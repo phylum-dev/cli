@@ -1,0 +1,15 @@
+connection: 
+#  - url: http://127.0.0.1:5000/
+  - url: http://10.0.3.2/
+    login: cn_admin
+    password:  abcd1234
+#packages:
+#  - name: react
+#    version: 16.13.1
+#    type: npm
+#  - name: redux
+#    version: 4.0.5
+#    type: npm
+#  - name: six
+#   version: 1.15.0
+#   type: pypi

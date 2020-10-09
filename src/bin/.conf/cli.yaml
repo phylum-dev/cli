@@ -1,0 +1,43 @@
+name: phylum-cli
+version: "0.0.1"
+author: Phylum, Inc.
+about: Client interface to the Phylum system
+args:
+    - config:
+        short: c
+        long: config
+        value_name: FILE
+        help: Sets a custom config file
+        takes_value: true
+    - verbose:
+        short: v
+        multiple: true
+        help: Sets the level of verbosity
+subcommands:
+    - submit:
+        about: Submits request to the processing system
+        args:
+            - name:
+                short: n
+                help: the package name
+                takes_value: true
+                required: true
+            - version:
+                short: v
+                help: the package version
+                takes_value: true
+                required: true
+            - type:
+                short: t
+                help: "the package type (default: \"npm\")"
+                takes_value: true
+                required: false
+    - status:
+        about: Polls the system for request status
+        args:
+            - request_id:
+                short: i
+                help: Request ID
+                takes_value: true
+                required: true
+
