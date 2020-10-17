@@ -32,7 +32,7 @@ def build_job(job_id):
                 'name': 'foo',
                 'risk': 60,
                 'status': 'NEW',
-                'type': 'npm',
+                'pkg_type': 'npm',
                 'version': '1.0.0',
                 'vulnerabilities': [],
                 'dependencies':
@@ -44,7 +44,7 @@ def build_job(job_id):
                         'name': 'bar',
                         'risk': 60,
                         'status': 'COMPLETED',
-                        'type': 'npm',
+                        'pkg_type': 'npm',
                         'version': '2.3.4',
                         'vulnerabilities': []
                     },
@@ -55,7 +55,7 @@ def build_job(job_id):
                         'name': 'baz',
                         'risk': 60,
                         'status': 'NEW',
-                        'type': 'npm',
+                        'pkg_type': 'npm',
                         'version': '9.8.7',
                         'vulnerabilities': []
                     }
@@ -71,13 +71,13 @@ def validate_request(req_json, schema):
     print(req_json)
     schema(req_json)
 
-@api.route('/request/packages', methods=['PUT'])
+@api.route('/request/package', methods=['PUT'])
 def put_packages():
     schema = Schema({
         'packages': [{
             Required('name'): str,
             Required('version'): str,
-            Required('type'): str,
+            Required('pkg_type'): str,
         }],
     })
     validate_request(request.json, schema)
@@ -87,7 +87,7 @@ def put_packages():
     print(f"Added job to db: {jobs[job_id]}")
     return json.dumps({'job_id': job_id}), 201
 
-@api.route('/request/packages/<job_id>', methods=['GET'])
+@api.route('/request/package/<job_id>', methods=['GET'])
 def get_status(job_id):
     job = jobs.get(job_id, {})
     if job:

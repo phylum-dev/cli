@@ -1,38 +1,37 @@
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::str::FromStr;
 use uuid::Uuid;
 
-use crate::restson::{RestPath, Error};
+use crate::restson::{Error, RestPath};
 
 pub type JobId = Uuid;
 pub type UserId = Uuid;
 pub type PackageId = String;
 
-
 #[serde(rename_all = "UPPERCASE")]
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RequestState {
     New,
-    Pending,
-    Complete,
+    Processing,
+    Completed,
     Error,
 }
 
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[derive(Debug, Serialize, Deserialize)]
 pub enum PackageState {
-    New,             // Brand new request, nothing has been processed yet.
-    PendingDownload, // We have issued the download but it has not started yet.
-    Downloading,     // We are downloading the package files.
-    Processing,      // We are processing the package files.
+    New,                       // Brand new request, nothing has been processed yet.
+    PendingDownload,           // We have issued the download but it has not started yet.
+    Downloading,               // We are downloading the package files.
+    Processing,                // We are processing the package files.
     PendingExternalProcessing, // Processing of package files is complete; waiting on external processing (e.g. VCS)
     PendingPackageProcessing, // External processing is complete; waiting on processing of package files
-    Completed        // We have completed both downloading and processing.
+    Completed,                // We have completed both downloading and processing.
 }
 
 #[serde(rename_all = "lowercase")]
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PackageType {
     Npm,
     PyPi,
@@ -45,11 +44,11 @@ impl FromStr for PackageType {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "npm"   => Ok(Self::Npm),
-            "pypi"  => Ok(Self::PyPi),
-            "java"  => Ok(Self::Java),
-            "ruby"  => Ok(Self::Ruby),
-            _       => Err(()),
+            "npm" => Ok(Self::Npm),
+            "pypi" => Ok(Self::PyPi),
+            "java" => Ok(Self::Java),
+            "ruby" => Ok(Self::Ruby),
+            _ => Err(()),
         }
     }
 }
@@ -108,20 +107,25 @@ impl<'a> RestPath<JobId> for RequestStatusResponse {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl<'a> RestPath<JobId> for CancelRequestResponse {
+    fn get_path(job_id: JobId) -> Result<String, Error> {
+        Ok(format!("request/package/{}", job_id))
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PackageDescriptor {
     pub name: String,
     pub version: String,
-    //#[serde(rename="type")]
-    pub pkg_type: PackageType,
+    pub r#type: PackageType,
 }
 
-
+/*
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeuristicResult {
     score: f64,
     data: Value, // The structure of this data is dependent on the particular heuristic
-}
+}*/
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
@@ -132,7 +136,7 @@ pub struct Package {
     risk: f64,
     status: PackageState,
     vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
-    heuristics: Vec<HeuristicResult>,
+    heuristics: Value,           // TODO: parse this using a strong type
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -142,14 +146,17 @@ pub struct PackageStatus {
     dependencies: Vec<Package>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestStatusResponse {
     id: JobId,
     user_id: UserId,
-    started_at: u64, // epoch seconds
+    started_at: u64,   // epoch seconds
     last_updated: u64, // epoch seconds
     status: RequestState,
     packages: Vec<PackageStatus>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CancelRequestResponse {
+    pub msg: String,
+}

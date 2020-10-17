@@ -1,10 +1,9 @@
-extern crate hyper;
 extern crate cli;
+extern crate hyper;
 
 #[macro_use]
 extern crate serde_derive;
 
-use hyper::header::*;
 use cli::restson::{Error, RestClient, RestPath};
 
 #[derive(Deserialize)]
@@ -33,9 +32,7 @@ impl RestPath<()> for HttpBinAnything {
 fn headers() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    client
-        .set_header(USER_AGENT.as_str(), "restson-test")
-        .unwrap();
+    client.set_header("user-agent", "restson-test").unwrap();
 
     let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(data.headers.user_agent, "restson-test");
@@ -72,5 +69,8 @@ fn response_headers() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let _data: HttpBinAnything = client.get(()).unwrap();
-    assert_eq!(client.response_headers()["content-type"], "application/json");
+    assert_eq!(
+        client.response_headers()["content-type"],
+        "application/json"
+    );
 }

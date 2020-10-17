@@ -40,4 +40,12 @@ subcommands:
                 help: Request ID
                 takes_value: true
                 required: true
+    - cancel:
+        about: Cancels a request currently in progress
+        args:
+            - request_id:
+                short: i
+                help: Request ID
+                takes_value: true
+                required: true
 

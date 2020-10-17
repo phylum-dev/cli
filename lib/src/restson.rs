@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
 //!
 //! Easy-to-use REST client for Rust programming language that provides
 //! automatic serialization and deserialization from Rust structs. The library
@@ -58,21 +57,21 @@ SOFTWARE.
 //! }
 //! ```
 
+extern crate base64;
 extern crate futures;
 extern crate hyper;
 extern crate serde;
 extern crate serde_json;
 extern crate tokio;
 extern crate url;
-extern crate base64;
 
-use tokio::time::timeout;
-use hyper::header::*;
 use hyper::body::Buf;
+use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
-use std::{error, fmt};
 use std::time::Duration;
+use std::{error, fmt};
+use tokio::time::timeout;
 use url::Url;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -260,9 +259,7 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => {
-                Client::builder().build(HttpsConnector::new())
-            }
+            None => Client::builder().build(HttpsConnector::new()),
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;
@@ -518,6 +515,16 @@ impl RestClient {
         Ok(())
     }
 
+    pub fn delete_capture<U, T>(&mut self, params: U) -> Result<T, Error>
+    where
+        T: serde::de::DeserializeOwned + RestPath<U>,
+    {
+        let req = self.make_request::<U, T>(Method::DELETE, params, None, None)?;
+        let body = self.run_request(req)?;
+
+        serde_json::from_str(body.as_str()).map_err(|err| Error::DeserializeParseError(err, body))
+    }
+
     /// Make a DELETE request with query and body.
     pub fn delete_with<U, T>(&mut self, params: U, data: &T, query: &Query) -> Result<(), Error>
     where
@@ -619,7 +626,9 @@ impl RestClient {
     }
 
     fn make_uri(&self, path: &str, params: Option<&Query>) -> Result<hyper::Uri, Error> {
-        let mut url = self.baseurl.clone()
+        let mut url = self
+            .baseurl
+            .clone()
             .join(path)
             .map_err(|_| Error::UrlError)?;
 

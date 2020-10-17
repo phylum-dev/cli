@@ -109,7 +109,6 @@ fn relative_path() {
     assert_eq!(data.url, "https://httpbin.org/anything/api/test");
 }
 
-
 #[test]
 fn body_wash_fn() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();

@@ -16,7 +16,6 @@ impl RestPath<()> for HttpBinDelete {
     }
 }
 
-
 #[test]
 fn basic_delete() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
@@ -34,5 +33,5 @@ fn delete_with() {
     };
     client.delete_with((), &data, &params).unwrap();
 
-    client.delete_with((), &data, &vec![]).unwrap();
+    client.delete_with((), &data, &[]).unwrap();
 }
