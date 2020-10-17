@@ -112,7 +112,7 @@ impl<'a> RestPath<JobId> for RequestStatusResponse {
 pub struct PackageDescriptor {
     pub name: String,
     pub version: String,
-    #[serde(rename="type")]
+    //#[serde(rename="type")]
     pub pkg_type: PackageType,
 }
 
