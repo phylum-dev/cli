@@ -95,7 +95,7 @@ pub struct PackageSubmissionResponse {
     pub job_id: JobId,
 }
 
-/// GET /request/packages
+/// GET /request/packages/<job_id>
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StatusRequest {
     job_id: JobId,
@@ -156,6 +156,7 @@ pub struct RequestStatusResponse {
     packages: Vec<PackageStatus>,
 }
 
+/// DELETE /request/packages/<job_id>
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CancelRequestResponse {
     pub msg: String,

@@ -22,7 +22,7 @@ def build_job(job_id):
             'id': '59482a54-423b-448d-8325-f171c9dc336b',
             'last_updated': started_at,
             'started_at': started_at,
-            'status': 'PENDING',
+            'status': 'PROCESSING',
             'user_id': '86bb664a-5331-489b-8901-f052f155ec79',
             'packages':
             [{
@@ -32,7 +32,7 @@ def build_job(job_id):
                 'name': 'foo',
                 'risk': 60,
                 'status': 'NEW',
-                'pkg_type': 'npm',
+                'type': 'npm',
                 'version': '1.0.0',
                 'vulnerabilities': [],
                 'dependencies':
@@ -44,7 +44,7 @@ def build_job(job_id):
                         'name': 'bar',
                         'risk': 60,
                         'status': 'COMPLETED',
-                        'pkg_type': 'npm',
+                        'type': 'npm',
                         'version': '2.3.4',
                         'vulnerabilities': []
                     },
@@ -55,7 +55,7 @@ def build_job(job_id):
                         'name': 'baz',
                         'risk': 60,
                         'status': 'NEW',
-                        'pkg_type': 'npm',
+                        'type': 'npm',
                         'version': '9.8.7',
                         'vulnerabilities': []
                     }
@@ -77,7 +77,7 @@ def put_packages():
         'packages': [{
             Required('name'): str,
             Required('version'): str,
-            Required('pkg_type'): str,
+            Required('type'): str,
         }],
     })
     validate_request(request.json, schema)

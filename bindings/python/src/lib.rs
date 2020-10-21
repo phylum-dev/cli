@@ -95,19 +95,10 @@ impl PhylumApi {
             PyRuntimeError::new_err(format!("Failed to get package status: {:?}", e))
         })?;
 
-        // TODO: we really should return this as a Python dict, not a json string
+        // TODO: we should return this as a Python dict, not a json string
         let json = serde_json::to_string(&resp).map_err(|e| {
             PyRuntimeError::new_err(format!("Failed to serialize response: {:?}", e))
         })?;
-
-        /*
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let locals = PyDict::new(py);
-        locals.set_item("data", json);
-        py.run("import json; result = json.loads(data)", None, Some(locals)).unwrap();
-        let res = locals.get_item("result").unwrap().extract::<&PyDict>().unwrap();
-        */
 
         Ok(json)
     }
@@ -132,12 +123,4 @@ impl PhylumApi {
 fn cli_python(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PhylumApi>()?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }
