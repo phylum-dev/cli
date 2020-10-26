@@ -46,37 +46,43 @@ fn main() {
     if should_submit {
         // If any packages were listed in the config file, include
         //  those as well.
-        let mut packages = config.packages.unwrap_or_default();
-        // These are required options, so `unwrap` is ok
-        let name = matches.value_of("name").unwrap().to_string();
-        let version = matches.value_of("version").unwrap().to_string();
-        let pkg_type = matches.value_of("type").unwrap_or("npm");
-        let pkg_type = PackageType::from_str(pkg_type);
-        if let Ok(pkg_type) = pkg_type {
-            packages.push(PackageDescriptor {
-                name,
-                version,
-                r#type: pkg_type,
-            });
-        }
+        if let Some(matches) = matches.subcommand_matches("submit") {
+            let mut packages = config.packages.unwrap_or_default();
+            // These are required options, so `unwrap` is ok
+            let name = matches.value_of("name").unwrap().to_string();
+            let version = matches.value_of("version").unwrap().to_string();
+            let pkg_type = matches.value_of("type").unwrap_or("npm");
+            let pkg_type = PackageType::from_str(pkg_type);
+            if let Ok(pkg_type) = pkg_type {
+                packages.push(PackageDescriptor {
+                    name,
+                    version,
+                    r#type: pkg_type,
+                });
+            }
 
-        log::info!("Submitting request...");
-        let resp = api
-            .submit_request(&packages)
-            .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
-        log::info!("Response => {:?}", resp);
+            log::info!("Submitting request...");
+            let resp = api
+                .submit_request(&packages)
+                .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
+            log::info!("Response => {:?}", resp);
+        }
     } else if should_get_status {
-        let request_id = matches.value_of("request_id").unwrap().to_string();
-        let request_id = JobId::from_str(&request_id)
-            .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
-        let resp = api.get_status(&request_id);
-        log::info!("==> {:?}", resp);
+        if let Some(matches) = matches.subcommand_matches("status") {
+            let request_id = matches.value_of("request_id").unwrap().to_string();
+            let request_id = JobId::from_str(&request_id)
+                .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
+            let resp = api.get_status(&request_id);
+            log::info!("==> {:?}", resp);
+        }
     } else if should_cancel {
-        let request_id = matches.value_of("request_id").unwrap().to_string();
-        let request_id = JobId::from_str(&request_id)
-            .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
-        let resp = api.cancel(&request_id);
-        log::info!("==> {:?}", resp);
+        if let Some(matches) = matches.subcommand_matches("cancel") {
+            let request_id = matches.value_of("request_id").unwrap().to_string();
+            let request_id = JobId::from_str(&request_id)
+                .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
+            let resp = api.cancel(&request_id);
+            log::info!("==> {:?}", resp);
+        }
     }
 }
 
