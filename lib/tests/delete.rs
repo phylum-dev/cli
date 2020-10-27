@@ -20,7 +20,11 @@ impl RestPath<()> for HttpBinDelete {
 fn basic_delete() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    client.delete::<(), HttpBinDelete>(()).unwrap();
+    let req = HttpBinDelete {
+        data: String::from("test data"),
+    };
+
+    client.delete((), &req).unwrap();
 }
 
 #[test]

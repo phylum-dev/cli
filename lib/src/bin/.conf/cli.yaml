@@ -14,6 +14,29 @@ args:
         multiple: true
         help: Sets the level of verbosity
 subcommands:
+    - register:
+        about: Register a new system user
+        args:
+            - email:
+                short: u
+                help: User e-mail address
+                takes_value: true
+                required: true
+            - password:
+                short: p
+                help: Password
+                takes_value: true
+                required: true
+            - first:
+                short: f
+                help: First name
+                takes_value: true
+                required: true
+            - last:
+                short: l
+                help: Last name
+                takes_value: true
+                required: true
     - submit:
         about: Submits request to the processing system
         args:
@@ -39,7 +62,7 @@ subcommands:
                 short: i
                 help: Request ID
                 takes_value: true
-                required: true
+                required: false
     - cancel:
         about: Cancels a request currently in progress
         args:
@@ -48,4 +71,18 @@ subcommands:
                 help: Request ID
                 takes_value: true
                 required: true
+    - tokens:
+        about: Manage API tokens
+        args:
+            - create:
+                short: c
+                help: Create new API token
+                takes_value: false
+                required: false
+            - delete:
+                short: d
+                help: Delete (de-activate) an existing token
+                takes_value: true
+                required: false
+
 

@@ -135,6 +135,9 @@ pub enum Error {
 
     /// Invalid parameter value
     InvalidValue,
+
+    /// Generic application error
+    ApplicationError(String),
 }
 
 /// Builder for `RestClient`
@@ -164,11 +167,13 @@ impl fmt::Display for Error {
             Error::HttpError(_, _) => "Server returned non-success status",
             Error::TimeoutError => "Request has timed out",
             Error::InvalidValue => "Invalid parameter value",
+            Error::ApplicationError(_) => "General application error",
         };
         fmt.write_str(desc)?;
         match *self {
             Error::SerializeParseError(ref err) => write!(fmt, ": {}", err),
             Error::DeserializeParseError(ref err, _) => write!(fmt, ": {}", err),
+            Error::ApplicationError(ref err) => write!(fmt, ": {}", err),
             _ => Ok(()),
         }
     }
@@ -193,6 +198,12 @@ impl std::convert::From<hyper::Error> for Error {
 impl std::convert::From<tokio::time::Elapsed> for Error {
     fn from(_e: tokio::time::Elapsed) -> Self {
         Error::TimeoutError
+    }
+}
+
+impl std::convert::From<&str> for Error {
+    fn from(e: &str) -> Self {
+        Error::ApplicationError(e.to_string())
     }
 }
 
@@ -294,6 +305,11 @@ impl RestClient {
         s.push_str(":");
         s.push_str(pass);
         self.auth = Some("Basic ".to_owned() + &base64::encode(&s));
+    }
+
+    /// Set credentials for JWT token authentication
+    pub fn set_jwt_auth(&mut self, token: &str) -> Result<(), Error> {
+        self.set_header("Authorization", &format!("Bearer {}", token))
     }
 
     /// Set a function that cleans the response body up before deserializing it.
@@ -506,11 +522,12 @@ impl RestClient {
     }
 
     /// Make a DELETE request.
-    pub fn delete<U, T>(&mut self, params: U) -> Result<(), Error>
+    pub fn delete<U, T>(&mut self, params: U, data: &T) -> Result<(), Error>
     where
-        T: RestPath<U>,
+        T: serde::Serialize + RestPath<U>,
     {
-        let req = self.make_request::<U, T>(Method::DELETE, params, None, None)?;
+        let data = serde_json::to_string(data).map_err(Error::SerializeParseError)?;
+        let req = self.make_request::<U, T>(Method::DELETE, params, None, Some(data))?;
         self.run_request(req)?;
         Ok(())
     }

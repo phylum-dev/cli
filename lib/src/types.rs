@@ -7,7 +7,10 @@ use crate::restson::{Error, RestPath};
 
 pub type JobId = Uuid;
 pub type UserId = Uuid;
+pub type Key = Uuid;
 pub type PackageId = String;
+
+pub const API_PATH: &str = "api/v0";
 
 #[serde(rename_all = "UPPERCASE")]
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,40 +56,138 @@ impl FromStr for PackageType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Token {
-    pub access_token: String,
-    pub refresh_token: String,
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Role {
+    #[serde(rename = "a")]
+    Administrator,
+    #[serde(rename = "o")]
+    Observer,
+    #[serde(rename = "u")]
+    User,
 }
 
-/// POST /auth/login
+impl FromStr for Role {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "a" => Ok(Self::Administrator),
+            "o" => Ok(Self::Observer),
+            "u" => Ok(Self::User),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct JwtToken {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiToken {
+    pub active: bool,
+    pub key: Key,
+    pub user_id: UserId,
+}
+
+/// PUT /authenticate/register
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RegisterRequest {
+    pub email: String,
+    pub password: String,
+    pub confirm_password: String,
+    pub first_name: String,
+    pub last_name: String,
+}
+
+impl RestPath<()> for RegisterRequest {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/authenticate/register", API_PATH))
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RegisterResponse {
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: Role,
+    pub user_id: UserId,
+}
+
+/// POST /authenticate/login
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthRequest {
-    pub login: String,
+    pub email: String,
     pub password: String,
 }
 
 impl RestPath<()> for AuthRequest {
     fn get_path(_: ()) -> Result<String, Error> {
-        Ok(String::from("auth/login"))
+        Ok(format!("{}/authenticate/login", API_PATH))
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     #[serde(flatten)]
-    pub token: Token,
+    pub token: JwtToken,
 }
 
-/// PUT /request/packages
+/// POST /authenticate/refresh
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RefreshRequest {}
+
+impl RestPath<()> for RefreshRequest {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/authenticate/refresh", API_PATH))
+    }
+}
+
+/// PUT /authenticate/key
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiCreateTokenRequest {}
+
+impl RestPath<()> for ApiCreateTokenRequest {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/authenticate/key", API_PATH))
+    }
+}
+
+/// DELETE /authenticate/key/<api_key>
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiDeleteTokenRequest {}
+
+impl<'a> RestPath<Key> for ApiDeleteTokenRequest {
+    fn get_path(key: Key) -> Result<String, Error> {
+        Ok(format!("{}/authenticate/key/{}", API_PATH, key))
+    }
+}
+
+/// GET /authenticate/key
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetApiTokensResponse {
+    pub keys: Vec<ApiToken>,
+}
+
+impl RestPath<()> for GetApiTokensResponse {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/authenticate/key", API_PATH))
+    }
+}
+
+/// PUT /job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageRequest {
+    pub r#type: PackageType,
     pub packages: Vec<PackageDescriptor>,
 }
 
 impl RestPath<()> for PackageRequest {
     fn get_path(_: ()) -> Result<String, Error> {
-        Ok(String::from("request/package"))
+        Ok(format!("{}/job", API_PATH))
     }
 }
 
@@ -95,7 +196,19 @@ pub struct PackageSubmissionResponse {
     pub job_id: JobId,
 }
 
-/// GET /request/packages/<job_id>
+/// GET /job
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AllJobsStatusResponse {
+    pub jobs: Vec<RequestStatusResponse>,
+}
+
+impl RestPath<()> for AllJobsStatusResponse {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job", API_PATH))
+    }
+}
+
+/// GET /job/<job_id>
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StatusRequest {
     job_id: JobId,
@@ -103,13 +216,13 @@ pub struct StatusRequest {
 
 impl<'a> RestPath<JobId> for RequestStatusResponse {
     fn get_path(job_id: JobId) -> Result<String, Error> {
-        Ok(format!("request/package/{}", job_id))
+        Ok(format!("{}/job/{}", API_PATH, job_id))
     }
 }
 
 impl<'a> RestPath<JobId> for CancelRequestResponse {
     fn get_path(job_id: JobId) -> Result<String, Error> {
-        Ok(format!("request/package/{}", job_id))
+        Ok(format!("{}/job/{}", API_PATH, job_id))
     }
 }
 
