@@ -100,7 +100,7 @@ impl PhylumApi {
     ///     JWT token
     ///
     /// Returns a `JwtToken` object consisting of both and access and refresh token
-    #[text_signature = "(login, pass)"]
+    #[text_signature = "(token)"]
     pub fn refresh(&mut self, token: &JwtToken) -> PyResult<JwtToken> {
         let rtoken = RustJwtToken {
             access_token: token.access.to_owned(),
@@ -157,6 +157,28 @@ impl PhylumApi {
             })
             .collect::<Vec<_>>())
     }
+
+    /// Set the api token to use for making package requests
+    /// 
+    ///   token
+    ///     an `ApiToken` returned by `create_api_token`
+    pub fn set_api_token(&mut self, token: &ApiToken) -> PyResult<()> {
+        let key = Key::from_str(&token.key)
+            .map_err(|e| PyRuntimeError::new_err(format!("Invalid api key: {:?}", e)))?;
+        let user_id = UserId::from_str(&token.user_id)
+            .map_err(|e| PyRuntimeError::new_err(format!("Invalid api key: {:?}", e)))?;
+        let rtoken = RustApiToken {
+            active: token.active,
+            key,
+            user_id,
+        };
+        self.api
+            .set_api_token(&rtoken)
+            .map_err(|e: Error| {
+                PyRuntimeError::new_err(format!("Failed to create api token: {:?}", e))
+            })
+     }
+
 
     /// Submit a package request to the system
     ///

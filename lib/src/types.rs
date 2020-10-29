@@ -85,7 +85,7 @@ pub struct JwtToken {
     pub refresh_token: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ApiToken {
     pub active: bool,
     pub key: Key,

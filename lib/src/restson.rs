@@ -312,6 +312,11 @@ impl RestClient {
         self.set_header("Authorization", &format!("Bearer {}", token))
     }
 
+    /// Set credentials for API key authentication
+    pub fn set_api_key(&mut self, token: &str) -> Result<(), Error> {
+        self.set_header("apikey", token)
+    }
+
     /// Set a function that cleans the response body up before deserializing it.
     pub fn set_body_wash_fn(&mut self, func: fn(String) -> String) {
         self.body_wash_fn = func;

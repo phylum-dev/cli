@@ -3,12 +3,13 @@ use crate::types::*;
 
 pub struct PhylumApi {
     client: RestClient,
+    api_key: Option<ApiToken>,
 }
 
 impl PhylumApi {
     pub fn new(base_url: &str) -> Result<PhylumApi, Error> {
         let client = RestClient::new(base_url)?;
-        Ok(PhylumApi { client })
+        Ok(PhylumApi { client, api_key: None })
     }
 
     // TODO: expose api functions in both blocking / async forms
@@ -75,6 +76,16 @@ impl PhylumApi {
     pub fn get_api_tokens(&mut self) -> Result<Vec<ApiToken>, Error> {
         let resp: GetApiTokensResponse = self.client.get(())?;
         Ok(resp.keys)
+    }
+
+    /// Set the API token to use for requests to the `/job` endpoint
+    pub fn set_api_token(&mut self, token: &ApiToken) -> Result<(), Error> {
+        self.api_key = Some(token.to_owned());
+
+        // Remove any existing JWT auth header
+        self.client.clear_headers();
+        // Set the `apikey` header to use for authentication
+        self.client.set_api_key(&token.key.to_string())
     }
 
     /// Submit a new request to the system
