@@ -1,0 +1,5 @@
+# ./phylum-cli register -u example@phylum.io -f exa -l mple -p testtest
+connection:
+  - login: "example@phylum.io"
+    password: "testtest"
+    url: "http://localhost"
