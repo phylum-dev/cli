@@ -1,11 +1,18 @@
-connection: 
-#  - url: http://127.0.0.1:5000/
-  - url: http://10.0.3.2/
-    login: eric@phylum.io
-    password:  abcd1234
-#request_type: npm
-#packages:
-#  - name: react
-#    version: 16.13.1
-#  - name: redux
-#    version: 4.0.5
+---
+connection:
+  uri: "http://127.0.0.1"
+auth_info:
+  user: someone@someorg.com
+  pass: abcd1234
+  api_token: ~
+request_type: npm
+packages:
+  - name: foo
+    version: 1.2.3
+    type: npm
+  - name: bar
+    version: 3.4.5
+    type: npm
+  - name: baz
+    version: 2020.2.12
+    type: npm

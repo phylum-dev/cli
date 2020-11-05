@@ -1,10 +1,10 @@
-extern crate cli;
 extern crate hyper;
+extern crate phylum_cli;
 
 #[macro_use]
 extern crate serde_derive;
 
-use cli::restson::{Error, RestClient, RestPath};
+use phylum_cli::restson::{Error, RestClient, RestPath};
 
 #[derive(Deserialize)]
 struct HttpBinAnything {

@@ -1,79 +1,95 @@
-use crate::types::{PackageDescriptor, PackageType};
+use crate::types::{ApiToken, PackageDescriptor, PackageType};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
-use std::str::FromStr;
-use yaml_rust::{Yaml, YamlLoader};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionInfo {
     pub uri: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthInfo {
     pub user: String,
     pub pass: String,
+    pub api_token: Option<ApiToken>,
 }
 
 pub type Packages = Vec<PackageDescriptor>;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub connection: ConnectionInfo,
+    pub auth_info: AuthInfo,
     pub request_type: PackageType,
     pub packages: Option<Packages>,
 }
 
 // TODO: define explicit error types
-
-fn parse_package(p: &Yaml, ptype: &PackageType) -> Result<PackageDescriptor, Box<dyn Error>> {
-    let name = p["name"].as_str().ok_or("Couldn't read package name")?;
-    let version = p["version"]
-        .as_str()
-        .ok_or("Couldn't read package version")?;
-
-    Ok(PackageDescriptor {
-        name: name.to_string(),
-        version: version.to_string(),
-        r#type: ptype.to_owned(),
-    })
+pub fn save_config(path: &str, config: &Config) -> Result<(), Box<dyn Error>> {
+    let yaml = serde_yaml::to_string(config)?;
+    fs::write(shellexpand::env(path)?.as_ref(), yaml)?;
+    Ok(())
 }
 
-pub fn parse_config(config: &str) -> Result<Config, Box<dyn Error>> {
-    let config = fs::read_to_string(config)?;
-    let settings = YamlLoader::load_from_str(&config)?;
-    let connection_info = &settings[0]["connection"][0];
-    let s = |s: &str| s.to_string();
-    let uri = connection_info["url"]
-        .as_str()
-        .map(s)
-        .ok_or("Couldn't read connection url")?;
-    let user = connection_info["login"]
-        .as_str()
-        .map(s)
-        .ok_or("Couldn't read login")?;
-    let pass = connection_info["password"]
-        .as_str()
-        .map(s)
-        .ok_or("Couldn't read password")?;
+pub fn parse_config(path: &str) -> Result<Config, Box<dyn Error>> {
+    let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
+    let config: Config = serde_yaml::from_str(&contents)?;
+    Ok(config)
+}
 
-    let request_type = &settings[0]["request_type"][0].as_str().unwrap_or("npm");
-    //let request_type = serde_json::from_str(&format!("\"{}\"", request_type))?;
-    let request_type = PackageType::from_str(request_type).unwrap_or(PackageType::Npm);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{Key, UserId};
+    use std::str::FromStr;
 
-    let package_entries = settings[0]["packages"].as_vec();
+    #[test]
+    fn test_save_config() {
+        let con = ConnectionInfo {
+            uri: "http://127.0.0.1".into(),
+        };
 
-    if let Some(package_entries) = package_entries {
-        let packages: Result<Vec<_>, _> = package_entries
-            .iter()
-            .map(|p| parse_package(p, &request_type))
-            .collect();
+        let auth = AuthInfo {
+            user: "someone@someorg.com".into(),
+            pass: "abcd1234".into(),
+            api_token: Some(ApiToken {
+                active: true,
+                key: Key::from_str("5098fc16-5267-40ed-bf63-338ebdf185fe").unwrap(),
+                user_id: UserId::from_str("b4225454-13ee-4019-926e-cd5f8b128e4a").unwrap(),
+            }),
+        };
 
-        Ok(Config {
-            connection: ConnectionInfo { uri, user, pass },
-            request_type,
-            packages: Some(packages?),
-        })
-    } else {
-        Ok(Config {
-            connection: ConnectionInfo { uri, user, pass },
-            request_type,
-            packages: None,
-        })
+        let packages = vec![
+            PackageDescriptor {
+                name: "foo".into(),
+                version: "1.2.3".into(),
+                r#type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "bar".into(),
+                version: "3.4.5".into(),
+                r#type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "baz".into(),
+                version: "2020.2.12".into(),
+                r#type: PackageType::Npm,
+            },
+        ];
+
+        let config = Config {
+            connection: con,
+            auth_info: auth,
+            request_type: PackageType::Npm,
+            packages: Some(packages),
+        };
+        save_config("/tmp/test_config", &config).unwrap();
+    }
+
+    #[test]
+    fn test_parse_config() {
+        let config: Config = parse_config("/tmp/test_config").unwrap();
+        assert_eq!(config.request_type, PackageType::Npm);
     }
 }

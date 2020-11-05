@@ -33,7 +33,7 @@ SOFTWARE.
 //! #[macro_use]
 //! extern crate serde_derive;
 //!
-//! use cli::restson::{RestClient,RestPath,Error};
+//! use phylum_cli::restson::{RestClient,RestPath,Error};
 //!
 //! // Data structure that matches with REST API JSON
 //! #[derive(Serialize,Deserialize,Debug)]

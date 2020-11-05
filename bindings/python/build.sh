@@ -1,3 +1,3 @@
 #!/bin/bash
-maturin build
+maturin build --release
 

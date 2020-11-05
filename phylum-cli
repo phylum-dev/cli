@@ -1,3 +1,0 @@
-#!/bin/bash
-(cd ./lib/src/bin && cargo run -q --release -- $@)
-

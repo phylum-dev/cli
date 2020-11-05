@@ -5,12 +5,12 @@ use pyo3::prelude::*;
 //use pyo3::types::PyDict;
 //use pyo3::wrap_pyfunction;
 
-use cli::api::PhylumApi as RustPhylumApi;
-use cli::types::ApiToken as RustApiToken;
-use cli::types::JwtToken as RustJwtToken;
-use cli::types::Key;
-use cli::types::{JobId, PackageDescriptor, PackageType, UserId};
-use cli::Error;
+use phylum_cli::api::PhylumApi as RustPhylumApi;
+use phylum_cli::types::ApiToken as RustApiToken;
+use phylum_cli::types::JwtToken as RustJwtToken;
+use phylum_cli::types::Key;
+use phylum_cli::types::{JobId, PackageDescriptor, PackageType, UserId};
+use phylum_cli::Error;
 
 #[pyclass]
 struct JwtToken {
@@ -159,7 +159,7 @@ impl PhylumApi {
     }
 
     /// Set the api token to use for making package requests
-    /// 
+    ///
     ///   token
     ///     an `ApiToken` returned by `create_api_token`
     pub fn set_api_token(&mut self, token: &ApiToken) -> PyResult<()> {
@@ -172,13 +172,10 @@ impl PhylumApi {
             key,
             user_id,
         };
-        self.api
-            .set_api_token(&rtoken)
-            .map_err(|e: Error| {
-                PyRuntimeError::new_err(format!("Failed to create api token: {:?}", e))
-            })
-     }
-
+        self.api.set_api_token(&rtoken).map_err(|e: Error| {
+            PyRuntimeError::new_err(format!("Failed to create api token: {:?}", e))
+        })
+    }
 
     /// Submit a package request to the system
     ///

@@ -1,4 +1,5 @@
 name: phylum-cli
+bin_name: phylum-cli
 version: "0.0.1"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
@@ -38,13 +39,14 @@ subcommands:
                 takes_value: true
                 required: true
     - submit:
-        about: Submits request to the processing system
+        about: Submits a request to the processing system
         args:
             - name:
                 short: n
                 help: the package name
                 takes_value: true
                 required: true
+                allow_hyphen_values: true
             - version:
                 short: v
                 help: the package version
@@ -53,6 +55,14 @@ subcommands:
             - type:
                 short: t
                 help: "the package type (default: \"npm\")"
+                takes_value: true
+                required: false
+    - batch:
+        about: Submits a batch of requests to the processing system
+        args:
+            - file:
+                short: f
+                help: file (or piped stdin) containing the list of packages (format `<name>:<version>`)
                 takes_value: true
                 required: false
     - status:
@@ -84,5 +94,6 @@ subcommands:
                 help: Delete (de-activate) an existing token
                 takes_value: true
                 required: false
-
+    - version:
+        about: Display application versiono
 

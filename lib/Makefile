@@ -3,7 +3,7 @@ build:
 	@cargo build
 
 test:
-	@cargo test -- --nocapture
+	@cargo test -- --nocapture --test-threads=1 
 
 docs: build
 	@cargo doc --no-deps --document-private-items

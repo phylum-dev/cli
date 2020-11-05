@@ -3,13 +3,20 @@ use crate::types::*;
 
 pub struct PhylumApi {
     client: RestClient,
-    api_key: Option<ApiToken>,
+    pub api_key: Option<ApiToken>,
 }
 
 impl PhylumApi {
     pub fn new(base_url: &str) -> Result<PhylumApi, Error> {
-        let client = RestClient::new(base_url)?;
-        Ok(PhylumApi { client, api_key: None })
+        let mut client = RestClient::new(base_url)?;
+        let yml = clap::load_yaml!("bin/.conf/cli.yaml");
+        let version = yml["version"].as_str().unwrap_or("");
+        client.set_header("version", version)?;
+
+        Ok(PhylumApi {
+            client,
+            api_key: None,
+        })
     }
 
     // TODO: expose api functions in both blocking / async forms
