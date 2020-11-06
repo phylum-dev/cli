@@ -46,7 +46,6 @@ subcommands:
                 help: the package name
                 takes_value: true
                 required: true
-                allow_hyphen_values: true
             - version:
                 short: v
                 help: the package version
@@ -57,6 +56,14 @@ subcommands:
                 help: "the package type (default: \"npm\")"
                 takes_value: true
                 required: false
+            - low-priority: 
+                short: L
+                takes_value: false
+                required: false
+            - recurse: 
+                short: R
+                takes_value: false
+                required: false
     - batch:
         about: Submits a batch of requests to the processing system
         args:
@@ -64,6 +71,14 @@ subcommands:
                 short: f
                 help: file (or piped stdin) containing the list of packages (format `<name>:<version>`)
                 takes_value: true
+                required: false
+            - low-priority: 
+                short: u
+                takes_value: false
+                required: false
+            - recurse: 
+                short: u
+                takes_value: false
                 required: false
     - status:
         about: Polls the system for request status

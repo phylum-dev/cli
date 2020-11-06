@@ -72,7 +72,7 @@ _phylum-cli() {
             ;;
         
         phylum__cli__batch)
-            opts=" -f -h -V  --help --version  "
+            opts=" -f -u -u -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -175,7 +175,7 @@ _phylum-cli() {
             return 0
             ;;
         phylum__cli__submit)
-            opts=" -n -v -t -h -V  --help --version  "
+            opts=" -n -v -t -L -R -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

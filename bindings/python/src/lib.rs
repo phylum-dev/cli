@@ -197,7 +197,7 @@ impl PhylumApi {
             r#type: pkg_type.to_owned(),
         };
         self.api
-            .submit_request(&pkg_type, &[pkg])
+            .submit_request(&pkg_type, &[pkg], true, true)
             .map(|j: JobId| j.to_string())
             .map_err(|e: Error| {
                 PyRuntimeError::new_err(format!("Failed to submit package request: {:?}", e))

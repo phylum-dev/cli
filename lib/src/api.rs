@@ -100,10 +100,14 @@ impl PhylumApi {
         &mut self,
         req_type: &PackageType,
         package_list: &[PackageDescriptor],
+        is_user: bool,
+        no_recurse: bool,
     ) -> Result<JobId, Error> {
         let req = PackageRequest {
             r#type: req_type.to_owned(),
             packages: package_list.to_vec(),
+            is_user,
+            norecurse: no_recurse,
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: PackageSubmissionResponse = self.client.put_capture((), &req)?;
@@ -191,7 +195,7 @@ mod tests {
             version: "16.13.1".to_string(),
             r#type: PackageType::Npm,
         };
-        let res = client.submit_request(&PackageType::Npm, &[pkg]);
+        let res = client.submit_request(&PackageType::Npm, &[pkg], true, true);
         assert!(res.is_ok(), format!("{:?}", res));
     }
 

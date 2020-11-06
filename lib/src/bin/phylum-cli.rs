@@ -128,6 +128,8 @@ fn main() {
         //  those as well.
         let mut packages = config.packages.unwrap_or_default();
         let request_type = config.request_type;
+        let mut is_user = true;
+        let mut no_recurse = true;
 
         if let Some(matches) = matches.subcommand_matches("submit") {
             // If a package was explicitly passed on the command line,
@@ -140,6 +142,8 @@ fn main() {
                 version,
                 r#type: request_type.to_owned(),
             });
+            is_user = !matches.is_present("low-priority");
+            no_recurse = !matches.is_present("recurse");
         } else if let Some(matches) = matches.subcommand_matches("batch") {
             let mut eof = false;
             let mut line = String::new();
@@ -173,10 +177,12 @@ fn main() {
                     }
                 }
             }
+            is_user = !matches.is_present("low-priority");
+            no_recurse = !matches.is_present("recurse");
         }
         log::debug!("Submitting request...");
         let resp = api
-            .submit_request(&request_type, &packages)
+            .submit_request(&request_type, &packages, is_user, no_recurse)
             .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
         log::info!("Response => {:?}", resp);
         print_user_success!("Job ID: {}", resp);

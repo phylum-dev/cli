@@ -183,6 +183,8 @@ impl RestPath<()> for GetApiTokensResponse {
 pub struct PackageRequest {
     pub r#type: PackageType,
     pub packages: Vec<PackageDescriptor>,
+    pub is_user: bool,
+    pub norecurse: bool,
 }
 
 impl RestPath<()> for PackageRequest {
