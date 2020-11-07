@@ -78,8 +78,14 @@ fn main() {
     let should_get_status = matches.subcommand_matches("status").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
     let should_manage_tokens = matches.subcommand_matches("tokens").is_some();
+    let should_do_heuristics = matches.subcommand_matches("heuristics").is_some();
 
-    if should_submit || should_get_status || should_cancel || should_manage_tokens {
+    if should_submit
+        || should_get_status
+        || should_cancel
+        || should_manage_tokens
+        || should_do_heuristics
+    {
         log::debug!("Authenticating...");
         // If an API token has been configured, prefer that.  Otherwise, log in with
         //  a standard username and password to get a JWT.
@@ -245,6 +251,31 @@ fn main() {
                 log::info!("==> {:?}", resp);
                 print_response(resp);
             }
+        }
+    } else if should_do_heuristics {
+        let matches = matches.subcommand_matches("heuristics").unwrap();
+        if let Some(matches) = matches.subcommand_matches("submit") {
+            let request_type = config.request_type;
+            let pkg = PackageDescriptor {
+                name: matches.value_of("name").unwrap().to_string(), // required option
+                version: matches.value_of("version").unwrap().to_string(), // required option
+                r#type: request_type,
+            };
+            let heuristics = matches
+                .value_of("heuristics")
+                .unwrap_or_default()
+                .split(',')
+                .map(|s| s.to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<String>>();
+            let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
+            log::info!("==> {:?}", resp);
+            print_response(resp);
+        } else {
+            log::info!("Querying heuristics");
+            let resp = api.query_heuristics();
+            log::info!("==> {:?}", resp);
+            print_response(resp);
         }
     }
 }

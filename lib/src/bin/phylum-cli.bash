@@ -22,6 +22,9 @@ _phylum-cli() {
             help)
                 cmd+="__help"
                 ;;
+            heuristics)
+                cmd+="__heuristics"
+                ;;
             register)
                 cmd+="__register"
                 ;;
@@ -44,7 +47,7 @@ _phylum-cli() {
 
     case "${cmd}" in
         phylum__cli)
-            opts=" -c -v -h -V  --config --help --version  register submit batch status cancel tokens version help"
+            opts=" -c -v -h -V  --config --help --version  register submit batch status cancel tokens heuristics version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -124,6 +127,48 @@ _phylum-cli() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        phylum__cli__heuristics)
+            opts=" -h -V  --help --version  submit"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__cli__heuristics__submit)
+            opts=" -n -v -h -d -V  --help --version  "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                    -n)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -v)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -h)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         phylum__cli__register)
             opts=" -u -p -f -l -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -175,7 +220,7 @@ _phylum-cli() {
             return 0
             ;;
         phylum__cli__submit)
-            opts=" -n -v -t -L -R -h -V  --help --version  "
+            opts=" -n -v -L -R -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -187,10 +232,6 @@ _phylum-cli() {
                     return 0
                     ;;
                     -v)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

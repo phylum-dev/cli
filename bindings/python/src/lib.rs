@@ -250,6 +250,43 @@ impl PhylumApi {
         })?;
         Ok(resp.msg)
     }
+
+    /// List the available heuristics
+    /// 
+    pub fn heuristics(&mut self) -> PyResult<Vec<String>> {
+        let resp = self.api.query_heuristics().map_err(|e| {
+            PyRuntimeError::new_err(format!("Could not query available heuristics: {}", e))
+        })?;
+        Ok(resp)
+    }
+
+    /// Submit a package to have heuristics run against it
+    /// 
+    ///   pkg_name
+    ///     The name of the package to run heuristics against    
+    ///   pkg_version
+    ///     The version of the package to run heuristics against    
+    ///   pkg_type
+    ///     The type of the package to run heuristics against (default: "npm")
+    ///   heuristics
+    ///     A list of heuristics to run (if not provided, all available will be run)
+    ///   include_deps
+    ///     Heuristics should also be run against the packages dependencies (default: False)
+    /// 
+    #[text_signature = "(pkg_type=\"npm\", heuristics=None, include_deps=False)"]
+    #[args(pkg_type = "\"npm\"", heuristics = "None", include_deps = false)]
+    pub fn run_heuristics(&mut self, pkg_name: &str, pkg_version: &str, pkg_type: &str, heuristics: Option<Vec<String>>, include_deps: bool) -> PyResult<()> {
+        let pkg = PackageDescriptor {
+            name: pkg_name.to_string(),
+            version: pkg_version.to_string(),
+            r#type: PackageType::from_str(pkg_type).unwrap_or(PackageType::Npm),
+        };
+        let heuristics = heuristics.unwrap_or_default();
+        let _resp = self.api.submit_heuristics(&pkg, &heuristics, include_deps).map_err(|e| {
+            PyRuntimeError::new_err(format!("Failed to submit package `{}/{}` for heuristics: {}", pkg_name, pkg_version, e))
+        })?;
+        Ok(())
+    }
 }
 
 #[pymodule]

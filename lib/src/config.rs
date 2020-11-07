@@ -44,8 +44,7 @@ mod tests {
     use crate::types::{Key, UserId};
     use std::str::FromStr;
 
-    #[test]
-    fn test_save_config() {
+    fn write_test_config() {
         let con = ConnectionInfo {
             uri: "http://127.0.0.1".into(),
         };
@@ -85,10 +84,17 @@ mod tests {
             packages: Some(packages),
         };
         save_config("/tmp/test_config", &config).unwrap();
+ 
+    }
+
+    #[test]
+    fn test_save_config() {
+        write_test_config();
     }
 
     #[test]
     fn test_parse_config() {
+        write_test_config();
         let config: Config = parse_config("/tmp/test_config").unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
     }

@@ -1,6 +1,6 @@
 name: phylum-cli
 bin_name: phylum-cli
-version: "0.0.1"
+version: "0.0.2"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
@@ -43,19 +43,14 @@ subcommands:
         args:
             - name:
                 short: n
-                help: the package name
+                help: Package name
                 takes_value: true
                 required: true
             - version:
                 short: v
-                help: the package version
+                help: Package version
                 takes_value: true
                 required: true
-            - type:
-                short: t
-                help: "the package type (default: \"npm\")"
-                takes_value: true
-                required: false
             - low-priority: 
                 short: L
                 takes_value: false
@@ -69,7 +64,7 @@ subcommands:
         args:
             - file:
                 short: f
-                help: file (or piped stdin) containing the list of packages (format `<name>:<version>`)
+                help: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
                 takes_value: true
                 required: false
             - low-priority: 
@@ -109,6 +104,32 @@ subcommands:
                 help: Delete (de-activate) an existing token
                 takes_value: true
                 required: false
+    - heuristics:
+        about: List available heuristics / submit packages for heuristics
+        subcommands:
+            - submit:
+                about: Submit a package to the system for heuristics
+                args:
+                    - name:
+                        short: n
+                        help: Package name
+                        takes_value: true
+                        required: true
+                    - version:
+                        short: v
+                        help: Package version
+                        takes_value: true
+                        required: true
+                    - heuristics:
+                        short: h
+                        help: "Heuristics to run (comma separated list, default: all available)"
+                        takes_value: true
+                        required: false
+                    - include-deps:
+                        short: d
+                        help: "Include dependencies (default: false)"
+                        takes_value: false
+                        required: false
     - version:
-        about: Display application versiono
+        about: Display application version
 

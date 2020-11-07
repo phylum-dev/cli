@@ -228,6 +228,37 @@ impl<'a> RestPath<JobId> for CancelRequestResponse {
     }
 }
 
+/// GET /heuristics
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeuristicsListResponse {
+    pub heuristics: Vec<String>,
+}
+
+/// POST /heuristics
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeuristicsSubmitRequest {
+    pub package: PackageDescriptor,
+    pub heuristics_filter: Vec<String>,
+    pub include_deps: bool,
+}
+
+impl RestPath<()> for HeuristicsSubmitRequest {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/heuristics", API_PATH))
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeuristicsSubmitResponse {
+    pub msg: String,
+}
+
+impl RestPath<()> for HeuristicsListResponse {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/heuristics", API_PATH))
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PackageDescriptor {
     pub name: String,
