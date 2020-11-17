@@ -9,7 +9,7 @@ use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::{parse_config, save_config};
-use phylum_cli::types::{JobId, Key, PackageDescriptor};
+use phylum_cli::types::{JobId, Key, PackageDescriptor, PackageType};
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
@@ -147,7 +147,7 @@ fn main() {
         // If any packages were listed in the config file, include
         //  those as well.
         let mut packages = config.packages.unwrap_or_default();
-        let request_type = config.request_type;
+        let mut request_type = config.request_type;
         let mut is_user = true;
         let mut no_recurse = true;
 
@@ -157,6 +157,13 @@ fn main() {
             // These are required options, so `unwrap` is ok
             let name = matches.value_of("name").unwrap().to_string();
             let version = matches.value_of("version").unwrap().to_string();
+
+            // If a package type was provided on the command line, prefer that
+            //  to the global setting
+            if matches.is_present("type") {
+                request_type = PackageType::from_str(matches.value_of("type").unwrap())
+                    .unwrap_or(request_type);
+            }
             packages.push(PackageDescriptor {
                 name,
                 version,
@@ -199,6 +206,13 @@ fn main() {
             }
             is_user = !matches.is_present("low-priority");
             no_recurse = !matches.is_present("recurse");
+
+            // If a package type was provided on the command line, prefer that
+            //  to the global setting
+            if matches.is_present("type") {
+                request_type = PackageType::from_str(matches.value_of("type").unwrap())
+                    .unwrap_or(request_type);
+            }
         }
         log::debug!("Submitting request...");
         let resp = api

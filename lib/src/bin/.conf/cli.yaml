@@ -51,6 +51,11 @@ subcommands:
                 help: Package version
                 takes_value: true
                 required: true
+            - type:
+                short: t
+                help: Package type (`npm`, `ruby`, etc)
+                takes_value: true
+                required: false
             - low-priority: 
                 short: L
                 takes_value: false
@@ -67,12 +72,17 @@ subcommands:
                 help: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
                 takes_value: true
                 required: false
+            - type:
+                short: t
+                help: Package type (`npm`, `ruby`, etc)
+                takes_value: true
+                required: false
             - low-priority: 
-                short: u
+                short: L
                 takes_value: false
                 required: false
             - recurse: 
-                short: u
+                short: R
                 takes_value: false
                 required: false
     - status:
