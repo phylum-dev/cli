@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::error::Error;
 use std::io::{self, BufRead, BufReader};
 use std::process;
+use home::home_dir;
 use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
@@ -54,9 +55,22 @@ fn main() {
         print_user_success!("{} (Version {})", name, version);
         process::exit(0);
     }
+    let home_path = home_dir().unwrap_or_else(|| {
+        log::error!("Couldn't find the user's home directory");
+        process::exit(-1);
+    });
+    let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
+
     let config_path = matches
         .value_of("config")
-        .unwrap_or("$HOME/.phylum/settings.yaml");
+        .unwrap_or(settings_path.to_str().unwrap_or_else(|| {
+            log::error!("Unicode parsing error in configuration file path");
+            print_user_failure!(
+                "Unable to read path to configuration file at '{:?}'",
+                settings_path
+            );
+            process::exit(-1)
+        }));
     log::debug!("Reading config from {}", config_path);
 
     let mut config = parse_config(config_path).unwrap_or_else(|err| {

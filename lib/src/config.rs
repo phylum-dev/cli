@@ -33,6 +33,7 @@ pub fn save_config(path: &str, config: &Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn parse_config(path: &str) -> Result<Config, Box<dyn Error>> {
+
     let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
     let config: Config = serde_yaml::from_str(&contents)?;
     Ok(config)
@@ -43,6 +44,7 @@ mod tests {
     use super::*;
     use crate::types::{Key, UserId};
     use std::str::FromStr;
+    use std::env::temp_dir;
 
     fn write_test_config() {
         let con = ConnectionInfo {
@@ -83,8 +85,10 @@ mod tests {
             request_type: PackageType::Npm,
             packages: Some(packages),
         };
-        save_config("/tmp/test_config", &config).unwrap();
- 
+        let temp_dir = temp_dir();
+        let test_config_file = temp_dir.as_path().join("test_config");
+        save_config(test_config_file.to_str().unwrap(), &config).unwrap();
+
     }
 
     #[test]
@@ -95,7 +99,9 @@ mod tests {
     #[test]
     fn test_parse_config() {
         write_test_config();
-        let config: Config = parse_config("/tmp/test_config").unwrap();
+        let temp_dir = temp_dir();
+        let test_config_file = temp_dir.as_path().join("test_config");
+        let config: Config = parse_config(test_config_file.to_str().unwrap()).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
     }
 }
