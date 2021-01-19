@@ -1,10 +1,10 @@
 use ansi_term::Color::{Green, Red};
 use clap::{load_yaml, App, AppSettings};
+use home::home_dir;
 use serde::Serialize;
 use std::error::Error;
 use std::io::{self, BufRead, BufReader};
 use std::process;
-use home::home_dir;
 use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
