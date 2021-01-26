@@ -1,0 +1,15 @@
+{
+  "name": "phylum-utils",
+  "version": "0.0.1",
+  "description": "Script for submit package / yarn lock files to the Phylum system",
+  "main": "package-lock_submit.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@yarnpkg/lockfile": "^1.1.0",
+    "yargs": "^16.2.0"
+  }
+}

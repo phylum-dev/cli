@@ -12,11 +12,18 @@ const debug = true;
 let is_yarn = false;
 
 const argv = yargs
-   .option('t', {
-      alias: 'type',
-      describe: 'the type of the file to process (`package` or `yarn`, defaults to `package`)',
-      type: 'string',
-      nargs: 1,
+   .options({
+     't': {
+         alias: 'type',
+         describe: 'the type of the file to process (`package` or `yarn`, defaults to `package`)',
+         type: 'string',
+         nargs: 1,
+      },
+      'd': {
+         alias: 'dry-run',
+         describe: 'print the list of packages that would be submitted, but do not actually submit them',
+         type: 'boolean',
+      }
    })
    .help()
    .alias('help', 'h')
@@ -85,7 +92,6 @@ if (argv.length <= 3) {
 }
 
 if (argv['type'] == 'yarn') {
-   console.log("setting is_yarn");
    is_yarn = true;
 }
 
@@ -121,6 +127,10 @@ if (cli_input == null){
    usage();
 }
 
+if (argv['dry-run']) {
+   exit(0);
+}
+
 let stdinStream = new stream.Readable();
 stdinStream.push(cli_input);
 stdinStream.push(null);
@@ -130,4 +140,7 @@ child = execFile('phylum-cli', ['batch', '-t', 'npm'], (err, stdout, stderr) => 
       console.log(stderr);
    });
 stdinStream.pipe(child.stdin);
-console.log(child.err);
+
+if (!!child.err) {
+    console.log(child.err);
+}
