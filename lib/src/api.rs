@@ -21,6 +21,15 @@ impl PhylumApi {
 
     // TODO: expose api functions in both blocking / async forms
 
+    /// Ping the system and verify it's up
+    pub fn ping(
+        &mut self,
+    ) -> Result<String, Error> {
+
+        let resp: PingResponse = self.client.get(())?;
+        Ok(resp.msg)
+    }
+
     /// Register new user
     pub fn register(
         &mut self,

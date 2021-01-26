@@ -198,6 +198,18 @@ pub struct PackageSubmissionResponse {
     pub job_id: JobId,
 }
 
+/// GET /job/heartbeat
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PingResponse {
+    pub msg: String,
+}
+
+impl RestPath<()> for PingResponse {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/heartbeat", API_PATH))
+    }
+}
+
 /// GET /job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AllJobsStatusResponse {

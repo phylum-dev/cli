@@ -87,6 +87,12 @@ fn main() {
         exit(err, "Error creating client", -1);
     });
 
+    if matches.subcommand_matches("ping").is_some() {
+        let resp = api.ping();
+        print_response(resp);
+        process::exit(0);
+    }
+
     let should_submit = matches.subcommand_matches("submit").is_some()
         || matches.subcommand_matches("batch").is_some();
     let should_get_status = matches.subcommand_matches("status").is_some();

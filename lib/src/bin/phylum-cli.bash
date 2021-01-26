@@ -25,6 +25,9 @@ _phylum-cli() {
             heuristics)
                 cmd+="__heuristics"
                 ;;
+            ping)
+                cmd+="__ping"
+                ;;
             register)
                 cmd+="__register"
                 ;;
@@ -47,7 +50,7 @@ _phylum-cli() {
 
     case "${cmd}" in
         phylum__cli)
-            opts=" -c -v -h -V  --config --help --version  register submit batch status cancel tokens heuristics version help"
+            opts=" -c -v -h -V  --config --help --version  ping register submit batch status cancel tokens heuristics version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -166,6 +169,21 @@ _phylum-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__cli__ping)
+            opts=" -h -V  --help --version  "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
                 *)
                     COMPREPLY=()
                     ;;
