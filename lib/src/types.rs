@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -25,6 +26,7 @@ pub enum RequestState {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum PackageState {
     New,                       // Brand new request, nothing has been processed yet.
+    DownloadRequested,         // A download has been requested
     PendingDownload,           // We have issued the download but it has not started yet.
     Downloading,               // We are downloading the package files.
     Processing,                // We are processing the package files.
@@ -53,6 +55,13 @@ impl FromStr for PackageType {
             "ruby" => Ok(Self::Ruby),
             _ => Err(()),
         }
+    }
+}
+
+impl fmt::Display for PackageType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = format!("{:?}", self);
+        write!(f, "{}", s.to_lowercase())
     }
 }
 
@@ -213,7 +222,7 @@ impl RestPath<()> for PingResponse {
 /// GET /job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AllJobsStatusResponse {
-    pub jobs: Vec<RequestStatusResponse>,
+    pub jobs: Vec<JobDescriptor>,
 }
 
 impl RestPath<()> for AllJobsStatusResponse {
@@ -237,6 +246,15 @@ impl<'a> RestPath<JobId> for RequestStatusResponse {
 impl<'a> RestPath<JobId> for CancelRequestResponse {
     fn get_path(job_id: JobId) -> Result<String, Error> {
         Ok(format!("{}/job/{}", API_PATH, job_id))
+    }
+}
+
+/// GET /job/packages/<type>/<name>/<version>
+impl<'a> RestPath<PackageDescriptor> for PackageStatus {
+    fn get_path(pkg: PackageDescriptor) -> Result<String, Error> {
+        let name_escaped = pkg.name.replace("/", "~");
+        let endpoint = format!("{}/{}/{}", pkg.r#type, name_escaped, pkg.version);
+        Ok(format!("{}/job/packages/{}", API_PATH, endpoint))
     }
 }
 
@@ -278,6 +296,12 @@ pub struct PackageDescriptor {
     pub r#type: PackageType,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct JobDescriptor {
+    pub job_id: JobId,
+    pub packages: Vec<PackageDescriptor>,
+}
+
 /*
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeuristicResult {
@@ -291,7 +315,7 @@ pub struct Package {
     package: PackageDescriptor,
     last_updated: u64, // epoch seconds
     license: Option<String>,
-    risk: f64,
+    package_score: f64,
     status: PackageState,
     vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
     heuristics: Value,           // TODO: parse this using a strong type

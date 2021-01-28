@@ -22,10 +22,7 @@ impl PhylumApi {
     // TODO: expose api functions in both blocking / async forms
 
     /// Ping the system and verify it's up
-    pub fn ping(
-        &mut self,
-    ) -> Result<String, Error> {
-
+    pub fn ping(&mut self) -> Result<String, Error> {
         let resp: PingResponse = self.client.get(())?;
         Ok(resp.msg)
     }
@@ -130,9 +127,15 @@ impl PhylumApi {
     }
 
     /// Get the status of all jobs
-    pub fn get_status(&mut self) -> Result<Vec<RequestStatusResponse>, Error> {
+    pub fn get_status(&mut self) -> Result<Vec<JobDescriptor>, Error> {
         let resp: AllJobsStatusResponse = self.client.get(())?;
         Ok(resp.jobs)
+    }
+
+    /// Get package details
+    pub fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<PackageStatus, Error> {
+        let resp: PackageStatus = self.client.get(pkg.to_owned())?;
+        Ok(resp)
     }
 
     /// Cancel a job currently in progress
@@ -233,6 +236,82 @@ mod tests {
     }
 
     #[test]
+    fn get_status() {
+        let _m = mock("GET", "/api/v0/job")
+            .with_status(200)
+            .with_header("content-type", "application-json")
+            .with_body(
+                r#"
+            [[
+                {
+                  "job_id": "f8e8cb21-a4c0-4718-9cd2-8f631e95b951",
+                  "packages": [
+                    {
+                      "name": "esmalo",
+                      "version": "1.0.0",
+                      "type": "npm"
+                    }
+                  ]
+                },
+                {
+                  "job_id": "1d1ecd1d-94af-4841-bf55-f5506b4f8f9f",
+                  "packages": [
+                    {
+                      "name": "esmalo",
+                      "version": "1.0.0",
+                      "type": "npm"
+                    }
+                  ]
+                }
+            ]]"#,
+            )
+            .create();
+
+        let mut client = PhylumApi::new(&mockito::server_url()).unwrap();
+        let res = client.get_status();
+        assert!(res.is_ok(), format!("{:?}", res));
+    }
+
+    #[test]
+    fn get_package_details() {
+        let _m = mock("GET", "/api/v0/job/packages/npm/@schematics~angular/9.1.9")
+            .with_status(200)
+            .with_header("content-type", "application-json")
+            .with_body(
+                r#"
+            {
+                "name": "@schematics/angular",
+                "version": "9.1.9",
+                "type": "npm",
+                "last_updated": 1611962723183,
+                "license": "MIT",
+                "package_score": 1.0,
+                "status": "PENDING_EXTERNAL_PROCESSING",
+                "vulnerabilities": [],
+                "heuristics": {
+                  "sample": {
+                    "data": {},
+                    "raw_score": 10.192523726982682,
+                    "score": 0.9999625521468548
+                  }
+                },
+                "dependencies": []
+              }
+            "#,
+            )
+            .create();
+
+        let mut client = PhylumApi::new(&mockito::server_url()).unwrap();
+        let pkg = PackageDescriptor {
+            name: "@schematics/angular".to_string(),
+            version: "9.1.9".to_string(),
+            r#type: PackageType::Npm,
+        };
+        let res = client.get_package_details(&pkg);
+        assert!(res.is_ok(), format!("{:?}", res));
+    }
+
+    #[test]
     fn get_job_status() {
         let _m = mock(
             "GET",
@@ -255,7 +334,7 @@ mod tests {
                     "type": "npm",
                     "last_updated": 1603311564,
                     "license": null,
-                    "risk": 60.0,
+                    "package_score": 60.0,
                     "status": "NEW",
                     "vulnerabilities": [],
                     "heuristics": [
@@ -273,7 +352,7 @@ mod tests {
                         "type": "npm",
                         "last_updated": 1603311564,
                         "license": null,
-                        "risk": 60.0,
+                        "package_score": 60.0,
                         "status": "COMPLETED",
                         "vulnerabilities": [],
                         "heuristics": []
@@ -284,7 +363,7 @@ mod tests {
                         "type": "npm",
                         "last_updated": 1603311564,
                         "license": null,
-                        "risk": 60.0,
+                        "package_score": 60.0,
                         "status": "NEW",
                         "vulnerabilities": [],
                         "heuristics": [

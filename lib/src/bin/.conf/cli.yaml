@@ -1,6 +1,6 @@
 name: phylum-cli
 bin_name: phylum-cli
-version: "0.0.2"
+version: "0.0.3"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
@@ -88,11 +88,26 @@ subcommands:
                 takes_value: false
                 required: false
     - status:
-        about: Polls the system for request status
+        about: Polls the system for request / job / package status
         args:
             - request_id:
                 short: i
                 help: Request ID
+                takes_value: true
+                required: false
+            - name:
+                short: n
+                help: Package name
+                takes_value: true
+                required: false
+            - version:
+                short: v
+                help: Package version
+                takes_value: true
+                required: false
+            - type:
+                short: t
+                help: Package type (`npm`, `ruby`, etc)
                 takes_value: true
                 required: false
     - cancel:

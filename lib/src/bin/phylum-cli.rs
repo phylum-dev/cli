@@ -1,5 +1,5 @@
 use ansi_term::Color::{Green, Red};
-use clap::{load_yaml, App, AppSettings};
+use clap::{load_yaml, App, AppSettings, ArgMatches};
 use home::home_dir;
 use serde::Serialize;
 use std::error::Error;
@@ -39,6 +39,24 @@ where
         Err(err) => {
             print_user_failure!("Response error:\n{}", err);
         }
+    }
+}
+
+fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDescriptor {
+    let name = options.value_of("name").unwrap().to_string(); // required option
+    let version = options.value_of("version").unwrap_or_default().to_string();
+    let mut r#type = request_type.to_owned();
+
+    // If a package type was provided on the command line, prefer that
+    //  to the global setting
+    if options.is_present("type") {
+        r#type = PackageType::from_str(options.value_of("type").unwrap()).unwrap_or(r#type);
+    }
+
+    PackageDescriptor {
+        name,
+        version,
+        r#type,
     }
 }
 
@@ -153,28 +171,14 @@ fn main() {
         // If any packages were listed in the config file, include
         //  those as well.
         let mut packages = config.packages.unwrap_or_default();
-        let mut request_type = config.request_type;
+        let mut request_type = config.request_type.to_owned();
         let mut is_user = true;
         let mut no_recurse = true;
 
         if let Some(matches) = matches.subcommand_matches("submit") {
-            // If a package was explicitly passed on the command line,
-            //  include that.
-            // These are required options, so `unwrap` is ok
-            let name = matches.value_of("name").unwrap().to_string();
-            let version = matches.value_of("version").unwrap().to_string();
-
-            // If a package type was provided on the command line, prefer that
-            //  to the global setting
-            if matches.is_present("type") {
-                request_type = PackageType::from_str(matches.value_of("type").unwrap())
-                    .unwrap_or(request_type);
-            }
-            packages.push(PackageDescriptor {
-                name,
-                version,
-                r#type: request_type.to_owned(),
-            });
+            let pkg = parse_package(matches, &request_type);
+            request_type = pkg.r#type.to_owned();
+            packages.push(pkg);
             is_user = !matches.is_present("low-priority");
             no_recurse = !matches.is_present("recurse");
         } else if let Some(matches) = matches.subcommand_matches("batch") {
@@ -188,6 +192,14 @@ fn main() {
                 log::info!("Waiting on stdin...");
                 Box::new(BufReader::new(io::stdin()))
             };
+
+            // If a package type was provided on the command line, prefer that
+            //  to the global setting
+            if matches.is_present("type") {
+                request_type = PackageType::from_str(matches.value_of("type").unwrap())
+                    .unwrap_or(request_type);
+            }
+
             while !eof {
                 match reader.read_line(&mut line) {
                     Ok(0) => eof = true,
@@ -212,13 +224,6 @@ fn main() {
             }
             is_user = !matches.is_present("low-priority");
             no_recurse = !matches.is_present("recurse");
-
-            // If a package type was provided on the command line, prefer that
-            //  to the global setting
-            if matches.is_present("type") {
-                request_type = PackageType::from_str(matches.value_of("type").unwrap())
-                    .unwrap_or(request_type);
-            }
         }
         log::debug!("Submitting request...");
         let resp = api
@@ -234,10 +239,19 @@ fn main() {
                 let resp = api.get_job_status(&request_id);
                 log::info!("==> {:?}", resp);
                 print_response(resp);
+            } else if matches.is_present("name") {
+                if !matches.is_present("version") {
+                    print_user_failure!("A version is required when querying by package");
+                    process::exit(-3);
+                }
+                let pkg = parse_package(matches, &config.request_type);
+                let resp = api.get_package_details(&pkg);
+                log::info!("==> {:?}", resp);
+                print_response(resp);
             } else {
                 // get everything
                 let resp = api.get_status();
-                log::info!("==> {:?}", resp);
+                log::debug!("==> {:?}", resp);
                 print_response(resp);
             }
         }
@@ -289,12 +303,7 @@ fn main() {
     } else if should_do_heuristics {
         let matches = matches.subcommand_matches("heuristics").unwrap();
         if let Some(matches) = matches.subcommand_matches("submit") {
-            let request_type = config.request_type;
-            let pkg = PackageDescriptor {
-                name: matches.value_of("name").unwrap().to_string(), // required option
-                version: matches.value_of("version").unwrap().to_string(), // required option
-                r#type: request_type,
-            };
+            let pkg = parse_package(matches, &config.request_type);
             let heuristics = matches
                 .value_of("heuristics")
                 .unwrap_or_default()

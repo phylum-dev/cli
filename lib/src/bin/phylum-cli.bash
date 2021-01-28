@@ -223,7 +223,7 @@ _phylum-cli() {
             return 0
             ;;
         phylum__cli__status)
-            opts=" -i -h -V  --help --version  "
+            opts=" -i -n -v -t -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -231,6 +231,18 @@ _phylum-cli() {
             case "${prev}" in
                 
                     -i)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -n)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -v)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
