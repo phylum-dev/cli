@@ -15,13 +15,18 @@ const argv = yargs
    .options({
      't': {
          alias: 'type',
-         describe: 'the type of the file to process (`package` or `yarn`, defaults to `package`)',
+         describe: 'Type of file to process (`package` or `yarn`, defaults to `package`)',
          type: 'string',
          nargs: 1,
       },
+      'H': {
+         alias: 'heuristics',
+         describe: 'Submit previously processed packages for heuristics only, not a full processing run',
+         type: 'boolean',
+      },
       'd': {
          alias: 'dry-run',
-         describe: 'print the list of packages that would be submitted, but do not actually submit them',
+         describe: 'Print the list of packages that would be submitted, but do not actually submit them',
          type: 'boolean',
       }
    })
@@ -33,53 +38,49 @@ function parsePackageLock(file) {
    const package_info = JSON.parse(file)
    const dependencies = package_info['dependencies'];
 
-   let buf = "";
-   let pkgCount = 0;
+   let recs = [];
 
    for (const key in dependencies) {
-      //console.log(`${key}:${dependencies[key]['version']}`);
-      if (!!max_packages && pkgCount > max_packages) {
+      if (!!max_packages && recs.length >= max_packages) {
          break;
       }
-      pkgCount++;
-      buf += `${key}:${dependencies[key]['version']}\n`;
+
+      recs.push({
+         'name': key,
+         'version': dependencies[key]['version']
+      });
+
+      if (debug) {
+         console.log(`${key}:${dependencies[key]['version']}`);
+      }
    }
-   console.log(`Found ${pkgCount} packages.`)
-   if (debug) {
-      console.log();
-      console.log(buf);
-   }
-   if (pkgCount == 0) {
-      return null;
-   }
-   return buf
+   console.log(`Found ${recs.length} packages.`)
+   return recs;
 }
 
 function parseYarnLock(file) {
    const json = lockfile.parse(file);
    const dependencies = json['object']
 
-   let buf = "";
-   let pkgCount = 0;
+   let recs = [];
 
    for (const key in dependencies) {
-      if (!!max_packages && pkgCount > max_packages) {
+      if (!!max_packages && recs.length >= max_packages) {
          break;
       }
-      pkgCount++;
+
       const dep_name = key.substring(0, key.lastIndexOf('@')); 
-      //console.log(`${dep_name}:${dependencies[key]['version']}`)
-      buf += `${dep_name}:${dependencies[key]['version']}\n`;
+      recs.push({
+         'name': dep_name,
+         'version': dependencies[key]['version']
+      });
+
+      if (debug) {
+         console.log(`${dep_name}:${dependencies[key]['version']}`)
+      }
    }
-   console.log(`Found ${pkgCount} packages.`)
-   if (debug) {
-      console.log();
-      console.log(buf);
-   }
-   if (pkgCount == 0) {
-      return null;
-   }
-   return buf
+   console.log(`Found ${recs.length} packages.`)
+   return recs;
 }
 
 function usage() {
@@ -105,24 +106,24 @@ try {
    usage();
 }
 
-let cli_input;
+let packages = [];
 if (is_yarn) {
    try {
-      cli_input = parseYarnLock(file)
+      packages = parseYarnLock(file)
    } catch(e) {
       console.log("Invalid yarn file: " + e);
       usage();
    }
 } else {
    try {
-      cli_input = parsePackageLock(file)
+      packages = parsePackageLock(file)
    } catch(e) {
       console.log("Invalid package file: " + e);
       usage();
    }
 }
 
-if (cli_input == null){
+if (packages.length == 0){
    console.log("No valid packages found.");
    usage();
 }
@@ -131,16 +132,29 @@ if (argv['dry-run']) {
    exit(0);
 }
 
-let stdinStream = new stream.Readable();
-stdinStream.push(cli_input);
-stdinStream.push(null);
+if (argv['heuristics']) {
+   // Just run heuristics for these packages
+   console.log("Running heuristics only");
+   for (const p of packages) {
+      execFileSync('phylum-cli', ['heuristics', 'submit', '-n', p['name'], '-v', p['version']]);
+   }
+} else {
+   // Submit the list of packages for ingestion and processing
+   let stdinStream = new stream.Readable();
+   for (const p of packages) {
+      let cli_input = `${p['name']}:${p['version']}\n`
+      stdinStream.push(cli_input);
+   }
 
-child = execFile('phylum-cli', ['batch', '-t', 'npm'], (err, stdout, stderr) => {
-      console.log(stdout);
-      console.log(stderr);
-   });
-stdinStream.pipe(child.stdin);
+   stdinStream.push(null);
 
-if (!!child.err) {
-    console.log(child.err);
+   child = execFile('phylum-cli', ['batch', '-t', 'npm'], (err, stdout, stderr) => {
+         console.log(stdout);
+         console.log(stderr);
+      });
+   stdinStream.pipe(child.stdin);
+
+   if (!!child.err) {
+      console.log(child.err);
+   }
 }
