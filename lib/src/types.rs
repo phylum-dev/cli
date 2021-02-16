@@ -312,30 +312,30 @@ pub struct HeuristicResult {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
     #[serde(flatten)]
-    package: PackageDescriptor,
-    last_updated: u64, // epoch seconds
-    license: Option<String>,
-    package_score: f64,
-    status: PackageState,
-    vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
-    heuristics: Value,           // TODO: parse this using a strong type
+    pub package: PackageDescriptor,
+    pub last_updated: u64, // epoch seconds
+    pub license: Option<String>,
+    pub package_score: f64,
+    pub status: PackageState,
+    pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
+    pub heuristics: Value,           // TODO: parse this using a strong type
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageStatus {
     #[serde(flatten)]
-    package: Package,
-    dependencies: Vec<Package>,
+    pub package: Package,
+    pub dependencies: Vec<PackageDescriptor>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestStatusResponse {
-    id: JobId,
-    user_id: UserId,
-    started_at: u64,   // epoch seconds
-    last_updated: u64, // epoch seconds
-    status: RequestState,
-    packages: Vec<PackageStatus>,
+    pub id: JobId,
+    pub user_id: UserId,
+    pub started_at: u64,   // epoch seconds
+    pub last_updated: u64, // epoch seconds
+    pub status: RequestState,
+    pub packages: Vec<PackageStatus>,
 }
 
 /// DELETE /request/packages/<job_id>

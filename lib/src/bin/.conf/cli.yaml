@@ -1,6 +1,6 @@
 name: phylum-cli
 bin_name: phylum-cli
-version: "0.0.3"
+version: "0.0.4"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
@@ -108,6 +108,11 @@ subcommands:
             - type:
                 short: t
                 help: Package type (`npm`, `ruby`, etc)
+                takes_value: true
+                required: false
+            - threshold:
+                short: T
+                help: Set a package score threshold (packages with a score below this will cause the application to exit with an error code `STATUS_THRESHOLD_BREACHED [1]`
                 takes_value: true
                 required: false
     - cancel:

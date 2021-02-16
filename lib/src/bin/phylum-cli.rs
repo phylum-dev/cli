@@ -25,7 +25,7 @@ macro_rules! print_user_failure {
     }
 }
 
-fn print_response<T>(resp: Result<T, phylum_cli::Error>)
+fn print_response<T>(resp: &Result<T, phylum_cli::Error>)
 where
     T: Serialize,
 {
@@ -66,6 +66,8 @@ fn main() {
     let yml = load_yaml!(".conf/cli.yaml");
     let app = App::from(yml).setting(AppSettings::ArgRequiredElseHelp);
     let matches = app.get_matches();
+    let mut exit_status: i32 = 0;
+    const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
     if matches.subcommand_matches("version").is_some() {
         let name = yml["name"].as_str().unwrap_or("");
@@ -107,7 +109,7 @@ fn main() {
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
-        print_response(resp);
+        print_response(&resp);
         process::exit(0);
     }
 
@@ -171,7 +173,7 @@ fn main() {
         // If any packages were listed in the config file, include
         //  those as well.
         let mut packages = config.packages.unwrap_or_default();
-        let mut request_type = config.request_type.to_owned();
+        let mut request_type = config.request_type;
         let mut is_user = true;
         let mut no_recurse = true;
 
@@ -233,12 +235,27 @@ fn main() {
         print_user_success!("Job ID: {}", resp);
     } else if should_get_status {
         if let Some(matches) = matches.subcommand_matches("status") {
+            let mut threshold: f64 = 0.0;
+            if let Some(thresh) = matches.value_of("threshold") {
+                threshold = thresh.parse::<f64>().unwrap_or_default();
+            };
             if let Some(request_id) = matches.value_of("request_id") {
                 let request_id = JobId::from_str(&request_id)
                     .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
                 let resp = api.get_job_status(&request_id);
                 log::info!("==> {:?}", resp);
-                print_response(resp);
+                print_response(&resp);
+                if let Ok(resp) = resp {
+                    let _ret = resp
+                        .packages
+                        .into_iter()
+                        .map(|p| {
+                            if p.package.package_score < threshold {
+                                exit_status = STATUS_THRESHOLD_BREACHED
+                            }
+                        })
+                        .collect::<()>();
+                }
             } else if matches.is_present("name") {
                 if !matches.is_present("version") {
                     print_user_failure!("A version is required when querying by package");
@@ -247,12 +264,17 @@ fn main() {
                 let pkg = parse_package(matches, &config.request_type);
                 let resp = api.get_package_details(&pkg);
                 log::info!("==> {:?}", resp);
-                print_response(resp);
+                print_response(&resp);
+                if let Ok(resp) = resp {
+                    if resp.package.package_score < threshold {
+                        exit_status = STATUS_THRESHOLD_BREACHED;
+                    }
+                }
             } else {
                 // get everything
                 let resp = api.get_status();
                 log::debug!("==> {:?}", resp);
-                print_response(resp);
+                print_response(&resp);
             }
         }
     } else if should_cancel {
@@ -262,7 +284,7 @@ fn main() {
                 .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
             let resp = api.cancel(&request_id);
             log::info!("==> {:?}", resp);
-            print_response(resp);
+            print_response(&resp);
         }
     } else if should_manage_tokens {
         if let Some(matches) = matches.subcommand_matches("tokens") {
@@ -281,7 +303,7 @@ fn main() {
                         log::error!("Failed to save api token to config: {}", err)
                     });
                 }
-                print_response(resp);
+                print_response(&resp);
             } else if should_destroy {
                 let token_id = matches.value_of("delete").unwrap();
                 let token = Key::from_str(token_id)
@@ -292,12 +314,12 @@ fn main() {
                 save_config(config_path, &config).unwrap_or_else(|err| {
                     log::error!("Failed to clear api token from config: {}", err)
                 });
-                print_response(resp);
+                print_response(&resp);
             } else {
                 // get everything
                 let resp = api.get_api_tokens();
                 log::info!("==> {:?}", resp);
-                print_response(resp);
+                print_response(&resp);
             }
         }
     } else if should_do_heuristics {
@@ -313,14 +335,16 @@ fn main() {
                 .collect::<Vec<String>>();
             let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
             log::info!("==> {:?}", resp);
-            print_response(resp);
+            print_response(&resp);
         } else {
             log::info!("Querying heuristics");
             let resp = api.query_heuristics();
             log::info!("==> {:?}", resp);
-            print_response(resp);
+            print_response(&resp);
         }
     }
+    log::debug!("Exiting with status {}", exit_status);
+    process::exit(exit_status);
 }
 
 fn exit(error: impl Error, message: &str, code: i32) -> ! {
