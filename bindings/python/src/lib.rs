@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
+//use pyo3::types::IntoPyDict;
 //use pyo3::types::PyDict;
 //use pyo3::wrap_pyfunction;
 
@@ -30,6 +31,10 @@ struct ApiToken {
     user_id: String,
 }
 
+/// Create a new instance of the Phylum API
+/// 
+///   base_url
+///     The base url for the api to connect to.
 #[pyclass]
 #[text_signature = "(base_url)"]
 struct PhylumApi {
@@ -39,6 +44,7 @@ struct PhylumApi {
 #[pymethods]
 impl PhylumApi {
     #[new]
+    #[args(base_url = "\"https://api.phylum.io\"")]
     pub fn new(base_url: &str) -> PyResult<Self> {
         RustPhylumApi::new(base_url)
             .map(|api| PhylumApi { api })
@@ -210,32 +216,39 @@ impl PhylumApi {
     ///     The uuid returned by a call to `submit_request`
     ///
     /// Returns a dictionary containing status information for the request
-    #[text_signature = "(job_id=None)"]
-    #[args(job_id = "None")]
-    pub fn get_job_status(&mut self, job_id: Option<&str>) -> PyResult<String> {
-        let resp = match job_id {
-            Some(job_id) => {
-                let j = JobId::from_str(job_id)
-                    .map_err(|e| PyRuntimeError::new_err(format!("Invalid job id: {:?}", e)))?;
+    #[text_signature = "(job_id)"]
+    pub fn get_job_status(&mut self, job_id: &str) -> PyResult<String> {
+        let j = JobId::from_str(job_id)
+            .map_err(|e| PyRuntimeError::new_err(format!("Invalid job id: {:?}", e)))?;
 
-                let job = self.api.get_job_status(&j).map_err(|e| {
-                    PyRuntimeError::new_err(format!("Failed to get job status: {:?}", e))
-                })?;
-                vec![job]
-            }
-            None => self.api.get_status().map_err(|e| {
-                PyRuntimeError::new_err(format!("Failed to get job status: {:?}", e))
-            })?,
-        };
+        let job = self.api.get_job_status(&j).map_err(|e| {
+            PyRuntimeError::new_err(format!("Failed to get job status: {:?}", e))
+        })?;
 
         // TODO: we should return this as a Python dict, not a json string
-        let json = serde_json::to_string(&resp).map_err(|e| {
+        let json = serde_json::to_string(&job).map_err(|e| {
             PyRuntimeError::new_err(format!("Failed to serialize response: {:?}", e))
         })?;
 
         Ok(json)
     }
 
+    /// Get the overall status for current jobs
+    ///
+    /// Returns a dictionary containing status information for the request
+    pub fn get_status(&mut self) -> PyResult<String> {
+        let jobs = self.api.get_status().map_err(|e| {
+            PyRuntimeError::new_err(format!("Failed to get job status: {:?}", e))
+        })?;
+
+        // TODO: we should return this as a Python dict, not a json string
+        let json = serde_json::to_string(&jobs).map_err(|e| {
+            PyRuntimeError::new_err(format!("Failed to serialize response: {:?}", e))
+        })?;
+
+        Ok(json)
+    }
+ 
     /// Cancel a job currently in progress
     ///
     ///   job_id

@@ -441,6 +441,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "home"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2456aef2e6b6a9784192ae780c0f15bc57df0e918585282325e8c8ac27737654"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "http"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -837,7 +846,7 @@ checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "phylum-cli"
-version = "0.1.0"
+version = "0.0.4"
 dependencies = [
  "ansi_term",
  "base64 0.11.0",
@@ -845,6 +854,7 @@ dependencies = [
  "clap_generate",
  "env_logger",
  "futures",
+ "home",
  "hyper",
  "hyper-rustls",
  "lazy_static",
