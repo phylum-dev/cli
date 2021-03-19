@@ -314,7 +314,7 @@ impl RestClient {
 
     /// Set credentials for API key authentication
     pub fn set_api_key(&mut self, token: &str) -> Result<(), Error> {
-        self.set_header("apikey", token)
+        self.set_header("Authorization", token)
     }
 
     /// Set a function that cleans the response body up before deserializing it.
@@ -639,7 +639,7 @@ impl RestClient {
         if !req.headers().contains_key(USER_AGENT) {
             req.headers_mut().insert(
                 USER_AGENT,
-                HeaderValue::from_str(&("restson/".to_owned() + VERSION))
+                HeaderValue::from_str(&("phylum-cli/".to_owned() + VERSION))
                     .map_err(|_| Error::RequestError)?,
             );
         }

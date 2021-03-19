@@ -127,6 +127,7 @@ fn main() {
         || should_do_heuristics
     {
         log::debug!("Authenticating...");
+        log::debug!("Auth config:\n{:?}", config.auth_info);
         // If an API token has been configured, prefer that.  Otherwise, log in with
         //  a standard username and password to get a JWT.
         if !should_manage_tokens {
