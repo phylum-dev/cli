@@ -1,0 +1,31 @@
+name: Release
+
+on:  
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo apt update
+          sudo apt install -yq build-essential 
+      - uses: actions/checkout@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        name: Build
+        with:
+          command: build
+          args: --release --manifest-path lib/Cargo.toml
+      - uses: softprops/action-gh-release@v1
+        name: Release
+        with:
+          files: |
+            lib/target/release/phylum-cli
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            
