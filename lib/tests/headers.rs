@@ -60,7 +60,7 @@ fn default_user_agent() {
     let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(
         data.headers.user_agent,
-        "restson/".to_owned() + env!("CARGO_PKG_VERSION")
+        "phylum-cli/".to_owned() + env!("CARGO_PKG_VERSION")
     );
 }
 

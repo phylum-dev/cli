@@ -1,7 +1,10 @@
-use crate::types::{ApiToken, PackageDescriptor, PackageType};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
+
+use crate::types::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionInfo {
@@ -25,17 +28,49 @@ pub struct Config {
     pub packages: Option<Packages>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectConfig {
+    pub id: ProjectId,
+    pub name: String,
+    pub created_at: DateTime<Local>,
+}
+
 // TODO: define explicit error types
-pub fn save_config(path: &str, config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error>>
+where
+    T: Serialize,
+{
     let yaml = serde_yaml::to_string(config)?;
     fs::write(shellexpand::env(path)?.as_ref(), yaml)?;
     Ok(())
 }
 
-pub fn parse_config(path: &str) -> Result<Config, Box<dyn Error>> {
+pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error>>
+where
+    T: serde::de::DeserializeOwned,
+{
     let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
-    let config: Config = serde_yaml::from_str(&contents)?;
+    let config: T = serde_yaml::from_str(&contents)?;
     Ok(config)
+}
+
+pub fn find_project_conf(starting_directory: &str) -> Option<String> {
+    let mut path: PathBuf = starting_directory.into();
+    let mut attempts = 0;
+    const MAX_DEPTH: u8 = 32;
+
+    loop {
+        let f = path.join(PROJ_CONF_FILE);
+        if f.is_file() {
+            break Some(f.to_string_lossy().to_string());
+        }
+
+        if attempts > MAX_DEPTH {
+            break None;
+        }
+        path.push("..");
+        attempts += 1;
+    }
 }
 
 #[cfg(test)]

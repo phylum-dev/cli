@@ -10,7 +10,7 @@ use phylum_cli::api::PhylumApi as RustPhylumApi;
 use phylum_cli::types::ApiToken as RustApiToken;
 use phylum_cli::types::JwtToken as RustJwtToken;
 use phylum_cli::types::Key;
-use phylum_cli::types::{JobId, PackageDescriptor, PackageType, UserId};
+use phylum_cli::types::{JobId, PackageDescriptor, PackageType, ProjectId, UserId};
 use phylum_cli::Error;
 
 #[pyclass]
@@ -191,19 +191,26 @@ impl PhylumApi {
     ///     The package version (e.g. `16.13.1`)
     ///   type
     ///     The package type (currently only supports `npm`)
+    ///   project
+    ///     The project id to associate with this request (default: None)
+    ///   label
+    ///     The label to associate with this request (default: None)
     ///
     /// Returns a job id
-    #[text_signature = "(name, version, type=\"npm\")"]
-    #[args(name, version, r#type = "\"npm\"")]
-    pub fn submit_request(&mut self, name: &str, version: &str, r#type: &str) -> PyResult<String> {
+    #[text_signature = "(name, version, type=\"npm\", project=None, label=None)"]
+    #[args(name, version, r#type = "\"npm\"", project = "None", label = "None")]
+    pub fn submit_request(&mut self, name: &str, version: &str, r#type: &str, project: Option<String>, label: Option<String>) -> PyResult<String> {
         let pkg_type = PackageType::from_str(r#type).unwrap_or(PackageType::Npm);
         let pkg = PackageDescriptor {
             name: name.to_string(),
             version: version.to_string(),
             r#type: pkg_type.to_owned(),
         };
+        let proj_id = project
+            .and_then(|s| ProjectId::from_str(&s).ok());
+
         self.api
-            .submit_request(&pkg_type, &[pkg], true, true)
+            .submit_request(&pkg_type, &[pkg], true, true, proj_id, label)
             .map(|j: JobId| j.to_string())
             .map_err(|e: Error| {
                 PyRuntimeError::new_err(format!("Failed to submit package request: {:?}", e))
