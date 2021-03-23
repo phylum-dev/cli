@@ -350,6 +350,8 @@ mod tests {
                 "started_at": 1603311564,
                 "last_updated": 1603311584,
                 "status": "NEW",
+                "score": 1.0,
+                "label": "",
                 "packages": [
                     {
                     "name": "foo",
