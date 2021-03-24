@@ -13,16 +13,18 @@ let is_yarn = false;
 
 const argv = yargs
    .options({
+     'l': {
+         alias: 'label',
+         describe: 'A label (meaningful identifier) for this submission',
+         type: 'string',
+         required: true,
+         nargs: 1,
+      },
      't': {
          alias: 'type',
          describe: 'Type of file to process (`package` or `yarn`, defaults to `package`)',
          type: 'string',
          nargs: 1,
-      },
-      'H': {
-         alias: 'heuristics',
-         describe: 'Submit previously processed packages for heuristics only, not a full processing run',
-         type: 'boolean',
       },
       'd': {
          alias: 'dry-run',
@@ -132,29 +134,21 @@ if (argv['dry-run']) {
    exit(0);
 }
 
-if (argv['heuristics']) {
-   // Just run heuristics for these packages
-   console.log("Running heuristics only");
-   for (const p of packages) {
-      execFileSync('phylum-cli', ['heuristics', 'submit', '-n', p['name'], '-v', p['version']]);
-   }
-} else {
-   // Submit the list of packages for ingestion and processing
-   let stdinStream = new stream.Readable();
-   for (const p of packages) {
-      let cli_input = `${p['name']}:${p['version']}\n`
-      stdinStream.push(cli_input);
-   }
+// Submit the list of packages for ingestion and processing
+let stdinStream = new stream.Readable();
+for (const p of packages) {
+  let cli_input = `${p['name']}:${p['version']}\n`
+  stdinStream.push(cli_input);
+}
 
-   stdinStream.push(null);
+stdinStream.push(null);
 
-   child = execFile('phylum-cli', ['batch', '-t', 'npm'], (err, stdout, stderr) => {
-         console.log(stdout);
-         console.log(stderr);
-      });
-   stdinStream.pipe(child.stdin);
+child = execFile('phylum-cli', ['batch', '-t', 'npm', '-l', argv['label']], (err, stdout, stderr) => {
+     console.log(stdout);
+     console.log(stderr);
+  });
+stdinStream.pipe(child.stdin);
 
-   if (!!child.err) {
-      console.log(child.err);
-   }
+if (!!child.err) {
+  console.log(child.err);
 }

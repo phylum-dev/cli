@@ -185,29 +185,29 @@ impl PhylumApi {
 
     /// Submit a package request to the system
     ///
+    ///   project
+    ///     The project id to associate with this request
     ///   name
     ///     The package name (e.g. `react`)
     ///   version
     ///     The package version (e.g. `16.13.1`)
     ///   type
     ///     The package type (currently only supports `npm`)
-    ///   project
-    ///     The project id to associate with this request (default: None)
     ///   label
     ///     The label to associate with this request (default: None)
     ///
     /// Returns a job id
-    #[text_signature = "(name, version, type=\"npm\", project=None, label=None)"]
-    #[args(name, version, r#type = "\"npm\"", project = "None", label = "None")]
-    pub fn submit_request(&mut self, name: &str, version: &str, r#type: &str, project: Option<String>, label: Option<String>) -> PyResult<String> {
+    #[text_signature = "(project, name, version, type=\"npm\", label=None)"]
+    #[args(project, name, version, r#type = "\"npm\"", label = "None")]
+    pub fn submit_request(&mut self, project: &str, name: &str, version: &str, r#type: &str, label: Option<String>) -> PyResult<String> {
         let pkg_type = PackageType::from_str(r#type).unwrap_or(PackageType::Npm);
         let pkg = PackageDescriptor {
             name: name.to_string(),
             version: version.to_string(),
             r#type: pkg_type.to_owned(),
         };
-        let proj_id = project
-            .and_then(|s| ProjectId::from_str(&s).ok());
+        let proj_id = ProjectId::from_str(project)
+            .map_err(|e| PyRuntimeError::new_err(format!("Invalid project id: {:?}", e)))?;
 
         self.api
             .submit_request(&pkg_type, &[pkg], true, true, proj_id, label)

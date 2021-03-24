@@ -71,7 +71,13 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
 
     let project = find_project_conf(".")
         .and_then(|s| parse_config(&s).ok())
-        .map(|p: ProjectConfig| p.id);
+        .map(|p: ProjectConfig| p.id)
+        .unwrap_or_else(|| {
+            print_user_failure!(
+                "Failed to find a valid project configuration. Did you run `phylum-cli init`?"
+            );
+            process::exit(-1)
+        });
 
     let mut label = None;
 

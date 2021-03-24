@@ -174,10 +174,8 @@ pub struct PackageRequest {
     pub packages: Vec<PackageDescriptor>,
     pub is_user: bool,
     pub norecurse: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub project: Option<ProjectId>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
+    pub project: ProjectId,
+    pub label: String,
 }
 
 impl RestPath<()> for PackageRequest {

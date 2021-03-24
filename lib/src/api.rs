@@ -117,7 +117,7 @@ impl PhylumApi {
         package_list: &[PackageDescriptor],
         is_user: bool,
         no_recurse: bool,
-        project: Option<ProjectId>,
+        project: ProjectId,
         label: Option<String>,
     ) -> Result<JobId, Error> {
         let req = PackageRequest {
@@ -126,7 +126,7 @@ impl PhylumApi {
             is_user,
             norecurse: no_recurse,
             project,
-            label,
+            label: label.unwrap_or_else(|| "uncategorized".to_string()),
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: PackageSubmissionResponse = self.client.put_capture((), &req)?;
@@ -247,14 +247,7 @@ mod tests {
         };
         let project_id = Uuid::new_v4();
         let label = Some("mylabel".to_string());
-        let res = client.submit_request(
-            &PackageType::Npm,
-            &[pkg],
-            true,
-            true,
-            Some(project_id),
-            label,
-        );
+        let res = client.submit_request(&PackageType::Npm, &[pkg], true, true, project_id, label);
         assert!(res.is_ok(), format!("{:?}", res));
     }
 
