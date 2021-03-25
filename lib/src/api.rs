@@ -27,6 +27,15 @@ impl PhylumApi {
         Ok(resp.msg)
     }
 
+    /// Create a new project
+    pub fn create_project(&mut self, name: &str) -> Result<ProjectId, Error> {
+        let req = ProjectCreateRequest {
+            name: name.to_string(),
+        };
+        let resp: ProjectCreateResponse = self.client.put_capture((), &req)?;
+        Ok(resp.id)
+    }
+
     /// Register new user
     pub fn register(
         &mut self,
@@ -108,12 +117,16 @@ impl PhylumApi {
         package_list: &[PackageDescriptor],
         is_user: bool,
         no_recurse: bool,
+        project: ProjectId,
+        label: Option<String>,
     ) -> Result<JobId, Error> {
         let req = PackageRequest {
             r#type: req_type.to_owned(),
             packages: package_list.to_vec(),
             is_user,
             norecurse: no_recurse,
+            project,
+            label: label.unwrap_or_else(|| "uncategorized".to_string()),
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: PackageSubmissionResponse = self.client.put_capture((), &req)?;
@@ -173,6 +186,7 @@ impl PhylumApi {
 mod tests {
     use mockito::{mock, Matcher};
     use std::str::FromStr;
+    use uuid::Uuid;
 
     use super::*;
     #[test]
@@ -231,7 +245,9 @@ mod tests {
             version: "16.13.1".to_string(),
             r#type: PackageType::Npm,
         };
-        let res = client.submit_request(&PackageType::Npm, &[pkg], true, true);
+        let project_id = Uuid::new_v4();
+        let label = Some("mylabel".to_string());
+        let res = client.submit_request(&PackageType::Npm, &[pkg], true, true, project_id, label);
         assert!(res.is_ok(), format!("{:?}", res));
     }
 
@@ -327,6 +343,8 @@ mod tests {
                 "started_at": 1603311564,
                 "last_updated": 1603311584,
                 "status": "NEW",
+                "score": 1.0,
+                "label": "",
                 "packages": [
                     {
                     "name": "foo",

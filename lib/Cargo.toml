@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 build = "build.rs"
@@ -12,10 +12,8 @@ clap_generate = "3.0.0-beta.2"
 clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 
 [dependencies]
-#reqwest = { version = "0.10.7", features = ["json", "rustls-tls"], default-features = false }
 clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 hyper = "^0.13.2"
-#hyper-tls = "^0.4.1"
 hyper-rustls = "0.21.0"
 futures = "^0.3"
 env_logger = "0.7.1"
@@ -33,6 +31,7 @@ shellexpand = "2.0.0"
 lazy_static = "1.4.0"
 yaml-rust = "*"
 home = "0.5.3"
+chrono = { version = "^0.4", features = ["serde"] }
 
 [dev-dependencies]
 mockito = "0.27.0"

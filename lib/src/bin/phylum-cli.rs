@@ -1,4 +1,5 @@
 use ansi_term::Color::{Green, Red};
+use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
 use home::home_dir;
 use serde::Serialize;
@@ -8,8 +9,8 @@ use std::process;
 use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
-use phylum_cli::config::{parse_config, save_config};
-use phylum_cli::types::{JobId, Key, PackageDescriptor, PackageType};
+use phylum_cli::config::{find_project_conf, parse_config, save_config, Config, ProjectConfig};
+use phylum_cli::types::*;
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
@@ -60,6 +61,93 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
     }
 }
 
+fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatches) {
+    // If any packages were listed in the config file, include
+    //  those as well.
+    let mut packages = config.packages.unwrap_or_default();
+    let mut request_type = config.request_type;
+    let mut is_user = true;
+    let mut no_recurse = true;
+
+    let project = find_project_conf(".")
+        .and_then(|s| parse_config(&s).ok())
+        .map(|p: ProjectConfig| p.id)
+        .unwrap_or_else(|| {
+            print_user_failure!(
+                "Failed to find a valid project configuration. Did you run `phylum-cli init`?"
+            );
+            process::exit(-1)
+        });
+
+    let mut label = None;
+
+    if let Some(matches) = matches.subcommand_matches("submit") {
+        let pkg = parse_package(matches, &request_type);
+        request_type = pkg.r#type.to_owned();
+        packages.push(pkg);
+        is_user = !matches.is_present("low-priority");
+        no_recurse = !matches.is_present("recurse");
+        label = matches.value_of("label");
+    } else if let Some(matches) = matches.subcommand_matches("batch") {
+        let mut eof = false;
+        let mut line = String::new();
+        let mut reader: Box<dyn BufRead> = if let Some(file) = matches.value_of("file") {
+            // read entries from the file
+            Box::new(BufReader::new(std::fs::File::open(file).unwrap()))
+        } else {
+            // read from stdin
+            log::info!("Waiting on stdin...");
+            Box::new(BufReader::new(io::stdin()))
+        };
+
+        // If a package type was provided on the command line, prefer that
+        //  to the global setting
+        if matches.is_present("type") {
+            request_type =
+                PackageType::from_str(matches.value_of("type").unwrap()).unwrap_or(request_type);
+        }
+        label = matches.value_of("label");
+
+        while !eof {
+            match reader.read_line(&mut line) {
+                Ok(0) => eof = true,
+                Ok(_) => {
+                    line.pop();
+                    let pkg_info = line.split(':').collect::<Vec<&str>>();
+                    if pkg_info.len() != 2 {
+                        log::debug!("Invalid package input: `{}`", line);
+                        continue;
+                    }
+                    packages.push(PackageDescriptor {
+                        name: pkg_info[0].to_owned(),
+                        version: pkg_info[1].to_owned(),
+                        r#type: request_type.to_owned(),
+                    });
+                    line.clear();
+                }
+                Err(err) => {
+                    exit(err, "Error reading input", -6);
+                }
+            }
+        }
+        is_user = !matches.is_present("low-priority");
+        no_recurse = !matches.is_present("recurse");
+    }
+    log::debug!("Submitting request...");
+    let resp = api
+        .submit_request(
+            &request_type,
+            &packages,
+            is_user,
+            no_recurse,
+            project,
+            label.map(|s| s.to_string()),
+        )
+        .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
+    log::info!("Response => {:?}", resp);
+    print_user_success!("Job ID: {}", resp);
+}
+
 fn main() {
     env_logger::init();
 
@@ -93,7 +181,7 @@ fn main() {
         }));
     log::debug!("Reading config from {}", config_path);
 
-    let mut config = parse_config(config_path).unwrap_or_else(|err| {
+    let mut config: Config = parse_config(config_path).unwrap_or_else(|err| {
         log::error!("Failed to parse config: {:?}", err);
         print_user_failure!(
             "Unable to parse configuration file at `{}`: {}",
@@ -113,6 +201,7 @@ fn main() {
         process::exit(0);
     }
 
+    let should_init = matches.subcommand_matches("init").is_some();
     let should_submit = matches.subcommand_matches("submit").is_some()
         || matches.subcommand_matches("batch").is_some();
     let should_get_status = matches.subcommand_matches("status").is_some();
@@ -120,7 +209,8 @@ fn main() {
     let should_manage_tokens = matches.subcommand_matches("tokens").is_some();
     let should_do_heuristics = matches.subcommand_matches("heuristics").is_some();
 
-    if should_submit
+    if should_init
+        || should_submit
         || should_get_status
         || should_cancel
         || should_manage_tokens
@@ -151,7 +241,22 @@ fn main() {
         }
     }
 
-    if let Some(matches) = matches.subcommand_matches("register") {
+    if let Some(matches) = matches.subcommand_matches("init") {
+        let project = matches.value_of("project").unwrap();
+        log::info!("Initializing new project: `{}`", project);
+        let project_id = api.create_project(&project).unwrap_or_else(|err| {
+            exit(err, "Error initializing project", -1);
+        });
+        let proj_conf = ProjectConfig {
+            id: project_id.to_owned(),
+            name: project.to_owned(),
+            created_at: Local::now(),
+        };
+        save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
+            log::error!("Failed to save user credentials to config: {}", err)
+        });
+        print_user_success!("Successfully created new project. ID: {}", project_id);
+    } else if let Some(matches) = matches.subcommand_matches("register") {
         log::debug!("Registering new user");
         let email = matches.value_of("email").unwrap();
         let pass = matches.value_of("password").unwrap();
@@ -165,75 +270,12 @@ fn main() {
         log::debug!("Registered user with id: `{}`", user_id);
         config.auth_info.user = email.to_string();
         config.auth_info.pass = pass.to_string();
-        save_config(config_path, &config).unwrap();
         save_config(config_path, &config).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
         });
         print_user_success!("{}", "Successfully registered.");
     } else if should_submit {
-        // If any packages were listed in the config file, include
-        //  those as well.
-        let mut packages = config.packages.unwrap_or_default();
-        let mut request_type = config.request_type;
-        let mut is_user = true;
-        let mut no_recurse = true;
-
-        if let Some(matches) = matches.subcommand_matches("submit") {
-            let pkg = parse_package(matches, &request_type);
-            request_type = pkg.r#type.to_owned();
-            packages.push(pkg);
-            is_user = !matches.is_present("low-priority");
-            no_recurse = !matches.is_present("recurse");
-        } else if let Some(matches) = matches.subcommand_matches("batch") {
-            let mut eof = false;
-            let mut line = String::new();
-            let mut reader: Box<dyn BufRead> = if let Some(file) = matches.value_of("file") {
-                // read entries from the file
-                Box::new(BufReader::new(std::fs::File::open(file).unwrap()))
-            } else {
-                // read from stdin
-                log::info!("Waiting on stdin...");
-                Box::new(BufReader::new(io::stdin()))
-            };
-
-            // If a package type was provided on the command line, prefer that
-            //  to the global setting
-            if matches.is_present("type") {
-                request_type = PackageType::from_str(matches.value_of("type").unwrap())
-                    .unwrap_or(request_type);
-            }
-
-            while !eof {
-                match reader.read_line(&mut line) {
-                    Ok(0) => eof = true,
-                    Ok(_) => {
-                        line.pop();
-                        let pkg_info = line.split(':').collect::<Vec<&str>>();
-                        if pkg_info.len() != 2 {
-                            log::debug!("Invalid package input: `{}`", line);
-                            continue;
-                        }
-                        packages.push(PackageDescriptor {
-                            name: pkg_info[0].to_owned(),
-                            version: pkg_info[1].to_owned(),
-                            r#type: request_type.to_owned(),
-                        });
-                        line.clear();
-                    }
-                    Err(err) => {
-                        exit(err, "Error reading input", -6);
-                    }
-                }
-            }
-            is_user = !matches.is_present("low-priority");
-            no_recurse = !matches.is_present("recurse");
-        }
-        log::debug!("Submitting request...");
-        let resp = api
-            .submit_request(&request_type, &packages, is_user, no_recurse)
-            .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
-        log::info!("Response => {:?}", resp);
-        print_user_success!("Job ID: {}", resp);
+        handle_submission(&mut api, config, matches);
     } else if should_get_status {
         if let Some(matches) = matches.subcommand_matches("status") {
             let mut threshold: f64 = 0.0;

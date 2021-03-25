@@ -6,34 +6,14 @@ use uuid::Uuid;
 
 use crate::restson::{Error, RestPath};
 
+pub type ProjectId = Uuid;
 pub type JobId = Uuid;
 pub type UserId = Uuid;
 pub type Key = Uuid;
 pub type PackageId = String;
 
 pub const API_PATH: &str = "api/v0";
-
-#[serde(rename_all = "UPPERCASE")]
-#[derive(Debug, Serialize, Deserialize)]
-pub enum RequestState {
-    New,
-    Processing,
-    Completed,
-    Error,
-}
-
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[derive(Debug, Serialize, Deserialize)]
-pub enum PackageState {
-    New,                       // Brand new request, nothing has been processed yet.
-    DownloadRequested,         // A download has been requested
-    PendingDownload,           // We have issued the download but it has not started yet.
-    Downloading,               // We are downloading the package files.
-    Processing,                // We are processing the package files.
-    PendingExternalProcessing, // Processing of package files is complete; waiting on external processing (e.g. VCS)
-    PendingPackageProcessing, // External processing is complete; waiting on processing of package files
-    Completed,                // We have completed both downloading and processing.
-}
+pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
 #[serde(rename_all = "lowercase")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -194,6 +174,8 @@ pub struct PackageRequest {
     pub packages: Vec<PackageDescriptor>,
     pub is_user: bool,
     pub norecurse: bool,
+    pub project: ProjectId,
+    pub label: String,
 }
 
 impl RestPath<()> for PackageRequest {
@@ -258,6 +240,23 @@ impl<'a> RestPath<PackageDescriptor> for PackageStatus {
     }
 }
 
+/// PUT /projects
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectCreateRequest {
+    pub name: String,
+}
+
+impl RestPath<()> for ProjectCreateRequest {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/projects", API_PATH))
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectCreateResponse {
+    pub id: ProjectId,
+}
+
 /// GET /heuristics
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeuristicsListResponse {
@@ -313,10 +312,8 @@ pub struct HeuristicResult {
 pub struct Package {
     #[serde(flatten)]
     pub package: PackageDescriptor,
-    pub last_updated: u64, // epoch seconds
     pub license: Option<String>,
     pub package_score: f64,
-    pub status: PackageState,
     pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
     pub heuristics: Value,           // TODO: parse this using a strong type
 }
@@ -334,7 +331,9 @@ pub struct RequestStatusResponse {
     pub user_id: UserId,
     pub started_at: u64,   // epoch seconds
     pub last_updated: u64, // epoch seconds
-    pub status: RequestState,
+    pub score: f64,
+    pub project: Option<ProjectId>,
+    pub label: String,
     pub packages: Vec<PackageStatus>,
 }
 
