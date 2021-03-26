@@ -131,6 +131,12 @@ subcommands:
                 help: Set a package score threshold (packages with a score below this will cause the application to exit with an error code `STATUS_THRESHOLD_BREACHED [1]`
                 takes_value: true
                 required: false
+            - verbose:
+                short: V 
+                long: verbose
+                help: Increase verbosity of api response.
+                takes_value: false
+                required: false
     - cancel:
         about: Cancels a request currently in progress
         args:

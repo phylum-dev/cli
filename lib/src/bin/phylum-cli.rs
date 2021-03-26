@@ -169,16 +169,16 @@ fn main() {
     });
     let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
 
-    let config_path = matches
-        .value_of("config")
-        .unwrap_or(settings_path.to_str().unwrap_or_else(|| {
+    let config_path = matches.value_of("config").unwrap_or_else(|| {
+        settings_path.to_str().unwrap_or_else(|| {
             log::error!("Unicode parsing error in configuration file path");
             print_user_failure!(
                 "Unable to read path to configuration file at '{:?}'",
                 settings_path
             );
             process::exit(-1)
-        }));
+        })
+    });
     log::debug!("Reading config from {}", config_path);
 
     let mut config: Config = parse_config(config_path).unwrap_or_else(|err| {
@@ -285,19 +285,29 @@ fn main() {
             if let Some(request_id) = matches.value_of("request_id") {
                 let request_id = JobId::from_str(&request_id)
                     .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
-                let resp = api.get_job_status(&request_id);
-                log::info!("==> {:?}", resp);
-                print_response(&resp);
-                if let Ok(resp) = resp {
-                    let _ret = resp
-                        .packages
-                        .into_iter()
-                        .map(|p| {
-                            if p.package.package_score < threshold {
-                                exit_status = STATUS_THRESHOLD_BREACHED
+
+                if matches.is_present("verbose") {
+                    let resp = api.get_job_status_ext(&request_id);
+                    log::info!("==> {:?}", resp);
+                    print_response(&resp);
+                    if let Ok(resp) = resp {
+                        for p in resp.packages {
+                            if p.basic_status.package_score < threshold {
+                                exit_status = STATUS_THRESHOLD_BREACHED;
                             }
-                        })
-                        .collect::<()>();
+                        }
+                    }
+                } else {
+                    let resp = api.get_job_status(&request_id);
+                    log::info!("==> {:?}", resp);
+                    print_response(&resp);
+                    if let Ok(resp) = resp {
+                        for p in resp.packages {
+                            if p.package_score < threshold {
+                                exit_status = STATUS_THRESHOLD_BREACHED;
+                            }
+                        }
+                    }
                 }
             } else if matches.is_present("name") {
                 if !matches.is_present("version") {
@@ -309,7 +319,7 @@ fn main() {
                 log::info!("==> {:?}", resp);
                 print_response(&resp);
                 if let Ok(resp) = resp {
-                    if resp.package.package_score < threshold {
+                    if resp.basic_status.package_score < threshold {
                         exit_status = STATUS_THRESHOLD_BREACHED;
                     }
                 }

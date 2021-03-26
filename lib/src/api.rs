@@ -134,8 +134,21 @@ impl PhylumApi {
     }
 
     /// Get the status of a previously submitted job
-    pub fn get_job_status(&mut self, job_id: &JobId) -> Result<RequestStatusResponse, Error> {
-        let resp: RequestStatusResponse = self.client.get(job_id.to_owned())?;
+    pub fn get_job_status(
+        &mut self,
+        job_id: &JobId,
+    ) -> Result<RequestStatusResponse<PackageStatus>, Error> {
+        let resp: RequestStatusResponse<PackageStatus> = self.client.get(job_id.to_owned())?;
+        Ok(resp)
+    }
+
+    /// Get the status of a previously submitted job (verbose output)
+    pub fn get_job_status_ext(
+        &mut self,
+        job_id: &JobId,
+    ) -> Result<RequestStatusResponse<PackageStatusExtended>, Error> {
+        let resp: RequestStatusResponse<PackageStatusExtended> =
+            self.client.get(job_id.to_owned())?;
         Ok(resp)
     }
 
@@ -146,8 +159,11 @@ impl PhylumApi {
     }
 
     /// Get package details
-    pub fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<PackageStatus, Error> {
-        let resp: PackageStatus = self.client.get(pkg.to_owned())?;
+    pub fn get_package_details(
+        &mut self,
+        pkg: &PackageDescriptor,
+    ) -> Result<PackageStatusExtended, Error> {
+        let resp: PackageStatusExtended = self.client.get(pkg.to_owned())?;
         Ok(resp)
     }
 
@@ -302,6 +318,8 @@ mod tests {
                 "last_updated": 1611962723183,
                 "license": "MIT",
                 "package_score": 1.0,
+                "num_dependencies": 2,
+                "num_vulnerabilities": 4,
                 "status": "PENDING_EXTERNAL_PROCESSING",
                 "vulnerabilities": [],
                 "heuristics": {
@@ -340,9 +358,7 @@ mod tests {
             {
                 "id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
-                "started_at": 1603311564,
-                "last_updated": 1603311584,
-                "status": "NEW",
+                "created_at": 1603311564,
                 "score": 1.0,
                 "label": "",
                 "packages": [
@@ -352,6 +368,44 @@ mod tests {
                     "type": "npm",
                     "last_updated": 1603311564,
                     "license": null,
+                    "num_dependencies": 2,
+                    "num_vulnerabilities": 4,
+                    "package_score": 60.0
+                    }]}"#,
+        )
+        .create();
+
+        let mut client = PhylumApi::new(&mockito::server_url()).unwrap();
+        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
+        let res = client.get_job_status(&job);
+        assert!(res.is_ok(), format!("{:?}", res));
+    }
+
+    #[test]
+    fn get_job_status_ext() {
+        let _m = mock(
+            "GET",
+            Matcher::Regex(r"^/api/v0/job/[-\dabcdef]+\?verbose=True$".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application-json")
+        .with_body(
+            r#"
+            {
+                "id": "59482a54-423b-448d-8325-f171c9dc336b",
+                "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
+                "created_at": 1603311564,
+                "score": 1.0,
+                "label": "",
+                "packages": [
+                    {
+                    "name": "foo",
+                    "version": "1.0.0",
+                    "type": "npm",
+                    "last_updated": 1603311564,
+                    "license": null,
+                    "num_dependencies": 2,
+                    "num_vulnerabilities": 7,
                     "package_score": 60.0,
                     "status": "NEW",
                     "vulnerabilities": [],
@@ -396,7 +450,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url()).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        let res = client.get_job_status(&job);
+        let res = client.get_job_status_ext(&job);
         assert!(res.is_ok(), format!("{:?}", res));
     }
 

@@ -219,9 +219,15 @@ pub struct StatusRequest {
     job_id: JobId,
 }
 
-impl<'a> RestPath<JobId> for RequestStatusResponse {
+impl<'a> RestPath<JobId> for RequestStatusResponse<PackageStatus> {
     fn get_path(job_id: JobId) -> Result<String, Error> {
         Ok(format!("{}/job/{}", API_PATH, job_id))
+    }
+}
+
+impl<'a> RestPath<JobId> for RequestStatusResponse<PackageStatusExtended> {
+    fn get_path(job_id: JobId) -> Result<String, Error> {
+        Ok(format!("{}/job/{}?verbose=True", API_PATH, job_id))
     }
 }
 
@@ -232,7 +238,7 @@ impl<'a> RestPath<JobId> for CancelRequestResponse {
 }
 
 /// GET /job/packages/<type>/<name>/<version>
-impl<'a> RestPath<PackageDescriptor> for PackageStatus {
+impl<'a> RestPath<PackageDescriptor> for PackageStatusExtended {
     fn get_path(pkg: PackageDescriptor) -> Result<String, Error> {
         let name_escaped = pkg.name.replace("/", "~");
         let endpoint = format!("{}/{}/{}", pkg.r#type, name_escaped, pkg.version);
@@ -309,32 +315,34 @@ pub struct HeuristicResult {
 }*/
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Package {
-    #[serde(flatten)]
-    pub package: PackageDescriptor,
+pub struct PackageStatus {
+    pub name: String,
+    pub version: String,
     pub license: Option<String>,
     pub package_score: f64,
+    pub num_dependencies: u32,
+    pub num_vulnerabilities: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PackageStatusExtended {
+    #[serde(flatten)]
+    pub basic_status: PackageStatus,
+    pub r#type: PackageType,
+    pub dependencies: Vec<PackageDescriptor>,
     pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
     pub heuristics: Value,           // TODO: parse this using a strong type
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PackageStatus {
-    #[serde(flatten)]
-    pub package: Package,
-    pub dependencies: Vec<PackageDescriptor>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RequestStatusResponse {
+pub struct RequestStatusResponse<T> {
     pub id: JobId,
     pub user_id: UserId,
-    pub started_at: u64,   // epoch seconds
-    pub last_updated: u64, // epoch seconds
+    pub created_at: u64, // epoch seconds
     pub score: f64,
     pub project: Option<ProjectId>,
     pub label: String,
-    pub packages: Vec<PackageStatus>,
+    pub packages: Vec<T>,
 }
 
 /// DELETE /request/packages/<job_id>
