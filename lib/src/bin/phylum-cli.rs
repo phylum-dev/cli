@@ -14,15 +14,15 @@ use phylum_cli::types::*;
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
-        print!("[{}] ", Green.paint("success"));
-        println!($($tts)*);
+        eprint!("[{}] ", Green.paint("success"));
+        eprintln!($($tts)*);
     }
 }
 
 macro_rules! print_user_failure {
     ($($tts:tt)*) => {
-        print!("[{}] ", Red.paint("failure"));
-        println!($($tts)*);
+        eprint!("[{}] ", Red.paint("failure"));
+        eprintln!($($tts)*);
     }
 }
 
@@ -32,10 +32,8 @@ where
 {
     match resp {
         Ok(resp) => {
-            print_user_success!(
-                "Response object:\n{}",
-                serde_json::to_string_pretty(&resp).unwrap()
-            );
+            print_user_success!("Response object:");
+            println!("{}", serde_json::to_string_pretty(&resp).unwrap());
         }
         Err(err) => {
             print_user_failure!("Response error:\n{}", err);
