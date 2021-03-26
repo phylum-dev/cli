@@ -9,7 +9,7 @@ use std::process;
 use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
-use phylum_cli::config::{find_project_conf, parse_config, save_config, Config, ProjectConfig};
+use phylum_cli::config::*;
 use phylum_cli::types::*;
 
 macro_rules! print_user_success {
@@ -179,13 +179,9 @@ fn main() {
     });
     log::debug!("Reading config from {}", config_path);
 
-    let mut config: Config = parse_config(config_path).unwrap_or_else(|err| {
-        log::error!("Failed to parse config: {:?}", err);
-        print_user_failure!(
-            "Unable to parse configuration file at `{}`: {}",
-            config_path,
-            err
-        );
+    let mut config: Config = read_configuration(config_path).unwrap_or_else(|err| {
+        log::error!("Failed to read configuration: {:?}", err);
+        print_user_failure!("Failed to read configuration [`{}`]: {}", config_path, err);
         process::exit(-1)
     });
 
