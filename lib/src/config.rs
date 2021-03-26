@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -51,6 +52,21 @@ where
 {
     let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
     let config: T = serde_yaml::from_str(&contents)?;
+    Ok(config)
+}
+
+pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error>> {
+    let mut config: Config = parse_config(path)?;
+
+    // If an api token has been set in the environment, prefer that
+    if let Ok(key) = env::var("PHYLUM_API_KEY") {
+        log::debug!("Reading api token from environment");
+        let token: ApiToken = serde_json::from_str(&key).map_err(|e| {
+            log::error!("Malformed PHYLUM_API_KEY: `{}`", key);
+            e
+        })?;
+        config.auth_info.api_token = Some(token);
+    }
     Ok(config)
 }
 
