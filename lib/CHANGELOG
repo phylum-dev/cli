@@ -1,4 +1,4 @@
-* 0.0.5 - Add support for projects and project labels
+* 0.0.5 - Add support for projects and project labels / decrease verbosity of package status
 * 0.0.4 - Minor update to API response format; add `--threshold` argument to `status` command
 * 0.0.3 - Update response format of the `status` command to match API changes.
 * 0.0.2 - Add support for listing / submitting heuristics.
