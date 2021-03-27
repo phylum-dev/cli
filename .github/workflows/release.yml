@@ -16,16 +16,15 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        name: Build
-        with:
-          command: build
-          args: --release --manifest-path lib/Cargo.toml
+      - name: Build
+        run: docker build lib/ --file lib/Dockerfile --tag static-build
+      - name: Copy
+        run: docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum-cli > phylum-cli
       - uses: softprops/action-gh-release@v1
         name: Release
         with:
           files: |
-            lib/target/release/phylum-cli
+            phylum-cli
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             
