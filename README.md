@@ -41,7 +41,7 @@ git clone https://github.com/phylum-dev/cli
 2. Run install script in cli/lib
 ```sh
 cd cli/lib
-sh install.sh
+bash install.sh
 ```
 
 ## Configuration
@@ -52,3 +52,6 @@ To register a user account:
 ```sh
 phylum-cli register -u <username (email address> -f <first_name> -l <last_name> -p <password>
 ```
+
+Activation:
+To have your Phylum API user account enabled, please contact someone at Phylum.
