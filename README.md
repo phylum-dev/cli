@@ -33,7 +33,7 @@ SUBCOMMANDS:
 ```
 
 ## Building
-Phylum-cli is written in Rust, so you'll need a recent Rust installation to build it.
+Phylum-cli is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
 1. Clone repository
 ```sh
 git clone https://github.com/phylum-dev/cli
