@@ -53,5 +53,5 @@ To register a user account:
 phylum-cli register -u <username (email address> -f <first_name> -l <last_name> -p <password>
 ```
 
-Activation:
+## Activation:
 To have your Phylum API user account enabled, please contact someone at Phylum.
