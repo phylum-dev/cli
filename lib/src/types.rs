@@ -341,7 +341,7 @@ pub struct RequestStatusResponse<T> {
     pub created_at: u64, // epoch seconds
     pub score: f64,
     pub project: Option<ProjectId>,
-    pub label: String,
+    pub label: Option<String>,
     pub packages: Vec<T>,
 }
 

@@ -360,7 +360,45 @@ mod tests {
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
                 "created_at": 1603311564,
                 "score": 1.0,
-                "label": "",
+                "project": "86bb664a-5331-489b-8901-f052f155ec79",
+                "label": "some_label",
+                "packages": [
+                    {
+                    "name": "foo",
+                    "version": "1.0.0",
+                    "type": "npm",
+                    "last_updated": 1603311564,
+                    "license": null,
+                    "num_dependencies": 2,
+                    "num_vulnerabilities": 4,
+                    "package_score": 60.0
+                    }]}"#,
+        )
+        .create();
+
+        let mut client = PhylumApi::new(&mockito::server_url()).unwrap();
+        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
+        let res = client.get_job_status(&job);
+        assert!(res.is_ok(), format!("{:?}", res));
+    }
+
+    #[test]
+    fn get_job_status_missing_project_label() {
+        let _m = mock(
+            "GET",
+            Matcher::Regex(r"^/api/v0/job/[-\dabcdef]+$".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application-json")
+        .with_body(
+            r#"
+            {
+                "id": "59482a54-423b-448d-8325-f171c9dc336b",
+                "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
+                "created_at": 1603311564,
+                "score": 1.0,
+                "project": null,
+                "label": null,
                 "packages": [
                     {
                     "name": "foo",
