@@ -3,7 +3,7 @@ Command line interface for the Phylum API
 
 ## Overview
 ```
-phylum-cli 0.0.4
+phylum-cli 0.0.6
 Phylum, Inc.
 Client interface to the Phylum system
 
@@ -23,13 +23,13 @@ SUBCOMMANDS:
     cancel        Cancels a request currently in progress
     help          Prints this message or the help of the given subcommand(s)
     heuristics    List available heuristics / submit packages for heuristics
+    init          Initialize a new project
     ping          Ping the remote system to verify it is available
     register      Register a new system user
     status        Polls the system for request / job / package status
     submit        Submits a request to the processing system
     tokens        Manage API tokens
     version       Display application version
-
 ```
 
 ## Building
@@ -48,4 +48,7 @@ sh install.sh
 Phylum-cli uses a configuration file located at $HOM#/.phylum/settings.yaml
 The install.sh script copies a default configuration file, but requires user credentials or a token to communicate with the Phylum API.
 
-To register
+To register a user account:
+```sh
+phylum-cli register -u <username (email address> -f <first_name> -l <last_name> -p <password>
+```
