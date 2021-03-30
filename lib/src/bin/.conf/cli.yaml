@@ -1,6 +1,6 @@
 name: phylum-cli
 bin_name: phylum-cli
-version: "0.0.5"
+version: "0.0.6"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
