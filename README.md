@@ -55,3 +55,14 @@ phylum-cli register -u <username (email address> -f <first_name> -l <last_name> 
 
 ## Activation
 To have your Phylum API user account enabled, please contact someone at Phylum.
+
+## First package submission
+Package submissions must be part of _projects_. To create a project:
+```sh
+phylum-cli init -p <project_name>
+```
+Next, submit a package like react-is:
+```sh
+phylum-cli submit -n react-is -v 17.0.1
+```
+
