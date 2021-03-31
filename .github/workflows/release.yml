@@ -11,7 +11,7 @@ jobs:
     steps:
       - run: |
           sudo apt update
-          sudo apt install -yq build-essential
+          sudo apt install -yq build-essential zip
       - uses: actions/checkout@master
       - uses: actions-rs/toolchain@v1
         with:
@@ -20,6 +20,8 @@ jobs:
         run: docker build lib/ --file lib/Dockerfile --tag static-build
       - name: Copy
         run: docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum-cli > phylum-cli
+      - name: Build zipfile
+        run: zip phylum-cli-release.zip phylum-cli lib/install.sh lib/src/bin/settings.yaml lib/src/bin/phylum-cli.bash
       - uses: softprops/action-gh-release@v1
         name: Release
         with:
