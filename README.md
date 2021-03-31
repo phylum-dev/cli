@@ -31,6 +31,8 @@ SUBCOMMANDS:
     tokens        Manage API tokens
     version       Display application version
 ```
+## Releases
+Currently, releases of phylum-cli are statically-built for linux x64. 
 
 ## Building
 Phylum-cli is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
