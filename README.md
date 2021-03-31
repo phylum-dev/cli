@@ -45,7 +45,7 @@ bash install.sh
 ```
 
 ## Configuration
-Phylum-cli uses a configuration file located at $HOM#/.phylum/settings.yaml
+Phylum-cli uses a configuration file located at `$HOME/.phylum/settings.yaml`
 The install.sh script copies a default configuration file, but requires user credentials or a token to communicate with the Phylum API.
 
 To register a user account:
