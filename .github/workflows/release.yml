@@ -19,17 +19,21 @@ jobs:
       - name: Build
         run: docker build lib/ --file lib/Dockerfile --tag static-build
       - name: Copy
-        run: docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum-cli > phylum-cli
+        run: |
+          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum-cli > phylum-cli
+          cp lib/install.sh .
+          cp lib/src/bin/settings.yaml .
+          cp lib/src/bin/phylum-cli.bash .
       - name: Build zipfile
-        run: zip phylum-cli-release.zip phylum-cli lib/install.sh lib/src/bin/settings.yaml lib/src/bin/phylum-cli.bash
+        run: zip phylum-cli-release.zip phylum-cli install.sh settings.yaml phylum-cli.bash
       - uses: softprops/action-gh-release@v1
         name: Release
         with:
           files: |
             phylum-cli
-            lib/install.sh
-            lib/src/bin/settings.yaml
-            lib/src/bin/phylum-cli.bash
+            install.sh
+            settings.yaml
+            phylum-cli.bash
             phylum-cli-release.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
