@@ -34,7 +34,10 @@ SUBCOMMANDS:
 
 ## Installation
 Currently, releases of phylum-cli are statically-built for linux x64. If you need another architecture, see the section below on Building.
-An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files. This script also adds the .phylum directory to the user's PATH on bash.
+
+An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files. 
+
+This script also **adds the .phylum directory to the user's PATH** on bash.
 
 ## Building
 Phylum-cli is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
