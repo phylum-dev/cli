@@ -31,6 +31,8 @@ SUBCOMMANDS:
     tokens        Manage API tokens
     version       Display application version
 ```
+## Releases
+Currently, releases of phylum-cli are statically-built for linux x64. 
 
 ## Installation
 Currently, releases of phylum-cli are statically-built for linux x64. If you need another architecture, see the section below on Building.
