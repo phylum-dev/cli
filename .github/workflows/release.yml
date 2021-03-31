@@ -1,6 +1,6 @@
 name: Release
 
-on:  
+on:
   push:
     tags:
       - '*'
@@ -11,7 +11,7 @@ jobs:
     steps:
       - run: |
           sudo apt update
-          sudo apt install -yq build-essential 
+          sudo apt install -yq build-essential
       - uses: actions/checkout@master
       - uses: actions-rs/toolchain@v1
         with:
@@ -25,6 +25,8 @@ jobs:
         with:
           files: |
             phylum-cli
+            lib/install.sh
+            lib/src/bin/settings.yaml
+            lib/src/bin/phylum-cli.bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            
