@@ -60,7 +60,7 @@ The install.sh script copies a default configuration file, but requires user cre
 
 To register a user account:
 ```sh
-phylum-cli register -u <username (email address> -f <first_name> -l <last_name> -p <password>
+phylum-cli register -u <username (email address)> -f <first_name> -l <last_name> -p <password>
 ```
 
 ## Activation
