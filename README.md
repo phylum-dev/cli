@@ -32,12 +32,12 @@ SUBCOMMANDS:
     version       Display application version
 ```
 ## Releases
-Currently, releases of phylum-cli are statically-built for linux x64. 
+Currently, releases of phylum-cli are statically-built for linux x64.
 
 ## Installation
 Currently, releases of phylum-cli are statically-built for linux x64. If you need another architecture, see the section below on Building.
 
-An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files. 
+An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files.
 
 This script also **adds the .phylum directory to the user's PATH** on bash.
 
@@ -66,13 +66,42 @@ phylum-cli register -u <username (email address)> -f <first_name> -l <last_name>
 ## Activation
 To have your Phylum API user account enabled, please contact someone at Phylum.
 
-## First package submission
+## Example: First package submission
 Package submissions must be part of _projects_. To create a project:
 ```sh
 phylum-cli init -p <project_name>
 ```
-Next, submit a package like react-is:
+Next, submit a package like axios:
 ```sh
-phylum-cli submit -n react-is -v 17.0.1
+phylum-cli submit -n axios -v 0.19.0
 ```
+phylum-cli sends the package and version information to the Phylum API and received a Job ID GUID. This GUID is then used to query for status of the specific job. In most cases, Phylum has already analyzed that package and can give an instantaneous result. In some cases, the package may need to be ingested, processed and analyzed. This might take 3-5 minutes but should happen exceedingly rarely.
+Query the job status to receive an overview of the job and an overview of the package results
+```sh
+phylum-cli status -i <GUID>
+❯ phylum-cli status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5
+[success] Response object:
+{
+  "id": "4860ff81-9b23-4e1b-8062-1cac7454f1d5",
+  "user_id": "3fae32db-6b59-4617-9e4d-53dc9235137f",
+  "created_at": 1617384979705,
+  "score": 0.5602972277915301,
+  "project": "5c347fb0-0b46-4797-9c87-ed71a6d3e2cc",
+  "label": "uncategorized",
+  "packages": [
+    {
+      "name": "axios",
+      "version": "0.19.0",
+      "license": "MIT",
+      "package_score": 0.5602972277915301,
+      "num_dependencies": 30,
+      "num_vulnerabilities": 2
+    }
+  ]
+}
+```
+Here we can see some summary information: the package_score of the job, the package score of axios specifically, the number of dependencies axios has, and the number of vulnerabilities identified in axios version 0.19.0. In this case the package score of the job and package are the same since the job only has 1 package.
+To get more detailed information about the job, we can use the verbose flag `-V` on phylum-cli.
+```sh
+#TODO: FINISH LONGER OUTPUT
 
