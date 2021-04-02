@@ -102,8 +102,8 @@ Query the job status to receive an overview of the job and an overview of the pa
 }
 ```
 Here we can see some summary information:
-* the package_score of the job - `"score": 0.5602972277915301`
-* the package score of axios specifically - `"package_score": 0.5602972277915301`
+* the package score of the job - `"score": 0.5602972277915301`
+* the package score of the axios package specifically - `"package_score": 0.5602972277915301`
 * the number of dependencies axios requires - `"num_dependencies": 30`
 * the number of vulnerabilities identified in axios version 0.19.0 - `"num_vulnerabilities": 2`
 
@@ -159,3 +159,5 @@ To get more detailed information about the job, we can use the verbose flag `-V`
     }
   ]
 }
+
+For more information, please see our [documentation)[https://docs.phylum.io/docs]
