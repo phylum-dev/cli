@@ -28,9 +28,9 @@ if [ ! -f ${HOME}/.phylum/phylum-cli.bash ]; then
   fi
 fi
 
-if [ -f src/bin/phylum-cli ]; then
+if [ -f target/release/phylum-cli ]; then
   echo '[*] Copying phylum-cli binary to ~/.phylum'
-  cp -f src/bin/phylum-cli ${HOME}/.phylum/
+  cp -f target/release/phylum-cli ${HOME}/.phylum/
 elif [ -f phylum-cli ]; then
   echo '[*] Copying phylum-cli binary to ~/.phylum'
   cp -f phylum-cli ${HOME}/.phylum/
