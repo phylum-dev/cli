@@ -17,8 +17,8 @@ else
   echo "Can't find phylum-cli.bash"
 fi
 
-if [ -f src/bin/phylum-cli ]; then
-  cp -f src/bin/phylum-cli ${HOME}/.phylum/
+if [ -f target/release/phylum-cli ]; then
+  cp -f target/release/phylum-cli ${HOME}/.phylum/
 elif [ -f phylum-cli ]; then
   cp -f phylum-cli ${HOME}/.phylum/
 else
