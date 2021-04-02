@@ -77,6 +77,7 @@ phylum-cli submit -n axios -v 0.19.0
 [Success] Job ID: 4860ff81-9b23-4e1b-8062-1cac7454f1d5
 ```
 phylum-cli sends the package and version information to the Phylum API and received a Job ID GUID. This GUID is then used to query for status of the specific job. In most cases, Phylum has already analyzed that package and can give an instantaneous result. In some cases, the package may need to be ingested, processed and analyzed. This might take 3-5 minutes but should happen exceedingly rarely.
+
 Query the job status to receive an overview of the job and an overview of the package results
 ```sh
 ❯ phylum-cli status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5
@@ -100,11 +101,16 @@ Query the job status to receive an overview of the job and an overview of the pa
   ]
 }
 ```
-Here we can see some summary information: the package_score of the job, the package score of axios specifically, the number of dependencies axios has, and the number of vulnerabilities identified in axios version 0.19.0. In this case the package score of the job and package are the same since the job only has 1 package.
+Here we can see some summary information:
+* the package_score of the job
+* the package score of axios specifically
+* the number of dependencies axios requires
+* the number of vulnerabilities identified in axios version 0.19.0.
+
+In this case the package score of the job and package are the same since the job only has 1 package.
+
 To get more detailed information about the job, we can use the verbose flag `-V` on phylum-cli.
 ```sh
-
-
 ❯ phylum-cli status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5 -V
 [success] Response object:
 {
