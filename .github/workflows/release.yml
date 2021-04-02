@@ -29,7 +29,7 @@ jobs:
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum-cli.bash .
       - name: Build zipfile
-        run: zip -r phylum-cli-release.zip phylum-cli-release/
+        run: zip -r phylum-cli-release.zip phylum-cli-release
       - uses: softprops/action-gh-release@v1
         name: Release
         with:
