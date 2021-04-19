@@ -1,6 +1,6 @@
 [package]
 name = "cli-python"
-version = "0.1.0"
+version = "0.0.7"
 authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 

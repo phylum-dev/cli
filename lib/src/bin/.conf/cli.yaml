@@ -1,6 +1,6 @@
 name: phylum-cli
 bin_name: phylum-cli
-version: "0.0.6"
+version: "0.0.7"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
@@ -10,10 +10,12 @@ args:
         value_name: FILE
         help: Sets a custom config file
         takes_value: true
-    - verbose:
-        short: v
-        multiple: true
-        help: Sets the level of verbosity
+    - timeout:
+        short: t
+        long: timeout
+        value_name: TIMEOUT
+        help: Set the timeout (in seconds) for requests to the Phylum api
+        takes_value: true
 subcommands:
     - ping:
         about: Ping the remote system to verify it is available
@@ -70,8 +72,9 @@ subcommands:
                 short: L
                 takes_value: false
                 required: false
-            - recurse: 
-                short: R
+            - synch: 
+                short: S
+                help: "After submitting a request, immediately request status (default: false)"
                 takes_value: false
                 required: false
             - label:
@@ -95,8 +98,9 @@ subcommands:
                 short: L
                 takes_value: false
                 required: false
-            - recurse: 
-                short: R
+            - synch: 
+                short: S
+                help: "After submitting a request, immediately request status (default: false)"
                 takes_value: false
                 required: false
             - label:

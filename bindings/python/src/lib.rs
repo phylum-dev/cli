@@ -35,8 +35,10 @@ struct ApiToken {
 /// 
 ///   base_url
 ///     The base url for the api to connect to.
+///   timeout
+///     The timeout (in seconds) for requests to the api (default: 30s).
 #[pyclass]
-#[text_signature = "(base_url)"]
+#[text_signature = "(base_url, timeout=None)"]
 struct PhylumApi {
     api: RustPhylumApi,
 }
@@ -44,9 +46,9 @@ struct PhylumApi {
 #[pymethods]
 impl PhylumApi {
     #[new]
-    #[args(base_url = "\"https://api.phylum.io\"")]
-    pub fn new(base_url: &str) -> PyResult<Self> {
-        RustPhylumApi::new(base_url)
+    #[args(base_url = "\"https://api.phylum.io\"", timeout = "None")]
+    pub fn new(base_url: &str, timeout: Option<u64>) -> PyResult<Self> {
+        RustPhylumApi::new(base_url, timeout)
             .map(|api| PhylumApi { api })
             .map_err(|e| {
                 PyRuntimeError::new_err(format!("Failed to create new api instance: {:?}", e))
@@ -210,7 +212,7 @@ impl PhylumApi {
             .map_err(|e| PyRuntimeError::new_err(format!("Invalid project id: {:?}", e)))?;
 
         self.api
-            .submit_request(&pkg_type, &[pkg], true, true, proj_id, label)
+            .submit_request(&pkg_type, &[pkg], true, proj_id, label)
             .map(|j: JobId| j.to_string())
             .map_err(|e: Error| {
                 PyRuntimeError::new_err(format!("Failed to submit package request: {:?}", e))
