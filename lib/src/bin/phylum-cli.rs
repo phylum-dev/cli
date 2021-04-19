@@ -12,6 +12,8 @@ use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
 use phylum_cli::types::*;
 
+const STATUS_THRESHOLD_BREACHED: i32 = 1;
+
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
         eprint!("[{}] ", Green.paint("success"));
@@ -59,13 +61,81 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
     }
 }
 
-fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatches) {
+fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::ArgMatches) -> i32 {
+    let mut exit_status: i32 = 0;
+
+    if let Some(matches) = matches.subcommand_matches("status") {
+        let mut threshold: f64 = 0.0;
+        if let Some(thresh) = matches.value_of("threshold") {
+            threshold = thresh.parse::<f64>().unwrap_or_default();
+        };
+        if let Some(request_id) = matches.value_of("request_id") {
+            let request_id = JobId::from_str(&request_id)
+                .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
+
+            if matches.is_present("verbose") {
+                let resp = api.get_job_status_ext(&request_id);
+                log::debug!("==> {:?}", resp);
+                print_response(&resp);
+                if let Ok(resp) = resp {
+                    for p in resp.packages {
+                        if let Some(score) = p.basic_status.package_score {
+                            if score < threshold {
+                                exit_status = STATUS_THRESHOLD_BREACHED;
+                            }
+                        }
+                    }
+                }
+            } else {
+                let resp = api.get_job_status(&request_id);
+                log::debug!("==> {:?}", resp);
+                print_response(&resp);
+                if let Ok(resp) = resp {
+                    for p in resp.packages {
+                        if let Some(score) = p.package_score {
+                            if score < threshold {
+                                exit_status = STATUS_THRESHOLD_BREACHED;
+                            }
+                        }
+                    }
+                }
+            }
+        } else if matches.is_present("name") {
+            if !matches.is_present("version") {
+                print_user_failure!("A version is required when querying by package");
+                process::exit(-3);
+            }
+            let pkg = parse_package(matches, &req_type);
+            let resp = api.get_package_details(&pkg);
+            log::debug!("==> {:?}", resp);
+            print_response(&resp);
+            if let Ok(resp) = resp {
+                if let Some(score) = resp.basic_status.package_score {
+                    if score < threshold {
+                        exit_status = STATUS_THRESHOLD_BREACHED;
+                    }
+                }
+            }
+        } else {
+            // get everything
+            let resp = api.get_status();
+            log::debug!("==> {:?}", resp);
+            print_response(&resp);
+        }
+    }
+
+    exit_status
+}
+
+fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatches) -> i32 {
+    let mut exit_status: i32 = 0;
+
     // If any packages were listed in the config file, include
     //  those as well.
     let mut packages = config.packages.unwrap_or_default();
     let mut request_type = config.request_type;
     let mut is_user = true;
-    let mut no_recurse = true;
+    let mut synch = true;
 
     let project = find_project_conf(".")
         .and_then(|s| parse_config(&s).ok())
@@ -84,7 +154,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
         request_type = pkg.r#type.to_owned();
         packages.push(pkg);
         is_user = !matches.is_present("low-priority");
-        no_recurse = !matches.is_present("recurse");
+        synch = !matches.is_present("synch");
         label = matches.value_of("label");
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         let mut eof = false;
@@ -129,7 +199,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
             }
         }
         is_user = !matches.is_present("low-priority");
-        no_recurse = !matches.is_present("recurse");
+        synch = !matches.is_present("synch");
     }
     log::debug!("Submitting request...");
     let resp = api
@@ -137,13 +207,16 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
             &request_type,
             &packages,
             is_user,
-            no_recurse,
             project,
             label.map(|s| s.to_string()),
         )
         .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
+    if synch {
+        exit_status = handle_status(api, &request_type, matches);
+    }
     log::info!("Response => {:?}", resp);
     print_user_success!("Job ID: {}", resp);
+    exit_status
 }
 
 fn main() {
@@ -153,7 +226,6 @@ fn main() {
     let app = App::from(yml).setting(AppSettings::ArgRequiredElseHelp);
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
-    const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
     if matches.subcommand_matches("version").is_some() {
         let name = yml["name"].as_str().unwrap_or("");
@@ -185,7 +257,10 @@ fn main() {
         process::exit(-1)
     });
 
-    let mut api = PhylumApi::new(&config.connection.uri).unwrap_or_else(|err| {
+    let timeout = matches
+        .value_of("timeout")
+        .and_then(|t| t.parse::<u64>().ok());
+    let mut api = PhylumApi::new(&config.connection.uri, timeout).unwrap_or_else(|err| {
         exit(err, "Error creating client", -1);
     });
 
@@ -269,61 +344,9 @@ fn main() {
         });
         print_user_success!("{}", "Successfully registered.");
     } else if should_submit {
-        handle_submission(&mut api, config, matches);
+        exit_status = handle_submission(&mut api, config, matches);
     } else if should_get_status {
-        if let Some(matches) = matches.subcommand_matches("status") {
-            let mut threshold: f64 = 0.0;
-            if let Some(thresh) = matches.value_of("threshold") {
-                threshold = thresh.parse::<f64>().unwrap_or_default();
-            };
-            if let Some(request_id) = matches.value_of("request_id") {
-                let request_id = JobId::from_str(&request_id)
-                    .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
-
-                if matches.is_present("verbose") {
-                    let resp = api.get_job_status_ext(&request_id);
-                    log::info!("==> {:?}", resp);
-                    print_response(&resp);
-                    if let Ok(resp) = resp {
-                        for p in resp.packages {
-                            if p.basic_status.package_score < threshold {
-                                exit_status = STATUS_THRESHOLD_BREACHED;
-                            }
-                        }
-                    }
-                } else {
-                    let resp = api.get_job_status(&request_id);
-                    log::info!("==> {:?}", resp);
-                    print_response(&resp);
-                    if let Ok(resp) = resp {
-                        for p in resp.packages {
-                            if p.package_score < threshold {
-                                exit_status = STATUS_THRESHOLD_BREACHED;
-                            }
-                        }
-                    }
-                }
-            } else if matches.is_present("name") {
-                if !matches.is_present("version") {
-                    print_user_failure!("A version is required when querying by package");
-                    process::exit(-3);
-                }
-                let pkg = parse_package(matches, &config.request_type);
-                let resp = api.get_package_details(&pkg);
-                log::info!("==> {:?}", resp);
-                print_response(&resp);
-                if let Ok(resp) = resp {
-                    if resp.basic_status.package_score < threshold {
-                        exit_status = STATUS_THRESHOLD_BREACHED;
-                    }
-                }
-            } else {
-                // get everything
-                let resp = api.get_status();
-                log::debug!("==> {:?}", resp);
-                print_response(&resp);
-            }
-        }
+        exit_status = handle_status(&mut api, &config.request_type, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();

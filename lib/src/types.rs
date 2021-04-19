@@ -69,6 +69,13 @@ impl FromStr for Role {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Status {
+    Complete,
+    Incomplete,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct JwtToken {
     pub access_token: String,
     pub refresh_token: Option<String>,
@@ -173,7 +180,6 @@ pub struct PackageRequest {
     pub r#type: PackageType,
     pub packages: Vec<PackageDescriptor>,
     pub is_user: bool,
-    pub norecurse: bool,
     pub project: ProjectId,
     pub label: String,
 }
@@ -318,8 +324,10 @@ pub struct HeuristicResult {
 pub struct PackageStatus {
     pub name: String,
     pub version: String,
+    pub status: Status,
+    pub last_updated: u64,
     pub license: Option<String>,
-    pub package_score: f64,
+    pub package_score: Option<f64>,
     pub num_dependencies: u32,
     pub num_vulnerabilities: u32,
 }
@@ -339,7 +347,11 @@ pub struct RequestStatusResponse<T> {
     pub id: JobId,
     pub user_id: UserId,
     pub created_at: u64, // epoch seconds
+    pub status: Status,
     pub score: f64,
+    #[serde(default)]
+    pub num_incomplete: u32,
+    pub last_updated: u64,
     pub project: Option<ProjectId>,
     pub label: Option<String>,
     pub packages: Vec<T>,
