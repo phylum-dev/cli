@@ -143,7 +143,7 @@ for (const p of packages) {
 
 stdinStream.push(null);
 
-child = execFile('phylum-cli', ['batch', '-t', 'npm', '-l', argv['label']], (err, stdout, stderr) => {
+child = execFile('phylum', ['batch', '-t', 'npm', '-l', argv['label']], (err, stdout, stderr) => {
      console.log(stdout);
      console.log(stderr);
   });

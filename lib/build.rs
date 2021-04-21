@@ -7,8 +7,8 @@ fn main() {
     let mut app = App::from(yml);
 
     generate_to::<Bash, _, _>(
-        &mut app,     // We need to specify what generator to use
-        "phylum-cli", // We need to specify the bin name manually
-        "src/bin/",   // We need to specify where to write to
+        &mut app,   // We need to specify what generator to use
+        "phylum",   // We need to specify the bin name manually
+        "src/bin/", // We need to specify where to write to
     );
 }

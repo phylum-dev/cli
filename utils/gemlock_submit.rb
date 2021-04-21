@@ -11,7 +11,7 @@ end
 
 def call_cli(package_list)
   pkg_info = package_list.map { |p| "#{p.name}:#{p.version}\n" }.join
-  IO::popen('phylum-cli batch -t ruby', 'w') do |f|
+  IO::popen('phylum batch -t ruby', 'w') do |f|
     f.puts pkg_info
   end
   exit $?.exitstatus

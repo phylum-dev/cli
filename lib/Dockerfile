@@ -3,7 +3,7 @@
 # Builds a static musl binary and runs it on a `scratch` container.
 #
 ARG APP_PATH=/app
-ARG APP_NAME=phylum-cli
+ARG APP_NAME=phylum
 ARG APP_ARGS=""
 ARG BUILD_CONFIG=release
 ARG CARGO_HOME=/opt/rust/cargo

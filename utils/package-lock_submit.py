@@ -13,7 +13,7 @@ def usage():
 def call_cli(package_list):
     pkg_info = '\n'.join([f"{p[0]}:{p[1]}" for p in package_list])
 
-    proc = Popen('phylum-cli batch -t npm'.split(), stdin=PIPE)
+    proc = Popen('phylum batch -t npm'.split(), stdin=PIPE)
     out = proc.communicate(input=pkg_info.encode())
     sys.exit(proc.returncode)
 

@@ -3,12 +3,12 @@ Command line interface for the Phylum API
 
 ## Overview
 ```
-phylum-cli 0.0.6
+phylum 0.0.6
 Phylum, Inc.
 Client interface to the Phylum system
 
 USAGE:
-    phylum-cli [OPTIONS] [SUBCOMMAND]
+    phylum [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
@@ -32,10 +32,10 @@ SUBCOMMANDS:
     version       Display application version
 ```
 ## Releases
-Currently, releases of phylum-cli are statically-built for linux x64.
+Currently, releases of phylum are statically-built for linux x64.
 
 ## Installation
-Currently, releases of phylum-cli are statically-built for linux x64. If you need another architecture, see the section below on Building.
+Currently, releases of phylum are statically-built for linux x64. If you need another architecture, see the section below on Building.
 
 An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files.
 
@@ -55,12 +55,12 @@ bash install.sh
 ```
 
 ## Configuration
-Phylum-cli uses a configuration file located at `$HOME/.phylum/settings.yaml`
+Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`
 The install.sh script copies a default configuration file, but requires user credentials or a token to communicate with the Phylum API.
 
 To register a user account:
 ```sh
-phylum-cli register -u <username (email address)> -f <first_name> -l <last_name> -p <password>
+phylum register -u <username (email address)> -f <first_name> -l <last_name> -p <password>
 ```
 
 ## Activation
@@ -69,18 +69,18 @@ To have your Phylum API user account enabled, please contact someone at Phylum.
 ## Example: First package submission
 Package submissions must be part of _projects_. To create a project:
 ```sh
-phylum-cli init -p <project_name>
+phylum init -p <project_name>
 ```
 Next, submit a package like axios:
 ```sh
-phylum-cli submit -n axios -v 0.19.0
+phylum submit -n axios -v 0.19.0
 [Success] Job ID: 4860ff81-9b23-4e1b-8062-1cac7454f1d5
 ```
-phylum-cli sends the package and version information to the Phylum API and received a Job ID GUID. This GUID is then used to query for status of the specific job. In most cases, Phylum has already analyzed that package and can give an instantaneous result. In some cases, the package may need to be ingested, processed and analyzed. This might take 3-5 minutes but should happen exceedingly rarely.
+phylum sends the package and version information to the Phylum API and received a Job ID GUID. This GUID is then used to query for status of the specific job. In most cases, Phylum has already analyzed that package and can give an instantaneous result. In some cases, the package may need to be ingested, processed and analyzed. This might take 3-5 minutes but should happen exceedingly rarely.
 
 Query the job status to receive an overview of the job and an overview of the package results
 ```sh
-❯ phylum-cli status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5
+❯ phylum status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5
 [success] Response object:
 {
   "id": "4860ff81-9b23-4e1b-8062-1cac7454f1d5",
@@ -109,9 +109,9 @@ Here we can see some summary information:
 
 In this case the package score of the job and package are the same since the job only has 1 package.
 
-To get more detailed information about the job, we can use the verbose flag `-V` on phylum-cli.
+To get more detailed information about the job, we can use the verbose flag `-V` on phylum.
 ```sh
-❯ phylum-cli status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5 -V
+❯ phylum status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5 -V
 [success] Response object:
 {
   "id": "4860ff81-9b23-4e1b-8062-1cac7454f1d5",
