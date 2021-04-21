@@ -20,12 +20,12 @@ jobs:
         run: docker build lib/ --file lib/Dockerfile --tag static-build
       - name: Copy
         run: |
-          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum-cli > phylum-cli
+          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
           cp lib/src/bin/phylum-cli.bash phylum-cli-release/
-          cp phylum-cli phylum-cli-release/
+          cp phylum phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum-cli.bash .
@@ -35,7 +35,7 @@ jobs:
         name: Release
         with:
           files: |
-            phylum-cli
+            phylum
             install.sh
             settings.yaml
             phylum-cli.bash

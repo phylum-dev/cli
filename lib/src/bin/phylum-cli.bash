@@ -355,4 +355,4 @@ _phylum-cli() {
     esac
 }
 
-complete -F _phylum-cli -o bashdefault -o default phylum-cli
+complete -F _phylum-cli -o bashdefault -o default phylum

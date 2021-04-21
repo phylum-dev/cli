@@ -5,6 +5,10 @@ authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 build = "build.rs"
 
+[[bin]]
+name = "phylum"
+path = "src/bin/phylum-cli.rs"
+
 [features]
 phylum-online = []
 

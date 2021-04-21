@@ -28,14 +28,14 @@ if [ ! -f ${HOME}/.phylum/phylum-cli.bash ]; then
   fi
 fi
 
-if [ -f target/release/phylum-cli ]; then
-  echo '[*] Copying phylum-cli binary to ~/.phylum'
-  cp -f target/release/phylum-cli ${HOME}/.phylum/
-elif [ -f phylum-cli ]; then
-  echo '[*] Copying phylum-cli binary to ~/.phylum'
-  cp -f phylum-cli ${HOME}/.phylum/
+if [ -f target/release/phylum ]; then
+  echo '[*] Copying phylum binary to ~/.phylum'
+  cp -f target/release/phylum ${HOME}/.phylum/
+elif [ -f phylum ]; then
+  echo '[*] Copying phylum binary to ~/.phylum'
+  cp -f phylum ${HOME}/.phylum/
 else
-  echo "Can't find phylum-cli"
+  echo "Can't find phylum"
 fi
 
 if ! grep -q 'phylum-cli.bash' $HOME/.bashrc ;
@@ -48,3 +48,7 @@ then
   echo 'export PATH="$HOME/.phylum/:$PATH"' >> ${HOME}/.bashrc
 fi
 
+if ! grep -q 'alias ph=' $HOME/.bashrc ;
+then
+    echo "alias ph='phylum'" >> ${HOME}/.bashrc
+fi

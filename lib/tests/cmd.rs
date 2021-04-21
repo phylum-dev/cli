@@ -9,7 +9,7 @@ fn is_sub<T: PartialEq>(haystack: &[T], needle: &[T]) -> bool {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn ping_system() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.arg("ping").assert();
     assert.success().stdout("\"Alive\"\n");
 }
@@ -17,7 +17,7 @@ fn ping_system() {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn get_basic_status() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.arg("status").assert();
 
     let output = &assert.get_output().stderr;
@@ -27,7 +27,7 @@ fn get_basic_status() {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn get_job_status() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.arg("status").assert();
 
     let resp = String::from_utf8_lossy(&assert.get_output().stdout);
@@ -35,7 +35,7 @@ fn get_job_status() {
 
     let job_id = obj[0].job_id;
 
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.args(&["status", "-i", &job_id.to_string()]).assert();
 
     let output = &assert.get_output().stderr;
@@ -45,7 +45,7 @@ fn get_job_status() {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn get_job_status_non_existent_job() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd
         .args(&["status", "-i", "ffffffff-ffff-ffff-ffff-ffffffffffff"])
         .assert();
@@ -58,7 +58,7 @@ fn get_job_status_non_existent_job() {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn get_package_status() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.arg("status").assert();
 
     let resp = String::from_utf8_lossy(&assert.get_output().stdout);
@@ -67,7 +67,7 @@ fn get_package_status() {
     let name = jobs[0].packages[0].name.to_string();
     let version = jobs[0].packages[0].version.to_string();
 
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.args(&["status", "-n", &name, "-v", &version]).assert();
 
     let output = &assert.get_output().stderr;
@@ -77,7 +77,7 @@ fn get_package_status() {
 #[test]
 #[cfg_attr(not(feature = "phylum-online"), ignore)]
 fn get_package_status_detailed() {
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd.arg("status").assert();
 
     let resp = String::from_utf8_lossy(&assert.get_output().stdout);
@@ -86,7 +86,7 @@ fn get_package_status_detailed() {
     let name = jobs[0].packages[0].name.to_string();
     let version = jobs[0].packages[0].version.to_string();
 
-    let mut cmd = Command::cargo_bin("phylum-cli").unwrap();
+    let mut cmd = Command::cargo_bin("phylum").unwrap();
     let assert = cmd
         .args(&["status", "-n", &name, "-v", &version])
         .arg("-V")

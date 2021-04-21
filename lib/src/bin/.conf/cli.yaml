@@ -1,5 +1,5 @@
-name: phylum-cli
-bin_name: phylum-cli
+name: phylum
+bin_name: phylum
 version: "0.0.7"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
