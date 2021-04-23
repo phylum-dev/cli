@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
+use phylum_cli::render::Renderable;
 use phylum_cli::types::*;
 
 const STATUS_THRESHOLD_BREACHED: i32 = 1;
@@ -28,14 +29,18 @@ macro_rules! print_user_failure {
     }
 }
 
-fn print_response<T>(resp: &Result<T, phylum_cli::Error>)
+fn print_response<T>(resp: &Result<T, phylum_cli::Error>, pretty: bool)
 where
-    T: Serialize,
+    T: Serialize + Renderable,
 {
     match resp {
         Ok(resp) => {
             print_user_success!("Response object:");
-            println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+            if pretty {
+                println!("{}", resp.render())
+            } else {
+                println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+            }
         }
         Err(err) => {
             print_user_failure!("Response error:\n{}", err);
@@ -65,6 +70,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
     let mut exit_status: i32 = 0;
 
     if let Some(matches) = matches.subcommand_matches("status") {
+        let pretty_print = !matches.is_present("json");
         let mut threshold: f64 = 0.0;
         if let Some(thresh) = matches.value_of("threshold") {
             threshold = thresh.parse::<f64>().unwrap_or_default();
@@ -76,7 +82,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             if matches.is_present("verbose") {
                 let resp = api.get_job_status_ext(&request_id);
                 log::debug!("==> {:?}", resp);
-                print_response(&resp);
+                print_response(&resp, pretty_print);
                 if let Ok(resp) = resp {
                     for p in resp.packages {
                         if let Some(score) = p.basic_status.package_score {
@@ -89,7 +95,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             } else {
                 let resp = api.get_job_status(&request_id);
                 log::debug!("==> {:?}", resp);
-                print_response(&resp);
+                print_response(&resp, pretty_print);
                 if let Ok(resp) = resp {
                     for p in resp.packages {
                         if let Some(score) = p.package_score {
@@ -108,7 +114,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             let pkg = parse_package(matches, &req_type);
             let resp = api.get_package_details(&pkg);
             log::debug!("==> {:?}", resp);
-            print_response(&resp);
+            print_response(&resp, pretty_print);
             if let Ok(resp) = resp {
                 if let Some(score) = resp.basic_status.package_score {
                     if score < threshold {
@@ -120,7 +126,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             // get everything
             let resp = api.get_status();
             log::debug!("==> {:?}", resp);
-            print_response(&resp);
+            print_response(&resp, pretty_print);
         }
     }
 
@@ -227,6 +233,9 @@ fn main() {
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
 
+    // TODO: determine from options
+    let pretty_print = false; // json output
+
     if matches.subcommand_matches("version").is_some() {
         let name = yml["name"].as_str().unwrap_or("");
         let version = yml["version"].as_str().unwrap_or("");
@@ -266,7 +275,7 @@ fn main() {
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
-        print_response(&resp);
+        print_response(&resp, pretty_print);
         process::exit(0);
     }
 
@@ -354,7 +363,7 @@ fn main() {
                 .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
             let resp = api.cancel(&request_id);
             log::info!("==> {:?}", resp);
-            print_response(&resp);
+            print_response(&resp, pretty_print);
         }
     } else if should_manage_tokens {
         if let Some(matches) = matches.subcommand_matches("tokens") {
@@ -373,7 +382,7 @@ fn main() {
                         log::error!("Failed to save api token to config: {}", err)
                     });
                 }
-                print_response(&resp);
+                print_response(&resp, pretty_print);
             } else if should_destroy {
                 let token_id = matches.value_of("delete").unwrap();
                 let token = Key::from_str(token_id)
@@ -384,12 +393,12 @@ fn main() {
                 save_config(config_path, &config).unwrap_or_else(|err| {
                     log::error!("Failed to clear api token from config: {}", err)
                 });
-                print_response(&resp);
+                print_response(&resp, pretty_print);
             } else {
                 // get everything
                 let resp = api.get_api_tokens();
                 log::info!("==> {:?}", resp);
-                print_response(&resp);
+                print_response(&resp, pretty_print);
             }
         }
     } else if should_do_heuristics {
@@ -405,12 +414,12 @@ fn main() {
                 .collect::<Vec<String>>();
             let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
             log::info!("==> {:?}", resp);
-            print_response(&resp);
+            print_response(&resp, pretty_print);
         } else {
             log::info!("Querying heuristics");
             let resp = api.query_heuristics();
             log::info!("==> {:?}", resp);
-            print_response(&resp);
+            print_response(&resp, pretty_print);
         }
     }
     log::debug!("Exiting with status {}", exit_status);
