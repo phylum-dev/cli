@@ -141,6 +141,10 @@ subcommands:
                 help: Increase verbosity of api response.
                 takes_value: false
                 required: false
+            - json:
+                short: j
+                long: json
+                help: "Produce output in json format (default: false)"
     - cancel:
         about: Cancels a request currently in progress
         args:
