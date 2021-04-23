@@ -1,12 +1,16 @@
-use ansi_term::Color::{Green, Red};
+use ansi_term::Color::{Blue, Green, Red};
 use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
+use dialoguer::{theme::ColorfulTheme, Input, Password};
 use home::home_dir;
 use serde::Serialize;
 use std::error::Error;
 use std::io::{self, BufRead, BufReader};
 use std::process;
 use std::str::FromStr;
+
+extern crate serde;
+extern crate serde_json;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
@@ -17,14 +21,14 @@ const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
-        eprint!("[{}] ", Green.paint("success"));
+        eprint!("{} ", Green.paint("✔"));
         eprintln!($($tts)*);
     }
 }
 
 macro_rules! print_user_failure {
     ($($tts:tt)*) => {
-        eprint!("[{}] ", Red.paint("failure"));
+        eprint!("{} ", Red.paint("✘"));
         eprintln!($($tts)*);
     }
 }
@@ -35,7 +39,6 @@ where
 {
     match resp {
         Ok(resp) => {
-            print_user_success!("Response object:");
             if pretty {
                 println!("{}", resp.render())
             } else {
@@ -126,7 +129,6 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             // get everything
             let resp = api.get_status();
             log::debug!("==> {:?}", resp);
-            print_response(&resp, pretty_print);
         }
     }
 
@@ -225,11 +227,226 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
     exit_status
 }
 
+/// Register a user. Drops the user into an interactive mode to get the user's
+/// details.
+fn handle_auth_register(
+    api: &mut PhylumApi,
+    config: &mut Config,
+    config_path: &str,
+) -> Result<String, std::io::Error> {
+    let name: String = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Your name")
+        .interact_text()?;
+
+    let email: String = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Email address")
+        .validate_with({
+            move |email: &String| -> Result<(), &str> {
+                // Naive check for email. Additional validation should
+                // occur on the backend.
+                match email.contains('@') && email.contains('.') {
+                    true => Ok(()),
+                    false => Err("That is not a valid email address"),
+                }
+            }
+        })
+        .interact_text()?;
+
+    let password: String = Password::with_theme(&ColorfulTheme::default())
+        .with_prompt("Password")
+        .with_confirmation("Confirm password", "Passwords do not match")
+        .interact()?;
+
+    api.register(email.as_str(), password.as_str(), name.as_str())
+        .unwrap_or_else(|err| {
+            exit(err, "Error registering user", -1);
+        });
+
+    config.auth_info.user = email.to_string();
+    config.auth_info.pass = password.to_string();
+    save_config(config_path, &config).unwrap_or_else(|err| {
+        log::error!("Failed to save user credentials to config: {}", err);
+        print_user_failure!("Failed to save user credentials: {}", err);
+    });
+
+    Ok("Successfully registred a new account!".to_string())
+}
+
+/// Authenticate a user with email and password.
+///
+/// Drops the user into an interactive mode to retrieve this information. If
+/// authentication succeeds, persists the data to the configuration file. On
+/// failure, returns a non-zero exit code.
+fn handle_auth_login(
+    api: &mut PhylumApi,
+    config: &mut Config,
+    config_path: &str,
+) -> Result<String, std::io::Error> {
+    let email: String = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Email address")
+        .validate_with({
+            move |email: &String| -> Result<(), &str> {
+                // Naive check for email. Additional validation should
+                // occur on the backend.
+                match email.contains('@') && email.contains('.') {
+                    true => Ok(()),
+                    false => Err("That is not a valid email address"),
+                }
+            }
+        })
+        .interact_text()?;
+
+    let password: String = Password::with_theme(&ColorfulTheme::default())
+        .with_prompt("Password")
+        .interact()?;
+
+    // First login with the provided credentials. If the login is successful,
+    // save the authentication information in our settings file.
+    api.authenticate(&email, &password).unwrap_or_else(|err| {
+        print_user_failure!("{}", err);
+        process::exit(-1);
+    });
+
+    config.auth_info.user = email.to_string();
+    config.auth_info.pass = password.to_string();
+    config.auth_info.api_token = None;
+    save_config(config_path, &config).unwrap_or_else(|err| {
+        log::error!("Failed to save user credentials to config: {}", err);
+        print_user_failure!("{}", err);
+    });
+
+    Ok("Successfully authenticated with Phylum".to_string())
+}
+
+/// Handles the management of API keys.
+///
+/// Provides subcommands for:
+///
+/// * Creating a new key with `create`
+/// * Deactivating a key with `remove`
+/// * Listing all active keys with `list`
+fn handle_auth_keys(
+    api: &mut PhylumApi,
+    config: &mut Config,
+    config_path: &str,
+    matches: &clap::ArgMatches,
+) {
+    if matches.subcommand_matches("create").is_some() {
+        let resp = api.create_api_token();
+        log::info!("==> Token created: `{:?}`", resp);
+        if let Ok(ref resp) = resp {
+            config.auth_info.api_token = Some(resp.to_owned());
+            save_config(config_path, &config)
+                .unwrap_or_else(|err| log::error!("Failed to save api token to config: {}", err));
+
+            let key: String = resp.key.to_string();
+            print_user_success!(
+                "Successfully created new API key: \n\t{}\n",
+                Green.paint(key)
+            );
+            return;
+        }
+    } else if let Some(action) = matches.subcommand_matches("remove") {
+        let token_id = action.value_of("key_id").unwrap();
+        let token = Key::from_str(token_id)
+            .unwrap_or_else(|err| exit(err, "Received invalid token id", -5));
+        let resp = api.delete_api_token(&token);
+        log::info!("==> {:?}", resp);
+        config.auth_info.api_token = None;
+        save_config(config_path, &config)
+            .unwrap_or_else(|err| log::error!("Failed to clear api token from config: {}", err));
+        print_user_success!("Successfully deleted API key");
+    } else if matches.subcommand_matches("list").is_some() {
+        let resp = api.get_api_tokens();
+
+        // We only show the user the active API keys.
+        let keys: Vec<ApiToken> = resp
+            .unwrap_or(Vec::new())
+            .into_iter()
+            .filter(|k| k.active)
+            .collect();
+
+        if keys.is_empty() {
+            print_user_success!(
+                "No API keys available. Create your first key:\n\n\t{}\n",
+                Blue.paint("phylum auth keys create")
+            );
+            return;
+        }
+
+        println!(
+            "\n{:<35} | {}",
+            Blue.paint("Created").to_string(),
+            Blue.paint("API Key").to_string()
+        );
+
+        let res = Ok(keys);
+        println!("{:-^65}", "");
+        print_response(&res, true);
+        println!("");
+    }
+}
+
+/// Display the current authentication status to the user.
+fn handle_auth_status(config: &mut Config) {
+    if config.auth_info.api_token.is_some() {
+        let key = config.auth_info.api_token.as_ref().unwrap().key.to_string();
+        print_user_success!("Currenty authenticated with API key {}", Green.paint(key));
+    } else if config.auth_info.user != "" {
+        print_user_success!(
+            "Currenty authenticated as {}",
+            Green.paint(&config.auth_info.user)
+        );
+    }
+}
+
+/// Handle the subcommands for the `auth` subcommand.
+fn handle_auth(
+    api: &mut PhylumApi,
+    config: &mut Config,
+    config_path: &str,
+    matches: &clap::ArgMatches,
+) {
+    if matches.subcommand_matches("register").is_some() {
+        match handle_auth_register(api, config, config_path) {
+            Ok(msg) => {
+                print_user_success!("{}", msg);
+            }
+            Err(msg) => {
+                print_user_failure!("{}", msg);
+                process::exit(-1);
+            }
+        }
+    } else if matches.subcommand_matches("login").is_some() {
+        match handle_auth_login(api, config, config_path) {
+            Ok(msg) => {
+                print_user_success!("{}", msg);
+            }
+            Err(msg) => {
+                print_user_failure!("{}", msg);
+                process::exit(-1);
+            }
+        }
+    } else if let Some(subcommand) = matches.subcommand_matches("keys") {
+        handle_auth_keys(api, config, config_path, subcommand);
+    } else if matches.subcommand_matches("status").is_some() {
+        handle_auth_status(config);
+    } else {
+        // TODO: What if we don't have a subcommand? Clap will give us the help
+        //       output if the top level subcommands are missing, but not for
+        //       sub-subcommands, i.e. `phylum auth` won't produce the help
+        //       output.
+        print_user_failure!("Missing subcommand.");
+    }
+}
+
 fn main() {
     env_logger::init();
 
     let yml = load_yaml!(".conf/cli.yaml");
-    let app = App::from(yml).setting(AppSettings::ArgRequiredElseHelp);
+    let app = App::from(yml)
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
 
@@ -284,8 +501,14 @@ fn main() {
         || matches.subcommand_matches("batch").is_some();
     let should_get_status = matches.subcommand_matches("status").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
-    let should_manage_tokens = matches.subcommand_matches("tokens").is_some();
     let should_do_heuristics = matches.subcommand_matches("heuristics").is_some();
+
+    let auth_subcommand = matches.subcommand_matches("auth");
+    let should_manage_tokens = auth_subcommand.is_some()
+        && auth_subcommand
+            .unwrap()
+            .subcommand_matches("keys")
+            .is_some();
 
     if should_init
         || should_submit
@@ -334,24 +557,8 @@ fn main() {
             log::error!("Failed to save user credentials to config: {}", err)
         });
         print_user_success!("Successfully created new project. ID: {}", project_id);
-    } else if let Some(matches) = matches.subcommand_matches("register") {
-        log::debug!("Registering new user");
-        let email = matches.value_of("email").unwrap();
-        let pass = matches.value_of("password").unwrap();
-        let first = matches.value_of("first").unwrap();
-        let last = matches.value_of("last").unwrap();
-        let user_id = api
-            .register(email, pass, first, last)
-            .unwrap_or_else(|err| {
-                exit(err, "Error registering user", -1);
-            });
-        log::debug!("Registered user with id: `{}`", user_id);
-        config.auth_info.user = email.to_string();
-        config.auth_info.pass = pass.to_string();
-        save_config(config_path, &config).unwrap_or_else(|err| {
-            log::error!("Failed to save user credentials to config: {}", err)
-        });
-        print_user_success!("{}", "Successfully registered.");
+    } else if let Some(matches) = matches.subcommand_matches("auth") {
+        handle_auth(&mut api, &mut config, config_path, matches);
     } else if should_submit {
         exit_status = handle_submission(&mut api, config, matches);
     } else if should_get_status {
@@ -364,42 +571,6 @@ fn main() {
             let resp = api.cancel(&request_id);
             log::info!("==> {:?}", resp);
             print_response(&resp, pretty_print);
-        }
-    } else if should_manage_tokens {
-        if let Some(matches) = matches.subcommand_matches("tokens") {
-            let should_create = matches.is_present("create");
-            let should_destroy = matches.is_present("delete");
-            if should_create && should_destroy {
-                log::error!("Incompatible options specified: `create` and `delete`");
-                process::exit(-5);
-            }
-            if should_create {
-                let resp = api.create_api_token();
-                log::info!("==> Token created: `{:?}`", resp);
-                if let Ok(ref resp) = resp {
-                    config.auth_info.api_token = Some(resp.to_owned());
-                    save_config(config_path, &config).unwrap_or_else(|err| {
-                        log::error!("Failed to save api token to config: {}", err)
-                    });
-                }
-                print_response(&resp, pretty_print);
-            } else if should_destroy {
-                let token_id = matches.value_of("delete").unwrap();
-                let token = Key::from_str(token_id)
-                    .unwrap_or_else(|err| exit(err, "Received invalid token id", -5));
-                let resp = api.delete_api_token(&token);
-                log::info!("==> {:?}", resp);
-                config.auth_info.api_token = None;
-                save_config(config_path, &config).unwrap_or_else(|err| {
-                    log::error!("Failed to clear api token from config: {}", err)
-                });
-                print_response(&resp, pretty_print);
-            } else {
-                // get everything
-                let resp = api.get_api_tokens();
-                log::info!("==> {:?}", resp);
-                print_response(&resp, pretty_print);
-            }
         }
     } else if should_do_heuristics {
         let matches = matches.subcommand_matches("heuristics").unwrap();
@@ -419,7 +590,7 @@ fn main() {
             log::info!("Querying heuristics");
             let resp = api.query_heuristics();
             log::info!("==> {:?}", resp);
-            print_response(&resp, pretty_print);
+            //print_response(&resp, pretty_print);
         }
     }
     log::debug!("Exiting with status {}", exit_status);
