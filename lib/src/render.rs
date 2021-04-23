@@ -30,7 +30,7 @@ impl Renderable for String {
 
 impl Renderable for ApiToken {
     fn render(&self) -> String {
-        format!("{:<10}{:>48}{:>48}\n", self.active, self.key, self.user_id)
+        format!("{:<10} | {:>48}", self.created, self.key)
     }
 }
 

@@ -45,19 +45,13 @@ impl PhylumApi {
     }
 
     /// Register new user
-    pub fn register(
-        &mut self,
-        email: &str,
-        password: &str,
-        first_name: &str,
-        last_name: &str,
-    ) -> Result<UserId, Error> {
+    pub fn register(&mut self, email: &str, password: &str, name: &str) -> Result<UserId, Error> {
         let req = RegisterRequest {
             email: email.to_owned(),
             password: password.to_owned(),
             confirm_password: password.to_owned(),
-            first_name: first_name.to_owned(),
-            last_name: last_name.to_owned(),
+            first_name: name.to_owned(),
+            last_name: name.to_owned(),
         };
 
         let resp: RegisterResponse = self.client.put_capture((), &req)?;

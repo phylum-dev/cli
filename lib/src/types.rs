@@ -86,6 +86,8 @@ pub struct ApiToken {
     pub active: bool,
     pub key: Key,
     pub user_id: UserId,
+    pub name: Option<String>,
+    pub created: String,
 }
 
 /// PUT /authenticate/register
