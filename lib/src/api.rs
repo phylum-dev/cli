@@ -45,19 +45,13 @@ impl PhylumApi {
     }
 
     /// Register new user
-    pub fn register(
-        &mut self,
-        email: &str,
-        password: &str,
-        first_name: &str,
-        last_name: &str,
-    ) -> Result<UserId, Error> {
+    pub fn register(&mut self, email: &str, password: &str, name: &str) -> Result<UserId, Error> {
         let req = RegisterRequest {
             email: email.to_owned(),
             password: password.to_owned(),
             confirm_password: password.to_owned(),
-            first_name: first_name.to_owned(),
-            last_name: last_name.to_owned(),
+            first_name: name.to_owned(),
+            last_name: name.to_owned(),
         };
 
         let resp: RegisterResponse = self.client.put_capture((), &req)?;
@@ -534,18 +528,13 @@ mod tests {
               "last_name":  "Smith",
               "role":  "a",
               "user_id": "abcd1234-abcd-1234-5678-abcd12345678"
-            } 
+            }
         "#,
             )
             .create();
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
-        let res = client.register(
-            "johnsmith@somedomain.com",
-            "agreatpassword",
-            "john",
-            "smith",
-        );
+        let res = client.register("johnsmith@somedomain.com", "agreatpassword", "john smith");
         assert!(res.is_ok(), format!("{:?}", res));
     }
 
@@ -558,7 +547,9 @@ mod tests {
                 r#"{
                 "active": true,
                 "key": "a37ba84d-67b4-42ff-910e-25ec5fb7b909",
-                "user_id": "f8becb8d-f0e7-4420-9249-053d8228b19e"
+                "user_id": "f8becb8d-f0e7-4420-9249-053d8228b19e",
+                "created": "Dec 28, 2017",
+                "name": "foobar"
             }"#,
             )
             .create();
@@ -606,12 +597,16 @@ mod tests {
                 {
                     "active": true,
                     "key": "a37ba84d-67b4-42ff-910e-25ec5fb7b909",
-                    "user_id": "f8becb8d-f0e7-4420-9249-053d8228b19e"
+                    "user_id": "f8becb8d-f0e7-4420-9249-053d8228b19e",
+                    "created": "Jan 12, 1988",
+                    "name": "Spameggs"
                 },
                 {
                     "active": false,
                     "key": "b37ba84d-67b4-42ff-910e-25ec5fb7b909",
-                    "user_id": "e8becb8d-f0e7-4420-9249-053d8228b19e"
+                    "user_id": "e8becb8d-f0e7-4420-9249-053d8228b19e",
+                    "created": "Nov 16, 1959",
+                    "name": "test"
                 }
                 ]
             }"#,

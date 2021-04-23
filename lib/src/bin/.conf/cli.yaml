@@ -17,31 +17,54 @@ args:
         help: Set the timeout (in seconds) for requests to the Phylum api
         takes_value: true
 subcommands:
+    - auth:
+        about: Manage authentication, registration, and API keys
+        subcommands:
+            - register:
+                about: Register a new account
+            - login:
+                about: Login to an existing account
+            - keys:
+                about: Manage API keys
+                after_help: "EXAMPLES
+
+
+                             # List existing active API keys
+
+
+                             \tphylum auth list
+
+
+                             # Create new API key
+
+
+                             \tphylum auth keys create
+
+
+                             # Remove (deactivate) an API key
+
+
+                             \tphylum auth keys remove <api-key>
+
+
+                             "
+                subcommands:
+                    - create:
+                        about: Create a new API key
+                    - list:
+                        about: List current API keys
+                    - remove:
+                        about: Deactivate an API key
+                        args:
+                            - key_id:
+                                required: false
+                                takes_value: true
+                                index: 1
+            - status:
+                about: Return the current authentication status
+
     - ping:
         about: Ping the remote system to verify it is available
-    - register:
-        about: Register a new system user
-        args:
-            - email:
-                short: u
-                help: User e-mail address
-                takes_value: true
-                required: true
-            - password:
-                short: p
-                help: Password
-                takes_value: true
-                required: true
-            - first:
-                short: f
-                help: First name
-                takes_value: true
-                required: true
-            - last:
-                short: l
-                help: Last name
-                takes_value: true
-                required: true
     - init:
         about: Initialize a new project
         args:
@@ -153,19 +176,6 @@ subcommands:
                 help: Request ID
                 takes_value: true
                 required: true
-    - tokens:
-        about: Manage API tokens
-        args:
-            - create:
-                short: c
-                help: Create new API token
-                takes_value: false
-                required: false
-            - delete:
-                short: d
-                help: Delete (de-activate) an existing token
-                takes_value: true
-                required: false
     - heuristics:
         about: List available heuristics / submit packages for heuristics
         subcommands:

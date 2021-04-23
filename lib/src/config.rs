@@ -105,9 +105,11 @@ mod tests {
             user: "someone@someorg.com".into(),
             pass: "abcd1234".into(),
             api_token: Some(ApiToken {
+                name: Some("Foobar".to_string()),
                 active: true,
                 key: Key::from_str("5098fc16-5267-40ed-bf63-338ebdf185fe").unwrap(),
                 user_id: UserId::from_str("b4225454-13ee-4019-926e-cd5f8b128e4a").unwrap(),
+                created: "Dec 5, 2019".to_string(),
             }),
         };
 
