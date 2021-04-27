@@ -17,6 +17,8 @@ args:
         help: Set the timeout (in seconds) for requests to the Phylum api
         takes_value: true
 subcommands:
+    - update:
+        about: Check for a new release of the Phylum CLI tool.
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:
