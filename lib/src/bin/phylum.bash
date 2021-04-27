@@ -58,6 +58,9 @@ _phylum() {
             submit)
                 cmd+="__submit"
                 ;;
+            update)
+                cmd+="__update"
+                ;;
             version)
                 cmd+="__version"
                 ;;
@@ -68,7 +71,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  auth ping init submit batch status cancel heuristics version help"
+            opts=" -c -t -h -V  --config --timeout --help --version  update auth ping init submit batch status cancel heuristics version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -415,6 +418,21 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__update)
+            opts=" -h -V  --help --version  "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
                 *)
                     COMPREPLY=()
                     ;;
