@@ -69,9 +69,13 @@ where
     }
 }
 
-fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDescriptor {
+fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<PackageDescriptor> {
+    if !(options.is_present("name") && options.is_present("version")) {
+        return None;
+    }
+
     let name = options.value_of("name").unwrap().to_string(); // required option
-    let version = options.value_of("version").unwrap_or_default().to_string();
+    let version = options.value_of("version").unwrap().to_string();
     let mut r#type = request_type.to_owned();
 
     // If a package type was provided on the command line, prefer that
@@ -80,11 +84,11 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
         r#type = PackageType::from_str(options.value_of("type").unwrap()).unwrap_or(r#type);
     }
 
-    PackageDescriptor {
+    Some(PackageDescriptor {
         name,
         version,
         r#type,
-    }
+    })
 }
 
 /// List the projects in this account.
@@ -188,7 +192,8 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             if !matches.is_present("version") {
                 exit("A version is required when querying by package", -3);
             }
-            let pkg = parse_package(matches, &req_type);
+            let pkg = parse_package(matches, &req_type)
+                .unwrap_or_else(|| exit("Invalid package name or version.", -3));
             let resp = api.get_package_details(&pkg);
             print_response(&resp, pretty_print);
             if let Ok(resp) = resp {
@@ -923,6 +928,24 @@ fn print_sc_help(app: &mut App, subcommand: &str) {
     println!();
 }
 
+/// Handle the subcommands for the `package` subcommand.
+fn handle_get_package(
+    api: &mut PhylumApi,
+    req_type: &PackageType,
+    matches: &clap::ArgMatches
+) -> i32 {
+    let pretty_print = !matches.is_present("json");
+    let pkg = parse_package(&matches, &req_type);
+    if pkg.is_none() {
+        return -1;
+    }
+    let resp = api.get_package_details(&pkg.unwrap());
+    log::debug!("==> {:?}", resp);
+    print_response(&resp, pretty_print);
+
+    0
+}
+
 fn main() {
     env_logger::init();
 
@@ -991,7 +1014,7 @@ fn main() {
         || matches.subcommand_matches("batch").is_some();
     let should_get_history = matches.subcommand_matches("history").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
-    let should_do_heuristics = matches.subcommand_matches("heuristics").is_some();
+    let should_get_packages = matches.subcommand_matches("package").is_some();
 
     let auth_subcommand = matches.subcommand_matches("auth");
     let should_manage_tokens = auth_subcommand.is_some()
@@ -1005,7 +1028,7 @@ fn main() {
         || should_get_history
         || should_cancel
         || should_manage_tokens
-        || should_do_heuristics
+        || should_get_packages
     {
         log::debug!("Authenticating...");
         log::debug!("Auth config:\n{:?}", config.auth_info);
@@ -1050,6 +1073,8 @@ fn main() {
                 print_user_warning!("Failed to get version metadata");
             }
         };
+    } else if let Some(matches) = matches.subcommand_matches("package") {
+        exit_status = handle_get_package(&mut api, &config.request_type, matches);
     } else if should_submit {
         exit_status = handle_submission(&mut api, config, matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
@@ -1064,26 +1089,8 @@ fn main() {
             let resp = api.cancel(&request_id);
             print_response(&resp, true);
         }
-    } else if should_do_heuristics {
-        let matches = matches.subcommand_matches("heuristics").unwrap();
-        if let Some(matches) = matches.subcommand_matches("submit") {
-            let pkg = parse_package(matches, &config.request_type);
-            let heuristics = matches
-                .value_of("heuristics")
-                .unwrap_or_default()
-                .split(',')
-                .map(|s| s.to_string())
-                .filter(|s| !s.is_empty())
-                .collect::<Vec<String>>();
-            let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
-            print_response(&resp, true);
-        } else {
-            log::info!("Querying heuristics");
-            let resp = api.query_heuristics();
-            log::info!("==> {:?}", resp);
-            //print_response(&resp, pretty_print);
-        }
     }
+
     log::debug!("Exiting with status {}", exit_status);
     process::exit(exit_status);
 }

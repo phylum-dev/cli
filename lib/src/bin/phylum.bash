@@ -22,21 +22,21 @@ _phylum() {
             batch)
                 cmd+="__batch"
                 ;;
-            cancel)
-                cmd+="__cancel"
-                ;;
             create)
                 cmd+="__create"
                 ;;
             help)
                 cmd+="__help"
                 ;;
+<<<<<<< HEAD
             heuristics)
                 cmd+="__heuristics"
                 ;;
             history)
                 cmd+="__history"
                 ;;
+=======
+>>>>>>> e5a8e6b... Add package subcommand for checking package details.
             init)
                 cmd+="__init"
                 ;;
@@ -51,6 +51,9 @@ _phylum() {
                 ;;
             login)
                 cmd+="__login"
+                ;;
+            package)
+                cmd+="__package"
                 ;;
             ping)
                 cmd+="__ping"
@@ -73,9 +76,6 @@ _phylum() {
             status)
                 cmd+="__status"
                 ;;
-            submit)
-                cmd+="__submit"
-                ;;
             update)
                 cmd+="__update"
                 ;;
@@ -90,14 +90,23 @@ _phylum() {
     case "${cmd}" in
         phylum)
 <<<<<<< HEAD
+<<<<<<< HEAD
             opts=" -c -t -h -V  --config --timeout --help --version  update history projects auth ping init submit batch status cancel heuristics version help"
 =======
+=======
+>>>>>>> b295b50... Add package subcommand for checking package details.
 <<<<<<< HEAD
             opts=" -c -t -h -V  --config --timeout --help --version  update history auth ping init submit batch status cancel heuristics version help"
 =======
             opts=" -c -t -h -V  --config --timeout --help --version  update auth ping init analyze batch status cancel heuristics version help"
 >>>>>>> 6189e67... Rename `submit` to `analyze`; re-organize command args
+<<<<<<< HEAD
 >>>>>>> 6fb9d7d... Rename `submit` to `analyze`; re-organize command args
+=======
+=======
+            opts=" -c -t -h -V  --config --timeout --help --version  update package auth ping init analyze batch status version help"
+>>>>>>> e5a8e6b... Add package subcommand for checking package details.
+>>>>>>> b295b50... Add package subcommand for checking package details.
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -294,25 +303,6 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        phylum__cancel)
-            opts=" -i -h -V  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                    -i)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
         phylum__help)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -328,8 +318,8 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        phylum__heuristics)
-            opts=" -h -V  --help --version  submit"
+        phylum__init)
+            opts=" -h -V  --help --version  <PROJECT> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -343,23 +333,19 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        phylum__heuristics__submit)
-            opts=" -n -v -h -d -V  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+        phylum__package)
+            opts=" -t -h -V  --package-type --help --version  <name> <version> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 
-                    -n)
+                --package-type)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -v)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -h)
+                    -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -370,6 +356,7 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+<<<<<<< HEAD
         phylum__history)
             opts=" -h -V  --help --version  <job_id> project"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -415,6 +402,8 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+=======
+>>>>>>> e5a8e6b... Add package subcommand for checking package details.
         phylum__ping)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
