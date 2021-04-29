@@ -63,6 +63,25 @@ subcommands:
                         required: true 
                         takes_value: true
                         index: 1
+    - package:
+        about: Retrieve the details of a specific packge
+        args:
+            - name:
+                help: The name of the package.
+                takes_value: true
+                required: false
+                index: 1
+            - version:
+                help: The version of the package.
+                takes_value: true
+                required: false
+                index: 2
+            - type:
+                help: The type of the package ("npm", "ruby", "pypi", etc.)
+                short: t
+                long: package-type
+                takes_value: true
+                required: false
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:
@@ -163,11 +182,11 @@ subcommands:
                 help: Package type (`npm`, `ruby`, etc)
                 takes_value: true
                 required: false
-            - low-priority: 
+            - low-priority:
                 short: L
                 takes_value: false
                 required: false
-            - synch: 
+            - synch:
                 short: S
                 help: "After submitting a request, immediately request status (default: false)"
                 takes_value: false
