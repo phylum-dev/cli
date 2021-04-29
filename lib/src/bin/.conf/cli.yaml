@@ -17,6 +17,20 @@ args:
         help: Set the timeout (in seconds) for requests to the Phylum api
         takes_value: true
 subcommands:
+    - package:
+        about: Retrieve the details of a specific packge
+        args:
+            - name:
+                help: The name of the package.
+                takes_value: true
+                required: true
+                index: 1
+            - version:
+                help: The version of the package.
+                takes_value: true
+                required: true
+                index: 2
+
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:
@@ -117,11 +131,11 @@ subcommands:
                 help: Package type (`npm`, `ruby`, etc)
                 takes_value: true
                 required: false
-            - low-priority: 
+            - low-priority:
                 short: L
                 takes_value: false
                 required: false
-            - synch: 
+            - synch:
                 short: S
                 help: "After submitting a request, immediately request status (default: false)"
                 takes_value: false
@@ -168,40 +182,6 @@ subcommands:
                 short: j
                 long: json
                 help: "Produce output in json format (default: false)"
-    - cancel:
-        about: Cancels a request currently in progress
-        args:
-            - request_id:
-                short: i
-                help: Request ID
-                takes_value: true
-                required: true
-    - heuristics:
-        about: List available heuristics / submit packages for heuristics
-        subcommands:
-            - submit:
-                about: Submit a package to the system for heuristics
-                args:
-                    - name:
-                        short: n
-                        help: Package name
-                        takes_value: true
-                        required: true
-                    - version:
-                        short: v
-                        help: Package version
-                        takes_value: true
-                        required: true
-                    - heuristics:
-                        short: h
-                        help: "Heuristics to run (comma separated list, default: all available)"
-                        takes_value: true
-                        required: false
-                    - include-deps:
-                        short: d
-                        help: "Include dependencies (default: false)"
-                        takes_value: false
-                        required: false
     - version:
         about: Display application version
 

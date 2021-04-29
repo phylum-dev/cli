@@ -19,17 +19,11 @@ _phylum() {
             batch)
                 cmd+="__batch"
                 ;;
-            cancel)
-                cmd+="__cancel"
-                ;;
             create)
                 cmd+="__create"
                 ;;
             help)
                 cmd+="__help"
-                ;;
-            heuristics)
-                cmd+="__heuristics"
                 ;;
             init)
                 cmd+="__init"
@@ -42,6 +36,9 @@ _phylum() {
                 ;;
             login)
                 cmd+="__login"
+                ;;
+            package)
+                cmd+="__package"
                 ;;
             ping)
                 cmd+="__ping"
@@ -68,7 +65,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  auth ping init submit batch status cancel heuristics version help"
+            opts=" -c -t -h -V  --config --timeout --help --version  package auth ping init submit batch status version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -246,25 +243,6 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        phylum__cancel)
-            opts=" -i -h -V  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                    -i)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
         phylum__help)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -273,48 +251,6 @@ _phylum() {
             fi
             case "${prev}" in
                 
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__heuristics)
-            opts=" -h -V  --help --version  submit"
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__heuristics__submit)
-            opts=" -n -v -h -d -V  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                    -n)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -v)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -h)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -334,6 +270,21 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__package)
+            opts=" -h -V  --help --version  <name> <version> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
                 *)
                     COMPREPLY=()
                     ;;
