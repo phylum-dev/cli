@@ -42,6 +42,7 @@ lazy_static = "1.4.0"
 yaml-rust = "*"
 home = "0.5.3"
 chrono = { version = "^0.4", features = ["serde"] }
+nom = "6.1.2"
 
 [dev-dependencies]
 mockito = "0.27.0"
