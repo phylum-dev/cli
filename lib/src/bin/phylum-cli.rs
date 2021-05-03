@@ -274,8 +274,8 @@ fn handle_auth_register(
             exit(err, "Error registering user", -1);
         });
 
-    config.auth_info.user = email.to_string();
-    config.auth_info.pass = password.to_string();
+    config.auth_info.user = email;
+    config.auth_info.pass = password;
     save_config(config_path, &config).unwrap_or_else(|err| {
         log::error!("Failed to save user credentials to config: {}", err);
         print_user_failure!("Failed to save user credentials: {}", err);
@@ -319,8 +319,8 @@ fn handle_auth_login(
         process::exit(-1);
     });
 
-    config.auth_info.user = email.to_string();
-    config.auth_info.pass = password.to_string();
+    config.auth_info.user = email;
+    config.auth_info.pass = password;
     config.auth_info.api_token = None;
     save_config(config_path, &config).unwrap_or_else(|err| {
         log::error!("Failed to save user credentials to config: {}", err);
@@ -373,7 +373,7 @@ fn handle_auth_keys(
 
         // We only show the user the active API keys.
         let keys: Vec<ApiToken> = resp
-            .unwrap_or(Vec::new())
+            .unwrap_or_default()
             .into_iter()
             .filter(|k| k.active)
             .collect();
@@ -395,7 +395,7 @@ fn handle_auth_keys(
         let res = Ok(keys);
         println!("{:-^65}", "");
         print_response(&res, true);
-        println!("");
+        println!();
     }
 }
 
@@ -404,7 +404,7 @@ fn handle_auth_status(config: &mut Config) {
     if config.auth_info.api_token.is_some() {
         let key = config.auth_info.api_token.as_ref().unwrap().key.to_string();
         print_user_success!("Currenty authenticated with API key {}", Green.paint(key));
-    } else if config.auth_info.user != "" {
+    } else if !config.auth_info.user.is_empty() {
         print_user_success!(
             "Currenty authenticated as {}",
             Green.paint(&config.auth_info.user)
@@ -553,7 +553,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let bin = download_file(bin_asset, tmp_bin_path);
     let bash = download_file(bash_asset, tmp_bash_path);
     sp.stop();
-    println!("");
+    println!();
 
     // Ensure that we have both files for our update. This includes the actual
     // binary file, as well as the bash file.
