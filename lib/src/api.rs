@@ -227,7 +227,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.authenticate("joe", "mypass");
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -244,7 +244,7 @@ mod tests {
             refresh_token: Some("abcd1234".to_string()),
         };
         let res = client.refresh(&jwt);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
         let project_id = Uuid::new_v4();
         let label = Some("mylabel".to_string());
         let res = client.submit_request(&PackageType::Npm, &[pkg], true, project_id, label);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -301,7 +301,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.get_status();
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -342,7 +342,7 @@ mod tests {
             r#type: PackageType::Npm,
         };
         let res = client.get_package_details(&pkg);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -382,7 +382,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.get_job_status(&job);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.get_job_status(&job);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -496,7 +496,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.get_job_status_ext(&job);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -513,7 +513,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.cancel(&job);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -535,7 +535,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.register("johnsmith@somedomain.com", "agreatpassword", "john smith");
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -556,7 +556,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.create_api_token();
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
         let token = res.unwrap();
         assert_eq!(token.active, true);
         assert_eq!(
@@ -582,7 +582,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let key = Key::from_str("b75e1f40-02a5-4580-a7d1-d842dbcc1aca").unwrap();
         let res = client.delete_api_token(&key);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -616,7 +616,7 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.get_api_tokens();
 
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -629,7 +629,7 @@ mod tests {
 
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.query_heuristics();
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 
     #[test]
@@ -652,6 +652,6 @@ mod tests {
             .collect::<Vec<String>>();
 
         let res = client.submit_heuristics(&pkg, &heuristics, true);
-        assert!(res.is_ok(), format!("{:?}", res));
+        assert!(res.is_ok(), "{:?}", res);
     }
 }

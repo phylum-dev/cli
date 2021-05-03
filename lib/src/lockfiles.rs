@@ -87,6 +87,7 @@ impl Parseable for GemLock {
 }
 
 mod tests {
+    #[cfg(test)]
     use super::*;
 
     #[test]
