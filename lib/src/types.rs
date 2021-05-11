@@ -15,8 +15,8 @@ pub type PackageId = String;
 pub const API_PATH: &str = "api/v0";
 pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
-#[serde(rename_all = "lowercase")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum PackageType {
     Npm,
     PyPi,

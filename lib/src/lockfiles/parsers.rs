@@ -111,7 +111,7 @@ pub mod gem {
         let pkgs = consumed
             .lines()
             .map(|l| package(l))
-            .filter_map(|x| x)
+            .flatten()
             .collect::<Vec<_>>();
         Ok((i, pkgs))
     }
