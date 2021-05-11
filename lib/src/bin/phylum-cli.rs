@@ -216,7 +216,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
 
     let mut label = None;
 
-    if let Some(matches) = matches.subcommand_matches("submit") {
+    if let Some(matches) = matches.subcommand_matches("analyze") {
         let pkg = parse_package(matches, &request_type);
         request_type = pkg.r#type.to_owned();
         packages.push(pkg);
@@ -922,7 +922,7 @@ fn main() {
     }
 
     let should_projects = matches.subcommand_matches("projects").is_some();
-    let should_submit = matches.subcommand_matches("submit").is_some()
+    let should_submit = matches.subcommand_matches("analyze").is_some()
         || matches.subcommand_matches("batch").is_some();
     let should_get_history = matches.subcommand_matches("history").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();

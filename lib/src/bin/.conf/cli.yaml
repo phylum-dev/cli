@@ -118,37 +118,40 @@ subcommands:
 
     - ping:
         about: Ping the remote system to verify it is available
-    - submit:
-        about: Submits a request to the processing system
+    - init:
+        about: Initialize a new project
         args:
-            - name:
-                short: n
-                help: Package name
+            - project:
+                short: p
+                help: The project name.
                 takes_value: true
                 required: true
-            - version:
-                short: v
-                help: Package version
-                takes_value: true
-                required: true
-            - type:
-                short: t
-                help: Package type (`npm`, `ruby`, etc)
-                takes_value: true
-                required: false
-            - low-priority: 
-                short: L
-                takes_value: false
-                required: false
-            - synch: 
-                short: S
-                help: "After submitting a request, immediately request status (default: false)"
-                takes_value: false
+    - analyze:
+        about: Submit a request for analysis to the processing system
+        args:
+            - LOCKFILE:
+                help: "The package lock file to submit."
                 required: false
             - label:
                 short: l
                 takes_value: true
                 required: false
+            - synch: 
+                short: S
+                long: synch
+                help: "After submitting a request, immediately request status (default: false)"
+                takes_value: false
+                required: false
+            - verbose:
+                short: V 
+                long: verbose
+                help: Increase verbosity of api response.
+                takes_value: false
+                required: false
+            - json:
+                short: j
+                long: json
+                help: "Produce output in json format (default: false)"
     - batch:
         about: Submits a batch of requests to the processing system
         args:
