@@ -44,6 +44,12 @@ impl PhylumApi {
         Ok(resp.id)
     }
 
+    /// Get a list of projects
+    pub fn get_projects(&mut self) -> Result<Vec<ProjectGetRequest>, Error> {
+        let resp: Vec<ProjectGetRequest> = self.client.get(())?;
+        Ok(resp)
+    }
+
     /// Register new user
     pub fn register(&mut self, email: &str, password: &str, name: &str) -> Result<UserId, Error> {
         let req = RegisterRequest {
@@ -153,9 +159,18 @@ impl PhylumApi {
     }
 
     /// Get the status of all jobs
-    pub fn get_status(&mut self) -> Result<Vec<JobDescriptor>, Error> {
-        let resp: AllJobsStatusResponse = self.client.get(())?;
-        Ok(resp.jobs)
+    pub fn get_status(&mut self) -> Result<AllJobsStatusResponse, Error> {
+        let resp: AllJobsStatusResponse = self.client.get(30)?;
+        Ok(resp)
+    }
+
+    /// Get the details of a specific project
+    pub fn get_project_details(
+        &mut self,
+        project_name: &str,
+    ) -> Result<ProjectGetDetailsRequest, Error> {
+        let resp: ProjectGetDetailsRequest = self.client.get(project_name)?;
+        Ok(resp)
     }
 
     /// Get package details
@@ -269,33 +284,56 @@ mod tests {
 
     #[test]
     fn get_status() {
-        let _m = mock("GET", "/api/v0/job")
+        let _m = mock("GET", "/api/v0/job/?limit=30&verbose=1")
             .with_status(200)
             .with_header("content-type", "application-json")
             .with_body(
                 r#"
-            [[
                 {
-                  "job_id": "f8e8cb21-a4c0-4718-9cd2-8f631e95b951",
-                  "packages": [
-                    {
-                      "name": "esmalo",
-                      "version": "1.0.0",
-                      "type": "npm"
-                    }
-                  ]
-                },
-                {
-                  "job_id": "1d1ecd1d-94af-4841-bf55-f5506b4f8f9f",
-                  "packages": [
-                    {
-                      "name": "esmalo",
-                      "version": "1.0.0",
-                      "type": "npm"
-                    }
-                  ]
-                }
-            ]]"#,
+                    "count": 1,
+                    "jobs": [
+                        {
+                            "date": "Mon, 17 May 2021 17:39:34 GMT",
+                            "job_id": "e0ea0e13-f5f1-4142-85b8-7aa22bfb984f",
+                            "label": "uncategorized",
+                            "num_dependencies": 14,
+                            "packages": [
+                                {
+                                    "name": "ansi-red",
+                                    "type": "npm",
+                                    "version": "0.1.1"
+                                }
+                             ],
+                            "msg": "Project met threshold requirements",
+                            "pass": true,
+                            "project": "test-project",
+                            "total_jobs": 1,
+                            "score": 1.0,
+                            "ecosystem": "npm"
+                        },
+                       {
+                            "date": "Mon, 17 May 2021 17:39:34 GMT",
+                            "job_id": "f8e8cb21-a4c0-4718-9cd2-8f631e95b951",
+                            "label": "uncategorized",
+                            "num_dependencies": 14,
+                            "packages": [
+                                {
+                                    "name": "ansi-red",
+                                    "type": "npm",
+                                    "version": "0.1.1"
+                                }
+                             ],
+                            "msg": "Project met threshold requirements",
+                            "pass": true,
+                            "project": "test-project",
+                            "total_jobs": 1,
+                            "score": 1.0,
+                            "ecosystem": "npm"
+                        }
+
+                    ],
+                    "total_jobs": 1
+                }"#,
             )
             .create();
 
@@ -356,7 +394,7 @@ mod tests {
         .with_body(
             r#"
             {
-                "id": "59482a54-423b-448d-8325-f171c9dc336b",
+                "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
                 "created_at": 1603311564,
                 "status": "complete",
@@ -396,7 +434,7 @@ mod tests {
         .with_body(
             r#"
             {
-                "id": "59482a54-423b-448d-8325-f171c9dc336b",
+                "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
                 "created_at": 1603311564,
                 "status": "incomplete",
@@ -435,7 +473,7 @@ mod tests {
         .with_body(
             r#"
             {
-                "id": "59482a54-423b-448d-8325-f171c9dc336b",
+                "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
                 "created_at": 1603311564,
                 "score": 1.0,
