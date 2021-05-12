@@ -45,7 +45,7 @@ fi
 if ! grep -q '.phylum/:\$PATH' $HOME/.bashrc;
 then
   echo '[*] Updating path to include ~/.phylum'
-  echo 'export PATH="$HOME/.phylum/:$PATH"' >> ${HOME}/.bashrc
+  echo 'export PATH="$HOME/.phylum:$PATH"' >> ${HOME}/.bashrc
 fi
 
 if ! grep -q 'alias ph=' $HOME/.bashrc ;
