@@ -48,8 +48,10 @@ macro_rules! print_user_failure {
 
 fn print_response<T>(resp: &Result<T, phylum_cli::Error>, pretty: bool)
 where
-    T: Serialize + Renderable,
+    T: std::fmt::Debug + Serialize + Renderable,
 {
+    log::debug!("==> {:?}", resp);
+
     match resp {
         Ok(resp) => {
             if pretty {
@@ -128,46 +130,57 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     0
 }
 
-fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::ArgMatches) -> i32 {
+fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::ArgMatches, job: Option<JobId>) -> i32 {
     let mut exit_status: i32 = 0;
 
-    if let Some(matches) = matches.subcommand_matches("status") {
+    let mut check_score = |thresh, score| {
+        if let Some(score) = score {
+            if score < thresh {
+                exit_status = STATUS_THRESHOLD_BREACHED;
+            }
+        } 
+    };
+
+    let display_settings = |matches: &ArgMatches| {
         let pretty_print = !matches.is_present("json");
-        let mut threshold: f64 = 0.0;
-        if let Some(thresh) = matches.value_of("threshold") {
-            threshold = thresh.parse::<f64>().unwrap_or_default();
-        };
+        let verbose = matches.is_present("verbose");
+        let threshold = matches
+            .value_of("threshold")
+            .and_then(|t| t.parse::<f64>().ok())
+            .unwrap_or(0.0);
+
+        (verbose, pretty_print, threshold)
+    };
+
+    let mut handle_job_status = |job_id, thresh, verbose, pretty, summarize| {
+        if verbose {
+            let resp = api.get_job_status_ext(&job_id);
+            print_response(&resp, pretty);
+            if let Ok(resp) = resp {
+                for p in resp.packages {
+                    check_score(thresh, p.basic_status.package_score);
+                }
+            }
+        } else {
+            let resp = api.get_job_status(&job_id);
+            print_response(&resp, pretty);
+            if let Ok(resp) = resp {
+                for p in resp.packages {
+                    check_score(thresh, p.package_score);
+                }
+            }
+        }
+    };
+
+    if let Some(matches) = matches.subcommand_matches("status") {
+        let (pretty_print, verbose, threshold) = display_settings(matches);
+
         if let Some(request_id) = matches.value_of("request_id") {
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
+            
+            handle_job_status(request_id, threshold, verbose, pretty_print, false);
 
-            if matches.is_present("verbose") {
-                let resp = api.get_job_status_ext(&request_id);
-                log::debug!("==> {:?}", resp);
-                print_response(&resp, pretty_print);
-                if let Ok(resp) = resp {
-                    for p in resp.packages {
-                        if let Some(score) = p.basic_status.package_score {
-                            if score < threshold {
-                                exit_status = STATUS_THRESHOLD_BREACHED;
-                            }
-                        }
-                    }
-                }
-            } else {
-                let resp = api.get_job_status(&request_id);
-                log::debug!("==> {:?}", resp);
-                print_response(&resp, pretty_print);
-                if let Ok(resp) = resp {
-                    for p in resp.packages {
-                        if let Some(score) = p.package_score {
-                            if score < threshold {
-                                exit_status = STATUS_THRESHOLD_BREACHED;
-                            }
-                        }
-                    }
-                }
-            }
         } else if matches.is_present("name") {
             if !matches.is_present("version") {
                 print_user_failure!("A version is required when querying by package");
@@ -175,20 +188,18 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             }
             let pkg = parse_package(matches, &req_type);
             let resp = api.get_package_details(&pkg);
-            log::debug!("==> {:?}", resp);
             print_response(&resp, pretty_print);
             if let Ok(resp) = resp {
-                if let Some(score) = resp.basic_status.package_score {
-                    if score < threshold {
-                        exit_status = STATUS_THRESHOLD_BREACHED;
-                    }
-                }
+                check_score(threshold, resp.basic_status.package_score);
             }
         } else {
             // get everything
             let resp = api.get_status();
             log::debug!("==> {:?}", resp);
         }
+    } else if let Some(matches) = matches.subcommand_matches("analyze") {
+        let (pretty_print, verbose, threshold) = display_settings(matches);
+        handle_job_status(job.unwrap(), threshold, verbose, pretty_print, true);
     }
 
     exit_status
@@ -278,11 +289,14 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
             label.map(|s| s.to_string()),
         )
         .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
-    if synch {
-        exit_status = handle_status(api, &request_type, matches);
-    }
-    log::info!("Response => {:?}", resp);
+
+    log::debug!("Response => {:?}", resp);
     print_user_success!("Job ID: {}", resp);
+
+    if synch {
+        exit_status = handle_status(api, &request_type, matches, Some(resp));
+    }
+
     exit_status
 }
 
@@ -1010,13 +1024,14 @@ fn main() {
         exit_status = handle_submission(&mut api, config, matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
         exit_status = handle_history(&mut api, config, matches);
+    } else if should_get_status {
+        exit_status = handle_status(&mut api, &config.request_type, matches, None);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
             let resp = api.cancel(&request_id);
-            log::info!("==> {:?}", resp);
             print_response(&resp, pretty_print);
         }
     } else if should_do_heuristics {
@@ -1031,7 +1046,6 @@ fn main() {
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<String>>();
             let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
-            log::info!("==> {:?}", resp);
             print_response(&resp, pretty_print);
         } else {
             log::info!("Querying heuristics");
