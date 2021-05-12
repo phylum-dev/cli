@@ -859,6 +859,17 @@ fn print_update_message() {
     println!("{:-^50}\n\n", "");
 }
 
+fn subcommand_help<'a>(mut app: App<'a>) -> impl FnMut(&str) -> () + 'a {
+    move |s| {
+        for sc in app.get_subcommands_mut() {
+            if sc.get_name() == s {
+                let _ = sc.print_help();
+                break;
+            }
+        }
+    }
+}
+
 fn main() {
     env_logger::init();
 
@@ -867,12 +878,22 @@ fn main() {
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::SubcommandRequiredElseHelp);
     let ver = &app.render_version();
+
+    let mut print_sc_help = subcommand_help(app.clone());
+
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
 
     let latest_version = get_latest_version();
     if matches.subcommand_matches("update").is_none() && needs_update(&latest_version, ver) {
         print_update_message();
+    }
+
+    if let Some(matches) = matches.subcommand_matches("analyze") {
+        if !matches.is_present("INPUT") {
+            print_sc_help("analyze");
+            process::exit(0);
+        }
     }
 
     // TODO: determine from options
