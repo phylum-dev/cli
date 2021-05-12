@@ -24,6 +24,16 @@ pub enum PackageType {
     Ruby,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectThresholds {
+    pub author: f32,
+    pub engineering: f32,
+    pub license: f32,
+    pub malicious: f32,
+    pub total: f32,
+    pub vulnerability: f32,
+}
+
 impl FromStr for PackageType {
     type Err = ();
 
@@ -88,6 +98,15 @@ pub struct ApiToken {
     pub user_id: UserId,
     pub name: Option<String>,
     pub created: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Projecct {
+    pub score: u32,
+    pub passing: bool,
+    pub name: String,
+    pub id: ProjectId,
+    pub last_updated: u64,
 }
 
 /// PUT /authenticate/register
@@ -213,11 +232,13 @@ impl RestPath<()> for PingResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AllJobsStatusResponse {
     pub jobs: Vec<JobDescriptor>,
+    pub total_jobs: u32,
+    pub count: u32,
 }
 
-impl RestPath<()> for AllJobsStatusResponse {
-    fn get_path(_: ()) -> Result<String, Error> {
-        Ok(format!("{}/job", API_PATH))
+impl RestPath<u32> for AllJobsStatusResponse {
+    fn get_path(limit: u32) -> Result<String, Error> {
+        Ok(format!("{}/job/?limit={}&verbose=1", API_PATH, limit))
     }
 }
 
@@ -251,6 +272,41 @@ impl<'a> RestPath<PackageDescriptor> for PackageStatusExtended {
         let name_escaped = pkg.name.replace("/", "~");
         let endpoint = format!("{}/{}/{}", pkg.r#type, name_escaped, pkg.version);
         Ok(format!("{}/job/packages/{}", API_PATH, endpoint))
+    }
+}
+
+/// GET /projects/overview
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectGetRequest {
+    pub name: String,
+    pub id: String,
+    pub updated_at: String,
+}
+
+impl RestPath<()> for Vec<ProjectGetRequest> {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/projects/overview", API_PATH))
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectGetResponse {
+    pub id: ProjectId,
+}
+
+/// GET /projects/<project-id>
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectGetDetailsRequest {
+    pub name: String,
+    pub id: String,
+    pub ecosystem: String,
+    pub thresholds: ProjectThresholds,
+    pub jobs: Vec<JobDescriptor>,
+}
+
+impl RestPath<&str> for ProjectGetDetailsRequest {
+    fn get_path(pkg_id: &str) -> Result<String, Error> {
+        Ok(format!("{}/job/projects/name/{}", API_PATH, pkg_id))
     }
 }
 
@@ -312,7 +368,15 @@ pub struct PackageDescriptor {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct JobDescriptor {
     pub job_id: JobId,
+    pub project: String,
+    pub label: String,
+    pub num_dependencies: u32,
+    pub score: f64,
     pub packages: Vec<PackageDescriptor>,
+    pub pass: bool,
+    pub msg: String,
+    pub date: String,
+    pub ecosystem: String,
 }
 
 /*
@@ -346,7 +410,7 @@ pub struct PackageStatusExtended {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestStatusResponse<T> {
-    pub id: JobId,
+    pub job_id: JobId,
     pub user_id: UserId,
     pub created_at: u64, // epoch seconds
     pub status: Status,

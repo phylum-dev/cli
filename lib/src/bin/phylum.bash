@@ -31,6 +31,9 @@ _phylum() {
             heuristics)
                 cmd+="__heuristics"
                 ;;
+            history)
+                cmd+="__history"
+                ;;
             init)
                 cmd+="__init"
                 ;;
@@ -45,6 +48,9 @@ _phylum() {
                 ;;
             ping)
                 cmd+="__ping"
+                ;;
+            project)
+                cmd+="__project"
                 ;;
             register)
                 cmd+="__register"
@@ -71,7 +77,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  update auth ping init submit batch status cancel heuristics version help"
+            opts=" -c -t -h -V  --config --timeout --help --version  update history auth ping init submit batch status cancel heuristics version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -318,6 +324,36 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__history)
+            opts=" -h -V  --help --version  <job_id> project"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__history__project)
+            opts=" -h -V  --help --version  <project_name> <job_id> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
                 *)
                     COMPREPLY=()
                     ;;

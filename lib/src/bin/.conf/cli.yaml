@@ -18,7 +18,25 @@ args:
         takes_value: true
 subcommands:
     - update:
-        about: Check for a new release of the Phylum CLI tool.
+        about: Check for a new release of the Phylum CLI tool
+    - history:
+        about: Return information about historical scans
+        args:
+            - job_id:
+                required: false
+                takes_value: true
+        subcommands:
+            - project:
+                about: Shows a list of projeccts associated with the user
+                args:
+                    - project_name:
+                        required: false
+                        takes_value: true
+                        index: 1
+                    - job_id:
+                        required: false
+                        takes_value: true
+                        index: 2
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:

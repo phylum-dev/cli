@@ -81,6 +81,47 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
     }
 }
 
+/// Handle the history subcommand.
+///
+/// This allows us to list last N job runs, list the projects, list runs
+/// associated with projects, and get the detailed run results for a specific
+/// job run.
+fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> i32 {
+    let pretty_print = !matches.is_present("json");
+
+    if let Some(matches) = matches.subcommand_matches("project") {
+        let project_name = matches.value_of("project_name");
+        let project_job_id = matches.value_of("job_id");
+
+        if project_job_id.is_some() && project_name.is_none() {
+            println!("TODO: Need functionality from `analyze`");
+        } else if project_name.is_some() {
+            if project_job_id.is_none() {
+                let resp = api.get_project_details(project_name.unwrap());
+                print_response(&resp, pretty_print);
+            } else {
+                println!("TODO: Need functionality from `analyze`");
+            }
+        } else {
+            let resp = api.get_projects();
+            let proj_title = format!("{}", Blue.paint("Project Name"));
+            let id_title = format!("{}", Blue.paint("Project ID"));
+            println!("{:<38}{}", proj_title, id_title);
+            print_response(&resp, pretty_print);
+            println!();
+        }
+    } else {
+        println!(
+            "Projects and most recent run for {}\n",
+            Blue.paint(&config.auth_info.user)
+        );
+        let resp = api.get_status();
+        print_response(&resp, pretty_print);
+    }
+
+    0
+}
+
 fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::ArgMatches) -> i32 {
     let mut exit_status: i32 = 0;
 
@@ -659,7 +700,7 @@ fn main() {
     let should_init = matches.subcommand_matches("init").is_some();
     let should_submit = matches.subcommand_matches("submit").is_some()
         || matches.subcommand_matches("batch").is_some();
-    let should_get_status = matches.subcommand_matches("status").is_some();
+    let should_get_history = matches.subcommand_matches("history").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
     let should_do_heuristics = matches.subcommand_matches("heuristics").is_some();
 
@@ -672,7 +713,7 @@ fn main() {
 
     if should_init
         || should_submit
-        || should_get_status
+        || should_get_history
         || should_cancel
         || should_manage_tokens
         || should_do_heuristics
@@ -735,8 +776,8 @@ fn main() {
         };
     } else if should_submit {
         exit_status = handle_submission(&mut api, config, matches);
-    } else if should_get_status {
-        exit_status = handle_status(&mut api, &config.request_type, matches);
+    } else if let Some(matches) = matches.subcommand_matches("history") {
+        exit_status = handle_history(&mut api, config, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
