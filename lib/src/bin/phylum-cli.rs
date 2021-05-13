@@ -7,10 +7,10 @@ use serde::Serialize;
 use spinners::{Spinner, Spinners};
 use std::error::Error;
 use std::fs;
-use std::io::ErrorKind;
+use std::io;
 use std::io::Write;
-use std::io::{self, BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -20,6 +20,8 @@ extern crate serde_json;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
+use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
+use phylum_cli::lockfiles::Parseable;
 use phylum_cli::render::Renderable;
 use phylum_cli::types::*;
 
@@ -155,7 +157,12 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
     let mut handle_job_status = |job_id, thresh, verbose, pretty, summarize| {
         if verbose {
             let resp = api.get_job_status_ext(&job_id);
-            print_response(&resp, pretty);
+            if summarize {
+                // TODO: summarize the response 
+                println!("Summary goes here")
+            } else {
+                print_response(&resp, pretty);
+            }
             if let Ok(resp) = resp {
                 for p in resp.packages {
                     check_score(thresh, p.basic_status.package_score);
@@ -163,7 +170,12 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             }
         } else {
             let resp = api.get_job_status(&job_id);
-            print_response(&resp, pretty);
+            if summarize {
+                // TODO: summarize the response 
+                println!("Summary goes here")
+            } else {
+                print_response(&resp, pretty);
+            }
             if let Ok(resp) = resp {
                 for p in resp.packages {
                     check_score(thresh, p.package_score);
@@ -177,14 +189,13 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
 
         if let Some(request_id) = matches.value_of("request_id") {
             let request_id = JobId::from_str(&request_id)
-                .unwrap_or_else(|err| exit(err, "Received invalid request id", -3));
+                .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -3));
             
             handle_job_status(request_id, threshold, verbose, pretty_print, false);
 
         } else if matches.is_present("name") {
             if !matches.is_present("version") {
-                print_user_failure!("A version is required when querying by package");
-                process::exit(-3);
+                exit("A version is required when querying by package", -3);
             }
             let pkg = parse_package(matches, &req_type);
             let resp = api.get_package_details(&pkg);
@@ -205,15 +216,56 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
     exit_status
 }
 
+/// Determine the lockfile type based on its name and parse
+/// accordingly to obtain the packages from it
+fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, PackageType)> {
+    let path = Path::new(path);
+    let file = path.file_name()?.to_str()?;
+
+    let res = match file {
+        "Gemfile.lock" => {
+            let parser = GemLock::new(path).ok()?;
+            parser
+                .parse()
+                .ok()
+                .map(|pkgs| (pkgs, PackageType::Ruby))
+        },
+        "package-lock.json" => {
+            let parser = PackageLock::new(path).ok()?;
+            parser
+                .parse()
+                .ok()
+                .map(|pkgs| (pkgs, PackageType::Npm))
+        },
+        "yarn.lock" => {
+            let parser = YarnLock::new(path).ok()?;
+            parser
+                .parse()
+                .ok()
+                .map(|pkgs| (pkgs, PackageType::Npm))
+        },
+        _ => None
+    };
+
+    let pkg_count = res
+        .as_ref()
+        .map(|p| p.0.len())
+        .unwrap_or_default();
+
+    log::debug!("Read {} packages from file `{}`", pkg_count, file);
+
+    res
+}
+
+/// Handles submission of packages to the system for analysis and
+/// displays summary information about the submitted package(s)
 fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatches) -> i32 {
     let mut exit_status: i32 = 0;
 
-    // If any packages were listed in the config file, include
-    //  those as well.
-    let mut packages = config.packages.unwrap_or_default();
-    let mut request_type = config.request_type;
-    let mut is_user = true;
+    let mut packages = vec![];
+    let mut request_type = config.request_type; // default request type
     let mut synch = true;
+    let mut label = None;
 
     let project = find_project_conf(".")
         .and_then(|s| parse_config(&s).ok())
@@ -221,29 +273,30 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
         .unwrap_or_else(|| {
             print_user_failure!(
                 "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
-            );
-            process::exit(-1)
-        });
-
-    let mut label = None;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
-        let pkg = parse_package(matches, &request_type);
-        request_type = pkg.r#type.to_owned();
-        packages.push(pkg);
-        is_user = !matches.is_present("low-priority");
+        // Should never get here if `INPUT` was not specified
+        let lockfile = matches.value_of("LOCKFILE").unwrap();
+        let res = get_packages_from_lockfile(lockfile)
+            .unwrap_or_else(|| 
+                exit("Unable to locate any valid package in package lockfile", -1)
+            );
+
+        packages = res.0;
+        request_type = res.1;
+
         synch = !matches.is_present("synch");
         label = matches.value_of("label");
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         let mut eof = false;
         let mut line = String::new();
-        let mut reader: Box<dyn BufRead> = if let Some(file) = matches.value_of("file") {
+        let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.value_of("file") {
             // read entries from the file
-            Box::new(BufReader::new(std::fs::File::open(file).unwrap()))
+            Box::new(io::BufReader::new(std::fs::File::open(file).unwrap()))
         } else {
             // read from stdin
             log::info!("Waiting on stdin...");
-            Box::new(BufReader::new(io::stdin()))
+            Box::new(io::BufReader::new(io::stdin()))
         };
 
         // If a package type was provided on the command line, prefer that
@@ -272,23 +325,23 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
                     line.clear();
                 }
                 Err(err) => {
-                    exit(err, "Error reading input", -6);
+                    err_exit(err, "Error reading input", -6);
                 }
             }
         }
-        is_user = !matches.is_present("low-priority");
         synch = !matches.is_present("synch");
     }
+
     log::debug!("Submitting request...");
     let resp = api
         .submit_request(
             &request_type,
             &packages,
-            is_user,
+            false,
             project,
             label.map(|s| s.to_string()),
         )
-        .unwrap_or_else(|err| exit(err, "Error submitting package", -2));
+        .unwrap_or_else(|err| err_exit(err, "Error submitting package", -2));
 
     log::debug!("Response => {:?}", resp);
     print_user_success!("Job ID: {}", resp);
@@ -332,7 +385,7 @@ fn handle_auth_register(
 
     api.register(email.as_str(), password.as_str(), name.as_str())
         .unwrap_or_else(|err| {
-            exit(err, "Error registering user", -1);
+            err_exit(err, "Error registering user", -1);
         });
 
     config.auth_info.user = email;
@@ -376,8 +429,7 @@ fn handle_auth_login(
     // First login with the provided credentials. If the login is successful,
     // save the authentication information in our settings file.
     api.authenticate(&email, &password).unwrap_or_else(|err| {
-        print_user_failure!("{}", err);
-        process::exit(-1);
+        err_exit(err, "", -1);
     });
 
     config.auth_info.user = email;
@@ -422,7 +474,7 @@ fn handle_auth_keys(
     } else if let Some(action) = matches.subcommand_matches("remove") {
         let token_id = action.value_of("key_id").unwrap();
         let token = Key::from_str(token_id)
-            .unwrap_or_else(|err| exit(err, "Received invalid token id", -5));
+            .unwrap_or_else(|err| err_exit(err, "Received invalid token id", -5));
         let resp = api.delete_api_token(&token);
         log::info!("==> {:?}", resp);
         config.auth_info.api_token = None;
@@ -838,7 +890,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     // binary file, as well as the bash file.
     if bin.is_none() || bash.is_none() {
         return Err(std::io::Error::new(
-            ErrorKind::Other,
+            io::ErrorKind::Other,
             "Failed to download update files",
         ));
     }
@@ -904,7 +956,7 @@ fn main() {
     }
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
-        if !matches.is_present("INPUT") {
+        if !matches.is_present("LOCKFILE") {
             print_sc_help("analyze");
             process::exit(0);
         }
@@ -920,34 +972,27 @@ fn main() {
         process::exit(0);
     }
     let home_path = home_dir().unwrap_or_else(|| {
-        log::error!("Couldn't find the user's home directory");
-        process::exit(-1);
+        exit("Couldn't find the user's home directory", -1);
     });
     let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
 
     let config_path = matches.value_of("config").unwrap_or_else(|| {
         settings_path.to_str().unwrap_or_else(|| {
             log::error!("Unicode parsing error in configuration file path");
-            print_user_failure!(
-                "Unable to read path to configuration file at '{:?}'",
-                settings_path
-            );
-            process::exit(-1)
+            exit(&format!("Unable to read path to configuration file at '{:?}'", settings_path), -1);
         })
     });
     log::debug!("Reading config from {}", config_path);
 
     let mut config: Config = read_configuration(config_path).unwrap_or_else(|err| {
-        log::error!("Failed to read configuration: {:?}", err);
-        print_user_failure!("Failed to read configuration [`{}`]: {}", config_path, err);
-        process::exit(-1)
+        exit(&format!("Failed to read configuration at `{}`: {}", config_path, err), -1);
     });
 
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
     let mut api = PhylumApi::new(&config.connection.uri, timeout).unwrap_or_else(|err| {
-        exit(err, "Error creating client", -1);
+        err_exit(err, "Error creating client", -1);
     });
 
     if matches.subcommand_matches("ping").is_some() {
@@ -995,7 +1040,7 @@ fn main() {
             let resp = api
                 .authenticate(&config.auth_info.user, &config.auth_info.pass)
                 .unwrap_or_else(|err| {
-                    exit(err, "Error attempting to authenticate", -1);
+                    err_exit(err, "Error attempting to authenticate", -1);
                 });
 
             log::info!("==> {:?}", resp);
@@ -1030,7 +1075,7 @@ fn main() {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
-                .unwrap_or_else(|err| exit(err, "Received invalid request id", -4));
+                .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -4));
             let resp = api.cancel(&request_id);
             print_response(&resp, pretty_print);
         }
@@ -1058,8 +1103,14 @@ fn main() {
     process::exit(exit_status);
 }
 
-fn exit(error: impl Error, message: &str, code: i32) -> ! {
+fn err_exit(error: impl Error, message: &str, code: i32) -> ! {
     log::error!("{}: {:?}", message, error);
+    print_user_failure!("Error: {}", message);
+    process::exit(code);
+}
+
+fn exit( message: &str, code: i32) -> ! {
+    log::warn!("{}", message);
     print_user_failure!("Error: {}", message);
     process::exit(code);
 }
