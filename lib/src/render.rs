@@ -228,6 +228,12 @@ impl Renderable for RequestStatusResponse<PackageStatusExtended> {
     }
 }
 
+impl Renderable for PackageStatus {
+    fn render(&self) -> String {
+        "TODO".to_string()
+    }
+}
+
 impl Renderable for PackageStatusExtended {
     fn render(&self) -> String {
         "TODO".to_string()

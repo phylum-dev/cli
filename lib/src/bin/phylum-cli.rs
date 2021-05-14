@@ -22,10 +22,11 @@ use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
 use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
 use phylum_cli::lockfiles::Parseable;
-use phylum_cli::render::Renderable;
+use phylum_cli::summarize::Summarize;
 use phylum_cli::types::*;
 
 const STATUS_THRESHOLD_BREACHED: i32 = 1;
+
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
@@ -48,16 +49,16 @@ macro_rules! print_user_failure {
     }
 }
 
-fn print_response<T>(resp: &Result<T, phylum_cli::Error>, pretty: bool)
+fn print_response<T>(resp: &Result<T, phylum_cli::Error>, pretty_print: bool)
 where
-    T: std::fmt::Debug + Serialize + Renderable,
+    T: std::fmt::Debug + Serialize + Summarize,
 {
     log::debug!("==> {:?}", resp);
 
     match resp {
         Ok(resp) => {
-            if pretty {
-                println!("{}", resp.render())
+            if pretty_print {
+                println!("{}", resp.summarize());
             } else {
                 println!("{}", serde_json::to_string_pretty(&resp).unwrap());
             }
@@ -154,15 +155,10 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
         (verbose, pretty_print, threshold)
     };
 
-    let mut handle_job_status = |job_id, thresh, verbose, pretty, summarize| {
+    let mut handle_job_status = |job_id, thresh, verbose, display_opts| {
         if verbose {
             let resp = api.get_job_status_ext(&job_id);
-            if summarize {
-                // TODO: summarize the response 
-                println!("Summary goes here")
-            } else {
-                print_response(&resp, pretty);
-            }
+            print_response(&resp, display_opts);
             if let Ok(resp) = resp {
                 for p in resp.packages {
                     check_score(thresh, p.basic_status.package_score);
@@ -170,12 +166,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             }
         } else {
             let resp = api.get_job_status(&job_id);
-            if summarize {
-                // TODO: summarize the response 
-                println!("Summary goes here")
-            } else {
-                print_response(&resp, pretty);
-            }
+            print_response(&resp, display_opts);
             if let Ok(resp) = resp {
                 for p in resp.packages {
                     check_score(thresh, p.package_score);
@@ -191,7 +182,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -3));
             
-            handle_job_status(request_id, threshold, verbose, pretty_print, false);
+            handle_job_status(request_id, threshold, verbose, pretty_print);
 
         } else if matches.is_present("name") {
             if !matches.is_present("version") {
@@ -210,7 +201,7 @@ fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::Arg
         }
     } else if let Some(matches) = matches.subcommand_matches("analyze") {
         let (pretty_print, verbose, threshold) = display_settings(matches);
-        handle_job_status(job.unwrap(), threshold, verbose, pretty_print, true);
+        handle_job_status(job.unwrap(), threshold, verbose, pretty_print);
     }
 
     exit_status
@@ -395,7 +386,7 @@ fn handle_auth_register(
         print_user_failure!("Failed to save user credentials: {}", err);
     });
 
-    Ok("Successfully registred a new account!".to_string())
+    Ok("Successfully registered a new account!".to_string())
 }
 
 /// Authenticate a user with email and password.
@@ -531,6 +522,7 @@ fn handle_auth(
     config: &mut Config,
     config_path: &str,
     matches: &clap::ArgMatches,
+    app_helper: &mut App,
 ) {
     if matches.subcommand_matches("register").is_some() {
         match handle_auth_register(api, config, config_path) {
@@ -557,11 +549,7 @@ fn handle_auth(
     } else if matches.subcommand_matches("status").is_some() {
         handle_auth_status(config);
     } else {
-        // TODO: What if we don't have a subcommand? Clap will give us the help
-        //       output if the top level subcommands are missing, but not for
-        //       sub-subcommands, i.e. `phylum auth` won't produce the help
-        //       output.
-        print_user_failure!("Missing subcommand.");
+        print_sc_help(app_helper, "auth");
     }
 }
 
@@ -925,15 +913,14 @@ fn print_update_message() {
     println!("{:-^50}\n\n", "");
 }
 
-fn subcommand_help<'a>(mut app: App<'a>) -> impl FnMut(&str) -> () + 'a {
-    move |s| {
-        for sc in app.get_subcommands_mut() {
-            if sc.get_name() == s {
-                let _ = sc.print_help();
-                break;
-            }
+fn print_sc_help(app: &mut App, subcommand: &str) {
+    for sc in app.get_subcommands_mut() {
+        if sc.get_name() == subcommand {
+            let _ = sc.print_help();
+            break;
         }
     }
+    println!();
 }
 
 fn main() {
@@ -945,7 +932,8 @@ fn main() {
         .setting(AppSettings::SubcommandRequiredElseHelp);
     let ver = &app.render_version();
 
-    let mut print_sc_help = subcommand_help(app.clone());
+    // Required for printing help messages since `get_matches()` consumes `App`
+    let app_helper = &mut app.clone();
 
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
@@ -957,13 +945,10 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
-            print_sc_help("analyze");
+            print_sc_help(app_helper, "analyze");
             process::exit(0);
         }
     }
-
-    // TODO: determine from options
-    let pretty_print = false; // json output
 
     if matches.subcommand_matches("version").is_some() {
         let name = yml["name"].as_str().unwrap_or("");
@@ -997,7 +982,7 @@ fn main() {
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
-        print_response(&resp, pretty_print);
+        print_response(&resp, true);
         process::exit(0);
     }
 
@@ -1050,7 +1035,7 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("projects") {
         exit_status = handle_projects(&mut api, matches);
     } else if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(&mut api, &mut config, config_path, matches);
+        handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if matches.subcommand_matches("update").is_some() {
         match latest_version {
             Some(ver) => match update_in_place(ver) {
@@ -1077,7 +1062,7 @@ fn main() {
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -4));
             let resp = api.cancel(&request_id);
-            print_response(&resp, pretty_print);
+            print_response(&resp, true);
         }
     } else if should_do_heuristics {
         let matches = matches.subcommand_matches("heuristics").unwrap();
@@ -1091,7 +1076,7 @@ fn main() {
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<String>>();
             let resp = api.submit_heuristics(&pkg, &heuristics, matches.is_present("include-deps"));
-            print_response(&resp, pretty_print);
+            print_response(&resp, true);
         } else {
             log::info!("Querying heuristics");
             let resp = api.query_heuristics();

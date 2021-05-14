@@ -401,17 +401,13 @@ _phylum() {
             return 0
             ;;
         phylum__init)
-            opts=" -p -h -V  --help --version  "
+            opts=" -h -V  --help --version  <PROJECT> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 
-                    -p)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 *)
                     COMPREPLY=()
                     ;;

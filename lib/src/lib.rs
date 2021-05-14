@@ -3,6 +3,7 @@ pub mod config;
 pub mod lockfiles;
 pub mod render;
 pub mod restson;
+pub mod summarize;
 pub mod types;
 
 pub use restson::Error;
