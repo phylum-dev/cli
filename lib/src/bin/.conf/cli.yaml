@@ -121,11 +121,9 @@ subcommands:
     - init:
         about: Initialize a new project
         args:
-            - project:
-                short: p
+            - PROJECT:
                 help: The project name.
-                takes_value: true
-                required: true
+                required: false
     - analyze:
         about: Submit a request for analysis to the processing system
         args:
