@@ -28,15 +28,9 @@ _phylum() {
             help)
                 cmd+="__help"
                 ;;
-<<<<<<< HEAD
-            heuristics)
-                cmd+="__heuristics"
-                ;;
             history)
                 cmd+="__history"
                 ;;
-=======
->>>>>>> e5a8e6b... Add package subcommand for checking package details.
             init)
                 cmd+="__init"
                 ;;
@@ -89,24 +83,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-<<<<<<< HEAD
-<<<<<<< HEAD
-            opts=" -c -t -h -V  --config --timeout --help --version  update history projects auth ping init submit batch status cancel heuristics version help"
-=======
-=======
->>>>>>> b295b50... Add package subcommand for checking package details.
-<<<<<<< HEAD
-            opts=" -c -t -h -V  --config --timeout --help --version  update history auth ping init submit batch status cancel heuristics version help"
-=======
-            opts=" -c -t -h -V  --config --timeout --help --version  update auth ping init analyze batch status cancel heuristics version help"
->>>>>>> 6189e67... Rename `submit` to `analyze`; re-organize command args
-<<<<<<< HEAD
->>>>>>> 6fb9d7d... Rename `submit` to `analyze`; re-organize command args
-=======
-=======
-            opts=" -c -t -h -V  --config --timeout --help --version  update package auth ping init analyze batch status version help"
->>>>>>> e5a8e6b... Add package subcommand for checking package details.
->>>>>>> b295b50... Add package subcommand for checking package details.
+            opts=" -c -t -h -V  --config --timeout --help --version  update history projects package auth ping init analyze batch version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -138,7 +115,7 @@ _phylum() {
             ;;
         
         phylum__analyze)
-            opts=" -l -S -V -j -h  --synch --verbose --json --help --version  <LOCKFILE> "
+            opts=" -l -V -j -h  --verbose --json --help --version  <LOCKFILE> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -277,7 +254,7 @@ _phylum() {
             return 0
             ;;
         phylum__batch)
-            opts=" -f -t -L -S -l -h -V  --help --version  "
+            opts=" -f -t -L -l -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -306,6 +283,36 @@ _phylum() {
         phylum__help)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__history)
+            opts=" -V -j -h  --verbose --json --help --version  <JOB_ID> project"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__history__project)
+            opts=" -h -V  --help --version  <project_name> <job_id> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -356,54 +363,6 @@ _phylum() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-<<<<<<< HEAD
-        phylum__history)
-            opts=" -h -V  --help --version  <job_id> project"
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__history__project)
-            opts=" -h -V  --help --version  <project_name> <job_id> "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__init)
-            opts=" -h -V  --help --version  <PROJECT> "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-=======
->>>>>>> e5a8e6b... Add package subcommand for checking package details.
         phylum__ping)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -487,41 +446,6 @@ _phylum() {
             fi
             case "${prev}" in
                 
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__status)
-            opts=" -i -n -v -t -T -V -j -h  --verbose --json --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                    -i)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -n)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -v)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -t)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -T)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 *)
                     COMPREPLY=()
                     ;;

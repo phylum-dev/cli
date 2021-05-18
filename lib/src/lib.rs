@@ -5,8 +5,15 @@ pub mod render;
 pub mod restson;
 pub mod summarize;
 pub mod types;
+pub mod utils;
 
 pub use restson::Error;
 
 #[macro_use]
 extern crate log;
+
+#[macro_use]
+extern crate prettytable;
+
+//#[macro_use]
+//extern crate fake;

@@ -43,6 +43,12 @@ yaml-rust = "*"
 home = "0.5.3"
 chrono = { version = "^0.4", features = ["serde"] }
 nom = "6.1.2"
+prettytable-rs = "0.8.0"
+histogram = "0.6.9"
+
+## TODO: remove these when all fakes replaced
+fake = { version = "2.4", features=['derive']}
+rand = "0.8"
 
 [dev-dependencies]
 mockito = "0.27.0"

@@ -1,9 +1,12 @@
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use uuid::Uuid;
+
+use fake::Dummy;
 
 use crate::restson::{Error, RestPath};
 
@@ -39,7 +42,7 @@ impl FromStr for PackageType {
     type Err = ();
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input {
+        match input.to_lowercase().as_str() {
             "npm" => Ok(Self::Npm),
             "pypi" => Ok(Self::PyPi),
             "java" => Ok(Self::Java),
@@ -53,6 +56,17 @@ impl fmt::Display for PackageType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = format!("{:?}", self);
         write!(f, "{}", s.to_lowercase())
+    }
+}
+
+impl PackageType {
+    pub fn language(&self) -> &str {
+        match self {
+            PackageType::Npm => "Javascript",
+            PackageType::Ruby => "Ruby",
+            PackageType::PyPi => "Python",
+            PackageType::Java => "Java",
+        }
     }
 }
 
@@ -388,37 +402,6 @@ pub struct ProjectCreateResponse {
     pub id: ProjectId,
 }
 
-/// GET /heuristics
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeuristicsListResponse {
-    pub heuristics: Vec<String>,
-}
-
-/// POST /heuristics
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeuristicsSubmitRequest {
-    pub package: PackageDescriptor,
-    pub heuristics_filter: Vec<String>,
-    pub include_deps: bool,
-}
-
-impl RestPath<()> for HeuristicsSubmitRequest {
-    fn get_path(_: ()) -> Result<String, Error> {
-        Ok(format!("{}/job/heuristics", API_PATH))
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeuristicsSubmitResponse {
-    pub msg: String,
-}
-
-impl RestPath<()> for HeuristicsListResponse {
-    fn get_path(_: ()) -> Result<String, Error> {
-        Ok(format!("{}/job/heuristics", API_PATH))
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PackageDescriptor {
     pub name: String,
@@ -440,14 +423,7 @@ pub struct JobDescriptor {
     pub ecosystem: String,
 }
 
-/*
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeuristicResult {
-    score: f64,
-    data: Value, // The structure of this data is dependent on the particular heuristic
-}*/
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PackageStatus {
     pub name: String,
     pub version: String,
@@ -459,28 +435,86 @@ pub struct PackageStatus {
     pub num_vulnerabilities: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PackageStatusExtended {
     #[serde(flatten)]
     pub basic_status: PackageStatus,
     pub r#type: PackageType,
     pub dependencies: Vec<PackageDescriptor>,
     pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
-    pub heuristics: Value,           // TODO: parse this using a strong type
+    pub heuristics: HashMap<String, HeuristicResult>,
+}
+
+#[derive(Debug, Deserialize, Dummy)]
+pub enum RiskLevel {
+    Crit,
+    High,
+    Med,
+    Low,
+    Info,
+}
+
+impl fmt::Display for RiskLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = format!("{:?}", self);
+        write!(f, "{}", s.to_lowercase())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum RiskDomain {
+    MaliciousCode,
+    Vulnerabilities,
+    EngineeringRisk,
+    AuthorRisk,
+    LicenseRisk,
+}
+
+impl fmt::Display for RiskDomain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self {
+            RiskDomain::MaliciousCode => "MAL",
+            RiskDomain::Vulnerabilities => "VLN",
+            RiskDomain::EngineeringRisk => "ENG",
+            RiskDomain::AuthorRisk => "AUT",
+            RiskDomain::LicenseRisk => "LIC",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Issue {
+    pub name: String,
+    pub risk_level: RiskLevel,
+    pub risk_domain: RiskDomain,
+    pub description: String,
+    pub pkg_name: String,
+    pub pkg_version: String,
+    pub score: f64,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct HeuristicResult {
+    pub description: String,
+    pub domain: RiskDomain,
+    pub score: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestStatusResponse<T> {
     pub job_id: JobId,
+    pub ecosystem: String,
     pub user_id: UserId,
-    pub created_at: u64, // epoch seconds
+    pub user_email: String,
+    pub created_at: i64, // epoch seconds
     pub status: Status,
     pub score: f64,
     #[serde(default)]
     pub num_incomplete: u32,
     pub last_updated: u64,
-    pub project: Option<ProjectId>,
+    pub project: String,
     pub label: Option<String>,
+    pub thresholds: ProjectThresholds,
     pub packages: Vec<T>,
 }
 
