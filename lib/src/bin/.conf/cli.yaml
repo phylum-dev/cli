@@ -22,12 +22,21 @@ subcommands:
     - history:
         about: Return information about historical scans
         args:
-            - job_id:
+            - JOB_ID:
                 required: false
-                takes_value: true
+            - verbose:
+                short: V 
+                long: verbose
+                help: Increase verbosity of api response.
+                takes_value: false
+                required: false
+            - json:
+                short: j
+                long: json
+                help: "Produce output in json format (default: false)"
         subcommands:
             - project:
-                about: Shows a list of projeccts associated with the user
+                about: Shows a list of projects associated with the user
                 args:
                     - project_name:
                         required: false
@@ -153,12 +162,6 @@ subcommands:
                 short: l
                 takes_value: true
                 required: false
-            - synch: 
-                short: S
-                long: synch
-                help: "After submitting a request, immediately request status (default: false)"
-                takes_value: false
-                required: false
             - verbose:
                 short: V 
                 long: verbose
@@ -186,53 +189,10 @@ subcommands:
                 short: L
                 takes_value: false
                 required: false
-            - synch:
-                short: S
-                help: "After submitting a request, immediately request status (default: false)"
-                takes_value: false
-                required: false
             - label:
                 short: l
                 takes_value: true
                 required: false
-    - status:
-        about: Polls the system for request / job / package status
-        args:
-            - request_id:
-                short: i
-                help: Request ID
-                takes_value: true
-                required: false
-            - name:
-                short: n
-                help: Package name
-                takes_value: true
-                required: false
-            - version:
-                short: v
-                help: Package version
-                takes_value: true
-                required: false
-            - type:
-                short: t
-                help: Package type (`npm`, `ruby`, etc)
-                takes_value: true
-                required: false
-            - threshold:
-                short: T
-                help: Set a package score threshold (packages with a score below this will cause the application to exit with an error code `STATUS_THRESHOLD_BREACHED [1]`
-                takes_value: true
-                required: false
-            - verbose:
-                short: V 
-                long: verbose
-                help: Increase verbosity of api response.
-                takes_value: false
-                required: false
-            - json:
-                short: j
-                long: json
-                help: "Produce output in json format (default: false)"
     - version:
         about: Display application version
 

@@ -198,29 +198,6 @@ impl PhylumApi {
         let resp: CancelRequestResponse = self.client.delete_capture(job_id.to_owned())?;
         Ok(resp)
     }
-
-    /// List available heuristics
-    pub fn query_heuristics(&mut self) -> Result<Vec<String>, Error> {
-        let resp: HeuristicsListResponse = self.client.get(())?;
-        Ok(resp.heuristics)
-    }
-
-    /// Submit a package / packages to have heuristics run against
-    pub fn submit_heuristics(
-        &mut self,
-        pkg: &PackageDescriptor,
-        heuristics: &[String],
-        include_deps: bool,
-    ) -> Result<String, Error> {
-        let req = HeuristicsSubmitRequest {
-            package: pkg.to_owned(),
-            heuristics_filter: heuristics.to_vec(),
-            include_deps,
-        };
-        log::debug!("==> Submitting heuristics run: {:?}", req);
-        let resp: HeuristicsSubmitResponse = self.client.post_capture((), &req)?;
-        Ok(resp.msg)
-    }
 }
 
 /// Tests
@@ -372,11 +349,11 @@ mod tests {
                 "status": "complete",
                 "vulnerabilities": [],
                 "heuristics": {
-                  "sample": {
-                    "data": {},
-                    "raw_score": 10.192523726982682,
-                    "score": 0.9999625521468548
-                  }
+                    "something": {
+                        "description": "do stuff",
+                        "score": 3.14,
+                        "domain": "AuthorRisk"
+                    }
                 },
                 "dependencies": []
               }
@@ -407,6 +384,16 @@ mod tests {
             {
                 "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
+                "ecosystem": "npm",
+                "user_email": "foo@bar.com",
+                "thresholds": {
+                    "author": 0.4,
+                    "engineering": 0.2,
+                    "license": 0.5,
+                    "malicious": 0.42,
+                    "vulnerability": 0.8,
+                    "total": 0.6
+                },
                 "created_at": 1603311564,
                 "status": "complete",
                 "score": 1.0,
@@ -435,45 +422,6 @@ mod tests {
     }
 
     #[test]
-    fn get_job_status_missing_project_label() {
-        let _m = mock(
-            "GET",
-            Matcher::Regex(r"^/api/v0/job/[-\dabcdef]+$".to_string()),
-        )
-        .with_status(200)
-        .with_header("content-type", "application-json")
-        .with_body(
-            r#"
-            {
-                "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
-                "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
-                "created_at": 1603311564,
-                "status": "incomplete",
-                "last_updated": 1603311776,
-                "score": 1.0,
-                "project": null,
-                "label": null,
-                "packages": [
-                    {
-                    "name": "foo",
-                    "version": "1.0.0",
-                    "status": "incomplete",
-                    "last_updated": 1603311776,
-                    "license": null,
-                    "num_dependencies": 2,
-                    "num_vulnerabilities": 4,
-                    "package_score": null
-                    }]}"#,
-        )
-        .create();
-
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
-        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        let res = client.get_job_status(&job);
-        assert!(res.is_ok(), "{:?}", res);
-    }
-
-    #[test]
     fn get_job_status_ext() {
         let _m = mock(
             "GET",
@@ -486,6 +434,17 @@ mod tests {
             {
                 "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
+                "ecosystem": "npm",
+                "project": "some project",
+                "user_email": "foo@bar.com",
+                "thresholds": {
+                    "author": 0.4,
+                    "engineering": 0.2,
+                    "license": 0.5,
+                    "malicious": 0.42,
+                    "vulnerability": 0.8,
+                    "total": 0.6
+                },
                 "created_at": 1603311564,
                 "score": 1.0,
                 "label": "",
@@ -503,14 +462,13 @@ mod tests {
                     "package_score": 0.3,
                     "status": "incomplete",
                     "vulnerabilities": [],
-                    "heuristics": [
-                        {
-                        "data": {
-                            "foo": "bar"
-                        },
-                        "score": 3.14
+                    "heuristics": {
+                        "something": {
+                            "description": "do stuff",
+                            "score": 3.14,
+                            "domain": "EngineeringRisk"
                         }
-                    ],
+                    },
                     "dependencies": [
                         {
                         "name": "bar",
@@ -665,42 +623,6 @@ mod tests {
         let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
         let res = client.get_api_tokens();
 
-        assert!(res.is_ok(), "{:?}", res);
-    }
-
-    #[test]
-    fn list_heuristics() {
-        let _m = mock("GET", "/api/v0/job/heuristics")
-            .with_status(200)
-            .with_header("content-type", "application-json")
-            .with_body(r#"{"heuristics": ["some_heuristic", "esmalo", "typosquatting"]}"#)
-            .create();
-
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
-        let res = client.query_heuristics();
-        assert!(res.is_ok(), "{:?}", res);
-    }
-
-    #[test]
-    fn submit_heuristics() {
-        let _m = mock("POST", "/api/v0/job/heuristics")
-            .with_status(200)
-            .with_header("content-type", "application-json")
-            .with_body(r#"{"msg": "ok"}"#)
-            .create();
-
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
-        let pkg = PackageDescriptor {
-            name: "react".to_string(),
-            version: "16.13.1".to_string(),
-            r#type: PackageType::Npm,
-        };
-        let heuristics = vec!["some_heuristic", "esmalo", "typosquatting"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        let res = client.submit_heuristics(&pkg, &heuristics, true);
         assert!(res.is_ok(), "{:?}", res);
     }
 }

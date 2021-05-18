@@ -20,13 +20,10 @@ extern crate serde_json;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
-use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
 use phylum_cli::lockfiles::Parseable;
+use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::*;
-
-const STATUS_THRESHOLD_BREACHED: i32 = 1;
-
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
@@ -58,7 +55,7 @@ where
     match resp {
         Ok(resp) => {
             if pretty_print {
-                println!("{}", resp.summarize());
+                resp.summarize();
             } else {
                 println!("{}", serde_json::to_string_pretty(&resp).unwrap());
             }
@@ -101,6 +98,17 @@ fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
     println!();
 }
 
+/// Display user-friendly overview of a job
+fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) {
+    if verbose {
+        let resp = api.get_job_status_ext(&job_id);
+        print_response(&resp, pretty);
+    } else {
+        let resp = api.get_job_status(&job_id);
+        print_response(&resp, pretty);
+    }
+}
+
 /// Handle the history subcommand.
 ///
 /// This allows us to list last N job runs, list the projects, list runs
@@ -108,23 +116,30 @@ fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 /// job run.
 fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> i32 {
     let pretty_print = !matches.is_present("json");
+    let verbose = matches.is_present("verbose");
+
+    let mut get_job = |job_id: Option<&str>| {
+        let job_id = JobId::from_str(&job_id.unwrap())
+            .unwrap_or_else(|err| err_exit(err, "Invalid request id", -3));
+        get_job_status(api, &job_id, verbose, pretty_print);
+    };
 
     if let Some(matches) = matches.subcommand_matches("project") {
         let project_name = matches.value_of("project_name");
         let project_job_id = matches.value_of("job_id");
 
-        if project_job_id.is_some() && project_name.is_none() {
-            println!("TODO: Need functionality from `analyze`");
-        } else if project_name.is_some() {
+        if let Some(project_name) = project_name {
             if project_job_id.is_none() {
-                let resp = api.get_project_details(project_name.unwrap());
+                let resp = api.get_project_details(project_name);
                 print_response(&resp, pretty_print);
             } else {
-                println!("TODO: Need functionality from `analyze`");
+                get_job(project_job_id);
             }
         } else {
             get_project_list(api, pretty_print);
         }
+    } else if matches.is_present("JOB_ID") {
+        get_job(matches.value_of("JOB_ID"));
     } else {
         println!(
             "Projects and most recent run for {}\n",
@@ -137,81 +152,6 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     0
 }
 
-fn handle_status(api: &mut PhylumApi, req_type: &PackageType, matches: clap::ArgMatches, job: Option<JobId>) -> i32 {
-    let mut exit_status: i32 = 0;
-
-    let mut check_score = |thresh, score| {
-        if let Some(score) = score {
-            if score < thresh {
-                exit_status = STATUS_THRESHOLD_BREACHED;
-            }
-        } 
-    };
-
-    let display_settings = |matches: &ArgMatches| {
-        let pretty_print = !matches.is_present("json");
-        let verbose = matches.is_present("verbose");
-        let threshold = matches
-            .value_of("threshold")
-            .and_then(|t| t.parse::<f64>().ok())
-            .unwrap_or(0.0);
-
-        (verbose, pretty_print, threshold)
-    };
-
-    let mut handle_job_status = |job_id, thresh, verbose, display_opts| {
-        if verbose {
-            let resp = api.get_job_status_ext(&job_id);
-            print_response(&resp, display_opts);
-            if let Ok(resp) = resp {
-                for p in resp.packages {
-                    check_score(thresh, p.basic_status.package_score);
-                }
-            }
-        } else {
-            let resp = api.get_job_status(&job_id);
-            print_response(&resp, display_opts);
-            if let Ok(resp) = resp {
-                for p in resp.packages {
-                    check_score(thresh, p.package_score);
-                }
-            }
-        }
-    };
-
-    if let Some(matches) = matches.subcommand_matches("status") {
-        let (pretty_print, verbose, threshold) = display_settings(matches);
-
-        if let Some(request_id) = matches.value_of("request_id") {
-            let request_id = JobId::from_str(&request_id)
-                .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -3));
-            
-            handle_job_status(request_id, threshold, verbose, pretty_print);
-
-        } else if matches.is_present("name") {
-            if !matches.is_present("version") {
-                exit("A version is required when querying by package", -3);
-            }
-            let pkg = parse_package(matches, &req_type)
-                .unwrap_or_else(|| exit("Invalid package name or version.", -3));
-            let resp = api.get_package_details(&pkg);
-            print_response(&resp, pretty_print);
-            if let Ok(resp) = resp {
-                check_score(threshold, resp.basic_status.package_score);
-            }
-        } else {
-            // get everything
-            let resp = api.get_status();
-            log::debug!("==> {:?}", resp);
-        }
-    } else if let Some(matches) = matches.subcommand_matches("analyze") {
-        let (pretty_print, verbose, threshold) = display_settings(matches);
-        handle_job_status(job.unwrap(), threshold, verbose, pretty_print);
-    }
-
-    exit_status
-}
-
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
 fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, PackageType)> {
@@ -221,32 +161,20 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
     let res = match file {
         "Gemfile.lock" => {
             let parser = GemLock::new(path).ok()?;
-            parser
-                .parse()
-                .ok()
-                .map(|pkgs| (pkgs, PackageType::Ruby))
-        },
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Ruby))
+        }
         "package-lock.json" => {
             let parser = PackageLock::new(path).ok()?;
-            parser
-                .parse()
-                .ok()
-                .map(|pkgs| (pkgs, PackageType::Npm))
-        },
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
+        }
         "yarn.lock" => {
             let parser = YarnLock::new(path).ok()?;
-            parser
-                .parse()
-                .ok()
-                .map(|pkgs| (pkgs, PackageType::Npm))
-        },
-        _ => None
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
+        }
+        _ => None,
     };
 
-    let pkg_count = res
-        .as_ref()
-        .map(|p| p.0.len())
-        .unwrap_or_default();
+    let pkg_count = res.as_ref().map(|p| p.0.len()).unwrap_or_default();
 
     log::debug!("Read {} packages from file `{}`", pkg_count, file);
 
@@ -255,34 +183,37 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
-fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatches) -> i32 {
-    let mut exit_status: i32 = 0;
-
+fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) {
     let mut packages = vec![];
     let mut request_type = config.request_type; // default request type
-    let mut synch = true;
+    let mut synch = false; // get status after submission
+    let mut verbose = false;
+    let mut pretty_print = false;
     let mut label = None;
 
     let project = find_project_conf(".")
         .and_then(|s| parse_config(&s).ok())
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
-            print_user_failure!(
-                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
+            exit(
+                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?",
+                -1
+            );
+        });
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         // Should never get here if `INPUT` was not specified
         let lockfile = matches.value_of("LOCKFILE").unwrap();
         let res = get_packages_from_lockfile(lockfile)
-            .unwrap_or_else(|| 
-                exit("Unable to locate any valid package in package lockfile", -1)
-            );
+            .unwrap_or_else(|| exit("Unable to locate any valid package in package lockfile", -1));
 
         packages = res.0;
         request_type = res.1;
 
-        synch = !matches.is_present("synch");
         label = matches.value_of("label");
+        verbose = matches.is_present("verbose");
+        pretty_print = !matches.is_present("json");
+        synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         let mut eof = false;
         let mut line = String::new();
@@ -325,11 +256,10 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
                 }
             }
         }
-        synch = !matches.is_present("synch");
     }
 
     log::debug!("Submitting request...");
-    let resp = api
+    let job_id = api
         .submit_request(
             &request_type,
             &packages,
@@ -339,14 +269,13 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
         )
         .unwrap_or_else(|err| err_exit(err, "Error submitting package", -2));
 
-    log::debug!("Response => {:?}", resp);
-    print_user_success!("Job ID: {}", resp);
+    log::debug!("Response => {:?}", job_id);
+    print_user_success!("Job ID: {}", job_id);
 
     if synch {
-        exit_status = handle_status(api, &request_type, matches, Some(resp));
+        log::debug!("Requesting status...");
+        get_job_status(api, &job_id, verbose, pretty_print);
     }
-
-    exit_status
 }
 
 /// Register a user. Drops the user into an interactive mode to get the user's
@@ -637,7 +566,7 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
 
         log::info!("Initializing new project: `{}`", project_name);
         let project_id = api.create_project(&project_name).unwrap_or_else(|err| {
-            exit(err, "Error initializing project", -1);
+            err_exit(err, "Error initializing project", -1);
         });
 
         let proj_conf = ProjectConfig {
@@ -932,7 +861,7 @@ fn print_sc_help(app: &mut App, subcommand: &str) {
 fn handle_get_package(
     api: &mut PhylumApi,
     req_type: &PackageType,
-    matches: &clap::ArgMatches
+    matches: &clap::ArgMatches,
 ) -> i32 {
     let pretty_print = !matches.is_present("json");
     let pkg = parse_package(&matches, &req_type);
@@ -987,13 +916,22 @@ fn main() {
     let config_path = matches.value_of("config").unwrap_or_else(|| {
         settings_path.to_str().unwrap_or_else(|| {
             log::error!("Unicode parsing error in configuration file path");
-            exit(&format!("Unable to read path to configuration file at '{:?}'", settings_path), -1);
+            exit(
+                &format!(
+                    "Unable to read path to configuration file at '{:?}'",
+                    settings_path
+                ),
+                -1,
+            );
         })
     });
     log::debug!("Reading config from {}", config_path);
 
     let mut config: Config = read_configuration(config_path).unwrap_or_else(|err| {
-        exit(&format!("Failed to read configuration at `{}`: {}", config_path, err), -1);
+        exit(
+            &format!("Failed to read configuration at `{}`: {}", config_path, err),
+            -1,
+        );
     });
 
     let timeout = matches
@@ -1074,13 +1012,11 @@ fn main() {
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {
-        exit_status = handle_get_package(&mut api, &config.request_type, matches);
+        exit_status = handle_get_package(&mut api, &config.request_type, &matches);
     } else if should_submit {
-        exit_status = handle_submission(&mut api, config, matches);
+        handle_submission(&mut api, config, &matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        exit_status = handle_history(&mut api, config, matches);
-    } else if should_get_status {
-        exit_status = handle_status(&mut api, &config.request_type, matches, None);
+        exit_status = handle_history(&mut api, config, &matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
@@ -1101,7 +1037,7 @@ fn err_exit(error: impl Error, message: &str, code: i32) -> ! {
     process::exit(code);
 }
 
-fn exit( message: &str, code: i32) -> ! {
+fn exit(message: &str, code: i32) -> ! {
     log::warn!("{}", message);
     print_user_failure!("Error: {}", message);
     process::exit(code);

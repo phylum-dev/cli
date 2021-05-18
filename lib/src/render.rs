@@ -1,5 +1,7 @@
 use crate::types::*;
+use crate::utils::table_format;
 use ansi_term::Color::{Blue, Green, Red, White};
+use prettytable::*;
 
 pub trait Renderable {
     fn render(&self) -> String;
@@ -230,13 +232,33 @@ impl Renderable for RequestStatusResponse<PackageStatusExtended> {
 
 impl Renderable for PackageStatus {
     fn render(&self) -> String {
-        "TODO".to_string()
+        format!(
+            "
+            Package '{}' ({})
+            ========================\n
+            Status: {:#?}
+            Last updated: {}
+            License: {}
+            Dependency count: {}
+            Vulnerability count: {}
+
+            Package Score: {}
+            ",
+            self.name,
+            self.version,
+            self.status,
+            self.last_updated,
+            self.license.as_ref().unwrap_or(&"Unknown".to_string()),
+            self.num_dependencies,
+            self.num_vulnerabilities,
+            self.package_score.unwrap_or(1.0), // TODO: colorize
+        )
     }
 }
 
 impl Renderable for PackageStatusExtended {
     fn render(&self) -> String {
-        "TODO".to_string()
+        self.basic_status.render()
     }
 }
 
@@ -249,5 +271,59 @@ impl Renderable for CancelRequestResponse {
 impl Renderable for PingResponse {
     fn render(&self) -> String {
         format!("Ping response: {}", self.msg)
+    }
+}
+
+impl Renderable for ProjectThresholds {
+    fn render(&self) -> String {
+        let mut t = table!(
+            [r => "Project Score:", self.total],
+            [r => "Malicious Code Risk MAL:", self.malicious],
+            [r => "Vulnerability Risk VLN:", self.vulnerability],
+            [r => "Engineering Risk ENG:", self.engineering],
+            [r => "Author Risk AUT:", self.author],
+            [r => "License Risk LIC:", self.license]
+        );
+        t.set_format(table_format(0, 0));
+        t.to_string()
+    }
+}
+
+impl From<RiskLevel> for color::Color {
+    fn from(level: RiskLevel) -> Self {
+        match level {
+            RiskLevel::Crit => color::BRIGHT_RED,
+            RiskLevel::High => color::YELLOW,
+            RiskLevel::Med => color::BRIGHT_YELLOW,
+            RiskLevel::Low => color::BLUE,
+            RiskLevel::Info => color::WHITE,
+        }
+    }
+}
+
+impl From<Issue> for Vec<Row> {
+    fn from(issue: Issue) -> Vec<Row> {
+        let r1 = Row::new(vec![
+            Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT)
+                .with_style(Attr::ForegroundColor(color::Color::from(issue.risk_level))),
+            Cell::new_align(&issue.name, format::Alignment::LEFT).with_style(Attr::Bold),
+            Cell::new_align(
+                &format!(
+                    "{:>47}@{} {}\n",
+                    issue.pkg_name,
+                    issue.pkg_version,
+                    issue.risk_domain.to_string(),
+                ),
+                format::Alignment::RIGHT,
+            ),
+        ]);
+
+        let r2 = Row::new(vec![
+            Cell::new(""),
+            Cell::new(&issue.description),
+            Cell::new(""),
+        ]);
+
+        vec![r1, r2]
     }
 }
