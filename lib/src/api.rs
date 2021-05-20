@@ -1,7 +1,6 @@
-use std::time::Duration;
-
 use crate::restson::{Error, RestClient};
 use crate::types::*;
+use std::time::Duration;
 
 pub struct PhylumApi {
     client: RestClient,
@@ -48,6 +47,18 @@ impl PhylumApi {
     pub fn get_projects(&mut self) -> Result<Vec<ProjectGetRequest>, Error> {
         let resp: Vec<ProjectGetRequest> = self.client.get(())?;
         Ok(resp)
+    }
+
+    /// Get user settings
+    pub fn get_user_settings(&mut self) -> Result<UserSettings, Error> {
+        let resp: UserSettings = self.client.get(())?;
+        Ok(resp)
+    }
+
+    /// Put updated user settings
+    pub fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool, Error> {
+        let _resp: UserSettings = self.client.put_capture((), settings)?;
+        Ok(true)
     }
 
     /// Register new user

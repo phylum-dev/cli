@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -281,6 +282,9 @@ pub struct ProjectGetRequest {
     pub name: String,
     pub id: String,
     pub updated_at: String,
+    // TODO: Need to update request manager to include thresholds with this
+    //       response.
+    //pub thresholds: ProjectThresholds,
 }
 
 impl RestPath<()> for Vec<ProjectGetRequest> {
@@ -307,6 +311,63 @@ pub struct ProjectGetDetailsRequest {
 impl RestPath<&str> for ProjectGetDetailsRequest {
     fn get_path(pkg_id: &str) -> Result<String, Error> {
         Ok(format!("{}/job/projects/name/{}", API_PATH, pkg_id))
+    }
+}
+
+/// PUT /settings/current-user
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Threshold {
+    pub action: String,
+    pub active: bool,
+    pub threshold: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserProject {
+    pub thresholds: HashMap<String, Threshold>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Setting {
+    DefaultLabel(HashMap<String, String>),
+    Project(UserProject),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserSettings {
+    pub version: u32,
+    pub projects: HashMap<String, Setting>,
+}
+
+impl UserSettings {
+    /// Sets the threshold for the given risk domain.
+    pub fn set_threshold(
+        &mut self,
+        project_id: String,
+        name: String,
+        threshold: i32,
+        action: String,
+    ) {
+        let mut thresholds = self.projects[project_id.as_str()].clone();
+        if let Setting::Project(ref mut t) = thresholds {
+            t.thresholds.insert(
+                name,
+                Threshold {
+                    action,
+                    active: (threshold > 0),
+                    threshold: (threshold as f32) / 100.0,
+                },
+            );
+        }
+
+        self.projects.insert(project_id, thresholds);
+    }
+}
+
+impl RestPath<()> for UserSettings {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/settings/current-user", API_PATH))
     }
 }
 

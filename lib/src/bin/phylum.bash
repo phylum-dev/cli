@@ -40,6 +40,9 @@ _phylum() {
             keys)
                 cmd+="__keys"
                 ;;
+            link)
+                cmd+="__link"
+                ;;
             list)
                 cmd+="__list"
                 ;;
@@ -52,11 +55,17 @@ _phylum() {
             project)
                 cmd+="__project"
                 ;;
+            projects)
+                cmd+="__projects"
+                ;;
             register)
                 cmd+="__register"
                 ;;
             remove)
                 cmd+="__remove"
+                ;;
+            set-thresholds)
+                cmd+="__set__thresholds"
                 ;;
             status)
                 cmd+="__status"
@@ -77,7 +86,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  update history auth ping init submit batch status cancel heuristics version help"
+            opts=" -c -t -h -V  --config --timeout --help --version  update history projects auth ping init submit batch status cancel heuristics version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -383,6 +392,81 @@ _phylum() {
         phylum__ping)
             opts=" -h -V  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__projects)
+            opts=" -h -V  --help --version  create list link set-thresholds"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__projects__create)
+            opts=" -h -V  --help --version  <name> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__projects__link)
+            opts=" -h -V  --help --version  <name> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__projects__list)
+            opts=" -h -V  --help --version  "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        phylum__projects__set__thresholds)
+            opts=" -h -V  --help --version  <name> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi

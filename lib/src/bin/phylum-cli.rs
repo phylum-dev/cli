@@ -1,7 +1,7 @@
-use ansi_term::Color::{Blue, Cyan, Green};
+use ansi_term::Color::{Blue, Cyan, Green, White};
 use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
-use dialoguer::{theme::ColorfulTheme, Input, Password};
+use dialoguer::{theme::ColorfulTheme, Input, Password, Select};
 use home::home_dir;
 use serde::Serialize;
 use spinners::{Spinner, Spinners};
@@ -13,6 +13,7 @@ use std::io::{self, BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
 use std::process;
 use std::str::FromStr;
+use uuid::Uuid;
 
 extern crate serde;
 extern crate serde_json;
@@ -26,21 +27,21 @@ const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
-        eprint!("✔️ ",);
+        eprint!("✅ ",);
         eprintln!($($tts)*);
     }
 }
 
 macro_rules! print_user_warning {
     ($($tts:tt)*) => {
-        eprint!("⚠️ ",);
+        eprint!("⚠️  ",);
         eprintln!($($tts)*);
     }
 }
 
 macro_rules! print_user_failure {
     ($($tts:tt)*) => {
-        eprint!("⛔ ");
+        eprint!("❗ ");
         eprintln!($($tts)*);
     }
 }
@@ -81,6 +82,16 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
     }
 }
 
+/// List the projects in this account.
+fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
+    let resp = api.get_projects();
+    let proj_title = format!("{}", Blue.paint("Project Name"));
+    let id_title = format!("{}", Blue.paint("Project ID"));
+    println!("{:<38}{}", proj_title, id_title);
+    print_response(&resp, pretty_print);
+    println!();
+}
+
 /// Handle the history subcommand.
 ///
 /// This allows us to list last N job runs, list the projects, list runs
@@ -103,12 +114,7 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
                 println!("TODO: Need functionality from `analyze`");
             }
         } else {
-            let resp = api.get_projects();
-            let proj_title = format!("{}", Blue.paint("Project Name"));
-            let id_title = format!("{}", Blue.paint("Project ID"));
-            println!("{:<38}{}", proj_title, id_title);
-            print_response(&resp, pretty_print);
-            println!();
+            get_project_list(api, pretty_print);
         }
     } else {
         println!(
@@ -203,7 +209,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: clap::ArgMatc
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
             print_user_failure!(
-                "Failed to find a valid project configuration. Did you run `phylum init`?"
+                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
             );
             process::exit(-1)
         });
@@ -561,6 +567,224 @@ fn needs_update(latest: &Option<GithubRelease>, current_version: &str) -> bool {
     }
 }
 
+/// Handle the project subcommand. Provides facilities for creating a new project,
+/// linking a current repository to an existing project, listing projects and
+/// setting project thresholds for risk domains.
+fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
+    let pretty_print = !matches.is_present("json");
+
+    if let Some(matches) = matches.subcommand_matches("create") {
+        let project_name = matches.value_of("name").unwrap();
+
+        log::info!("Initializing new project: `{}`", project_name);
+        let project_id = api.create_project(&project_name).unwrap_or_else(|err| {
+            exit(err, "Error initializing project", -1);
+        });
+
+        let proj_conf = ProjectConfig {
+            id: project_id.to_owned(),
+            name: project_name.to_owned(),
+            created_at: Local::now(),
+        };
+
+        save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
+            print_user_failure!("Failed to save user projects file: {}", err);
+        });
+
+        print_user_success!("Successfully created new project, {}", project_name);
+        return 0;
+    } else if matches.subcommand_matches("list").is_some() {
+        get_project_list(api, pretty_print);
+    } else if let Some(matches) = matches.subcommand_matches("link") {
+        let project_name = matches.value_of("name").unwrap();
+        let resp = api.get_project_details(project_name);
+
+        match resp {
+            Ok(proj) => {
+                let proj_uuid = Uuid::parse_str(proj.id.as_str()).unwrap(); // TODO: Handle this.
+                let proj_conf = ProjectConfig {
+                    id: proj_uuid,
+                    name: proj.name,
+                    created_at: Local::now(),
+                };
+                save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
+                    log::error!("Failed to save user credentials to config: {}", err)
+                });
+
+                print_user_success!(
+                    "Linked the current working directory to the project {}.",
+                    format!("{}", White.paint(proj_conf.name))
+                );
+            }
+            Err(x) => {
+                print_user_failure!("A project with that name does not exist: {}", x);
+                return -1;
+            }
+        }
+    } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
+        let project_name = matches.value_of("name").unwrap();
+
+        println!("Risk thresholds allow you to specify what constitutes a failure.");
+        println!("You can set a threshold for the overall project score, or for individual");
+        println!("risk vectors:");
+        println!();
+        println!("    * Author");
+        println!("    * Malicious Code");
+        println!("    * Vulnerability");
+        println!("    * License");
+        println!("    * Engineering");
+        println!();
+        println!("If your project score falls below a given threshold, it will be");
+        println!("considered a failure and the action you specify will be taken.");
+        println!();
+        println!("Possible actions are:");
+        println!();
+        println!(
+            "    * {}: print a message to standard error",
+            format!("{}", White.paint("Print a warning"))
+        );
+        println!(
+            "    * {}: If we are in CI/CD break the build and return a non-zero exit code",
+            format!("{}", White.paint("Break the build"))
+        );
+        println!(
+            "    * {}: Ignore the failure and continue",
+            format!("{}", White.paint("Nothing, fail silently"))
+        );
+        println!();
+
+        println!("Specify the thresholds and actions for {}. A threshold of zero will disable the threshold.", format!("{}", White.paint(project_name)));
+        println!();
+
+        let project_details = match api.get_project_details(project_name) {
+            Ok(x) => x,
+            _ => {
+                print_user_failure!("Could not get project details");
+                return -1;
+            }
+        };
+
+        let mut user_settings = match api.get_user_settings() {
+            Ok(x) => x,
+            _ => {
+                print_user_failure!("Could not get user settings");
+                return -1;
+            }
+        };
+
+        for threshold_name in vec![
+            "total project",
+            "author",
+            "engineering",
+            "license",
+            "malicious code",
+            "vulnerability",
+        ]
+        .iter()
+        {
+            let (threshold, action) = prompt_threshold(threshold_name).unwrap_or((0, "none"));
+
+            // API expects slight key change for specific fields.
+            let name = match *threshold_name {
+                "total project" => String::from("total"),
+                "malicious code" => String::from("maliciousCode"),
+                x => x.to_string(),
+            };
+
+            user_settings.set_threshold(
+                project_details.id.clone(),
+                name,
+                threshold,
+                action.to_string(),
+            );
+        }
+
+        let resp = api.put_user_settings(&user_settings);
+        match resp {
+            Ok(_) => {
+                print_user_success!(
+                    "Set all thresholds for the {} project",
+                    White.paint(project_name)
+                );
+            }
+            _ => {
+                print_user_failure!(
+                    "Failed to set thresholds for the {} project",
+                    White.paint(project_name)
+                );
+            }
+        }
+    } else {
+        get_project_list(api, pretty_print);
+    }
+
+    0
+}
+
+/// Prompt the user for the threshold value and action associated with a given
+/// threshold.
+fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
+    let threshold = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt(format!(
+            "{} Threshold",
+            format!("{}", White.paint(name.to_uppercase()))
+        ))
+        .validate_with(|input: &String| -> Result<(), &str> {
+            if input.chars().all(char::is_numeric) {
+                let val = input.parse::<i32>().unwrap();
+                if (0..=100).contains(&val) {
+                    Ok(())
+                } else {
+                    Err("Make sure to specify a number between 0-100")
+                }
+            } else {
+                Err("Threshold must be a number between 0-100")
+            }
+        })
+        .interact_text()?;
+
+    if threshold == "0" {
+        println!(
+            "\nDisabling {} risk domain",
+            format!("{}", White.paint(name))
+        );
+        println!("\n-----\n");
+        return Ok((0, "none"));
+    }
+
+    println!(
+        "\nWhat should happen if a score falls below the {} threshold?\n",
+        format!("{}", White.paint(name))
+    );
+
+    let items = vec![
+        "Break the CI/CD build",
+        "Print a warning message",
+        "Do nothing",
+    ];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .items(&items)
+        .default(0)
+        .interact()
+        .unwrap();
+    let action = items[selection];
+    println!("✔ {} Action · {}", White.paint(name.to_uppercase()), action);
+    println!("\n-----\n");
+
+    Ok((
+        threshold.parse::<i32>().unwrap(),
+        match selection {
+            // Convert the provided selection index into a string suitable for sending
+            // back to the API endpoint responsible for handling user settings.
+            0 => "break",
+            1 => "warn",
+            2 => "none",
+            _ => "warn", // We shouldn't be able to make it here.
+        },
+    ))
+}
+
 /// Update the Phylum installation. Please note, this will only function on
 /// Linux x64. This is due in part to the fact that the release is only
 /// compiling for this OS and architecture.
@@ -697,7 +921,7 @@ fn main() {
         process::exit(0);
     }
 
-    let should_init = matches.subcommand_matches("init").is_some();
+    let should_projects = matches.subcommand_matches("projects").is_some();
     let should_submit = matches.subcommand_matches("submit").is_some()
         || matches.subcommand_matches("batch").is_some();
     let should_get_history = matches.subcommand_matches("history").is_some();
@@ -711,7 +935,7 @@ fn main() {
             .subcommand_matches("keys")
             .is_some();
 
-    if should_init
+    if should_projects
         || should_submit
         || should_get_history
         || should_cancel
@@ -743,21 +967,8 @@ fn main() {
         }
     }
 
-    if let Some(matches) = matches.subcommand_matches("init") {
-        let project = matches.value_of("project").unwrap();
-        log::info!("Initializing new project: `{}`", project);
-        let project_id = api.create_project(&project).unwrap_or_else(|err| {
-            exit(err, "Error initializing project", -1);
-        });
-        let proj_conf = ProjectConfig {
-            id: project_id.to_owned(),
-            name: project.to_owned(),
-            created_at: Local::now(),
-        };
-        save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
-            log::error!("Failed to save user credentials to config: {}", err)
-        });
-        print_user_success!("Successfully created new project. ID: {}", project_id);
+    if let Some(matches) = matches.subcommand_matches("projects") {
+        exit_status = handle_projects(&mut api, matches);
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches);
     } else if matches.subcommand_matches("update").is_some() {
