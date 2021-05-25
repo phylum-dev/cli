@@ -18,7 +18,7 @@ args:
         takes_value: true
 subcommands:
     - update:
-        about: Check for a new release of the Phylum CLI tool
+        about: Check for a new release of the Phylum CLI tool and update if one exists
     - history:
         about: Return information about historical scans
         args:
@@ -47,7 +47,7 @@ subcommands:
                         takes_value: true
                         index: 2
     - projects:
-        about: Manage projects
+        about: Create, list, link and set thresholds for projects
         subcommands:
             - create:
                 about: Create a new project
@@ -146,12 +146,6 @@ subcommands:
 
     - ping:
         about: Ping the remote system to verify it is available
-    - init:
-        about: Initialize a new project
-        args:
-            - PROJECT:
-                help: The project name.
-                required: false
     - analyze:
         about: Submit a request for analysis to the processing system
         args:
@@ -174,6 +168,8 @@ subcommands:
                 help: "Produce output in json format (default: false)"
     - batch:
         about: Submits a batch of requests to the processing system
+        settings:
+            - hidden
         args:
             - file:
                 short: f

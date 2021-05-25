@@ -31,9 +31,6 @@ _phylum() {
             history)
                 cmd+="__history"
                 ;;
-            init)
-                cmd+="__init"
-                ;;
             keys)
                 cmd+="__keys"
                 ;;
@@ -83,7 +80,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  update history projects package auth ping init analyze batch version help"
+            opts=" -c -t -h -V  --config --timeout --help --version  update history projects package auth ping analyze batch version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -313,21 +310,6 @@ _phylum() {
         phylum__history__project)
             opts=" -h -V  --help --version  <project_name> <job_id> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__init)
-            opts=" -h -V  --help --version  <PROJECT> "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
