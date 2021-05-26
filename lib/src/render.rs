@@ -232,33 +232,37 @@ impl Renderable for RequestStatusResponse<PackageStatusExtended> {
 
 impl Renderable for PackageStatus {
     fn render(&self) -> String {
-        format!(
-            "
-            Package '{}' ({})
-            ========================\n
-            Status: {:#?}
-            Last updated: {}
-            License: {}
-            Dependency count: {}
-            Vulnerability count: {}
+        let mut t = table!(
+            ["Package Name:", self.name, "Package Version:", self.version],
+            [
+                "License:",
+                self.license.as_ref().unwrap_or(&"Unknown".to_string()),
+                "Last updated:",
+                self.last_updated
+            ],
+            [
+                "Num Deps:",
+                self.num_dependencies,
+                "Num Vulns:",
+                self.num_vulnerabilities
+            ]
+        );
 
-            Package Score: {}
-            ",
-            self.name,
-            self.version,
-            self.status,
-            self.last_updated,
-            self.license.as_ref().unwrap_or(&"Unknown".to_string()),
-            self.num_dependencies,
-            self.num_vulnerabilities,
-            self.package_score.unwrap_or(1.0), // TODO: colorize
-        )
+        t.set_format(table_format(0, 0));
+        t.to_string()
     }
 }
 
 impl Renderable for PackageStatusExtended {
     fn render(&self) -> String {
-        self.basic_status.render()
+        let mut overview_table = table!(
+            ["Package Name:", rB -> self.basic_status.name, "Package Version:", r -> self.basic_status.version],
+            ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> self.basic_status.last_updated],
+            ["Num Deps:", r -> self.basic_status.num_dependencies, "Num Vulns:", r -> self.basic_status.num_vulnerabilities],
+            ["Type", r -> self.r#type.to_string().to_uppercase(), "Language", r -> self.r#type.language()]
+        );
+        overview_table.set_format(table_format(0, 3));
+        overview_table.to_string()
     }
 }
 

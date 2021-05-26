@@ -348,6 +348,13 @@ mod tests {
                 "num_vulnerabilities": 4,
                 "status": "complete",
                 "vulnerabilities": [],
+                "riskVectors": {
+                    "author": 0.90,
+                    "engineering": 0.42,
+                    "license": 1.0,
+                    "malicious_code": 1.0,
+                    "vulnerability": 1.0
+                },
                 "heuristics": {
                     "something": {
                         "description": "do stuff",
@@ -468,6 +475,13 @@ mod tests {
                             "score": 3.14,
                             "domain": "EngineeringRisk"
                         }
+                    },
+                    "riskVectors": {
+                        "author": 0.90,
+                        "engineering": 0.42,
+                        "license": 1.0,
+                        "malicious_code": 1.0,
+                        "vulnerability": 1.0
                     },
                     "dependencies": [
                         {

@@ -208,12 +208,66 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
     }
 }
 
-impl Summarize for PackageStatus {}
-impl Summarize for PackageStatusExtended {}
+impl Summarize for PackageStatusExtended {
+    fn summarize(&self) {
+        let mut issues_table = Table::new();
+        issues_table.set_format(table_format(3, 0));
+
+        let issues: Vec<Issue> = self
+            .heuristics
+            .iter()
+            .map(move |(k, v)| {
+                Issue {
+                    name: k.to_string(),
+                    pkg_name: self.basic_status.name.to_string(),
+                    pkg_version: self.basic_status.version.to_string(),
+                    risk_level: Faker.fake(), // TODO: update when the api supports this
+                    risk_domain: v.domain.to_owned(),
+                    score: (v.score * 100.0).round(),
+                    description: v.description.to_string(),
+                }
+            })
+            .collect();
+
+        for i in issues {
+            let rows: Vec<Row> = i.into();
+            for mut r in rows {
+                r.remove_cell(2);
+                issues_table.add_row(r);
+            }
+            issues_table.add_empty_row();
+        }
+
+        let risk_to_string = |key| {
+            format!(
+                "{}",
+                (100.0 * self.risk_vectors.get(key).unwrap_or(&1.0)).round()
+            )
+        };
+
+        let mut risks_table = table![
+            ["Author Risk:", r -> risk_to_string("author")],
+            ["Engineering Risk:", r -> risk_to_string("engineering")],
+            ["License Risk:", r -> risk_to_string("license")],
+            ["Malicious Code Risk:", r -> risk_to_string("malicious_code")],
+            ["Vulnerability Risk:", r -> risk_to_string("vulnerability")]
+        ];
+        risks_table.set_format(table_format(3, 1));
+
+        println!("{}", self.render());
+
+        println!(" Risk Vectors:");
+        risks_table.printstd();
+
+        println!("\n Issues:");
+        issues_table.printstd();
+    }
+}
 
 impl<T> Summarize for Vec<T> where T: Renderable {}
 
 impl Summarize for String {}
+impl Summarize for PackageStatus {}
 impl Summarize for ProjectGetDetailsRequest {}
 impl Summarize for AllJobsStatusResponse {}
 impl Summarize for CancelRequestResponse {}
