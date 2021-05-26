@@ -323,7 +323,7 @@ _phylum() {
             return 0
             ;;
         phylum__package)
-            opts=" -t -h -V  --package-type --help --version  <name> <version> "
+            opts=" -t -j -h -V  --package-type --json --help --version  <name> <version> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

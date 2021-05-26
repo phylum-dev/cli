@@ -440,6 +440,8 @@ pub struct PackageStatusExtended {
     #[serde(flatten)]
     pub basic_status: PackageStatus,
     pub r#type: PackageType,
+    #[serde(rename = "riskVectors")]
+    pub risk_vectors: HashMap<String, f64>,
     pub dependencies: Vec<PackageDescriptor>,
     pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
     pub heuristics: HashMap<String, HeuristicResult>,

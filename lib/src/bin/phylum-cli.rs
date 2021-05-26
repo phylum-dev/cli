@@ -895,9 +895,16 @@ fn main() {
         print_update_message();
     }
 
+    // For these commands, we want to just provide verbose help and exit if no
+    // arguments are supplied
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
             print_sc_help(app_helper, "analyze");
+            process::exit(0);
+        }
+    } else if let Some(matches) = matches.subcommand_matches("package") {
+        if !(matches.is_present("name") && matches.is_present("version")) {
+            print_sc_help(app_helper, "package");
             process::exit(0);
         }
     }

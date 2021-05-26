@@ -91,6 +91,10 @@ subcommands:
                 long: package-type
                 takes_value: true
                 required: false
+            - json:
+                short: j
+                long: json
+                help: "Produce output in json format (default: false)"
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:
