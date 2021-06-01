@@ -3,7 +3,6 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 
 use fake::Dummy;
@@ -443,7 +442,7 @@ pub struct PackageStatusExtended {
     #[serde(rename = "riskVectors")]
     pub risk_vectors: HashMap<String, f64>,
     pub dependencies: Vec<PackageDescriptor>,
-    pub vulnerabilities: Vec<Value>, // TODO: parse this using a strong type
+    pub vulnerabilities: Vec<Vulnerability>,
     pub heuristics: HashMap<String, HeuristicResult>,
 }
 
@@ -500,6 +499,13 @@ pub struct HeuristicResult {
     pub description: String,
     pub domain: RiskDomain,
     pub score: f64,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Vulnerability {
+    pub cve: Vec<String>,
+    pub base_severity: f32,
+    pub description: String,
+    pub remediation: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
