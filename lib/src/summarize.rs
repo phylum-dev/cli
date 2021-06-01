@@ -170,6 +170,41 @@ impl Summarize for RequestStatusResponse<PackageStatus> {
     }
 }
 
+fn vuln_to_rows(
+    vuln: &Vulnerability,
+    pkg_name: Option<&str>,
+    pkg_version: Option<&str>,
+) -> Vec<Row> {
+    let mut rows = Vec::new();
+
+    let cve_s = if !vuln.cve.is_empty() {
+        vuln.cve.join("/")
+    } else {
+        "[No CVE listed]".to_string()
+    };
+
+    let pkg_descriptor = if pkg_name.is_some() && pkg_version.is_some() {
+        format!("{}@{}", pkg_name.unwrap(), pkg_version.unwrap())
+    } else {
+        "".to_string()
+    };
+
+    rows.push(row![b -> format!("* {} (base severity: {})", cve_s, vuln.base_severity), r -> &pkg_descriptor]);
+    rows.push(row![]);
+    rows.push(row![format!(
+        "Description: {}",
+        textwrap::fill(&vuln.description, 80)
+    )]);
+    rows.push(row! {});
+    rows.push(row![format!(
+        "Remediation: {}",
+        textwrap::fill(&vuln.remediation, 80)
+    )]);
+    rows.push(row! {});
+
+    rows
+}
+
 impl Summarize for RequestStatusResponse<PackageStatusExtended> {
     fn summarize(&self) {
         let t1: Table = response_to_table(self);
@@ -203,8 +238,26 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             }
             t2.add_empty_row();
         }
+
+        let mut vulns_table = Table::new();
+        vulns_table.set_format(table_format(3, 0));
+
+        for p in &self.packages {
+            for v in &p.vulnerabilities {
+                for r in vuln_to_rows(v, Some(&p.basic_status.name), Some(&p.basic_status.version))
+                {
+                    vulns_table.add_row(r);
+                }
+            }
+        }
+
         t1.printstd();
         t2.printstd();
+
+        if !vulns_table.is_empty() {
+            println!("\n Vulnerabilities:");
+            vulns_table.printstd();
+        }
     }
 }
 
@@ -254,13 +307,29 @@ impl Summarize for PackageStatusExtended {
         ];
         risks_table.set_format(table_format(3, 1));
 
+        let mut vulns_table = Table::new();
+        vulns_table.set_format(table_format(3, 0));
+
+        for v in &self.vulnerabilities {
+            for r in vuln_to_rows(v, None, None) {
+                vulns_table.add_row(r);
+            }
+        }
+
         println!("{}", self.render());
 
         println!(" Risk Vectors:");
         risks_table.printstd();
 
-        println!("\n Issues:");
-        issues_table.printstd();
+        if !issues_table.is_empty() {
+            println!("\n Issues:");
+            issues_table.printstd();
+        }
+
+        if !vulns_table.is_empty() {
+            println!("\n Vulnerabilities:");
+            vulns_table.printstd();
+        }
     }
 }
 

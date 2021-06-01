@@ -45,6 +45,7 @@ chrono = { version = "^0.4", features = ["serde"] }
 nom = "6.1.2"
 prettytable-rs = "0.8.0"
 histogram = "0.6.9"
+textwrap = "0.13.4"
 
 ## TODO: remove these when all fakes replaced
 fake = { version = "2.4", features=['derive']}
