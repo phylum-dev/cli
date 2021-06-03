@@ -520,7 +520,8 @@ pub struct RequestStatusResponse<T> {
     #[serde(default)]
     pub num_incomplete: u32,
     pub last_updated: u64,
-    pub project: String,
+    pub project: String, // project id
+    pub project_name: String,
     pub label: Option<String>,
     pub thresholds: ProjectThresholds,
     pub packages: Vec<T>,

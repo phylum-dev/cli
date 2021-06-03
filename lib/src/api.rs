@@ -406,6 +406,7 @@ mod tests {
                 "score": 1.0,
                 "last_updated": 1603311780,
                 "project": "86bb664a-5331-489b-8901-f052f155ec79",
+                "project_name": "some_project",
                 "label": "some_label",
                 "packages": [
                     {
@@ -442,7 +443,8 @@ mod tests {
                 "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
                 "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
                 "ecosystem": "npm",
-                "project": "some project",
+                "project": "86bb664a-5331-489b-8901-f052f155ec79",
+                "project_name": "some project",
                 "user_email": "foo@bar.com",
                 "thresholds": {
                     "author": 0.4,
