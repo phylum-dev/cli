@@ -152,6 +152,35 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     0
 }
 
+/// Attempt to get packages from an unknown lockfile type
+fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
+    log::warn!(
+        "Attempting to obtain packages from unrecognized lockfile type: {}",
+        path.to_string_lossy()
+    );
+
+    let packages = YarnLock::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type yarn lock");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
+    }
+
+    let packages = PackageLock::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type package lock");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
+    }
+
+    let packages = GemLock::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type gem lock");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Ruby));
+    }
+
+    log::error!("Failed to identify lock file type");
+    None
+}
+
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
 fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, PackageType)> {
@@ -171,7 +200,7 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
             let parser = YarnLock::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
         }
-        _ => None,
+        _ => try_get_packages(path),
     };
 
     let pkg_count = res.as_ref().map(|p| p.0.len()).unwrap_or_default();
@@ -192,7 +221,10 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
     let mut label = None;
 
     let project = find_project_conf(".")
-        .and_then(|s| parse_config(&s).ok())
+        .and_then(|s| {
+            log::info!("Found project configurtion file at {}", s);
+            parse_config(&s).ok()
+        })
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
             exit(
@@ -202,7 +234,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
         });
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
-        // Should never get here if `INPUT` was not specified
+        // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches.value_of("LOCKFILE").unwrap();
         let res = get_packages_from_lockfile(lockfile)
             .unwrap_or_else(|| exit("Unable to locate any valid package in package lockfile", -1));
