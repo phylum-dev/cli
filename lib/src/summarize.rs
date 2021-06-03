@@ -117,7 +117,7 @@ where
     let details = [
         (
             "Project",
-            resp.project.to_string(),
+            resp.project_name.to_string(),
             "Label",
             resp.label.as_ref().unwrap_or(&"".to_string()).to_owned(),
         ),
