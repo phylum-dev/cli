@@ -28,7 +28,15 @@ impl Histogram {
                 continue;
             }
 
-            let bucket_id = ((y - min) / step) as usize;
+            let mut bucket_id = ((y - min) / step) as usize;
+
+            // Account for packages with a "perfect" (i.e. 1.0) score
+            // This is generally unlikely but possible with packages that have
+            //  not yet had analytics run on them
+            if bucket_id == values.len() {
+                bucket_id -= 1;
+            }
+
             if bucket_id < values.len() {
                 values[bucket_id as usize] += 1;
             }

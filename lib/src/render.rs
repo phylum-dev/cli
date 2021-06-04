@@ -253,13 +253,25 @@ impl Renderable for PackageStatus {
     }
 }
 
+impl Renderable for PackageType {
+    fn render(&self) -> String {
+        let s = match self {
+            PackageType::Npm => "NPM",
+            PackageType::Ruby => "Ruby",
+            PackageType::PyPi => "Python",
+            PackageType::Java => "Java",
+        };
+        s.to_string()
+    }
+}
+
 impl Renderable for PackageStatusExtended {
     fn render(&self) -> String {
         let mut overview_table = table!(
             ["Package Name:", rB -> self.basic_status.name, "Package Version:", r -> self.basic_status.version],
             ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> self.basic_status.last_updated],
             ["Num Deps:", r -> self.basic_status.num_dependencies, "Num Vulns:", r -> self.basic_status.num_vulnerabilities],
-            ["Type", r -> self.r#type.to_string().to_uppercase(), "Language", r -> self.r#type.language()]
+            ["Type", r -> self.r#type.render(), "Language", r -> self.r#type.language()]
         );
         overview_table.set_format(table_format(0, 3));
         overview_table.to_string()
