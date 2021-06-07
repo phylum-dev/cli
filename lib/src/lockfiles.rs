@@ -108,18 +108,23 @@ mod tests {
 
     #[test]
     fn lock_parse_yarn() {
-        let parser = YarnLock::new(Path::new("tests/fixtures/yarn.lock")).unwrap();
+        for p in &[
+            "tests/fixtures/yarn.lock",
+            "tests/fixtures/yarn.trailing_newlines.lock",
+        ] {
+            let parser = YarnLock::new(Path::new(p)).unwrap();
 
-        let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 17);
-        assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
-        assert_eq!(pkgs[0].version, "1.1.0");
-        assert_eq!(pkgs[0].r#type, PackageType::Npm);
+            let pkgs = parser.parse().unwrap();
+            assert_eq!(pkgs.len(), 17);
+            assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
+            assert_eq!(pkgs[0].version, "1.1.0");
+            assert_eq!(pkgs[0].r#type, PackageType::Npm);
 
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "yargs");
-        assert_eq!(last.version, "16.2.0");
-        assert_eq!(last.r#type, PackageType::Npm);
+            let last = pkgs.last().unwrap();
+            assert_eq!(last.name, "yargs");
+            assert_eq!(last.version, "16.2.0");
+            assert_eq!(last.r#type, PackageType::Npm);
+        }
     }
 
     #[should_panic]

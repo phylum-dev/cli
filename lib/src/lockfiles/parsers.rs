@@ -7,7 +7,7 @@ use nom::{
     },
     combinator::{eof, opt, recognize},
     error::{context, VerboseError},
-    multi::{count, many0, many1, many_till},
+    multi::{count, many1, many_till},
     sequence::{delimited, tuple},
     AsChar, IResult,
 };
@@ -32,9 +32,15 @@ pub mod yarn {
 
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
         let (i, _) = yarn_lock_header(input)?;
-        let (i, mut entries) = many0(entry)(i)?;
-        let (i, final_entry) = entry_final(i)?;
-        entries.push(final_entry);
+        let (i, mut entries) = many1(entry)(i)?;
+
+        // Attempt to parse one final entry not followed by a newline
+        let res = entry_final(i);
+        if let Ok((i, final_entry)) = res {
+            entries.push(final_entry);
+            return Ok((i, entries));
+        }
+
         Ok((i, entries))
     }
 

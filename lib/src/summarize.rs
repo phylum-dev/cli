@@ -115,10 +115,7 @@ fn response_to_table<T>(resp: &RequestStatusResponse<T>) -> Table
 where
     T: Scored,
 {
-    let ecosystem = PackageType::from_str(&resp.ecosystem);
-    let language = ecosystem
-        .map(|e| e.language().to_string())
-        .unwrap_or_default();
+    let ecosystem = PackageType::from_str(&resp.ecosystem).unwrap_or(PackageType::Npm);
 
     let dt = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
 
@@ -141,7 +138,12 @@ where
             "Job ID",
             resp.job_id.to_string(),
         ),
-        ("Type", resp.ecosystem.to_uppercase(), "Language", language),
+        (
+            "Type",
+            ecosystem.render(),
+            "Language",
+            ecosystem.language().to_string(),
+        ),
         (
             "User ID",
             resp.user_email.to_string(),
