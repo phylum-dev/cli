@@ -12,8 +12,5 @@ pub use restson::Error;
 #[macro_use]
 extern crate log;
 
-#[macro_use]
-extern crate prettytable;
-
 //#[macro_use]
-//extern crate fake;
+//extern crate prettytable;
