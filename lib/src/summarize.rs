@@ -2,8 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use chrono::NaiveDateTime;
-use fake::{Fake, Faker};
-use prettytable::{Row, Table};
+use prettytable::*;
 
 use crate::render::Renderable;
 use crate::types::*;
@@ -199,7 +198,9 @@ fn vuln_to_rows(
         "".to_string()
     };
 
-    rows.push(row![b -> format!("* {} (base severity: {})", cve_s, vuln.base_severity), r -> &pkg_descriptor]);
+    rows.push(
+        row![b -> format!("* {} (Risk Level: {})", cve_s, vuln.risk_level), r -> &pkg_descriptor],
+    );
     rows.push(row![]);
     rows.push(row![format!(
         "Description: {}",
@@ -226,16 +227,14 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             .packages
             .iter()
             .map(|p| {
-                p.heuristics.iter().map(move |(k, v)| {
-                    Issue {
-                        name: k.to_string(),
-                        pkg_name: p.basic_status.name.to_string(),
-                        pkg_version: p.basic_status.version.to_string(),
-                        risk_level: Faker.fake(), // TODO: update when the api supports this
-                        risk_domain: v.domain.to_owned(),
-                        score: (v.score * 100.0).round(),
-                        description: v.description.to_string(),
-                    }
+                p.heuristics.iter().map(move |(k, v)| Issue {
+                    name: k.to_string(),
+                    pkg_name: p.basic_status.name.to_string(),
+                    pkg_version: p.basic_status.version.to_string(),
+                    risk_level: v.risk_level.to_owned(),
+                    risk_domain: v.domain.to_owned(),
+                    score: (v.score * 100.0).round(),
+                    description: v.description.to_string(),
                 })
             })
             .flatten()
@@ -279,16 +278,14 @@ impl Summarize for PackageStatusExtended {
         let issues: Vec<Issue> = self
             .heuristics
             .iter()
-            .map(move |(k, v)| {
-                Issue {
-                    name: k.to_string(),
-                    pkg_name: self.basic_status.name.to_string(),
-                    pkg_version: self.basic_status.version.to_string(),
-                    risk_level: Faker.fake(), // TODO: update when the api supports this
-                    risk_domain: v.domain.to_owned(),
-                    score: (v.score * 100.0).round(),
-                    description: v.description.to_string(),
-                }
+            .map(move |(k, v)| Issue {
+                name: k.to_string(),
+                pkg_name: self.basic_status.name.to_string(),
+                pkg_version: self.basic_status.version.to_string(),
+                risk_level: v.risk_level.to_owned(),
+                risk_domain: v.domain.to_owned(),
+                score: (v.score * 100.0).round(),
+                description: v.description.to_string(),
             })
             .collect();
 

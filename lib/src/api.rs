@@ -359,7 +359,8 @@ mod tests {
                     "something": {
                         "description": "do stuff",
                         "score": 3.14,
-                        "domain": "AuthorRisk"
+                        "domain": "AuthorRisk",
+                        "risk_level": "medium"
                     }
                 },
                 "dependencies": []
@@ -475,7 +476,8 @@ mod tests {
                         "something": {
                             "description": "do stuff",
                             "score": 3.14,
-                            "domain": "EngineeringRisk"
+                            "domain": "EngineeringRisk",
+                            "risk_level": "critical"
                         }
                     },
                     "riskVectors": {
