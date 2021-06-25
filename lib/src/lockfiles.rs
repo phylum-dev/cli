@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::types::{PackageDescriptor, PackageType};
 
 mod parsers;
-use parsers::{gem, yarn};
+use parsers::{gem, pypi, yarn};
 
 pub struct PackageLock(String);
 pub struct YarnLock(String);
@@ -86,6 +86,22 @@ impl Parseable for GemLock {
     }
 }
 
+impl Parseable for PyRequirements {
+    fn new(filename: &Path) -> Result<Self, io::Error>
+    where
+        Self: Sized,
+    {
+        Ok(PyRequirements(std::fs::read_to_string(filename)?))
+    }
+
+    /// Parses `requirements.txt` files into a vec of packages
+    fn parse(&self) -> ParseResult {
+        let (_, entries) =
+            pypi::parse(&self.0).map_err(|_e| "Failed to parse requirements file")?;
+        Ok(entries)
+    }
+}
+
 mod tests {
     #[cfg(test)]
     use super::*;
@@ -152,5 +168,37 @@ mod tests {
     }
 
     #[test]
-    fn lock_parse_requirements() {}
+    fn lock_parse_requirements() {
+        let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+        assert_eq!(pkgs.len(), 129);
+        assert_eq!(pkgs[0].name, "PyYAML");
+        assert_eq!(pkgs[0].version, "5.4.1");
+        assert_eq!(pkgs[0].r#type, PackageType::PyPi);
+
+        let last = pkgs.last().unwrap();
+        assert_eq!(last.name, "livy");
+        assert_eq!(last.version, "0.7.3");
+        assert_eq!(last.r#type, PackageType::PyPi);
+    }
+
+    #[test]
+    fn lock_parse_requirements_complex() {
+        let parser =
+            PyRequirements::new(Path::new("tests/fixtures/complex-requirements.txt")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+        assert_eq!(pkgs.len(), 30);
+        assert_eq!(pkgs[0].name, "nose");
+        assert_eq!(pkgs[0].version, "latest");
+        assert_eq!(pkgs[0].r#type, PackageType::PyPi);
+
+        let last = pkgs.last().unwrap();
+        assert_eq!(last.name, "FooProject9");
+        assert_eq!(last.version, ">2.0.*,!=2.1");
+        assert_eq!(last.r#type, PackageType::PyPi);
+
+        println!("{:?}", pkgs);
+    }
 }

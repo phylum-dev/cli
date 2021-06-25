@@ -2,13 +2,13 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
     character::{
-        complete::{line_ending, none_of, space0},
+        complete::{alphanumeric1, line_ending, none_of, not_line_ending, space0},
         streaming::multispace0,
     },
     combinator::{eof, opt, recognize},
     error::{context, VerboseError},
-    multi::{count, many1, many_till},
-    sequence::{delimited, tuple},
+    multi::{count, many0, many1, many_till},
+    sequence::{delimited, pair, tuple},
     AsChar, IResult,
 };
 
@@ -153,6 +153,85 @@ pub mod gem {
             name: name.to_string(),
             version: version.to_string(),
             r#type: PackageType::Ruby,
+        })
+    }
+}
+
+pub mod pypi {
+    use super::*;
+
+    pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
+        let pkgs = input
+            .lines()
+            .map(|l| match l.contains("://") {
+                true => package(""),
+                false => package(l),
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        Ok((input, pkgs))
+    }
+
+    fn filter_package_name(input: &str) -> Result<&str, &str> {
+        recognize(pair(
+            alphanumeric1,
+            many0(alt((alphanumeric1, alt((tag("-"), tag("_")))))),
+        ))(input)
+    }
+
+    fn get_package_version(input: &str) -> &str {
+        // remove features (if exists) as we want the whole package
+        let fs = input.split("]").collect::<Vec<&str>>();
+        let input = match fs.len() {
+            1 => fs[0].trim(),
+            2 => fs[1].trim(),
+            _ => "",
+        };
+
+        // python packages listed without a version will use latest
+        // ideally we'll be given the pinned versions.
+        let input = match input.len() {
+            0 => "latest",
+            _ => input,
+        };
+        input
+    }
+
+    fn filter_line(input: &str) -> Result<&str, &str> {
+        // filter out comments, features, and install options
+        recognize(alt((
+            take_until("#"),
+            take_until(";"),
+            take_until("--"),
+            not_line_ending,
+        )))(input)
+    }
+
+    fn filter_package_version(input: &str) -> Result<&str, &str> {
+        let check = !input.contains("!=") && !input.contains(">") && !input.contains("<");
+        let (input, _) = match check {
+            true => recognize(many1(alt((tag("=="), tag("~=")))))(input)?,
+            false => (input, ""),
+        };
+
+        Ok((input, ""))
+    }
+
+    fn package(input: &str) -> Option<PackageDescriptor> {
+        let (_, name) = filter_line(input).ok()?;
+        let (version, name) = filter_package_name(name).ok()?;
+        let version = get_package_version(version.trim());
+
+        let check_version = !version.contains(",") && version != "latest";
+        let (version, _) = match check_version {
+            true => filter_package_version(version).ok()?,
+            false => (version, ""),
+        };
+
+        Some(PackageDescriptor {
+            name: name.to_string().split_whitespace().collect(),
+            version: version.to_string().split_whitespace().collect(),
+            r#type: PackageType::PyPi,
         })
     }
 }
