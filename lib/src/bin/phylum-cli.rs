@@ -102,10 +102,24 @@ fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) {
     if verbose {
         let resp = api.get_job_status_ext(&job_id);
-        print_response(&resp, pretty);
+        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+            print_user_warning!(
+                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                Blue.paint("phylum analyze <lock_file>")
+            );
+        } else {
+            print_response(&resp, pretty);
+        }
     } else {
         let resp = api.get_job_status(&job_id);
-        print_response(&resp, pretty);
+        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+            print_user_warning!(
+                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                Blue.paint("phylum analyze <lock_file>")
+            );
+        } else {
+            print_response(&resp, pretty);
+        }
     }
 }
 
@@ -120,7 +134,7 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
 
     let mut get_job = |job_id: Option<&str>| {
         let job_id = JobId::from_str(&job_id.unwrap())
-            .unwrap_or_else(|err| err_exit(err, "Invalid request id", -3));
+            .unwrap_or_else(|err| err_exit(err, "Invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -3));
         get_job_status(api, &job_id, verbose, pretty_print);
     };
 
@@ -141,12 +155,19 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     } else if matches.is_present("JOB_ID") {
         get_job(matches.value_of("JOB_ID"));
     } else {
-        println!(
-            "Projects and most recent run for {}\n",
-            Blue.paint(&config.auth_info.user)
-        );
         let resp = api.get_status();
-        print_response(&resp, pretty_print);
+        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+            print_user_warning!(
+                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                Blue.paint("phylum analyze <lock_file>")
+            );
+        } else {
+            println!(
+                "Projects and most recent run for {}\n",
+                Blue.paint(&config.auth_info.user)
+            );
+            print_response(&resp, pretty_print);
+        }
     }
 
     0
@@ -438,7 +459,7 @@ fn handle_auth_keys(
         save_config(config_path, &config)
             .unwrap_or_else(|err| log::error!("Failed to clear api token from config: {}", err));
         print_user_success!("Successfully deleted API key");
-    } else if matches.subcommand_matches("list").is_some() {
+    } else if matches.subcommand_matches("list").is_some() || matches.subcommand().is_none() {
         let resp = api.get_api_tokens();
 
         // We only show the user the active API keys.
@@ -902,7 +923,15 @@ fn handle_get_package(
     }
     let resp = api.get_package_details(&pkg.unwrap());
     log::debug!("==> {:?}", resp);
-    print_response(&resp, pretty_print);
+
+    if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+        print_user_warning!(
+            "No matching packages found. Submit a lockfile for processing:\n\n\t{}\n",
+            Blue.paint("phylum analyze <lock_file>")
+        );
+    } else {
+        print_response(&resp, pretty_print);
+    }
 
     0
 }
@@ -1060,7 +1089,7 @@ fn main() {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
-                .unwrap_or_else(|err| err_exit(err, "Received invalid request id", -4));
+                .unwrap_or_else(|err| err_exit(err, "Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -4));
             let resp = api.cancel(&request_id);
             print_response(&resp, true);
         }

@@ -142,7 +142,7 @@ subcommands:
                         about: Deactivate an API key
                         args:
                             - key_id:
-                                required: false
+                                required: true
                                 takes_value: true
                                 index: 1
             - status:
