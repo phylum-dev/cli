@@ -583,7 +583,7 @@ mod tests {
         let res = client.create_api_token();
         assert!(res.is_ok(), "{:?}", res);
         let token = res.unwrap();
-        assert_eq!(token.active, true);
+        assert!(token.active);
         assert_eq!(
             token.key,
             Key::from_str("a37ba84d-67b4-42ff-910e-25ec5fb7b909").unwrap()
