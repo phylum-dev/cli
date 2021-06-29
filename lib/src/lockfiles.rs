@@ -174,12 +174,12 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 129);
         assert_eq!(pkgs[0].name, "PyYAML");
-        assert_eq!(pkgs[0].version, "5.4.1");
+        assert_eq!(pkgs[0].version, "==5.4.1");
         assert_eq!(pkgs[0].r#type, PackageType::PyPi);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "livy");
-        assert_eq!(last.version, "0.7.3");
+        assert_eq!(last.version, "==0.7.3");
         assert_eq!(last.r#type, PackageType::PyPi);
     }
 
@@ -191,7 +191,7 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 30);
         assert_eq!(pkgs[0].name, "nose");
-        assert_eq!(pkgs[0].version, "latest");
+        assert_eq!(pkgs[0].version, "==*");
         assert_eq!(pkgs[0].r#type, PackageType::PyPi);
 
         let last = pkgs.last().unwrap();

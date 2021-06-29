@@ -191,7 +191,7 @@ pub mod pypi {
         // python packages listed without a version will use latest
         // ideally we'll be given the pinned versions.
         let input = match input.len() {
-            0 => "latest",
+            0 => "==*",
             _ => input,
         };
         input
@@ -207,26 +207,10 @@ pub mod pypi {
         )))(input)
     }
 
-    fn filter_package_version(input: &str) -> Result<&str, &str> {
-        let check = !input.contains("!=") && !input.contains(">") && !input.contains("<");
-        let (input, _) = match check {
-            true => recognize(many1(alt((tag("=="), tag("~=")))))(input)?,
-            false => (input, ""),
-        };
-
-        Ok((input, ""))
-    }
-
     fn package(input: &str) -> Option<PackageDescriptor> {
         let (_, name) = filter_line(input).ok()?;
         let (version, name) = filter_package_name(name).ok()?;
         let version = get_package_version(version.trim());
-
-        let check_version = !version.contains(",") && version != "latest";
-        let (version, _) = match check_version {
-            true => filter_package_version(version).ok()?,
-            false => (version, ""),
-        };
 
         Some(PackageDescriptor {
             name: name.to_string().split_whitespace().collect(),
