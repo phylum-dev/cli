@@ -888,16 +888,16 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
 
 /// Prints a verbose message informing the user that an update is available.
 fn print_update_message() {
-    println!(
+    eprintln!(
         "---------------- {} ----------------\n",
         Cyan.paint("Update Available")
     );
-    println!("A new version of the Phylum CLI is available. Run");
-    println!(
+    eprintln!("A new version of the Phylum CLI is available. Run");
+    eprintln!(
         "\n\t{}\n\nto update to the latest version!\n",
         Blue.paint("phylum update")
     );
-    println!("{:-^50}\n\n", "");
+    eprintln!("{:-^50}\n\n", "");
 }
 
 fn print_sc_help(app: &mut App, subcommand: &str) {
