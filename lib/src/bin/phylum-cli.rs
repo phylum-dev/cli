@@ -21,7 +21,7 @@ extern crate serde_json;
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
 use phylum_cli::lockfiles::Parseable;
-use phylum_cli::lockfiles::{GemLock, PackageLock, PyRequirements, YarnLock};
+use phylum_cli::lockfiles::*;
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::*;
 
@@ -179,7 +179,13 @@ fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)
 
     let packages = PyRequirements::new(path).ok()?.parse();
     if packages.is_ok() {
-        log::debug!("Submitting file as type PyPI requirements.txt");
+        log::debug!("Submitting file as type pip requirements.txt");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+    }
+
+    let packages = PipFile::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
         return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
@@ -208,6 +214,10 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
         }
         "requirements.txt" => {
             let parser = PyRequirements::new(path).ok()?;
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+        }
+        "Pipfile.txt" | "Pipfile.lock" => {
+            let parser = PipFile::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
         }
         _ => try_get_packages(path),

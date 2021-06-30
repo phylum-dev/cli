@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::marker::Sized;
 use std::path::Path;
 
 use serde_json::Value;
+use toml;
 
 use crate::types::{PackageDescriptor, PackageType};
 
@@ -14,6 +16,7 @@ pub struct PackageLock(String);
 pub struct YarnLock(String);
 pub struct GemLock(String);
 pub struct PyRequirements(String);
+pub struct PipFile(String);
 
 pub type ParseResult = Result<Vec<PackageDescriptor>, Box<dyn Error>>;
 
@@ -102,6 +105,57 @@ impl Parseable for PyRequirements {
     }
 }
 
+impl Parseable for PipFile {
+    fn new(filename: &Path) -> Result<Self, io::Error>
+    where
+        Self: Sized,
+    {
+        Ok(PipFile(std::fs::read_to_string(filename)?))
+    }
+
+    /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
+    fn parse(&self) -> ParseResult {
+        let mut input: HashMap<String, Value> = match toml::from_str::<toml::Value>(&self.0).ok() {
+            Some(s) => serde_json::from_value(serde_json::to_value(s)?)?,
+            None => serde_json::from_str(&self.0)?,
+        };
+
+        let mut packages: HashMap<String, Value> =
+            serde_json::from_value(input.remove("packages").unwrap_or_default())
+                .unwrap_or_default();
+        let dev_packages: HashMap<String, Value> =
+            serde_json::from_value(input.remove("dev-packages").unwrap_or_default())
+                .unwrap_or_default();
+        let default: HashMap<String, Value> =
+            serde_json::from_value(input.remove("default").unwrap_or_default()).unwrap_or_default();
+        let develop: HashMap<String, Value> =
+            serde_json::from_value(input.remove("develop").unwrap_or_default()).unwrap_or_default();
+
+        packages.extend(dev_packages);
+        packages.extend(default);
+        packages.extend(develop);
+
+        packages
+            .iter()
+            .filter_map(|(k, v)| {
+                let version = match v {
+                    Value::String(_) => Some(v),
+                    Value::Object(s) => s.get("version"),
+                    _ => None,
+                };
+                version.map(|f| (k, f))
+            })
+            .map(|(k, v)| {
+                Ok(PackageDescriptor {
+                    name: k.as_str().to_string(),
+                    version: v.as_str().unwrap_or_default().to_string(),
+                    r#type: PackageType::PyPi,
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()
+    }
+}
+
 mod tests {
     #[cfg(test)]
     use super::*;
@@ -168,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn lock_parse_requirements() {
+    fn parse_requirements() {
         let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
@@ -184,21 +238,61 @@ mod tests {
     }
 
     #[test]
-    fn lock_parse_requirements_complex() {
+    fn parse_requirements_complex() {
         let parser =
             PyRequirements::new(Path::new("tests/fixtures/complex-requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 30);
         assert_eq!(pkgs[0].name, "nose");
-        assert_eq!(pkgs[0].version, "==*");
+        assert_eq!(pkgs[0].version, "*");
         assert_eq!(pkgs[0].r#type, PackageType::PyPi);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "FooProject9");
         assert_eq!(last.version, ">2.0.*,!=2.1");
         assert_eq!(last.r#type, PackageType::PyPi);
+    }
 
-        println!("{:?}", pkgs);
+    #[test]
+    fn parse_pipfile() {
+        let parser = PipFile::new(Path::new("tests/fixtures/Pipfile")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+        assert_eq!(pkgs.len(), 34);
+
+        for pkg in &pkgs {
+            if pkg.name == "pypresence" {
+                assert_eq!(pkg.version, "==4.0.0");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            } else if pkg.name == "async-timeout" {
+                assert_eq!(pkg.version, "*");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            } else if pkg.name == "unittest2" {
+                assert_eq!(pkg.version, ">=1.0,<3.0");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            }
+        }
+    }
+
+    #[test]
+    fn lock_parse_pipfile() {
+        let parser = PipFile::new(Path::new("tests/fixtures/Pipfile.lock")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+        assert_eq!(pkgs.len(), 27);
+
+        for pkg in &pkgs {
+            if pkg.name == "jdcal" {
+                assert_eq!(pkg.version, "==1.3");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            } else if pkg.name == "certifi" {
+                assert_eq!(pkg.version, "==2017.7.27.1");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            } else if pkg.name == "unittest2" {
+                assert_eq!(pkg.version, "==1.1.0");
+                assert_eq!(pkg.r#type, PackageType::PyPi);
+            }
+        }
     }
 }
