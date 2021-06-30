@@ -180,13 +180,13 @@ fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)
     let packages = PyRequirements::new(path).ok()?.parse();
     if packages.is_ok() {
         log::debug!("Submitting file as type pip requirements.txt");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
     }
 
     let packages = PipFile::new(path).ok()?.parse();
     if packages.is_ok() {
         log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
     }
 
     log::error!("Failed to identify lock file type");
@@ -214,11 +214,11 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
         }
         "requirements.txt" => {
             let parser = PyRequirements::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
         }
         "Pipfile.txt" | "Pipfile.lock" => {
             let parser = PipFile::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
         }
         _ => try_get_packages(path),
     };

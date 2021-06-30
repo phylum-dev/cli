@@ -149,7 +149,7 @@ impl Parseable for PipFile {
                 Ok(PackageDescriptor {
                     name: k.as_str().to_string(),
                     version: v.as_str().unwrap_or_default().to_string(),
-                    r#type: PackageType::PyPi,
+                    r#type: PackageType::Python,
                 })
             })
             .collect::<Result<Vec<_>, _>>()
@@ -226,15 +226,16 @@ mod tests {
         let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
+        println!("type: {}", pkgs[0].r#type);
         assert_eq!(pkgs.len(), 129);
         assert_eq!(pkgs[0].name, "PyYAML");
         assert_eq!(pkgs[0].version, "==5.4.1");
-        assert_eq!(pkgs[0].r#type, PackageType::PyPi);
+        assert_eq!(pkgs[0].r#type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "livy");
         assert_eq!(last.version, "==0.7.3");
-        assert_eq!(last.r#type, PackageType::PyPi);
+        assert_eq!(last.r#type, PackageType::Python);
     }
 
     #[test]
@@ -246,12 +247,12 @@ mod tests {
         assert_eq!(pkgs.len(), 30);
         assert_eq!(pkgs[0].name, "nose");
         assert_eq!(pkgs[0].version, "*");
-        assert_eq!(pkgs[0].r#type, PackageType::PyPi);
+        assert_eq!(pkgs[0].r#type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "FooProject9");
         assert_eq!(last.version, ">2.0.*,!=2.1");
-        assert_eq!(last.r#type, PackageType::PyPi);
+        assert_eq!(last.r#type, PackageType::Python);
     }
 
     #[test]
@@ -264,13 +265,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "pypresence" {
                 assert_eq!(pkg.version, "==4.0.0");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "async-timeout" {
                 assert_eq!(pkg.version, "*");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "unittest2" {
                 assert_eq!(pkg.version, ">=1.0,<3.0");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             }
         }
     }
@@ -285,13 +286,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "jdcal" {
                 assert_eq!(pkg.version, "==1.3");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "certifi" {
                 assert_eq!(pkg.version, "==2017.7.27.1");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "unittest2" {
                 assert_eq!(pkg.version, "==1.1.0");
-                assert_eq!(pkg.r#type, PackageType::PyPi);
+                assert_eq!(pkg.r#type, PackageType::Python);
             }
         }
     }

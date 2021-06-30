@@ -214,7 +214,7 @@ pub mod pypi {
         Some(PackageDescriptor {
             name: name.to_string().split_whitespace().collect(),
             version: version.to_string().split_whitespace().collect(),
-            r#type: PackageType::PyPi,
+            r#type: PackageType::Python,
         })
     }
 }
