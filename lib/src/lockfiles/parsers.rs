@@ -181,7 +181,7 @@ pub mod pypi {
 
     fn get_package_version(input: &str) -> &str {
         // remove features (if exists) as we want the whole package
-        let fs = input.split("]").collect::<Vec<&str>>();
+        let fs = input.split(']').collect::<Vec<&str>>();
         let input = match fs.len() {
             1 => fs[0].trim(),
             2 => fs[1].trim(),
@@ -190,11 +190,10 @@ pub mod pypi {
 
         // python packages listed without a version will use latest
         // ideally we'll be given the pinned versions.
-        let input = match input.len() {
-            0 => "==*",
+        match input.len() {
+            0 => "*",
             _ => input,
-        };
-        input
+        }
     }
 
     fn filter_line(input: &str) -> Result<&str, &str> {
