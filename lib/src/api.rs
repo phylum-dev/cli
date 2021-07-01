@@ -34,6 +34,12 @@ impl PhylumApi {
         Ok(resp.msg)
     }
 
+    /// Check auth status of the current user
+    pub fn auth_status(&mut self) -> Result<bool, Error> {
+        let resp: AuthStatusResponse = self.client.get(())?;
+        Ok(resp.authenticated)
+    }
+
     /// Create a new project
     pub fn create_project(&mut self, name: &str) -> Result<ProjectId, Error> {
         let req = ProjectCreateRequest {
