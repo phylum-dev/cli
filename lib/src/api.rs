@@ -359,7 +359,8 @@ mod tests {
                     "something": {
                         "description": "do stuff",
                         "score": 3.14,
-                        "domain": "AuthorRisk"
+                        "domain": "AuthorRisk",
+                        "risk_level": "medium"
                     }
                 },
                 "dependencies": []
@@ -475,7 +476,8 @@ mod tests {
                         "something": {
                             "description": "do stuff",
                             "score": 3.14,
-                            "domain": "EngineeringRisk"
+                            "domain": "EngineeringRisk",
+                            "risk_level": "critical"
                         }
                     },
                     "riskVectors": {
@@ -581,7 +583,7 @@ mod tests {
         let res = client.create_api_token();
         assert!(res.is_ok(), "{:?}", res);
         let token = res.unwrap();
-        assert_eq!(token.active, true);
+        assert!(token.active);
         assert_eq!(
             token.key,
             Key::from_str("a37ba84d-67b4-42ff-910e-25ec5fb7b909").unwrap()

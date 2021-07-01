@@ -5,8 +5,6 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use fake::Dummy;
-
 use crate::restson::{Error, RestPath};
 
 pub type ProjectId = Uuid;
@@ -446,12 +444,17 @@ pub struct PackageStatusExtended {
     pub heuristics: HashMap<String, HeuristicResult>,
 }
 
-#[derive(Debug, Deserialize, Dummy)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum RiskLevel {
+    #[serde(rename = "critical")]
     Crit,
+    #[serde(rename = "high")]
     High,
+    #[serde(rename = "medium")]
     Med,
+    #[serde(rename = "low")]
     Low,
+    #[serde(rename = "info")]
     Info,
 }
 
@@ -499,11 +502,13 @@ pub struct HeuristicResult {
     pub description: String,
     pub domain: RiskDomain,
     pub score: f64,
+    pub risk_level: RiskLevel,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Vulnerability {
     pub cve: Vec<String>,
     pub base_severity: f32,
+    pub risk_level: RiskLevel,
     pub description: String,
     pub remediation: String,
 }
