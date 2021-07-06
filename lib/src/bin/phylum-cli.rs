@@ -511,16 +511,25 @@ fn handle_auth_keys(
 }
 
 /// Display the current authentication status to the user.
-fn handle_auth_status(config: &mut Config) {
-    if config.auth_info.api_token.is_some() {
-        let key = config.auth_info.api_token.as_ref().unwrap().key.to_string();
-        print_user_success!("Currenty authenticated with API key {}", Green.paint(key));
-    } else if !config.auth_info.user.is_empty() {
-        print_user_success!(
-            "Currenty authenticated as {}",
-            Green.paint(&config.auth_info.user)
-        );
+fn handle_auth_status(api: &mut PhylumApi, config: &mut Config) {
+    let resp = authenticate(api, config, false);
+
+    if resp.is_ok() {
+        if let Ok(true) = api.auth_status() {
+            if config.auth_info.api_token.is_some() {
+                let key = config.auth_info.api_token.as_ref().unwrap().key.to_string();
+                print_user_success!("Currently authenticated with API key {}", Green.paint(key));
+            } else if !config.auth_info.user.is_empty() {
+                print_user_success!(
+                    "Currently authenticated as {}",
+                    Green.paint(&config.auth_info.user)
+                );
+            }
+            return;
+        }
     }
+
+    print_user_warning!("User is not currently authenticated");
 }
 
 /// Handle the subcommands for the `auth` subcommand.
@@ -554,7 +563,7 @@ fn handle_auth(
     } else if let Some(subcommand) = matches.subcommand_matches("keys") {
         handle_auth_keys(api, config, config_path, subcommand);
     } else if matches.subcommand_matches("status").is_some() {
-        handle_auth_status(config);
+        handle_auth_status(api, config);
     } else {
         print_sc_help(app_helper, "auth");
     }
@@ -588,7 +597,7 @@ fn get_latest_version() -> Option<GithubRelease> {
         match data {
             Ok(d) => Some(d),
             Err(e) => {
-                println!("Failed latest version check: {:?}", e);
+                log::warn!("Failed latest version check: {:?}", e);
                 None
             }
         }
@@ -956,6 +965,38 @@ fn handle_get_package(
     0
 }
 
+fn authenticate(
+    api: &mut PhylumApi,
+    config: &mut Config,
+    should_manage_tokens: bool,
+) -> Result<(), phylum_cli::restson::Error> {
+    log::debug!("Authenticating...");
+    log::debug!("Auth config:\n{:?}", config.auth_info);
+
+    // If an API token has been configured, prefer that.  Otherwise, log in with
+    //  a standard username and password to get a JWT.
+    if !should_manage_tokens {
+        // auth endpoint doesn't support token auth
+        if let Some(ref token) = config.auth_info.api_token {
+            log::debug!("using token auth");
+            api.set_api_token(token).unwrap_or_else(|err| {
+                log::error!("Failed to set API token: {}", err);
+            });
+        }
+    }
+
+    if api.api_key.is_none() {
+        log::debug!("using standard auth");
+        let resp = api
+            .authenticate(&config.auth_info.user, &config.auth_info.pass)
+            .map(|_t| ());
+        log::debug!("==> {:?}", resp);
+        return resp;
+    }
+
+    Ok(())
+}
+
 fn main() {
     env_logger::init();
 
@@ -1056,28 +1097,10 @@ fn main() {
         || should_manage_tokens
         || should_get_packages
     {
-        log::debug!("Authenticating...");
-        log::debug!("Auth config:\n{:?}", config.auth_info);
-        // If an API token has been configured, prefer that.  Otherwise, log in with
-        //  a standard username and password to get a JWT.
-        if !should_manage_tokens {
-            // endpoint doesn't support token auth yet
-            if let Some(ref token) = config.auth_info.api_token {
-                log::debug!("using token auth");
-                api.set_api_token(token).unwrap_or_else(|err| {
-                    log::error!("Failed to set API token: {}", err);
-                });
-            }
-        }
-        if api.api_key.is_none() {
-            log::debug!("using standard auth");
-            let resp = api
-                .authenticate(&config.auth_info.user, &config.auth_info.pass)
-                .unwrap_or_else(|err| {
-                    err_exit(err, "Error attempting to authenticate", -1);
-                });
+        let res = authenticate(&mut api, &mut config, should_manage_tokens);
 
-            log::info!("==> {:?}", resp);
+        if let Err(e) = res {
+            err_exit(e, "Error attempting to authenticate", -1);
         }
     }
 

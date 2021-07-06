@@ -228,6 +228,18 @@ pub struct PackageSubmissionResponse {
     pub job_id: JobId,
 }
 
+/// GET /job/auth_status
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthStatusResponse {
+    pub authenticated: bool,
+}
+
+impl RestPath<()> for AuthStatusResponse {
+    fn get_path(_: ()) -> Result<String, Error> {
+        Ok(format!("{}/job/auth_status", API_PATH))
+    }
+}
+
 /// GET /job/heartbeat
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PingResponse {
