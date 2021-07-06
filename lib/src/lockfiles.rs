@@ -143,13 +143,12 @@ impl Parseable for PipFile {
                     Value::Object(s) => s.get("version"),
                     _ => None,
                 };
-                version.map(|f| (k, f))
-            })
-            .map(|(k, v)| {
-                Ok(PackageDescriptor {
-                    name: k.as_str().to_string(),
-                    version: v.as_str().unwrap_or_default().to_string(),
-                    r#type: PackageType::Python,
+                version.map(|v| {
+                    Ok(PackageDescriptor {
+                        name: k.as_str().to_string(),
+                        version: v.as_str().unwrap_or_default().to_string(),
+                        r#type: PackageType::Python,
+                    })
                 })
             })
             .collect::<Result<Vec<_>, _>>()
@@ -226,7 +225,6 @@ mod tests {
         let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        println!("type: {}", pkgs[0].r#type);
         assert_eq!(pkgs.len(), 129);
         assert_eq!(pkgs[0].name, "PyYAML");
         assert_eq!(pkgs[0].version, "==5.4.1");

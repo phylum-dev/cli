@@ -163,9 +163,9 @@ pub mod pypi {
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
         let pkgs = input
             .lines()
-            .map(|l| match l.contains("://") {
-                true => package(""),
-                false => package(l),
+            .filter_map(|l| match !l.contains("://") {
+                true => Some(package(l)),
+                false => None,
             })
             .flatten()
             .collect::<Vec<_>>();
