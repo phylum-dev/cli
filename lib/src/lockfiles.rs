@@ -138,17 +138,28 @@ impl Parseable for PipFile {
             .iter()
             .filter_map(|(k, v)| {
                 let version = match v {
-                    Value::String(_) => Some(v),
-                    Value::Object(s) => s.get("version"),
+                    Value::String(s) if s.contains("==") => Some(v.as_str().unwrap_or_default()),
+                    Value::Object(s) => match s.get("version") {
+                        Some(s) if s.as_str().unwrap_or_default().contains("==") => {
+                            Some(s.as_str().unwrap_or_default())
+                        }
+                        _ => None,
+                    },
                     _ => None,
                 };
-                version.map(|v| {
-                    Ok(PackageDescriptor {
-                        name: k.as_str().to_string(),
-                        version: v.as_str().unwrap_or_default().to_string(),
-                        r#type: PackageType::Python,
-                    })
-                })
+                match version {
+                    Some(_) => version.map(|v| {
+                        Ok(PackageDescriptor {
+                            name: k.as_str().to_string(),
+                            version: v.replace("==", "").trim().to_string(),
+                            r#type: PackageType::Python,
+                        })
+                    }),
+                    None => {
+                        log::warn!("Could not determine version for package: {}", k);
+                        None
+                    }
+                }
             })
             .collect::<Result<Vec<_>, _>>()
     }
@@ -226,12 +237,12 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 129);
         assert_eq!(pkgs[0].name, "PyYAML");
-        assert_eq!(pkgs[0].version, "==5.4.1");
+        assert_eq!(pkgs[0].version, "5.4.1");
         assert_eq!(pkgs[0].r#type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "livy");
-        assert_eq!(last.version, "==0.7.3");
+        assert_eq!(last.version, "0.7.3");
         assert_eq!(last.r#type, PackageType::Python);
     }
 
@@ -241,14 +252,14 @@ mod tests {
             PyRequirements::new(Path::new("tests/fixtures/complex-requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 30);
-        assert_eq!(pkgs[0].name, "nose");
-        assert_eq!(pkgs[0].version, "*");
+        assert_eq!(pkgs.len(), 5);
+        assert_eq!(pkgs[0].name, "docopt");
+        assert_eq!(pkgs[0].version, "0.6.1");
         assert_eq!(pkgs[0].r#type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "FooProject9");
-        assert_eq!(last.version, ">2.0.*,!=2.1");
+        assert_eq!(last.name, "FooProject5");
+        assert_eq!(last.version, "1.5");
         assert_eq!(last.r#type, PackageType::Python);
     }
 
@@ -257,17 +268,17 @@ mod tests {
         let parser = PipFile::new(Path::new("tests/fixtures/Pipfile")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 34);
+        assert_eq!(pkgs.len(), 4);
 
         for pkg in &pkgs {
             if pkg.name == "pypresence" {
-                assert_eq!(pkg.version, "==4.0.0");
+                assert_eq!(pkg.version, "4.0.0");
                 assert_eq!(pkg.r#type, PackageType::Python);
-            } else if pkg.name == "async-timeout" {
-                assert_eq!(pkg.version, "*");
+            } else if pkg.name == "chromedriver-py" {
+                assert_eq!(pkg.version, "91.0.4472.19");
                 assert_eq!(pkg.r#type, PackageType::Python);
-            } else if pkg.name == "unittest2" {
-                assert_eq!(pkg.version, ">=1.0,<3.0");
+            } else if pkg.name == "requests" {
+                assert_eq!(pkg.version, "2.24.0");
                 assert_eq!(pkg.r#type, PackageType::Python);
             }
         }
@@ -282,13 +293,13 @@ mod tests {
 
         for pkg in &pkgs {
             if pkg.name == "jdcal" {
-                assert_eq!(pkg.version, "==1.3");
+                assert_eq!(pkg.version, "1.3");
                 assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "certifi" {
-                assert_eq!(pkg.version, "==2017.7.27.1");
+                assert_eq!(pkg.version, "2017.7.27.1");
                 assert_eq!(pkg.r#type, PackageType::Python);
             } else if pkg.name == "unittest2" {
-                assert_eq!(pkg.version, "==1.1.0");
+                assert_eq!(pkg.version, "1.1.0");
                 assert_eq!(pkg.r#type, PackageType::Python);
             }
         }
