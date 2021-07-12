@@ -1,4 +1,9 @@
 #!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+
+pushd "$SCRIPT_DIR" || exit
+
 if [ ! -d ${HOME}/.phylum ]; then
   echo '[*] Creating ~/.phylum'
   mkdir -p ${HOME}/.phylum
@@ -50,3 +55,5 @@ if ! grep -q 'alias ph=' $HOME/.bashrc ;
 then
     echo "alias ph='phylum'" >> ${HOME}/.bashrc
 fi
+
+popd || exit
