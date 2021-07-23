@@ -37,6 +37,7 @@ if [ -f target/release/phylum ]; then
 elif [ -f phylum ]; then
   echo '[*] Copying phylum binary to ~/.phylum'
   cp -f phylum ${HOME}/.phylum/
+  chmod u+x ${HOME}/.phylum/phylum
 else
   echo "Can't find phylum"
 fi
