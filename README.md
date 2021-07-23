@@ -31,18 +31,15 @@ SUBCOMMANDS:
     version     Display application version
 ```
 
-## Releases
-Releases of phylum are statically-built for linux x64.
-
 ## Installation
-Currently, releases of phylum are statically-built for linux x64. If you need another architecture, see the section below on Building.
+Releases of phylum are statically-built for linux x64. If you need another architecture, see the section below on Building.
 
 An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files.
 
 This script also **adds the .phylum directory to the user's PATH** on bash.
 
 ## Building
-Phylum-cli is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
+Phylum is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
 1. Clone repository
 ```sh
 git clone https://github.com/phylum-dev/cli
@@ -60,7 +57,7 @@ The install.sh script copies a default configuration file, but requires user cre
 
 To register a user account, use the `auth register` subcommand to enter the user registration workflow where the phylum tool will query for user input:
 ```sh
-phylum auth register
+❯ phylum auth register
 
 ✔ Your name · demo
 ✔ Email address · demo@example.com
@@ -74,11 +71,11 @@ To have your Phylum user account enabled, please contact someone at Phylum.
 ## Example: First project submission
 Package submissions must be part of _projects_. Projects in phylum correspond to software projects the users want to analyze. When a phylum project is created, the `.phylum_project` file is written to the current working directory and used correlate mulitple analysis jobs to a single software project.
 ```sh
-phylum projects create <project_name>
+❯ phylum projects create <project_name>
 ```
 Next, submit a package lock file:
 ```sh
-phylum analyze package-lock.json
+❯ phylum analyze package-lock.json
 ✅ Job ID: ec95dbc1-bd13-41f5-88f2-18ac9bcab3b6
 
 
