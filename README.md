@@ -110,5 +110,12 @@ To get more detailed information about the job, we can use the verbose flag `-V`
 ❯ phylum analyze package-lock.json -V
 ... long output omitted ...
 ```
+
+To get the analysis results data in JSON format, we can use the `--json` option:
+```sh
+❯ phylum analyze package-lock.json -V --json
+... long output omitted ...
+```
+
 For more information, please see our [documentation](https://docs.phylum.io/docs)
 
