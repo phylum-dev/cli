@@ -849,7 +849,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let current_bin = std::env::current_exe()?;
     let mut current_bash = current_bin.clone();
     current_bash.pop();
-    current_bash.push("phylum-cli.bash");
+    current_bash.push("phylum.bash");
     let latest_version = &latest.name;
 
     // The data comes back to us as a JSON response of assets. We do not need
@@ -860,7 +860,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let bash_asset = &latest
         .assets
         .iter()
-        .find(|x| x.name == "phylum-cli.bash")
+        .find(|x| x.name == "phylum.bash")
         .unwrap();
 
     // Download the required files for the update.
