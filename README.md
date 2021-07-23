@@ -98,89 +98,17 @@ Next, submit a package lock file:
      90 - 100  [   60] ████████████████████████████████
 
 ```
-phylum sends the package and version information to the Phylum API and received a Job ID GUID. This GUID is then used to query for status of the specific job. In most cases, Phylum has already analyzed that package and can give an instantaneous result. In some cases, the package may need to be ingested, processed and analyzed. This might take 3-5 minutes but should happen exceedingly rarely.
+phylum sends the information from the package lockfile to the Phylum API and receives summary analysis results.
 
-Query the job status to receive an overview of the job and an overview of the package results
-```sh
-❯ phylum status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5
-[success] Response object:
-{
-  "id": "4860ff81-9b23-4e1b-8062-1cac7454f1d5",
-  "user_id": "3fae32db-6b59-4617-9e4d-53dc9235137f",
-  "created_at": 1617384979705,
-  "score": 0.5602972277915301,
-  "project": "5c347fb0-0b46-4797-9c87-ed71a6d3e2cc",
-  "label": "uncategorized",
-  "packages": [
-    {
-      "name": "axios",
-      "version": "0.19.0",
-      "license": "MIT",
-      "package_score": 0.5602972277915301,
-      "num_dependencies": 30,
-      "num_vulnerabilities": 2
-    }
-  ]
-}
-```
 Here we can see some summary information:
-* the package score of the job - `"score": 0.5602972277915301`
-* the package score of the axios package specifically - `"package_score": 0.5602972277915301`
-* the number of dependencies axios requires - `"num_dependencies": 30`
-* the number of vulnerabilities identified in axios version 0.19.0 - `"num_vulnerabilities": 2`
-
-In this case the package score of the job and package are the same since the job only has 1 package.
+* the project score of the analysis job - `Proj. Score: 52`
+* the number of dependencies - `Num Deps: 63`
+* a histogram on the lower left showing the distribution of package scores for each dependency in the analysis job
 
 To get more detailed information about the job, we can use the verbose flag `-V` on phylum.
 ```sh
-❯ phylum status -i 4860ff81-9b23-4e1b-8062-1cac7454f1d5 -V
-[success] Response object:
-{
-  "id": "4860ff81-9b23-4e1b-8062-1cac7454f1d5",
-  "user_id": "3fae32db-6b59-4617-9e4d-53dc9235137f",
-  "created_at": 1617384979705,
-  "score": 0.5602972277915301,
-  "project": "5c347fb0-0b46-4797-9c87-ed71a6d3e2cc",
-  "label": "uncategorized",
-  "packages": [
-    {
-      "name": "axios",
-      "version": "0.19.0",
-      "license": "MIT",
-      "package_score": 0.5602972277915301,
-      "num_dependencies": 30,
-      "num_vulnerabilities": 2,
-      "type": "npm",
-      "dependencies": [
-<abbreviated due to length>
-      ],
-      "vulnerabilities": [
-        {
-          "base_severity": "high",
-          "cve": "CVE-2020-28168",
-          "description": "The `axios` NPM package before 0.21.1 contains a Server-Side Request Forgery (SSRF) vulnerability where an attacker is able to bypass a proxy by providing a URL that responds with a redirect to a restricted host or IP address.",
-          "remediation": "Upgrade to 0.21.1 or later."
-        },
-        {
-          "base_severity": "medium",
-          "cve": "CVE-2020-28168",
-          "description": "Axios NPM package 0.21.0 contains a Server-Side Request Forgery (SSRF) vulnerability where an attacker is able to bypass a proxy by providing a URL that responds with a redirect to a restricted host or IP address.",
-          "remediation": ""
-        }
-      ],
-      "heuristics": {
-        "abandonware": {
-          "description": "Finds projects that have likely been abandoned. [domain: EngineeringRisk]",
-          "score": 0.9510024076542912
-        },
-        "license": {
-          "description": "Categorizes the overall commercial risk of license used by this package. [domain: LicenseRisk]",
-          "score": 0.75
-        }
-      }
-    }
-  ]
-}
+❯ phylum analyze package-lock.json -V
+... long output omitted ...
 ```
 For more information, please see our [documentation](https://docs.phylum.io/docs)
 
