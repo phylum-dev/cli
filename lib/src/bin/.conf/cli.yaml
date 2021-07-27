@@ -170,6 +170,11 @@ subcommands:
                 short: j
                 long: json
                 help: "Produce output in json format (default: false)"
+            - force:
+                short: F
+                help: Force re-processing of packages (even if they already exist in the system)
+                takes_value: false
+                required: false
     - batch:
         about: Submits a batch of requests to the processing system
         settings:
@@ -184,6 +189,11 @@ subcommands:
                 short: t
                 help: Package type (`npm`, `ruby`, etc)
                 takes_value: true
+                required: false
+            - force:
+                short: F
+                help: Force re-processing of packages (even if they already exist in the system)
+                takes_value: false
                 required: false
             - low-priority:
                 short: L
