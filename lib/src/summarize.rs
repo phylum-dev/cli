@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use ansi_term::Color::Purple;
+use ansi_term::Color::{Green, Purple, Red};
 use chrono::NaiveDateTime;
 use prettytable::*;
 
@@ -159,6 +159,18 @@ where
         .join("\n")
     });
 
+    let status = if resp.pass {
+        format!("{:>16}: {}", "Status", Green.paint("PASS").to_string())
+    } else {
+        format!(
+            "{:>16}: {}\n{:>16}: {}",
+            "Status",
+            Red.paint("FAIL").to_string(),
+            "Reason",
+            resp.msg
+        )
+    };
+
     let scores: Vec<f64> = resp.packages.iter().map(|p| p.score()).collect();
 
     let hist = Histogram::new(scores.as_slice(), 0.0, 1.0, 10);
@@ -179,6 +191,7 @@ where
     }
 
     ret.add_row(row![t]);
+    ret.add_row(row![status]);
     ret.set_format(table_format(0, 0));
     ret
 }
@@ -209,19 +222,28 @@ fn vuln_to_rows(
         "".to_string()
     };
 
-    rows.push(
-        row![b -> format!("* {} (Risk Level: {})", cve_s, vuln.risk_level), r -> &pkg_descriptor],
-    );
+    rows.push(Row::new(vec![
+        Cell::new_align(&vuln.risk_level.to_string(), format::Alignment::LEFT)
+            .with_style(Attr::ForegroundColor(color::Color::from(&vuln.risk_level))),
+        Cell::new_align(
+            &format!(
+                "{} is vulnerable to {} [{}]",
+                &pkg_descriptor, vuln.title, cve_s
+            ),
+            format::Alignment::LEFT,
+        )
+        .with_style(Attr::Bold),
+    ]));
     rows.push(row![]);
-    rows.push(row![format!(
-        "Description: {}",
-        textwrap::fill(&vuln.description, 80)
-    )]);
+    rows.push(row![
+        "",
+        format!("Description: {}", textwrap::fill(&vuln.description, 80))
+    ]);
     rows.push(row! {});
-    rows.push(row![format!(
-        "Remediation: {}",
-        textwrap::fill(&vuln.remediation, 80)
-    )]);
+    rows.push(row![
+        "",
+        format!("Remediation: {}", textwrap::fill(&vuln.remediation, 80))
+    ]);
     rows.push(row! {});
 
     rows
@@ -234,29 +256,14 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
         let mut t2 = Table::new();
         t2.set_format(table_format(3, 1));
 
-        let issues: Vec<Issue> = self
-            .packages
-            .iter()
-            .map(|p| {
-                p.heuristics.iter().map(move |(k, v)| Issue {
-                    name: k.to_string(),
-                    pkg_name: p.basic_status.name.to_string(),
-                    pkg_version: p.basic_status.version.to_string(),
-                    risk_level: v.risk_level.to_owned(),
-                    risk_domain: v.domain.to_owned(),
-                    score: (v.score * 100.0).round(),
-                    description: v.description.to_string(),
-                })
-            })
-            .flatten()
-            .collect();
-
-        for i in issues {
-            let rows: Vec<Row> = i.into();
-            for r in rows {
-                t2.add_row(r);
+        for p in &self.packages {
+            for i in &p.issues {
+                let rows: Vec<Row> = i.into();
+                for r in rows {
+                    t2.add_row(r);
+                }
+                t2.add_empty_row();
             }
-            t2.add_empty_row();
         }
 
         let mut vulns_table = Table::new();
@@ -286,21 +293,7 @@ impl Summarize for PackageStatusExtended {
         let mut issues_table = Table::new();
         issues_table.set_format(table_format(3, 0));
 
-        let issues: Vec<Issue> = self
-            .heuristics
-            .iter()
-            .map(move |(k, v)| Issue {
-                name: k.to_string(),
-                pkg_name: self.basic_status.name.to_string(),
-                pkg_version: self.basic_status.version.to_string(),
-                risk_level: v.risk_level.to_owned(),
-                risk_domain: v.domain.to_owned(),
-                score: (v.score * 100.0).round(),
-                description: v.description.to_string(),
-            })
-            .collect();
-
-        for i in issues {
+        for i in &self.issues {
             let rows: Vec<Row> = i.into();
             for mut r in rows {
                 r.remove_cell(2);
