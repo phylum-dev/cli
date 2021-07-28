@@ -24,6 +24,7 @@ subcommands:
         args:
             - JOB_ID:
                 required: false
+                help: The job id to query (or `current` for the most recent job)
             - verbose:
                 short: V 
                 long: verbose

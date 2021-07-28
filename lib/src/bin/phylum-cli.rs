@@ -133,8 +133,15 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     let verbose = matches.is_present("verbose");
 
     let mut get_job = |job_id: Option<&str>| {
-        let job_id = JobId::from_str(job_id.unwrap())
-            .unwrap_or_else(|err| err_exit(err, "Invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -3));
+        let job_id_str = job_id.unwrap();
+
+        let job_id = if job_id_str == "current" {
+            get_current_project().map(|p: ProjectConfig| p.id)
+        } else {
+            JobId::from_str(job_id_str).ok()
+        }
+        .unwrap_or_else(|| exit(&format!("Invalid job id: {}", job_id_str), -3));
+
         get_job_status(api, &job_id, verbose, pretty_print);
     };
 
@@ -242,11 +249,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
     let mut label = None;
     let mut is_user = true; // is a user (non-batch) request
 
-    let project = find_project_conf(".")
-        .and_then(|s| {
-            log::info!("Found project configurtion file at {}", s);
-            parse_config(&s).ok()
-        })
+    let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
             exit(
