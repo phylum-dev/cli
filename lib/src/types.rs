@@ -41,7 +41,7 @@ impl FromStr for PackageType {
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
             "npm" => Ok(Self::Npm),
-            "pypi" => Ok(Self::Python),
+            "python" => Ok(Self::Python),
             "java" => Ok(Self::Java),
             "ruby" => Ok(Self::Ruby),
             _ => Err(()),

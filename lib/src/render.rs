@@ -258,7 +258,7 @@ impl Renderable for PackageType {
         let s = match self {
             PackageType::Npm => "NPM",
             PackageType::Ruby => "RubyGems",
-            PackageType::Python => "PyPi",
+            PackageType::Python => "Python",
             PackageType::Java => "Java",
         };
         s.to_string()
