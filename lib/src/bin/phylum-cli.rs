@@ -260,6 +260,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
     let mut verbose = false;
     let mut pretty_print = false;
     let mut label = None;
+    let mut is_user = true; // is a user (non-batch) request
 
     let project = find_project_conf(".")
         .and_then(|s| {
@@ -286,6 +287,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
         label = matches.value_of("label");
         verbose = matches.is_present("verbose");
         pretty_print = !matches.is_present("json");
+        is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         let mut eof = false;
@@ -306,6 +308,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
                 PackageType::from_str(matches.value_of("type").unwrap()).unwrap_or(request_type);
         }
         label = matches.value_of("label");
+        is_user = !matches.is_present("force");
 
         while !eof {
             match reader.read_line(&mut line) {
@@ -336,7 +339,7 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
         .submit_request(
             &request_type,
             &packages,
-            false,
+            is_user,
             project,
             label.map(|s| s.to_string()),
         )
@@ -869,7 +872,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let current_bin = std::env::current_exe()?;
     let mut current_bash = current_bin.clone();
     current_bash.pop();
-    current_bash.push("phylum-cli.bash");
+    current_bash.push("phylum.bash");
     let latest_version = &latest.name;
 
     // The data comes back to us as a JSON response of assets. We do not need
@@ -880,7 +883,7 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let bash_asset = &latest
         .assets
         .iter()
-        .find(|x| x.name == "phylum-cli.bash")
+        .find(|x| x.name == "phylum.bash")
         .unwrap();
 
     // Download the required files for the update.

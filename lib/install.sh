@@ -1,4 +1,9 @@
 #!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+
+pushd "$SCRIPT_DIR" || exit
+
 if [ ! -d ${HOME}/.phylum ]; then
   echo '[*] Creating ~/.phylum'
   mkdir -p ${HOME}/.phylum
@@ -32,6 +37,7 @@ if [ -f target/release/phylum ]; then
 elif [ -f phylum ]; then
   echo '[*] Copying phylum binary to ~/.phylum'
   cp -f phylum ${HOME}/.phylum/
+  chmod u+x ${HOME}/.phylum/phylum
 else
   echo "Can't find phylum"
 fi
@@ -50,3 +56,5 @@ if ! grep -q 'alias ph=' $HOME/.bashrc ;
 then
     echo "alias ph='phylum'" >> ${HOME}/.bashrc
 fi
+
+popd || exit

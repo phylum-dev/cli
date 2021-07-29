@@ -24,11 +24,11 @@ jobs:
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
-          cp lib/src/bin/phylum-cli.bash phylum-cli-release/
+          cp lib/src/bin/phylum.bash phylum-cli-release/
           cp phylum phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
-          cp lib/src/bin/phylum-cli.bash .
+          cp lib/src/bin/phylum.bash .
       - name: Build zipfile
         run: zip -r phylum-cli-release phylum-cli-release
       - uses: softprops/action-gh-release@v1
@@ -38,7 +38,7 @@ jobs:
             phylum
             install.sh
             settings.yaml
-            phylum-cli.bash
+            phylum.bash
             phylum-cli-release.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -123,6 +123,7 @@ pub mod gem {
     }
 
     fn gem_header(input: &str) -> Result<&str, &str> {
+        let (input, _) = recognize(take_until("GEM"))(input)?;
         recognize(tuple((tag("GEM"), line_ending)))(input)
     }
 
