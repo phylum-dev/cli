@@ -1,6 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
+use ansi_term::Color::Purple;
 use chrono::NaiveDateTime;
 use prettytable::*;
 
@@ -147,7 +148,7 @@ where
             "User ID",
             resp.user_email.to_string(),
             "View in Phylum UI",
-            format!("https://app.phylum.io/{}", resp.job_id),
+            format!("https://app.phylum.io/projects/{}", resp.project),
         ),
     ];
     let summary = details.iter().fold("".to_string(), |acc, x| {
@@ -167,6 +168,16 @@ where
 
     let mut ret = Table::new();
     ret.add_row(row![summary]);
+
+    if resp.num_incomplete > 0 {
+        let notice = format!(
+            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.", 
+            Purple.paint("PROCESSING"), 
+            (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
+        );
+        ret.add_row(row![notice]);
+    }
+
     ret.add_row(row![t]);
     ret.set_format(table_format(0, 0));
     ret

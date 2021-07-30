@@ -101,7 +101,7 @@ fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 /// Display user-friendly overview of a job
 fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) {
     if verbose {
-        let resp = api.get_job_status_ext(&job_id);
+        let resp = api.get_job_status_ext(job_id);
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
@@ -111,7 +111,7 @@ fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bo
             print_response(&resp, pretty);
         }
     } else {
-        let resp = api.get_job_status(&job_id);
+        let resp = api.get_job_status(job_id);
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
@@ -133,7 +133,7 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
     let verbose = matches.is_present("verbose");
 
     let mut get_job = |job_id: Option<&str>| {
-        let job_id = JobId::from_str(&job_id.unwrap())
+        let job_id = JobId::from_str(job_id.unwrap())
             .unwrap_or_else(|err| err_exit(err, "Invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -3));
         get_job_status(api, &job_id, verbose, pretty_print);
     };
@@ -630,7 +630,7 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
         let project_name = matches.value_of("name").unwrap();
 
         log::info!("Initializing new project: `{}`", project_name);
-        let project_id = api.create_project(&project_name).unwrap_or_else(|err| {
+        let project_id = api.create_project(project_name).unwrap_or_else(|err| {
             err_exit(err, "Error initializing project", -1);
         });
 
@@ -929,7 +929,7 @@ fn handle_get_package(
     matches: &clap::ArgMatches,
 ) -> i32 {
     let pretty_print = !matches.is_present("json");
-    let pkg = parse_package(&matches, &req_type);
+    let pkg = parse_package(matches, req_type);
     if pkg.is_none() {
         return -1;
     }
@@ -1106,11 +1106,11 @@ fn main() {
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {
-        exit_status = handle_get_package(&mut api, &config.request_type, &matches);
+        exit_status = handle_get_package(&mut api, &config.request_type, matches);
     } else if should_submit {
         handle_submission(&mut api, config, &matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        exit_status = handle_history(&mut api, config, &matches);
+        exit_status = handle_history(&mut api, config, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
