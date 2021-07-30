@@ -205,7 +205,7 @@ pub mod pypi {
 
         match get_package_version(version.trim()).ok() {
             Some((_, version)) => Some(PackageDescriptor {
-                name,
+                name: name.to_lowercase(),
                 version: version.to_string().split_whitespace().collect(),
                 r#type: PackageType::Python,
             }),

@@ -150,7 +150,7 @@ impl Parseable for PipFile {
                 match version {
                     Some(_) => version.map(|v| {
                         Ok(PackageDescriptor {
-                            name: k.as_str().to_string(),
+                            name: k.as_str().to_string().to_lowercase(),
                             version: v.replace("==", "").trim().to_string(),
                             r#type: PackageType::Python,
                         })
@@ -236,7 +236,7 @@ mod tests {
 
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 129);
-        assert_eq!(pkgs[0].name, "PyYAML");
+        assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
         assert_eq!(pkgs[0].r#type, PackageType::Python);
 
@@ -258,7 +258,7 @@ mod tests {
         assert_eq!(pkgs[0].r#type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "FooProject5");
+        assert_eq!(last.name, "fooproject5");
         assert_eq!(last.version, "1.5");
         assert_eq!(last.r#type, PackageType::Python);
     }
