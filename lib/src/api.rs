@@ -98,7 +98,7 @@ impl PhylumApi {
             .refresh_token
             .as_ref()
             .ok_or("Missing refresh token")?;
-        self.client.set_jwt_auth(&refresh_token)?;
+        self.client.set_jwt_auth(refresh_token)?;
         let req = RefreshRequest {};
         let resp: AuthResponse = self.client.post_capture((), &req)?;
         self.client.set_jwt_auth(&resp.token.access_token)?;
