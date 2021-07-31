@@ -89,6 +89,13 @@ pub fn find_project_conf(starting_directory: &str) -> Option<String> {
     }
 }
 
+pub fn get_current_project() -> Option<ProjectConfig> {
+    find_project_conf(".").and_then(|s| {
+        log::info!("Found project configuration file at {}", s);
+        parse_config(&s).ok()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

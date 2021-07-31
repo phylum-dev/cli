@@ -300,12 +300,13 @@ mod tests {
                              ],
                             "msg": "Project met threshold requirements",
                             "pass": true,
+                            "action": "warn",
                             "project": "test-project",
                             "total_jobs": 1,
                             "score": 1.0,
                             "ecosystem": "npm"
                         },
-                       {
+                        {
                             "date": "Mon, 17 May 2021 17:39:34 GMT",
                             "job_id": "f8e8cb21-a4c0-4718-9cd2-8f631e95b951",
                             "label": "uncategorized",
@@ -319,6 +320,7 @@ mod tests {
                              ],
                             "msg": "Project met threshold requirements",
                             "pass": true,
+                            "action": "break",
                             "project": "test-project",
                             "total_jobs": 1,
                             "score": 1.0,
@@ -352,6 +354,9 @@ mod tests {
                 "package_score": 1.0,
                 "num_dependencies": 2,
                 "num_vulnerabilities": 4,
+                "msg": "Project met threshold requirements",
+                "pass": true,
+                "action": "warn",
                 "status": "complete",
                 "vulnerabilities": [],
                 "riskVectors": {
@@ -361,6 +366,17 @@ mod tests {
                     "malicious_code": 1.0,
                     "vulnerability": 1.0
                 },
+                "issues": [
+                    {
+                    "title": "Commercial license risk in xmlrpc@0.3.0",
+                    "description": "license is medium risk",
+                    "risk_level": "medium",
+                    "risk_domain": "LicenseRisk",
+                    "pkg_name": "xmlrpc",
+                    "pkg_version": "0.3.0",
+                    "score": 0.7
+                    }
+                ],
                 "heuristics": {
                     "something": {
                         "description": "do stuff",
@@ -415,6 +431,9 @@ mod tests {
                 "project": "86bb664a-5331-489b-8901-f052f155ec79",
                 "project_name": "some_project",
                 "label": "some_label",
+                "msg": "Project met threshold requirements",
+                "pass": true,
+                "action": "none",
                 "packages": [
                     {
                     "name": "foo",
@@ -466,6 +485,9 @@ mod tests {
                 "label": "",
                 "status": "incomplete",
                 "last_updated": 1603311864,
+                "msg": "Project met threshold requirements",
+                "pass": true,
+                "action": "warn",
                 "packages": [
                     {
                     "name": "foo",
@@ -478,6 +500,17 @@ mod tests {
                     "package_score": 0.3,
                     "status": "incomplete",
                     "vulnerabilities": [],
+                    "issues": [
+                        {
+                        "title": "Commercial license risk in xmlrpc@0.3.0",
+                        "description": "license is medium risk",
+                        "risk_level": "medium",
+                        "risk_domain": "LicenseRisk",
+                        "pkg_name": "xmlrpc",
+                        "pkg_version": "0.3.0",
+                        "score": 0.7
+                        }
+                    ],
                     "heuristics": {
                         "something": {
                             "description": "do stuff",
