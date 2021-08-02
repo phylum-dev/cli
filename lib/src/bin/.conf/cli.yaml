@@ -1,6 +1,6 @@
 name: phylum
 bin_name: phylum
-version: "0.0.7"
+version: "1.0.0"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:

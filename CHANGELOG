@@ -1,3 +1,4 @@
+* 1.0.0 - Add formatted output; refactor subcommands; many other changes for improved usability
 * 0.0.7 - Adding synch submit requests
 * 0.0.5 - Add support for projects and project labels / decrease verbosity of package status
 * 0.0.4 - Minor update to API response format; add `--threshold` argument to `status` command
