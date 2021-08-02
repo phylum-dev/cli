@@ -57,7 +57,18 @@ where
             if pretty_print {
                 resp.summarize();
             } else {
-                println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+                // Use write! as a workaround to avoid https://github.com/rust-lang/rust/issues/46016
+                //  when piping output to an external program
+                let mut stdout = io::stdout();
+                write!(
+                    &mut stdout,
+                    "{}",
+                    serde_json::to_string_pretty(&resp).unwrap_or_else(|e| {
+                        log::error!("Failed to serialize json response: {}", e);
+                        "".to_string()
+                    })
+                )
+                .unwrap_or_else(|e| log::debug!("Failed writing to stdout: {}", e));
             }
         }
         Err(err) => {
