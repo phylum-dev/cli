@@ -13,6 +13,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 extern crate serde;
@@ -642,15 +643,20 @@ fn download_file(latest: &GithubReleaseAsset, dest: &str) -> Option<usize> {
 /// Compare the current version as reported by Clap with the version currently
 /// published on Github. We do the naive thing here: If the latest version on
 /// Github does not match the Clap version, we update.
-fn needs_update(latest: &Option<GithubRelease>, current_version: &str) -> bool {
+fn needs_update(current_version: &str) -> bool {
+    let latest = get_latest_version();
     match latest {
         Some(github) => {
             // The version comes back to us _possibly_ prefixed with `phylum v`.
             // Additionally, Clap returns `phylum <version>` without the "v"`.
             // Normalize the version strings here for comparison.
-            let latest = github.name.replace("phylum ", "").replace("v", "");
-            let current = current_version.replace("phylum ", "");
-
+            let latest = github
+                .name
+                .replace("phylum ", "")
+                .replace("v", "")
+                .trim()
+                .to_owned();
+            let current = current_version.replace("phylum ", "").trim().to_owned();
             latest != current
         }
         _ => false,
@@ -1044,31 +1050,6 @@ fn main() {
     let mut exit_status: i32 = 0;
     let mut action = Action::None;
 
-    let latest_version = get_latest_version();
-    if matches.subcommand_matches("update").is_none() && needs_update(&latest_version, ver) {
-        print_update_message();
-    }
-
-    // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied
-    if let Some(matches) = matches.subcommand_matches("analyze") {
-        if !matches.is_present("LOCKFILE") {
-            print_sc_help(app_helper, "analyze");
-            exit(None, 0);
-        }
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        if !(matches.is_present("name") && matches.is_present("version")) {
-            print_sc_help(app_helper, "package");
-            exit(None, 0);
-        }
-    }
-
-    if matches.subcommand_matches("version").is_some() {
-        let name = yml["name"].as_str().unwrap_or("");
-        let version = yml["version"].as_str().unwrap_or("");
-        print_user_success!("{} (Version {})", name, version);
-        exit(None, 0);
-    }
     let home_path = home_dir().unwrap_or_else(|| {
         exit(Some("Couldn't find the user's home directory"), -1);
     });
@@ -1097,6 +1078,57 @@ fn main() {
             -1,
         );
     });
+
+    let mut check_for_updates = false;
+
+    if matches.subcommand_matches("update").is_none() {
+        let start = SystemTime::now();
+        let now = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs() as usize;
+
+        if let Some(last_update) = config.last_update {
+            const SECS_IN_DAY: usize = 24 * 60 * 60;
+            if now - last_update > SECS_IN_DAY {
+                log::debug!("Checking for updates...");
+                check_for_updates = true;
+            }
+        } else {
+            check_for_updates = true;
+        }
+
+        if check_for_updates {
+            config.last_update = Some(now);
+            save_config(config_path, &config)
+                .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
+        }
+    }
+
+    if check_for_updates && needs_update(ver) {
+        print_update_message();
+    }
+
+    // For these commands, we want to just provide verbose help and exit if no
+    // arguments are supplied
+    if let Some(matches) = matches.subcommand_matches("analyze") {
+        if !matches.is_present("LOCKFILE") {
+            print_sc_help(app_helper, "analyze");
+            exit(None, 0);
+        }
+    } else if let Some(matches) = matches.subcommand_matches("package") {
+        if !(matches.is_present("name") && matches.is_present("version")) {
+            print_sc_help(app_helper, "package");
+            exit(None, 0);
+        }
+    }
+
+    if matches.subcommand_matches("version").is_some() {
+        let name = yml["name"].as_str().unwrap_or("");
+        let version = yml["version"].as_str().unwrap_or("");
+        print_user_success!("{} (Version {})", name, version);
+        exit(None, 0);
+    }
 
     let timeout = matches
         .value_of("timeout")
@@ -1144,6 +1176,7 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if matches.subcommand_matches("update").is_some() {
+        let latest_version = get_latest_version();
         match latest_version {
             Some(ver) => match update_in_place(ver) {
                 Ok(msg) => {
