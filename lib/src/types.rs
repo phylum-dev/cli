@@ -380,7 +380,15 @@ impl UserSettings {
         threshold: i32,
         action: String,
     ) {
-        let mut thresholds = self.projects[project_id.as_str()].clone();
+        log::debug!("Retrieving user settings for project: {}", project_id);
+        let mut thresholds = self
+            .projects
+            .get(project_id.as_str())
+            .map(|s| s.to_owned())
+            .unwrap_or_else(|| Setting::Project(UserProject {
+                thresholds: HashMap::new(),
+            }));
+
         if let Setting::Project(ref mut t) = thresholds {
             t.thresholds.insert(
                 name,

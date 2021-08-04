@@ -712,7 +712,16 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
             }
         }
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
-        let project_name = matches.value_of("name").unwrap();
+        let mut project_name = matches.value_of("name").unwrap_or("current");
+
+        let proj = if project_name == "current" {
+            get_current_project().map(|p| p.name)
+        } else {
+            None
+        };
+
+        project_name = proj.as_deref().unwrap_or(project_name);
+        log::debug!("Setting thresholds for project `{}`", project_name);
 
         println!("Risk thresholds allow you to specify what constitutes a failure.");
         println!("You can set a threshold for the overall project score, or for individual");
@@ -748,7 +757,8 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
 
         let project_details = match api.get_project_details(project_name) {
             Ok(x) => x,
-            _ => {
+            Err(e) => {
+                log::error!("Failed to get projet details: {}", e);
                 print_user_failure!("Could not get project details");
                 return -1;
             }
@@ -756,7 +766,8 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
 
         let mut user_settings = match api.get_user_settings() {
             Ok(x) => x,
-            _ => {
+            Err(e) => {
+                log::error!("Failed to get user settings: {}", e);
                 print_user_failure!("Could not get user settings");
                 return -1;
             }
