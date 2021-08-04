@@ -385,9 +385,11 @@ impl UserSettings {
             .projects
             .get(project_id.as_str())
             .map(|s| s.to_owned())
-            .unwrap_or_else(|| Setting::Project(UserProject {
-                thresholds: HashMap::new(),
-            }));
+            .unwrap_or_else(|| {
+                Setting::Project(UserProject {
+                    thresholds: HashMap::new(),
+                })
+            });
 
         if let Setting::Project(ref mut t) = thresholds {
             t.thresholds.insert(

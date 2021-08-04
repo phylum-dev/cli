@@ -1,3 +1,4 @@
+* 1.0.1 - Bugfix for https://github.com/phylum-dev/cli/issues/67
 * 1.0.0 - Add formatted output; refactor subcommands; many other changes for improved usability
 * 0.0.7 - Adding synch submit requests
 * 0.0.5 - Add support for projects and project labels / decrease verbosity of package status
