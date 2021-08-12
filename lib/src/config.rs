@@ -27,6 +27,7 @@ pub struct Config {
     pub auth_info: AuthInfo,
     pub request_type: PackageType,
     pub packages: Option<Packages>,
+    pub last_update: Option<usize>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,6 +90,13 @@ pub fn find_project_conf(starting_directory: &str) -> Option<String> {
     }
 }
 
+pub fn get_current_project() -> Option<ProjectConfig> {
+    find_project_conf(".").and_then(|s| {
+        log::info!("Found project configuration file at {}", s);
+        parse_config(&s).ok()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,6 +144,7 @@ mod tests {
             auth_info: auth,
             request_type: PackageType::Npm,
             packages: Some(packages),
+            last_update: None,
         };
         let temp_dir = temp_dir();
         let test_config_file = temp_dir.as_path().join("test_config");

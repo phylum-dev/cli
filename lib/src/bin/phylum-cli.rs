@@ -13,6 +13,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 extern crate serde;
@@ -24,6 +25,8 @@ use phylum_cli::lockfiles::Parseable;
 use phylum_cli::lockfiles::*;
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::*;
+
+const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
@@ -57,7 +60,18 @@ where
             if pretty_print {
                 resp.summarize();
             } else {
-                println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+                // Use write! as a workaround to avoid https://github.com/rust-lang/rust/issues/46016
+                //  when piping output to an external program
+                let mut stdout = io::stdout();
+                write!(
+                    &mut stdout,
+                    "{}",
+                    serde_json::to_string_pretty(&resp).unwrap_or_else(|e| {
+                        log::error!("Failed to serialize json response: {}", e);
+                        "".to_string()
+                    })
+                )
+                .unwrap_or_else(|e| log::debug!("Failed writing to stdout: {}", e));
             }
         }
         Err(err) => {
@@ -98,28 +112,41 @@ fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
     println!();
 }
 
-/// Display user-friendly overview of a job
-fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) {
-    if verbose {
-        let resp = api.get_job_status_ext(&job_id);
-        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
-            print_user_warning!(
-                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                Blue.paint("phylum analyze <lock_file>")
-            );
-        } else {
-            print_response(&resp, pretty);
-        }
+fn handle_status<T>(
+    resp: Result<RequestStatusResponse<T>, phylum_cli::Error>,
+    pretty: bool,
+) -> Action
+where
+    T: std::fmt::Debug + Serialize + Summarize,
+    phylum_cli::types::RequestStatusResponse<T>: Summarize,
+{
+    let mut action = Action::None;
+
+    if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+        print_user_warning!(
+            "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+            Blue.paint("phylum analyze <lock_file>")
+        );
     } else {
-        let resp = api.get_job_status(&job_id);
-        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
-            print_user_warning!(
-                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                Blue.paint("phylum analyze <lock_file>")
-            );
-        } else {
-            print_response(&resp, pretty);
+        if let Ok(ref resp) = resp {
+            if !resp.pass {
+                action = resp.action.to_owned();
+            }
         }
+        print_response(&resp, pretty);
+    }
+
+    action
+}
+
+/// Display user-friendly overview of a job
+fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) -> Action {
+    if verbose {
+        let resp = api.get_job_status_ext(job_id);
+        handle_status(resp, pretty)
+    } else {
+        let resp = api.get_job_status(job_id);
+        handle_status(resp, pretty)
     }
 }
 
@@ -128,14 +155,22 @@ fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bo
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> i32 {
+fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
+    let mut ret = Action::None;
 
     let mut get_job = |job_id: Option<&str>| {
-        let job_id = JobId::from_str(&job_id.unwrap())
-            .unwrap_or_else(|err| err_exit(err, "Invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -3));
-        get_job_status(api, &job_id, verbose, pretty_print);
+        let job_id_str = job_id.unwrap();
+
+        let job_id = if job_id_str == "current" {
+            get_current_project().map(|p: ProjectConfig| p.id)
+        } else {
+            JobId::from_str(job_id_str).ok()
+        }
+        .unwrap_or_else(|| exit(Some(&format!("Invalid job id: {}", job_id_str)), -3));
+
+        get_job_status(api, &job_id, verbose, pretty_print)
     };
 
     if let Some(matches) = matches.subcommand_matches("project") {
@@ -147,13 +182,13 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
                 let resp = api.get_project_details(project_name);
                 print_response(&resp, pretty_print);
             } else {
-                get_job(project_job_id);
+                ret = get_job(project_job_id);
             }
         } else {
             get_project_list(api, pretty_print);
         }
     } else if matches.is_present("JOB_ID") {
-        get_job(matches.value_of("JOB_ID"));
+        ret = get_job(matches.value_of("JOB_ID"));
     } else {
         let resp = api.get_status();
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
@@ -170,7 +205,7 @@ fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatche
         }
     }
 
-    0
+    ret
 }
 
 /// Attempt to get packages from an unknown lockfile type
@@ -253,7 +288,7 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
-fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) {
+fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> Action {
     let mut packages = vec![];
     let mut request_type = config.request_type; // default request type
     let mut synch = false; // get status after submission
@@ -261,16 +296,13 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
     let mut pretty_print = false;
     let mut label = None;
     let mut is_user = true; // is a user (non-batch) request
+    let mut ret = Action::None;
 
-    let project = find_project_conf(".")
-        .and_then(|s| {
-            log::info!("Found project configurtion file at {}", s);
-            parse_config(&s).ok()
-        })
+    let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
             exit(
-                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?",
+                Some("Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"),
                 -1
             );
         });
@@ -278,8 +310,12 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
     if let Some(matches) = matches.subcommand_matches("analyze") {
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches.value_of("LOCKFILE").unwrap();
-        let res = get_packages_from_lockfile(lockfile)
-            .unwrap_or_else(|| exit("Unable to locate any valid package in package lockfile", -1));
+        let res = get_packages_from_lockfile(lockfile).unwrap_or_else(|| {
+            exit(
+                Some("Unable to locate any valid package in package lockfile"),
+                -1,
+            )
+        });
 
         packages = res.0;
         request_type = res.1;
@@ -350,8 +386,10 @@ fn handle_submission(api: &mut PhylumApi, config: Config, matches: &clap::ArgMat
 
     if synch {
         log::debug!("Requesting status...");
-        get_job_status(api, &job_id, verbose, pretty_print);
+        ret = get_job_status(api, &job_id, verbose, pretty_print);
     }
+
+    ret
 }
 
 /// Register a user. Drops the user into an interactive mode to get the user's
@@ -625,15 +663,20 @@ fn download_file(latest: &GithubReleaseAsset, dest: &str) -> Option<usize> {
 /// Compare the current version as reported by Clap with the version currently
 /// published on Github. We do the naive thing here: If the latest version on
 /// Github does not match the Clap version, we update.
-fn needs_update(latest: &Option<GithubRelease>, current_version: &str) -> bool {
+fn needs_update(current_version: &str) -> bool {
+    let latest = get_latest_version();
     match latest {
         Some(github) => {
             // The version comes back to us _possibly_ prefixed with `phylum v`.
             // Additionally, Clap returns `phylum <version>` without the "v"`.
             // Normalize the version strings here for comparison.
-            let latest = github.name.replace("phylum ", "").replace("v", "");
-            let current = current_version.replace("phylum ", "");
-
+            let latest = github
+                .name
+                .replace("phylum ", "")
+                .replace("v", "")
+                .trim()
+                .to_owned();
+            let current = current_version.replace("phylum ", "").trim().to_owned();
             latest != current
         }
         _ => false,
@@ -650,7 +693,7 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
         let project_name = matches.value_of("name").unwrap();
 
         log::info!("Initializing new project: `{}`", project_name);
-        let project_id = api.create_project(&project_name).unwrap_or_else(|err| {
+        let project_id = api.create_project(project_name).unwrap_or_else(|err| {
             err_exit(err, "Error initializing project", -1);
         });
 
@@ -695,7 +738,16 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
             }
         }
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
-        let project_name = matches.value_of("name").unwrap();
+        let mut project_name = matches.value_of("name").unwrap_or("current");
+
+        let proj = if project_name == "current" {
+            get_current_project().map(|p| p.name)
+        } else {
+            None
+        };
+
+        project_name = proj.as_deref().unwrap_or(project_name);
+        log::debug!("Setting thresholds for project `{}`", project_name);
 
         println!("Risk thresholds allow you to specify what constitutes a failure.");
         println!("You can set a threshold for the overall project score, or for individual");
@@ -731,7 +783,8 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
 
         let project_details = match api.get_project_details(project_name) {
             Ok(x) => x,
-            _ => {
+            Err(e) => {
+                log::error!("Failed to get projet details: {}", e);
                 print_user_failure!("Could not get project details");
                 return -1;
             }
@@ -739,7 +792,8 @@ fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
 
         let mut user_settings = match api.get_user_settings() {
             Ok(x) => x,
-            _ => {
+            Err(e) => {
+                log::error!("Failed to get user settings: {}", e);
                 print_user_failure!("Could not get user settings");
                 return -1;
             }
@@ -949,7 +1003,7 @@ fn handle_get_package(
     matches: &clap::ArgMatches,
 ) -> i32 {
     let pretty_print = !matches.is_present("json");
-    let pkg = parse_package(&matches, &req_type);
+    let pkg = parse_package(matches, req_type);
     if pkg.is_none() {
         return -1;
     }
@@ -1014,34 +1068,10 @@ fn main() {
 
     let matches = app.get_matches();
     let mut exit_status: i32 = 0;
+    let mut action = Action::None;
 
-    let latest_version = get_latest_version();
-    if matches.subcommand_matches("update").is_none() && needs_update(&latest_version, ver) {
-        print_update_message();
-    }
-
-    // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied
-    if let Some(matches) = matches.subcommand_matches("analyze") {
-        if !matches.is_present("LOCKFILE") {
-            print_sc_help(app_helper, "analyze");
-            process::exit(0);
-        }
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        if !(matches.is_present("name") && matches.is_present("version")) {
-            print_sc_help(app_helper, "package");
-            process::exit(0);
-        }
-    }
-
-    if matches.subcommand_matches("version").is_some() {
-        let name = yml["name"].as_str().unwrap_or("");
-        let version = yml["version"].as_str().unwrap_or("");
-        print_user_success!("{} (Version {})", name, version);
-        process::exit(0);
-    }
     let home_path = home_dir().unwrap_or_else(|| {
-        exit("Couldn't find the user's home directory", -1);
+        exit(Some("Couldn't find the user's home directory"), -1);
     });
     let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
 
@@ -1049,10 +1079,10 @@ fn main() {
         settings_path.to_str().unwrap_or_else(|| {
             log::error!("Unicode parsing error in configuration file path");
             exit(
-                &format!(
+                Some(&format!(
                     "Unable to read path to configuration file at '{:?}'",
                     settings_path
-                ),
+                )),
                 -1,
             );
         })
@@ -1061,10 +1091,64 @@ fn main() {
 
     let mut config: Config = read_configuration(config_path).unwrap_or_else(|err| {
         exit(
-            &format!("Failed to read configuration at `{}`: {}", config_path, err),
+            Some(&format!(
+                "Failed to read configuration at `{}`: {}",
+                config_path, err
+            )),
             -1,
         );
     });
+
+    let mut check_for_updates = false;
+
+    if matches.subcommand_matches("update").is_none() {
+        let start = SystemTime::now();
+        let now = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs() as usize;
+
+        if let Some(last_update) = config.last_update {
+            const SECS_IN_DAY: usize = 24 * 60 * 60;
+            if now - last_update > SECS_IN_DAY {
+                log::debug!("Checking for updates...");
+                check_for_updates = true;
+            }
+        } else {
+            check_for_updates = true;
+        }
+
+        if check_for_updates {
+            config.last_update = Some(now);
+            save_config(config_path, &config)
+                .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
+        }
+    }
+
+    if check_for_updates && needs_update(ver) {
+        print_update_message();
+    }
+
+    // For these commands, we want to just provide verbose help and exit if no
+    // arguments are supplied
+    if let Some(matches) = matches.subcommand_matches("analyze") {
+        if !matches.is_present("LOCKFILE") {
+            print_sc_help(app_helper, "analyze");
+            exit(None, 0);
+        }
+    } else if let Some(matches) = matches.subcommand_matches("package") {
+        if !(matches.is_present("name") && matches.is_present("version")) {
+            print_sc_help(app_helper, "package");
+            exit(None, 0);
+        }
+    }
+
+    if matches.subcommand_matches("version").is_some() {
+        let name = yml["name"].as_str().unwrap_or("");
+        let version = yml["version"].as_str().unwrap_or("");
+        print_user_success!("{} (Version {})", name, version);
+        exit(None, 0);
+    }
 
     let timeout = matches
         .value_of("timeout")
@@ -1076,7 +1160,7 @@ fn main() {
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
         print_response(&resp, true);
-        process::exit(0);
+        exit(None, 0);
     }
 
     let should_projects = matches.subcommand_matches("projects").is_some();
@@ -1112,6 +1196,7 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if matches.subcommand_matches("update").is_some() {
+        let latest_version = get_latest_version();
         match latest_version {
             Some(ver) => match update_in_place(ver) {
                 Ok(msg) => {
@@ -1126,11 +1211,11 @@ fn main() {
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {
-        exit_status = handle_get_package(&mut api, &config.request_type, &matches);
+        exit_status = handle_get_package(&mut api, &config.request_type, matches);
     } else if should_submit {
-        handle_submission(&mut api, config, &matches);
+        action = handle_submission(&mut api, config, &matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        exit_status = handle_history(&mut api, config, &matches);
+        action = handle_history(&mut api, config, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
@@ -1141,8 +1226,17 @@ fn main() {
         }
     }
 
-    log::debug!("Exiting with status {}", exit_status);
-    process::exit(exit_status);
+    match action {
+        Action::None => {
+            log::debug!("Exiting with status {}", exit_status);
+            exit(None, exit_status)
+        }
+        Action::Warn => exit(Some("Project failed threshold requirements!"), exit_status),
+        Action::Break => exit(
+            Some("Project failed threshold requirements, failing the build!"),
+            STATUS_THRESHOLD_BREACHED,
+        ),
+    }
 }
 
 fn err_exit(error: impl Error, message: &str, code: i32) -> ! {
@@ -1151,8 +1245,15 @@ fn err_exit(error: impl Error, message: &str, code: i32) -> ! {
     process::exit(code);
 }
 
-fn exit(message: &str, code: i32) -> ! {
-    log::warn!("{}", message);
-    print_user_failure!("Error: {}", message);
+fn exit(message: Option<&str>, code: i32) -> ! {
+    if let Some(message) = message {
+        if code != 0 {
+            log::warn!("{}", message);
+            print_user_failure!("Error: {}", message);
+        } else {
+            log::debug!("{}", message);
+            print_user_warning!("{}", message);
+        }
+    }
     process::exit(code);
 }

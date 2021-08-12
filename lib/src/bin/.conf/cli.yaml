@@ -1,6 +1,6 @@
 name: phylum
 bin_name: phylum
-version: "0.0.7"
+version: "1.0.1"
 author: Phylum, Inc.
 about: Client interface to the Phylum system
 args:
@@ -24,6 +24,7 @@ subcommands:
         args:
             - JOB_ID:
                 required: false
+                help: The job id to query (or `current` for the most recent job)
             - verbose:
                 short: V 
                 long: verbose
@@ -69,7 +70,7 @@ subcommands:
                 about: Set risk domain thresholds for a projects
                 args:
                     - name:
-                        required: true 
+                        required: false 
                         takes_value: true
                         index: 1
     - package:
@@ -110,7 +111,7 @@ subcommands:
                              # List existing active API keys
 
 
-                             \tphylum auth list
+                             \tphylum auth keys list
 
 
                              # Create new API key

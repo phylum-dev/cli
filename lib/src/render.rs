@@ -293,6 +293,7 @@ impl Renderable for PingResponse {
 impl Renderable for ProjectThresholds {
     fn render(&self) -> String {
         let mut t = table!(
+            [r => "Thresholds:"],
             [r => "Project Score:", self.total],
             [r => "Malicious Code Risk MAL:", self.malicious],
             [r => "Vulnerability Risk VLN:", self.vulnerability],
@@ -305,8 +306,8 @@ impl Renderable for ProjectThresholds {
     }
 }
 
-impl From<RiskLevel> for color::Color {
-    fn from(level: RiskLevel) -> Self {
+impl From<&RiskLevel> for color::Color {
+    fn from(level: &RiskLevel) -> Self {
         match level {
             RiskLevel::Crit => color::BRIGHT_RED,
             RiskLevel::High => color::YELLOW,
@@ -317,29 +318,24 @@ impl From<RiskLevel> for color::Color {
     }
 }
 
-impl From<Issue> for Vec<Row> {
-    fn from(issue: Issue) -> Vec<Row> {
+impl From<&Issue> for Vec<Row> {
+    fn from(issue: &Issue) -> Vec<Row> {
         let r1 = Row::new(vec![
             Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT)
-                .with_style(Attr::ForegroundColor(color::Color::from(issue.risk_level))),
-            Cell::new_align(&issue.name, format::Alignment::LEFT).with_style(Attr::Bold),
+                .with_style(Attr::ForegroundColor(color::Color::from(&issue.risk_level))),
             Cell::new_align(
-                &format!(
-                    "{:>47}@{} {}\n",
-                    issue.pkg_name,
-                    issue.pkg_version,
-                    issue.risk_domain.to_string(),
-                ),
-                format::Alignment::RIGHT,
-            ),
+                &format!("{} [{}]", &issue.title, issue.risk_domain.to_string()),
+                format::Alignment::LEFT,
+            )
+            .with_style(Attr::Bold),
         ]);
 
         let r2 = Row::new(vec![
             Cell::new(""),
-            Cell::new(&issue.description),
+            Cell::new(&textwrap::fill(&issue.description, 80)),
             Cell::new(""),
         ]);
 
-        vec![r1, r2]
+        vec![r1, row![], r2]
     }
 }

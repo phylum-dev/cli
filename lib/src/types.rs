@@ -35,6 +35,14 @@ pub struct ProjectThresholds {
     pub vulnerability: f32,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Action {
+    None,
+    Warn,
+    Break,
+}
+
 impl FromStr for PackageType {
     type Err = ();
 
@@ -372,7 +380,17 @@ impl UserSettings {
         threshold: i32,
         action: String,
     ) {
-        let mut thresholds = self.projects[project_id.as_str()].clone();
+        log::debug!("Retrieving user settings for project: {}", project_id);
+        let mut thresholds = self
+            .projects
+            .get(project_id.as_str())
+            .map(|s| s.to_owned())
+            .unwrap_or_else(|| {
+                Setting::Project(UserProject {
+                    thresholds: HashMap::new(),
+                })
+            });
+
         if let Setting::Project(ref mut t) = thresholds {
             t.thresholds.insert(
                 name,
@@ -454,6 +472,7 @@ pub struct PackageStatusExtended {
     pub dependencies: Vec<PackageDescriptor>,
     pub vulnerabilities: Vec<Vulnerability>,
     pub heuristics: HashMap<String, HeuristicResult>,
+    pub issues: Vec<Issue>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -499,12 +518,12 @@ impl fmt::Display for RiskDomain {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Issue {
-    pub name: String,
+    pub title: String,
+    pub description: String,
     pub risk_level: RiskLevel,
     pub risk_domain: RiskDomain,
-    pub description: String,
     pub pkg_name: String,
     pub pkg_version: String,
     pub score: f64,
@@ -521,6 +540,7 @@ pub struct Vulnerability {
     pub cve: Vec<String>,
     pub base_severity: f32,
     pub risk_level: RiskLevel,
+    pub title: String,
     pub description: String,
     pub remediation: String,
 }
@@ -534,6 +554,9 @@ pub struct RequestStatusResponse<T> {
     pub created_at: i64, // epoch seconds
     pub status: Status,
     pub score: f64,
+    pub pass: bool,
+    pub msg: String,
+    pub action: Action,
     #[serde(default)]
     pub num_incomplete: u32,
     pub last_updated: u64,

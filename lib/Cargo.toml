@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "0.0.7"
+version = "1.0.1"
 authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 build = "build.rs"
