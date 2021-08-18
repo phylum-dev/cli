@@ -32,7 +32,7 @@ SUBCOMMANDS:
 ```
 
 ## Installation
-Releases of phylum are statically-built for linux x64. If you need another architecture, see the section below on Building.
+Releases of phylum are statically-built for Linux and MacOS x64. If you need another architecture, see the section below on Building.
 
 An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files.
 
