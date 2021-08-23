@@ -31,13 +31,15 @@ RUN cargo install cargo-chef
 COPY --from=planner ${APP_PATH}/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-FROM ekidd/rust-musl-builder as builder
+FROM ekidd/rust-musl-builder
 ARG APP_PATH
 ARG CARGO_HOME
 USER root
 WORKDIR ${APP_PATH}
 COPY . .
+
 # Copy over the cached dependencies
 COPY --from=cacher ${APP_PATH}/target target
 COPY --from=cacher /opt/rust/cargo /opt/rust/cargo
 RUN cargo build --release --offline
+RUN ls -lah target

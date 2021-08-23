@@ -1,0 +1,9 @@
+# MacOS builder
+FROM joseluisq/rust-linux-darwin-builder:1.54.0 as macos-builder
+ARG CC=o64-clang
+ARG CXX=o64-clang++
+
+COPY . .
+
+RUN cargo build --release --target x86_64-apple-darwin
+RUN ls -lah target

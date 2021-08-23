@@ -1,60 +1,86 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(dirname "$0")
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
 
-pushd "$SCRIPT_DIR" || exit
+error() { 
+    echo -e "${RED}ERROR${NC} ${1}" 
+}
 
+success() { 
+    echo -e "${GREEN}   OK${NC} ${1}" 
+}
+
+# Get the platform name.
+get_platform() {
+    local platform_str=`uname`
+    if [[ "$platform_str" == "Linux" ]]; then
+        echo "linux"
+    elif [[ "$platform_str" == "Darwin" ]]; then
+        echo "macos"
+    else
+        echo "unknown"
+    fi
+}
+
+# Check if the provided path exists and copy to the specified location.
+check_copy() {
+    local src=${1}
+    local dst=${2}
+
+    if [ -f ${src} ]; then
+        cp -f ${src} ${dst}
+        success "Copied ${src} to ${dst}"
+    else
+        error "Failed to copy. Could not find ${src}."
+        exit
+    fi
+}
+
+# Create the config directory if one does not already exist.
 if [ ! -d ${HOME}/.phylum ]; then
-  echo '[*] Creating ~/.phylum'
-  mkdir -p ${HOME}/.phylum
+    mkdir -p ${HOME}/.phylum
+    success "Created directory .phylum in home directory"
 fi
 
+# Copy the settings over, if settings do not already exist at the target.
 if [ ! -f ${HOME}/.phylum/settings.yaml ]; then
-  if [ -f src/bin/settings.yaml ]; then
-    echo '[*] Copying settings.yaml to ~/.phylum'
-    cp -f src/bin/settings.yaml ${HOME}/.phylum/
-  elif [ -f settings.yaml ]; then
-    echo '[*] Copying settings.yaml to ~/.phylum'
-    cp -f settings.yaml ${HOME}/.phylum/
-  else
-    echo "Can't find settings.yaml"
-  fi
+    check_copy "settings.yaml" "${HOME}/.phylum/"
 fi
 
-if [ -f src/bin/phylum.bash ]; then
-	echo '[*] Copying phylum.bash to ~/.phylum'
-	cp -f src/bin/phylum.bash ${HOME}/.phylum/
-elif [ -f phylum.bash ]; then
-	echo '[*] Copying phylum.bash to ~/.phylum'
-	cp -f phylum.bash ${HOME}/.phylum/
+# Copy the bash completion to phylum directory.
+check_copy "phylum.bash" "${HOME}/.phylum/"
+
+# Copy the specific platform binary.
+platform=$(get_platform)
+arch="x86_64"
+bin_name="phylum-${platform}-${arch}"
+check_copy "${bin_name}" "${HOME}/.phylum/phylum" 
+chmod +x ${HOME}/.phylum/phylum
+
+# Update some paths.
+rc_path=""
+
+if [ -n "$ZSH_VERSION" ]; then
+    rc_path=".zshrc"
 else
-	echo "Can't find phylum.bash"
+    rc_path=".bashrc"
 fi
 
-if [ -f target/release/phylum ]; then
-  echo '[*] Copying phylum binary to ~/.phylum'
-  cp -f target/release/phylum ${HOME}/.phylum/
-elif [ -f phylum ]; then
-  echo '[*] Copying phylum binary to ~/.phylum'
-  cp -f phylum ${HOME}/.phylum/
-  chmod u+x ${HOME}/.phylum/phylum
-else
-  echo "Can't find phylum"
+if ! grep -q 'phylum.bash' $HOME/${rc_path}; then
+  echo "source \$HOME/.phylum/phylum.bash" >> ${HOME}/${rc_path}
 fi
 
-if ! grep -q 'phylum.bash' $HOME/.bashrc ;
-then
-  echo "source \$HOME/.phylum/phylum.bash" >> ${HOME}/.bashrc
-fi
-if ! grep -q '.phylum/:\$PATH' $HOME/.bashrc;
-then
-  echo '[*] Updating path to include ~/.phylum'
-  echo 'export PATH="$HOME/.phylum:$PATH"' >> ${HOME}/.bashrc
+if ! grep -q '.phylum/:\$PATH' $HOME/${rc_path}; then
+  export PATH="$HOME/.phylum:$PATH"
+  echo 'export PATH="$HOME/.phylum:$PATH"' >> ${HOME}/${rc_path}
+  success "Updating path to include ${HOME}/.phylum/."
 fi
 
-if ! grep -q 'alias ph=' $HOME/.bashrc ;
-then
-    echo "alias ph='phylum'" >> ${HOME}/.bashrc
+if ! grep -q 'alias ph=' $HOME/${rc_path}; then
+    echo "alias ph='phylum'" >> ${HOME}/${rc_path}
+    success "Created ph alias for phylum" 
 fi
 
-popd || exit
+success "Successfully installed phylum"
