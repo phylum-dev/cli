@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '*'
+      - '*' 
 
 jobs:
   release:
@@ -16,16 +16,20 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build
-        run: docker build lib/ --file lib/Dockerfile --tag static-build
-      - name: Copy
+      - name: Build Linux
+        run: docker build lib/ --file lib/Dockerfile.linux --tag static-build
+      - name: Build MacOS
+        run: docker build lib/ --file lib/Dockerfile.macos --tag macos-build
+      - name: Collect files 
         run: |
-          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum
+          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum-linux-x86_64
+          docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
           cp lib/src/bin/phylum.bash phylum-cli-release/
-          cp phylum phylum-cli-release/
+          cp phylum-linux-x86_64 phylum-cli-release/
+          cp phylum-macos-x86_64 phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
@@ -35,7 +39,8 @@ jobs:
         name: Release
         with:
           files: |
-            phylum
+            phylum-linux-x86_64
+            phylum-macos-x86_64
             install.sh
             settings.yaml
             phylum.bash

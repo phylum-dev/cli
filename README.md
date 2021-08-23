@@ -1,10 +1,44 @@
-# cli
-Command line interface for the Phylum API
+<p align="center">
+  <img height="100" src="https://phylum.io/logo/dark-bckg.svg">
+</p>
+
+---
+
+## Command Line Utility for [Phylum.io](https://phylum.io) 
+  
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/phylum-dev/cli)
+[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)
+![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=master)
+[![README](https://img.shields.io/badge/docs-README-yellowgreen)](https://docs.phylum.io/docs/welcome)
+
+The command line interface (CLI) allows users to submit their project package dependencies to Phylum's API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. For other platforms (e.g. Windows), binaries can easily be [built](https://github.com/phylum-dev/cli#building). Additional information about using the CLI tool is available in the [documentation](https://docs.phylum.io/docs/welcome).
+
+[![asciicast](https://asciinema.org/a/431262.svg)](https://asciinema.org/a/431262)
+
+# Quickstart for Linux or macOS
+1. Download and unzip the latest [release package](https://github.com/phylum-dev/cli/releases/latest/download/phylum-cli-release.zip)
+2. Run the installer script
+```
+./install.sh
+```
+3. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
+```
+phylum auth login
+```
+4. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
+```
+phylum projects create <project-name>
+```
+5. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
+```
+package analyze <package-lock-file.ext>
+```
+---
 
 ## Overview
 ```
 ❯ phylum
-phylum 0.0.7
+phylum 1.0.1
 Phylum, Inc.
 Client interface to the Phylum system
 
@@ -32,11 +66,15 @@ SUBCOMMANDS:
 ```
 
 ## Installation
-Releases of phylum are statically-built for linux x64. If you need another architecture, see the section below on Building.
+Releases of phylum are built for Linux and macOS x64. If you need another architecture, see the section below on Building.
 
-An install script is provided for both releases and git versions. The script creates a `$HOME/.phylum` directory and copies the required files.
+Running the install script provided with the release package will install phylum, i.e. 
 
-This script also **adds the .phylum directory to the user's PATH** on bash.
+```
+./install.sh
+```
+
+This will create a new directory in `$HOME/.phylum` to house the configuration, and will place the binary in the appropriate location. The script will also add the `$HOME/.phylum` directory to the user's `PATH`.
 
 ## Building
 Phylum is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
@@ -69,7 +107,7 @@ To register a user account, use the `auth register` subcommand to enter the user
 To have your Phylum user account enabled, please contact someone at Phylum.
 
 ## Example: First project submission
-Package submissions must be part of _projects_. Projects in phylum correspond to software projects the users want to analyze. When a phylum project is created, the `.phylum_project` file is written to the current working directory and used correlate mulitple analysis jobs to a single software project.
+Package submissions must be part of _projects_. Projects in Phylum correspond to software projects the users want to analyze. When a phylum project is created, the `.phylum_project` file is written to the current working directory and used correlate mulitple analysis jobs to a single software project.
 ```sh
 ❯ phylum projects create <project_name>
 ```
@@ -119,3 +157,8 @@ To get the analysis results data in JSON format, we can use the `--json` option:
 
 For more information, please see our [documentation](https://docs.phylum.io/docs)
 
+## Questions/Issues
+
+Please contact Phylum with any questions or issues using the CLI tool.
+
+Email: <support@phylum.io>

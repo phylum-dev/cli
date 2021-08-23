@@ -256,14 +256,22 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
         let mut t2 = Table::new();
         t2.set_format(table_format(3, 1));
 
+        let mut issues: Vec<&Issue> = vec![];
+
         for p in &self.packages {
-            for i in &p.issues {
-                let rows: Vec<Row> = i.into();
-                for r in rows {
-                    t2.add_row(r);
-                }
-                t2.add_empty_row();
+            for issue in &p.issues {
+                issues.push(issue);
             }
+        }
+
+        issues.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+
+        for issue in issues {
+            let rows: Vec<Row> = issue.into();
+            for r in rows {
+                t2.add_row(r);
+            }
+            t2.add_empty_row();
         }
 
         let mut vulns_table = Table::new();
