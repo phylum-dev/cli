@@ -77,6 +77,9 @@ Running the install script provided with the release package will install phylum
 This will create a new directory in `$HOME/.phylum` to house the configuration, and will place the binary in the appropriate location. The script will also add the `$HOME/.phylum` directory to the user's `PATH`.
 
 ## Building
+<details>
+  <summary>Expand to learn more about building from source</summary>
+  
 Phylum is written in Rust, so you'll need a recent Rust installation to build it. [Install Rust](https://www.rust-lang.org/tools/install)
 1. Clone repository
 ```sh
@@ -88,8 +91,11 @@ cd cli/lib
 bash build.sh
 bash install.sh
 ```
+</details>
 
 ## Configuration
+<details>
+  <summary>Expand to learn more about the Phylum configuration file</summary>
 Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`
 The install.sh script copies a default configuration file, but requires user credentials or a token to communicate with the Phylum API.
 
@@ -102,6 +108,7 @@ To register a user account, use the `auth register` subcommand to enter the user
 ✔ Password · ********
 ✅ Successfully registered a new account!
 ```
+</details>
 
 ## Activation
 To have your Phylum user account enabled, please contact someone at Phylum.
