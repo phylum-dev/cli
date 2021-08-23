@@ -2,13 +2,13 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
     character::{
-        complete::{line_ending, none_of, space0},
+        complete::{alphanumeric1, line_ending, none_of, not_line_ending, space0},
         streaming::multispace0,
     },
-    combinator::{eof, opt, recognize},
+    combinator::{eof, opt, recognize, rest, verify},
     error::{context, VerboseError},
-    multi::{count, many1, many_till},
-    sequence::{delimited, tuple},
+    multi::{count, many0, many1, many_till},
+    sequence::{delimited, pair, tuple},
     AsChar, IResult,
 };
 
@@ -155,5 +155,64 @@ pub mod gem {
             version: version.to_string(),
             r#type: PackageType::Ruby,
         })
+    }
+}
+
+pub mod pypi {
+    use nom::character::complete::char;
+
+    use super::*;
+
+    pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
+        let pkgs = input
+            .lines()
+            .map(|l| package(l))
+            .flatten()
+            .collect::<Vec<_>>();
+        Ok((input, pkgs))
+    }
+
+    fn filter_package_name(input: &str) -> Result<&str, &str> {
+        recognize(pair(
+            alphanumeric1,
+            many0(alt((alphanumeric1, alt((tag("-"), tag("_")))))),
+        ))(input)
+    }
+
+    fn get_package_version(input: &str) -> Result<&str, &str> {
+        let (_, input) = verify(rest, |s: &str| !s.contains('*'))(input)?;
+        delimited(
+            tag("=="),
+            recognize(many1(alt((alphanumeric1, recognize(char('.')), tag(" "))))),
+            rest,
+        )(input)
+    }
+
+    fn filter_line(input: &str) -> Result<&str, &str> {
+        // filter out comments, features, and install options
+        recognize(alt((
+            take_until("#"),
+            take_until(";"),
+            take_until("--"),
+            not_line_ending,
+        )))(input)
+    }
+
+    fn package(input: &str) -> Option<PackageDescriptor> {
+        let (_, name) = filter_line(input).ok()?;
+        let (version, name) = filter_package_name(name).ok()?;
+        let name: String = name.to_string().split_whitespace().collect();
+
+        match get_package_version(version.trim()).ok() {
+            Some((_, version)) => Some(PackageDescriptor {
+                name: name.to_lowercase(),
+                version: version.to_string().split_whitespace().collect(),
+                r#type: PackageType::Python,
+            }),
+            None => {
+                log::warn!("Could not determine version for package: {}", name);
+                None
+            }
+        }
     }
 }

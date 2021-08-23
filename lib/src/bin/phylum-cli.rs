@@ -22,7 +22,7 @@ extern crate serde_json;
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
 use phylum_cli::lockfiles::Parseable;
-use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
+use phylum_cli::lockfiles::*;
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::*;
 
@@ -233,6 +233,18 @@ fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)
         return packages.ok().map(|pkgs| (pkgs, PackageType::Ruby));
     }
 
+    let packages = PyRequirements::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type pip requirements.txt");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
+    }
+
+    let packages = PipFile::new(path).ok()?.parse();
+    if packages.is_ok() {
+        log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
+    }
+
     log::error!("Failed to identify lock file type");
     None
 }
@@ -255,6 +267,14 @@ fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, Pac
         "yarn.lock" => {
             let parser = YarnLock::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
+        }
+        "requirements.txt" => {
+            let parser = PyRequirements::new(path).ok()?;
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
+        }
+        "Pipfile.txt" | "Pipfile.lock" => {
+            let parser = PipFile::new(path).ok()?;
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
         }
         _ => try_get_packages(path),
     };
