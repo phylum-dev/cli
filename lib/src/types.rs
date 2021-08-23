@@ -20,7 +20,7 @@ pub const PROJ_CONF_FILE: &str = ".phylum_project";
 #[serde(rename_all = "lowercase")]
 pub enum PackageType {
     Npm,
-    PyPi,
+    Python,
     Java,
     Ruby,
 }
@@ -49,7 +49,7 @@ impl FromStr for PackageType {
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
             "npm" => Ok(Self::Npm),
-            "pypi" => Ok(Self::PyPi),
+            "python" => Ok(Self::Python),
             "java" => Ok(Self::Java),
             "ruby" => Ok(Self::Ruby),
             _ => Err(()),
@@ -69,7 +69,7 @@ impl PackageType {
         match self {
             PackageType::Npm => "Javascript",
             PackageType::Ruby => "Ruby",
-            PackageType::PyPi => "Python",
+            PackageType::Python => "Python",
             PackageType::Java => "Java",
         }
     }
