@@ -912,7 +912,17 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     // The data comes back to us as a JSON response of assets. We do not need
     // every asset. We need the updated binary and the bash file. This simply
     // loops over this data to find the download URLs for each pertinent asset.
-    let bin_asset = &latest.assets.iter().find(|x| x.name == "phylum").unwrap();
+    let bin_asset_name = if cfg!(target_os = "macos") {
+        "phylum-macos-x86_64"
+    } else {
+        "phylum-linux-x86_64"
+    };
+
+    let bin_asset = &latest
+        .assets
+        .iter()
+        .find(|x| x.name == bin_asset_name)
+        .unwrap();
 
     let bash_asset = &latest
         .assets
