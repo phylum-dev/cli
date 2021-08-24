@@ -3,6 +3,7 @@ use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
 use dialoguer::{theme::ColorfulTheme, Input, Password, Select};
 use home::home_dir;
+use minisign_verify::{PublicKey, Signature};
 use serde::Serialize;
 use spinners::{Spinner, Spinners};
 use std::error::Error;
@@ -11,6 +12,7 @@ use std::io;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::env;
 use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -892,6 +894,26 @@ fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
     ))
 }
 
+///
+///
+fn verify_signature(sig_path: &str, bin_path: &str) -> bool {
+    let sig = fs::read_to_string(sig_path).expect("Unable to read signature file");
+    let bin = fs::read(bin_path).expect("Unable to read binary data from disk");
+
+    // TODO: Handle this as a const somewhere???
+    let pubkey = PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
+        .expect("Unable to decode the public key");
+    let signature = match Signature::decode(&sig) {
+        Ok(x) => x,
+        Err(_) => return false 
+    };
+
+    match pubkey.verify(&bin[..], &signature) {
+        Err(_) => false,
+        Ok(_) => true
+    }
+}
+
 /// Update the Phylum installation. Please note, this will only function on
 /// Linux x64. This is due in part to the fact that the release is only
 /// compiling for this OS and architecture.
@@ -899,8 +921,18 @@ fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
 /// Until we update the releases, this should suffice.
 fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     // We download the update to a temporary location.
-    let tmp_bin_path = "/tmp/phylum.update";
-    let tmp_bash_path = "/tmp/phylum-bash.update";
+    let tmp_loc = env::temp_dir();
+    let tmp_dir = Path::new(&tmp_loc);
+
+    // TODO: Can prob refactor this a bit???
+    let tmp_bin_path = tmp_dir.join("phylum.update").to_owned();
+    let tmp_bash_path = tmp_dir.join("phylum-bash.update").to_owned();
+    let tmp_minisign_path = tmp_dir.join("phylum.minisign").to_owned();
+
+    // Not sure if this works on Windows???
+    let tmp_bin_path_str = tmp_bin_path.to_str().unwrap();
+    let tmp_bash_path_str = tmp_bash_path.to_str().unwrap();
+    let tmp_minisign_path_str = tmp_minisign_path.to_str().unwrap();
 
     // This is path to the binary on disk.
     let current_bin = std::env::current_exe()?;
@@ -910,8 +942,9 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
     let latest_version = &latest.name;
 
     // The data comes back to us as a JSON response of assets. We do not need
-    // every asset. We need the updated binary and the bash file. This simply
-    // loops over this data to find the download URLs for each pertinent asset.
+    // every asset. We need the updated binary, the pertinent signature and the 
+    // bash file. This simply loops over this data to find the download URLs for
+    // each pertinent asset.
     let bin_asset_name = if cfg!(target_os = "macos") {
         "phylum-macos-x86_64"
     } else {
@@ -930,19 +963,38 @@ fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
         .find(|x| x.name == "phylum.bash")
         .unwrap();
 
+    // TODO: Temporary commented out until this is actually on Github.
+    //let minisign_asset = &latest
+    //    .assets
+    //    .iter()
+    //    .find(|x| x.name == format!("{}.minisig", bin_asset_name))
+    //    .unwrap();
+
     // Download the required files for the update.
     let sp = Spinner::new(Spinners::Dots12, "Downloading update...".into());
-    let bin = download_file(bin_asset, tmp_bin_path);
-    let bash = download_file(bash_asset, tmp_bash_path);
+    let bin = download_file(bin_asset, tmp_bin_path_str);
+    let bash = download_file(bash_asset, tmp_bash_path_str);
+
+    // TODO: temporary! Just dropped it to the location!
+    //let minisign = download_file(minisign_asset, tmp_minisign_path);
+    let minisign = Some(123);
     sp.stop();
     println!();
 
     // Ensure that we have both files for our update. This includes the actual
     // binary file, as well as the bash file.
-    if bin.is_none() || bash.is_none() {
+    if bin.is_none() || bash.is_none() || minisign.is_none() {
         return Err(std::io::Error::new(
             io::ErrorKind::Other,
             "Failed to download update files",
+        ));
+    }
+
+    // Ensure that the downloaded binary matches the specified signature.
+    if !verify_signature(tmp_minisign_path_str, tmp_bin_path_str) {
+        return Err(std::io::Error::new(
+                io::ErrorKind::Other,
+                "The update binary failed signature validation",
         ));
     }
 
