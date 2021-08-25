@@ -31,7 +31,7 @@ phylum projects create <project-name>
 ```
 5. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
 ```
-package analyze <package-lock-file.ext>
+phylum analyze <package-lock-file.ext>
 ```
 ---
 
