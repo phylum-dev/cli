@@ -2,17 +2,13 @@ use ansi_term::Color::{Blue, Cyan, Green, White};
 use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
 use dialoguer::{theme::ColorfulTheme, Input, Password, Select};
-use home::home_dir;
-use minisign_verify::{PublicKey, Signature};
-use serde::Serialize;
 use spinners::{Spinner, Spinners};
+use home::home_dir;
+use serde::Serialize;
 use std::error::Error;
-use std::fs;
 use std::io;
 use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use std::env;
 use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -26,6 +22,7 @@ use phylum_cli::config::*;
 use phylum_cli::lockfiles::Parseable;
 use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
 use phylum_cli::summarize::Summarize;
+use phylum_cli::update::ApplicationUpdater;
 use phylum_cli::types::*;
 
 const STATUS_THRESHOLD_BREACHED: i32 = 1;
@@ -592,79 +589,6 @@ fn handle_auth(
     }
 }
 
-/// Generic function for fetching data from Github.
-fn get_github<T>(url: &str, f: impl Fn(reqwest::blocking::Response) -> Option<T>) -> Option<T> {
-    let client = reqwest::blocking::Client::builder()
-        .user_agent("phylum-cli")
-        .build();
-
-    match client {
-        Ok(c) => {
-            let resp = c.get(url).send();
-
-            match resp {
-                Ok(r) => f(r),
-                Err(_) => None,
-            }
-        }
-        Err(_) => None,
-    }
-}
-
-/// Check for an update by querying the Github releases page.
-fn get_latest_version() -> Option<GithubRelease> {
-    let url = "https://api.github.com/repos/phylum-dev/cli/releases/latest";
-    get_github(url, |r| -> Option<GithubRelease> {
-        let data = r.json::<GithubRelease>();
-
-        match data {
-            Ok(d) => Some(d),
-            Err(e) => {
-                log::warn!("Failed latest version check: {:?}", e);
-                None
-            }
-        }
-    })
-}
-
-/// Download the binary specified in the Github release.
-///
-/// On success, writes the requested file to the destination `dest`. Returns
-/// the number of bytes written.
-fn download_file(latest: &GithubReleaseAsset, dest: &str) -> Option<usize> {
-    get_github(latest.browser_download_url.as_str(), |r| -> Option<usize> {
-        let data = r.bytes().ok()?;
-
-        let mut file = std::fs::File::create(dest).expect("Failed to create temporary update file");
-        file.write_all(&data).expect("Failed to write update file");
-
-        Some(data.len())
-    })
-}
-
-/// Compare the current version as reported by Clap with the version currently
-/// published on Github. We do the naive thing here: If the latest version on
-/// Github does not match the Clap version, we update.
-fn needs_update(current_version: &str) -> bool {
-    let latest = get_latest_version();
-    match latest {
-        Some(github) => {
-            // The version comes back to us _possibly_ prefixed with `phylum v`.
-            // Additionally, Clap returns `phylum <version>` without the "v"`.
-            // Normalize the version strings here for comparison.
-            let latest = github
-                .name
-                .replace("phylum ", "")
-                .replace("v", "")
-                .trim()
-                .to_owned();
-            let current = current_version.replace("phylum ", "").trim().to_owned();
-            latest != current
-        }
-        _ => false,
-    }
-}
-
 /// Handle the project subcommand. Provides facilities for creating a new project,
 /// linking a current repository to an existing project, listing projects and
 /// setting project thresholds for risk domains.
@@ -894,126 +818,6 @@ fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
     ))
 }
 
-///
-///
-fn verify_signature(sig_path: &str, bin_path: &str) -> bool {
-    let sig = fs::read_to_string(sig_path).expect("Unable to read signature file");
-    let bin = fs::read(bin_path).expect("Unable to read binary data from disk");
-
-    // TODO: Handle this as a const somewhere???
-    let pubkey = PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
-        .expect("Unable to decode the public key");
-    let signature = match Signature::decode(&sig) {
-        Ok(x) => x,
-        Err(_) => return false 
-    };
-
-    match pubkey.verify(&bin[..], &signature) {
-        Err(_) => false,
-        Ok(_) => true
-    }
-}
-
-/// Update the Phylum installation. Please note, this will only function on
-/// Linux x64. This is due in part to the fact that the release is only
-/// compiling for this OS and architecture.
-///
-/// Until we update the releases, this should suffice.
-fn update_in_place(latest: GithubRelease) -> Result<String, std::io::Error> {
-    // We download the update to a temporary location.
-    let tmp_loc = env::temp_dir();
-    let tmp_dir = Path::new(&tmp_loc);
-
-    // TODO: Can prob refactor this a bit???
-    let tmp_bin_path = tmp_dir.join("phylum.update").to_owned();
-    let tmp_bash_path = tmp_dir.join("phylum-bash.update").to_owned();
-    let tmp_minisign_path = tmp_dir.join("phylum.minisign").to_owned();
-
-    // Not sure if this works on Windows???
-    let tmp_bin_path_str = tmp_bin_path.to_str().unwrap();
-    let tmp_bash_path_str = tmp_bash_path.to_str().unwrap();
-    let tmp_minisign_path_str = tmp_minisign_path.to_str().unwrap();
-
-    // This is path to the binary on disk.
-    let current_bin = std::env::current_exe()?;
-    let mut current_bash = current_bin.clone();
-    current_bash.pop();
-    current_bash.push("phylum.bash");
-    let latest_version = &latest.name;
-
-    // The data comes back to us as a JSON response of assets. We do not need
-    // every asset. We need the updated binary, the pertinent signature and the 
-    // bash file. This simply loops over this data to find the download URLs for
-    // each pertinent asset.
-    let bin_asset_name = if cfg!(target_os = "macos") {
-        "phylum-macos-x86_64"
-    } else {
-        "phylum-linux-x86_64"
-    };
-
-    let bin_asset = &latest
-        .assets
-        .iter()
-        .find(|x| x.name == bin_asset_name)
-        .unwrap();
-
-    let bash_asset = &latest
-        .assets
-        .iter()
-        .find(|x| x.name == "phylum.bash")
-        .unwrap();
-
-    // TODO: Temporary commented out until this is actually on Github.
-    //let minisign_asset = &latest
-    //    .assets
-    //    .iter()
-    //    .find(|x| x.name == format!("{}.minisig", bin_asset_name))
-    //    .unwrap();
-
-    // Download the required files for the update.
-    let sp = Spinner::new(Spinners::Dots12, "Downloading update...".into());
-    let bin = download_file(bin_asset, tmp_bin_path_str);
-    let bash = download_file(bash_asset, tmp_bash_path_str);
-
-    // TODO: temporary! Just dropped it to the location!
-    //let minisign = download_file(minisign_asset, tmp_minisign_path);
-    let minisign = Some(123);
-    sp.stop();
-    println!();
-
-    // Ensure that we have both files for our update. This includes the actual
-    // binary file, as well as the bash file.
-    if bin.is_none() || bash.is_none() || minisign.is_none() {
-        return Err(std::io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to download update files",
-        ));
-    }
-
-    // Ensure that the downloaded binary matches the specified signature.
-    if !verify_signature(tmp_minisign_path_str, tmp_bin_path_str) {
-        return Err(std::io::Error::new(
-                io::ErrorKind::Other,
-                "The update binary failed signature validation",
-        ));
-    }
-
-    // If the download succeeds, _then_ we move it to overwrite the
-    // existing binary and bash file.
-    fs::rename(tmp_bin_path, &current_bin)?;
-    fs::rename(tmp_bash_path, &current_bash)?;
-    match fs::set_permissions(&current_bin, fs::Permissions::from_mode(0o770)) {
-        Ok(_) => {}
-        Err(_) => {
-            print_user_warning!(
-                "Successfully downloaded updates, but failed to make binary executable"
-            );
-        }
-    };
-
-    Ok(format!("Successfully updated to {}!", latest_version))
-}
-
 /// Prints a verbose message informing the user that an update is available.
 fn print_update_message() {
     eprintln!(
@@ -1167,8 +971,16 @@ fn main() {
         }
     }
 
-    if check_for_updates && needs_update(ver) {
-        print_update_message();
+    if check_for_updates {
+        let updater = ApplicationUpdater::new();
+        match updater.get_latest_version() {
+            Some(latest) => {
+                if updater.needs_update(ver, &latest) {
+                    print_update_message();
+                }
+            },
+            None => log::debug!("Failed to get the latest version for update check")
+        }
     }
 
     // For these commands, we want to just provide verbose help and exit if no
@@ -1238,17 +1050,24 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if matches.subcommand_matches("update").is_some() {
-        let latest_version = get_latest_version();
-        match latest_version {
-            Some(ver) => match update_in_place(ver) {
+        let sp = Spinner::new(Spinners::Dots12, "Downloading update...".into());
+        let updater = ApplicationUpdater::new();
+        match updater.get_latest_version() {
+            Some(ver) => match updater.do_update(ver) {
                 Ok(msg) => {
+                    sp.stop();
+                    println!();
                     print_user_success!("{}", msg);
                 }
                 Err(msg) => {
+                    sp.stop();
+                    println!();
                     print_user_failure!("{}", msg);
                 }
             },
             _ => {
+                sp.stop();
+                println!();
                 print_user_warning!("Failed to get version metadata");
             }
         };

@@ -6,6 +6,7 @@ pub mod restson;
 pub mod summarize;
 pub mod types;
 pub mod utils;
+pub mod update;
 
 pub use restson::Error;
 
