@@ -95,7 +95,7 @@ impl ApplicationUpdater {
     /// Download the binary specified in the Github release.
     ///
     /// On success, writes the requested file to the temporary system folder
-    /// with the provided filename. Returns the number of bytes written.
+    /// with the provided filename. Returns the path to the written file.
     fn download_file(
         &self,
         latest: &GithubReleaseAsset,
