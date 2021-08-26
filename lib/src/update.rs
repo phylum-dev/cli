@@ -1,12 +1,12 @@
-use std::fs;
-use minisign_verify::{PublicKey, Signature};
-use std::path::PathBuf;
-use std::path::Path;
-use std::io;
-use std::os::unix::fs::PermissionsExt;
-use std::env;
-use std::io::prelude::*;
 use crate::types::*;
+use minisign_verify::{PublicKey, Signature};
+use std::env;
+use std::fs;
+use std::io;
+use std::io::prelude::*;
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+use std::path::PathBuf;
 
 #[cfg(test)]
 use mockito;
@@ -16,7 +16,7 @@ const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
 
 #[derive(Debug)]
 pub struct ApplicationUpdater {
-    pubkey: PublicKey
+    pubkey: PublicKey,
 }
 
 /// Produces the path to a temporary file on disk.
@@ -26,7 +26,7 @@ fn tmp_path(filename: &str) -> Option<String> {
     let tmp_path = path.join(filename).to_owned();
     match tmp_path.into_os_string().into_string() {
         Ok(x) => Some(x),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -34,11 +34,8 @@ fn tmp_path(filename: &str) -> Option<String> {
 /// facilities for validating the binary signature before installation.
 impl ApplicationUpdater {
     pub fn new() -> ApplicationUpdater {
-        let pubkey = PublicKey::from_base64(PUBKEY)
-            .expect("Unable to decode the public key");
-        ApplicationUpdater {
-            pubkey
-        }
+        let pubkey = PublicKey::from_base64(PUBKEY).expect("Unable to decode the public key");
+        ApplicationUpdater { pubkey }
     }
 
     /// Locate the currently installed asset on the given host.
@@ -50,7 +47,11 @@ impl ApplicationUpdater {
     }
 
     /// Generic function for fetching data from Github.
-    fn get_github<T>(&self, url: &str, f: impl Fn(reqwest::blocking::Response) -> Option<T>) -> Option<T> {
+    fn get_github<T>(
+        &self,
+        url: &str,
+        f: impl Fn(reqwest::blocking::Response) -> Option<T>,
+    ) -> Option<T> {
         let client = reqwest::blocking::Client::builder()
             .user_agent("phylum-cli")
             .build();
@@ -60,15 +61,13 @@ impl ApplicationUpdater {
                 let resp = c.get(url).send();
 
                 match resp {
-                    Ok(r) => { 
-                        f(r)
-                    },
+                    Ok(r) => f(r),
                     Err(_) => None,
                 }
             }
             Err(_) => None,
         }
-    } 
+    }
 
     /// Check for an update by querying the Github releases page.
     pub fn get_latest_version(&self) -> Option<GithubRelease> {
@@ -95,30 +94,46 @@ impl ApplicationUpdater {
 
     /// Download the binary specified in the Github release.
     ///
-    /// On success, writes the requested file to the temporary system folder 
+    /// On success, writes the requested file to the temporary system folder
     /// with the provided filename. Returns the number of bytes written.
-    fn download_file(&self, latest: &GithubReleaseAsset, filename: &str) -> Option<String> {
-        self.get_github(latest.browser_download_url.as_str(), |r| -> Option<String> {
-            let dest = match tmp_path(filename) {
-                Some(x) => x,
-                None => return None
-            };
+    fn download_file(
+        &self,
+        latest: &GithubReleaseAsset,
+        filename: &str,
+    ) -> Result<String, std::io::Error> {
+        let ret = self.get_github(
+            latest.browser_download_url.as_str(),
+            |r| -> Option<String> {
+                let dest = match tmp_path(filename) {
+                    Some(x) => x,
+                    None => return None,
+                };
 
-            let data = r.bytes().ok()?;
+                let data = r.bytes().ok()?;
 
-            let mut file = std::fs::File::create(&dest).expect("Failed to create temporary update file");
-            file.write_all(&data).expect("Failed to write update file");
+                let mut file =
+                    std::fs::File::create(&dest).expect("Failed to create temporary update file");
+                file.write_all(&data).expect("Failed to write update file");
 
-            Some(dest)
-        })
+                Some(dest)
+            },
+        );
+
+        match ret {
+            Some(ret) => Ok(ret),
+            _ => Err(std::io::Error::new(
+                io::ErrorKind::Other,
+                format!("Failed to download {}", filename),
+            )),
+        }
     }
 
     /// Compare the current version as reported by Clap with the version currently
     /// published on Github. We do the naive thing here: If the latest version on
-    /// Github does not match the Clap version, we indicate that we need to 
+    /// Github does not match the Clap version, we indicate that we need to
     /// update. We do not compare semvers to determine if an update is required.
     pub fn needs_update(&self, current_version: &str, latest_version: &GithubRelease) -> bool {
-        let latest = latest_version 
+        let latest = latest_version
             .name
             .replace("phylum ", "")
             .replace("v", "")
@@ -129,15 +144,22 @@ impl ApplicationUpdater {
     }
 
     /// Locate the specified asset in the Github response structure.
-    pub fn find_github_asset<'a>(&self, latest: &'a GithubRelease, name: &str) -> Option<&'a GithubReleaseAsset> {
-        latest
-            .assets
-            .iter()
-            .find(|x| x.name == name)
+    pub fn find_github_asset<'a>(
+        &self,
+        latest: &'a GithubRelease,
+        name: &str,
+    ) -> Result<&'a GithubReleaseAsset, std::io::Error> {
+        match latest.assets.iter().find(|x| x.name == name) {
+            Some(x) => Ok(x),
+            _ => Err(std::io::Error::new(
+                io::ErrorKind::Other,
+                format!("Failed to download update file: {}", name),
+            )),
+        }
     }
 
     /// Update the Phylum installation. Please note, this will only function on
-    /// Linux and macOS x64. This is due in part to the fact that the release is 
+    /// Linux and macOS x64. This is due in part to the fact that the release is
     /// only compiling for these OSes and architectures.
     ///
     /// Until we update the releases, this should suffice.
@@ -159,61 +181,15 @@ impl ApplicationUpdater {
         let installed_bin_path = self.installed_asset(bin_asset_name)?;
         let installed_bash_path = self.installed_asset("phylum.bash")?;
 
-        // TODO: Fix these unwraps
-        let bin_asset = match self.find_github_asset(&latest, bin_asset_name) {
-            Some(x) => x,
-            _ => return Err(std::io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to download updated binary",
-            ))
-        };
-
-        let bash_asset = match self.find_github_asset(&latest, "phylum.bash") {
-            Some(x) => x,
-            _ => return Err(std::io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to download updated bash file",
-            ))
-        };
-
+        // Get the URL for each asset from the Github JSON response in `latest`.
+        let bin_asset_url = self.find_github_asset(&latest, bin_asset_name)?;
+        let bash_asset_url = self.find_github_asset(&latest, "phylum.bash")?;
         let minisign_name = format!("{}.minisig", bin_asset_name);
-        let sig_asset = match self.find_github_asset(&latest, minisign_name.as_str()) {
-            Some(x) => x,
-            _ => return Err(std::io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to download binary signature file",
-            ))
-        };
+        let sig_asset_url = self.find_github_asset(&latest, minisign_name.as_str())?;
 
-        let bin = match self.download_file(&bin_asset, "phylum.update") {
-            Some(x) => x,
-            _ => {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::Other,
-                    "Failed to download update files",
-                ));
-            }
-        };
-
-        let bash = match self.download_file(&bash_asset, "phylum.bash") {
-            Some(x) => x,
-            _ => {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::Other,
-                    "Failed to download update files",
-                ));
-            }
-        };
-
-        let sig = match self.download_file(&sig_asset, "phylum.update.minisig") {
-            Some(x) => x,
-            _ => {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::Other,
-                    "Failed to download update files",
-                ));
-            }
-        };
+        let bin = self.download_file(&bin_asset_url, "phylum.update")?;
+        let bash = self.download_file(&bash_asset_url, "phylum.bash")?;
+        let sig = self.download_file(&sig_asset_url, "phylum.update.minisig")?;
 
         if !self.has_valid_signature(bin.as_str(), sig.as_str()) {
             return Err(std::io::Error::new(
@@ -222,19 +198,11 @@ impl ApplicationUpdater {
             ));
         }
 
-        // If the download and validation succeeds _then_ we move it to overwrite 
+        // If the download and validation succeeds _then_ we move it to overwrite
         // the existing binary and bash file.
         fs::rename(bin, &installed_bin_path)?;
         fs::rename(bash, &installed_bash_path)?;
-        match fs::set_permissions(&installed_bin_path, fs::Permissions::from_mode(0o770)) {
-            Ok(_) => {}
-            Err(_) => {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::Other,
-                    "Successfully downloaded updates, but failed to make binary executable"
-                ));
-            }
-        };
+        fs::set_permissions(&installed_bin_path, fs::Permissions::from_mode(0o770))?;
 
         Ok(format!("Successfully updated to {}!", latest_version))
     }
@@ -242,36 +210,35 @@ impl ApplicationUpdater {
     /// Verify that the downloaded binary matches the expected signature. Returns
     /// `true` for a valid signature, `false` otherwise.
     pub fn has_valid_signature(&self, file: &str, sig: &str) -> bool {
-        let sig = fs::read_to_string(sig)
-            .expect("Unable to read signature file");
-        let bin = fs::read(file)
-            .expect("Unable to read binary data from disk");
+        let sig = fs::read_to_string(sig).expect("Unable to read signature file");
+        let bin = fs::read(file).expect("Unable to read binary data from disk");
 
         let signature = match Signature::decode(&sig) {
             Ok(x) => x,
-            Err(_) => return false
+            Err(_) => return false,
         };
 
         match self.pubkey.verify(&bin[..], &signature) {
             Err(_) => false,
-            Ok(_) => true
+            Ok(_) => true,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use mockito::mock;
     use crate::update::ApplicationUpdater;
     use minisign_verify::PublicKey;
+    use mockito::mock;
     use std::fs;
     use std::fs::File;
     use std::io::prelude::*;
 
     #[test]
     fn creating_application() {
-        let correct_pubkey = PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
-                                .expect("Failed to create public key");
+        let correct_pubkey =
+            PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
+                .expect("Failed to create public key");
         let updater = ApplicationUpdater::new();
         assert_eq!(correct_pubkey, updater.pubkey);
     }
@@ -281,13 +248,15 @@ mod tests {
         let _m = mock("GET", "/repos/phylum-dev/cli/releases/latest")
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(r#"{ 
+            .with_body(
+                r#"{ 
                          "name": "1.2.3",
                          "assets": [
                            { "browser_download_url": "https://foo.example.com", "name": "foo" },
                            { "browser_download_url": "https://bar.example.com", "name": "bar" }
                          ] 
-                       }"#)
+                       }"#,
+            )
             .create();
 
         let updater = ApplicationUpdater::new();

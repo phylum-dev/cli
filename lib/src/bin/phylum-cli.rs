@@ -2,9 +2,9 @@ use ansi_term::Color::{Blue, Cyan, Green, White};
 use chrono::Local;
 use clap::{load_yaml, App, AppSettings, ArgMatches};
 use dialoguer::{theme::ColorfulTheme, Input, Password, Select};
-use spinners::{Spinner, Spinners};
 use home::home_dir;
 use serde::Serialize;
+use spinners::{Spinner, Spinners};
 use std::error::Error;
 use std::io;
 use std::io::Write;
@@ -22,8 +22,8 @@ use phylum_cli::config::*;
 use phylum_cli::lockfiles::Parseable;
 use phylum_cli::lockfiles::{GemLock, PackageLock, YarnLock};
 use phylum_cli::summarize::Summarize;
-use phylum_cli::update::ApplicationUpdater;
 use phylum_cli::types::*;
+use phylum_cli::update::ApplicationUpdater;
 
 const STATUS_THRESHOLD_BREACHED: i32 = 1;
 
@@ -978,8 +978,8 @@ fn main() {
                 if updater.needs_update(ver, &latest) {
                     print_update_message();
                 }
-            },
-            None => log::debug!("Failed to get the latest version for update check")
+            }
+            None => log::debug!("Failed to get the latest version for update check"),
         }
     }
 
