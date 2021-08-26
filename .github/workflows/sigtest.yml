@@ -24,6 +24,8 @@ jobs:
           docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
           mkdir -p /home/runner/.minisign/ && echo $MINISIGN_KEY > /home/runner/.minisign/minisign.key 
           ls -lah /home/runner/.minisign/
+          cat /home/runner/.minisign/minisign.key
+          md5sum /home/runner/.minisign/minisign.key
           echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
