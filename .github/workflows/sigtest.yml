@@ -22,8 +22,8 @@ jobs:
       - name: Collect files 
         run: |
           docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
-          mkdir -p /home/runner/.minisign/ && echo ${ secrets.MINISIGN_KEY } > /home/runner/.minisign/minisign.key 
-          echo ${ secrets.MINISIGN_PASSWORD } | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
+          mkdir -p /home/runner/.minisign/ && echo $MINISIGN_KEY > /home/runner/.minisign/minisign.key 
+          echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
@@ -33,6 +33,9 @@ jobs:
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
+        env: 
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
       - name: Build zipfile
         run: zip -r phylum-cli-release phylum-cli-release
       - name: Archive production artifacts
