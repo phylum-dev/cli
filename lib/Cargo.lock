@@ -1002,6 +1002,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
+name = "minisign-verify"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db0507fe8e3c68cd62961cf9f87f6c2b21d884d3515a7150a4a3fa9d014e5c12"
+
+[[package]]
 name = "mio"
 version = "0.6.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1183,7 +1189,7 @@ checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "phylum-cli"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "ansi_term 0.12.1",
  "assert_cmd",
@@ -1201,6 +1207,7 @@ dependencies = [
  "hyper-rustls 0.21.0",
  "lazy_static",
  "log",
+ "minisign-verify",
  "mockito",
  "nom",
  "prettytable-rs",

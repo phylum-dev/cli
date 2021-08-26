@@ -1,0 +1,49 @@
+name: Test signature 
+
+on:
+  push:
+    branches:
+      - 'louis/binary-verification' 
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo add-apt-repository ppa:dysfunctionalprogramming/minisign
+          sudo apt update
+          sudo apt install -yq build-essential zip minisign
+      - uses: actions/checkout@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build MacOS
+        run: docker build lib/ --file lib/Dockerfile.macos --tag macos-build
+      - name: Collect files 
+        run: |
+          docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
+          mkdir -p /home/runner/.minisign/ && echo $MINISIGN_KEY > /home/runner/.minisign/minisign.key 
+          ls -lah /home/runner/.minisign/
+          cat /home/runner/.minisign/minisign.key
+          md5sum /home/runner/.minisign/minisign.key
+          echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
+          mkdir phylum-cli-release
+          cp lib/install.sh phylum-cli-release/
+          cp lib/src/bin/settings.yaml phylum-cli-release/
+          cp lib/src/bin/phylum.bash phylum-cli-release/
+          cp phylum-linux-x86_64 phylum-cli-release/
+          cp phylum-macos-x86_64 phylum-cli-release/
+          cp lib/install.sh .
+          cp lib/src/bin/settings.yaml .
+          cp lib/src/bin/phylum.bash .
+        env: 
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+      - name: Build zipfile
+        run: zip -r phylum-cli-release phylum-cli-release
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: phylum-cli-release.zip 
+          path: |
+            phylum-cli-release.zip
