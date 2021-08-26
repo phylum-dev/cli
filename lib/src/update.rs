@@ -209,8 +209,8 @@ impl ApplicationUpdater {
 
     /// Verify that the downloaded binary matches the expected signature. Returns
     /// `true` for a valid signature, `false` otherwise.
-    pub fn has_valid_signature(&self, file: &str, sig: &str) -> bool {
-        let sig = fs::read_to_string(sig).expect("Unable to read signature file");
+    pub fn has_valid_signature(&self, file: &str, sig_path: &str) -> bool {
+        let sig = fs::read_to_string(sig_path).expect("Unable to read signature file");
         let bin = fs::read(file).expect("Unable to read binary data from disk");
 
         let signature = match Signature::decode(&sig) {
@@ -240,7 +240,7 @@ mod tests {
             PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
                 .expect("Failed to create public key");
         let updater = ApplicationUpdater::new();
-        assert_eq!(correct_pubkey, updater.pubkey);
+        assert!(correct_pubkey, updater.pubkey);
     }
 
     #[test]
@@ -261,18 +261,18 @@ mod tests {
 
         let updater = ApplicationUpdater::new();
         let latest = updater.get_latest_version().unwrap();
-        assert_eq!("1.2.3", latest.name);
-        assert_eq!(true, updater.needs_update("1.0.2", &latest));
+        assert!("1.2.3", latest.name);
+        assert!(true, updater.needs_update("1.0.2", &latest));
 
         let github_asset = updater.find_github_asset(&latest, "foo").unwrap();
-        assert_eq!("https://foo.example.com", github_asset.browser_download_url);
+        assert!("https://foo.example.com", github_asset.browser_download_url);
     }
 
     #[test]
     fn find_installed_asset_location() {
         let updater = ApplicationUpdater::new();
         let asset = updater.installed_asset("example.ext").unwrap();
-        assert_eq!(true, asset.ends_with("example.ext"));
+        assert!(true, asset.ends_with("example.ext"));
     }
 
     #[test]
@@ -289,6 +289,6 @@ mod tests {
 
         let _ = fs::remove_file("hello.txt");
         let _ = fs::remove_file("hello.txt.minisig");
-        assert_eq!(true, valid);
+        assert!(true, valid);
     }
 }
