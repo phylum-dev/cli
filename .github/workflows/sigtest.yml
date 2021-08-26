@@ -17,16 +17,13 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build Linux
-        run: docker build lib/ --file lib/Dockerfile.linux --tag static-build
       - name: Build MacOS
         run: docker build lib/ --file lib/Dockerfile.macos --tag macos-build
       - name: Collect files 
         run: |
-          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum-linux-x86_64
           docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
-          echo "password" | minisign -Sm phylum-linux-x86_64 -t 'Phylum - Future of software supply chain security'
-          echo "password" | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
+          mkdir -p /home/runner/.minisign/ && echo ${ secrets.MINISIGN_KEY } > /home/runner/.minisign/minisign.key 
+          echo ${ secrets.MINISIGN_PASSWORD } | minisign -Sm phylum-macos-x86_64 -t 'Phylum - Future of software supply chain security'
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
