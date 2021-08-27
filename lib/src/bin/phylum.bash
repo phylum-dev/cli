@@ -80,7 +80,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts=" -c -t -h -V  --config --timeout --help --version  update history projects package auth ping analyze batch version help"
+            opts=" -h -V -c -t  --help --version --config --timeout  update history projects package auth ping analyze batch version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -91,7 +91,7 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -99,7 +99,7 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -t)
+                -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -112,14 +112,14 @@ _phylum() {
             ;;
         
         phylum__analyze)
-            opts=" -l -V -j -F -h  --verbose --json --help --version  <LOCKFILE> "
+            opts=" -l -V -j -F -h -V  --verbose --json --help --version  <LOCKFILE> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 
-                    -l)
+                -l)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -146,7 +146,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__keys)
-            opts=" -h -V  --help --version  create list remove"
+            opts="  --help --version  create list remove"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -161,7 +161,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__keys__create)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -176,7 +176,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__keys__list)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -191,7 +191,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__keys__remove)
-            opts=" -h -V  --help --version  <key_id> "
+            opts="  --help --version  <key_id> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -206,7 +206,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__login)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -221,7 +221,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__register)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -236,7 +236,7 @@ _phylum() {
             return 0
             ;;
         phylum__auth__status)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -258,15 +258,15 @@ _phylum() {
             fi
             case "${prev}" in
                 
-                    -f)
+                -f)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -t)
+                -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -l)
+                -l)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -293,7 +293,7 @@ _phylum() {
             return 0
             ;;
         phylum__history)
-            opts=" -V -j -h  --verbose --json --help --version  <JOB_ID> project"
+            opts=" -V -j -h -V  --verbose --json --help --version  <JOB_ID> project"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -308,7 +308,7 @@ _phylum() {
             return 0
             ;;
         phylum__history__project)
-            opts=" -h -V  --help --version  <project_name> <job_id> "
+            opts="  --help --version  <project_name> <job_id> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -334,7 +334,7 @@ _phylum() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -t)
+                -t)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -376,7 +376,7 @@ _phylum() {
             return 0
             ;;
         phylum__projects__create)
-            opts=" -h -V  --help --version  <name> "
+            opts="  --help --version  <name> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -391,7 +391,7 @@ _phylum() {
             return 0
             ;;
         phylum__projects__link)
-            opts=" -h -V  --help --version  <name> "
+            opts="  --help --version  <name> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -406,7 +406,7 @@ _phylum() {
             return 0
             ;;
         phylum__projects__list)
-            opts=" -h -V  --help --version  "
+            opts="  --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -421,7 +421,7 @@ _phylum() {
             return 0
             ;;
         phylum__projects__set__thresholds)
-            opts=" -h -V  --help --version  <name> "
+            opts="  --help --version  <name> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

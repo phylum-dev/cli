@@ -16,6 +16,17 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+          driver-opts: network=host
+      - name: Login to Harbor
+        uses: docker/login-action@v1
+        with:
+          registry: harbor.prod-aws.phylum.dev
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Linux
         run: docker build lib/ --file lib/Dockerfile.linux --tag static-build
       - name: Build MacOS
@@ -35,9 +46,17 @@ jobs:
           cp lib/src/bin/phylum.bash .
       - name: Build zipfile
         run: zip -r phylum-cli-release phylum-cli-release
+      - name: Determine prerelease status
+        uses: haya14busa/action-cond@v1
+        id: preRelease
+        with:
+          cond: ${{ contains(github.event.release.tag_name, 'rc') }}
+          if_true: 'true'  # string value
+          if_false: 'false' # string value
       - uses: softprops/action-gh-release@v0.1.7
         name: Release
         with:
+          prerelease: ${{ steps.preRelease.outputs.value }}
           files: |
             phylum-linux-x86_64
             phylum-macos-x86_64
