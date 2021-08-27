@@ -18,6 +18,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: Build
+        run: lib/build.sh
       - uses: actions-rs/cargo@v1
         name: Format check
         with:
