@@ -8,13 +8,13 @@ args:
         short: c
         long: config
         value_name: FILE
-        help: Sets a custom config file
+        about: Sets a custom config file
         takes_value: true
     - timeout:
         short: t
         long: timeout
         value_name: TIMEOUT
-        help: Set the timeout (in seconds) for requests to the Phylum api
+        about: Set the timeout (in seconds) for requests to the Phylum api
         takes_value: true
 subcommands:
     - update:
@@ -24,17 +24,17 @@ subcommands:
         args:
             - JOB_ID:
                 required: false
-                help: The job id to query (or `current` for the most recent job)
+                about: The job id to query (or `current` for the most recent job)
             - verbose:
                 short: V 
                 long: verbose
-                help: Increase verbosity of api response.
+                about: Increase verbosity of api response.
                 takes_value: false
                 required: false
             - json:
                 short: j
                 long: json
-                help: "Produce output in json format (default: false)"
+                about: "Produce output in json format (default: false)"
         subcommands:
             - project:
                 about: Shows a list of projects associated with the user
@@ -77,17 +77,17 @@ subcommands:
         about: Retrieve the details of a specific packge
         args:
             - name:
-                help: The name of the package.
+                about: The name of the package.
                 takes_value: true
                 required: false
                 index: 1
             - version:
-                help: The version of the package.
+                about: The version of the package.
                 takes_value: true
                 required: false
                 index: 2
             - type:
-                help: The type of the package ("npm", "ruby", "pypi", etc.)
+                about: The type of the package ("npm", "ruby", "pypi", etc.)
                 short: t
                 long: package-type
                 takes_value: true
@@ -95,7 +95,7 @@ subcommands:
             - json:
                 short: j
                 long: json
-                help: "Produce output in json format (default: false)"
+                about: "Produce output in json format (default: false)"
     - auth:
         about: Manage authentication, registration, and API keys
         subcommands:
@@ -155,7 +155,7 @@ subcommands:
         about: Submit a request for analysis to the processing system
         args:
             - LOCKFILE:
-                help: "The package lock file to submit."
+                about: "The package lock file to submit."
                 required: false
             - label:
                 short: l
@@ -164,16 +164,16 @@ subcommands:
             - verbose:
                 short: V 
                 long: verbose
-                help: Increase verbosity of api response.
+                about: Increase verbosity of api response.
                 takes_value: false
                 required: false
             - json:
                 short: j
                 long: json
-                help: "Produce output in json format (default: false)"
+                about: "Produce output in json format (default: false)"
             - force:
                 short: F
-                help: Force re-processing of packages (even if they already exist in the system)
+                about: Force re-processing of packages (even if they already exist in the system)
                 takes_value: false
                 required: false
     - batch:
@@ -183,17 +183,17 @@ subcommands:
         args:
             - file:
                 short: f
-                help: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
+                about: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
                 takes_value: true
                 required: false
             - type:
                 short: t
-                help: Package type (`npm`, `ruby`, etc)
+                about: Package type (`npm`, `ruby`, etc)
                 takes_value: true
                 required: false
             - force:
                 short: F
-                help: Force re-processing of packages (even if they already exist in the system)
+                about: Force re-processing of packages (even if they already exist in the system)
                 takes_value: false
                 required: false
             - low-priority:

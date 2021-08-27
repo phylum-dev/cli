@@ -13,7 +13,7 @@ ARG RUST_TARGET=x86_64-unknown-linux-musl
 # We use a multi-stage build here to get access to a full system when building
 #  but still run in a scratch image
 #
-FROM ekidd/rust-musl-builder as planner
+FROM harbor.prod-aws.phylum.dev/phylum/rust/rust-musl:1.54.0 as planner
 ARG APP_PATH
 ARG CARGO_HOME
 USER root
@@ -22,7 +22,7 @@ RUN cargo install cargo-chef
 COPY . .
 RUN cargo chef prepare  --recipe-path recipe.json
 
-FROM ekidd/rust-musl-builder as cacher
+FROM harbor.prod-aws.phylum.dev/phylum/rust/rust-musl:1.54.0 as cacher
 ARG APP_PATH
 ARG CARGO_HOME
 USER root
@@ -31,7 +31,7 @@ RUN cargo install cargo-chef
 COPY --from=planner ${APP_PATH}/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-FROM ekidd/rust-musl-builder
+FROM harbor.prod-aws.phylum.dev/phylum/rust/rust-musl:1.54.0
 ARG APP_PATH
 ARG CARGO_HOME
 USER root
