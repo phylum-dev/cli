@@ -51,6 +51,9 @@ jobs:
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
+        env:
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
       - name: Build zipfile
         run: zip -r phylum-cli-release phylum-cli-release
       - name: Determine prerelease status
