@@ -45,9 +45,9 @@ jobs:
           cp lib/src/bin/settings.yaml phylum-cli-release/
           cp lib/src/bin/phylum.bash phylum-cli-release/
           cp phylum-linux-x86_64 phylum-cli-release/
-          cp phylum-linux-x86_64.minisig phylum-cli-release/
           cp phylum-macos-x86_64 phylum-cli-release/
-          cp phylum-macos-x86_64.minisig phylum-cli-release/
+          cp phylum-linux-x86_64.minisig .
+          cp phylum-macos-x86_64.minisig .
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
