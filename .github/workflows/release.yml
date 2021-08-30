@@ -17,17 +17,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          install: true
-          driver-opts: network=host
-      - name: Login to Harbor
-        uses: docker/login-action@v1
-        with:
-          registry: harbor.prod-aws.phylum.dev
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Build Linux
         run: docker build lib/ --file lib/Dockerfile.linux --tag static-build
       - name: Build MacOS
@@ -47,8 +36,6 @@ jobs:
           cp lib/src/bin/phylum.bash phylum-cli-release/
           cp phylum-linux-x86_64 phylum-cli-release/
           cp phylum-macos-x86_64 phylum-cli-release/
-          cp phylum-linux-x86_64.minisig .
-          cp phylum-macos-x86_64.minisig .
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
@@ -61,7 +48,7 @@ jobs:
         uses: haya14busa/action-cond@v1
         id: preRelease
         with:
-          cond: ${{ contains(github.event.release.tag_name, 'rc') }}
+          cond: ${{ contains(github.ref, 'rc') }}
           if_true: 'true'  # string value
           if_false: 'false' # string value
       - uses: softprops/action-gh-release@v0.1.7
@@ -75,5 +62,7 @@ jobs:
             settings.yaml
             phylum.bash
             phylum-cli-release.zip
+            phylum-linux-x86_64.minisig
+            phylum-macos-x86_64.minisig
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
