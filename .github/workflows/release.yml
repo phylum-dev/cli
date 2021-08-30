@@ -10,8 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          sudo add-apt-repository ppa:dysfunctionalprogramming/minisign
           sudo apt update
-          sudo apt install -yq build-essential zip
+          sudo apt install -yq build-essential zip minisign
       - uses: actions/checkout@master
       - uses: actions-rs/toolchain@v1
         with:
