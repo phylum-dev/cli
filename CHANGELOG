@@ -1,3 +1,4 @@
+* 1.1.0 - Add support for submitting Python packages; signature verification on upgrade
 * 1.0.1 - Bugfix for https://github.com/phylum-dev/cli/issues/67
 * 1.0.0 - Add formatted output; refactor subcommands; many other changes for improved usability
 * 0.0.7 - Adding synch submit requests
