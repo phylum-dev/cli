@@ -1070,7 +1070,10 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if matches.subcommand_matches("update").is_some() {
-        let sp = Spinner::new(Spinners::Dots12, "Downloading update...".into());
+        let sp = Spinner::new(
+            Spinners::Dots12,
+            "Downloading update and verifying binary signatures...".into(),
+        );
         let updater = ApplicationUpdater::default();
         match updater.get_latest_version() {
             Some(ver) => match updater.do_update(ver) {
