@@ -166,6 +166,7 @@ impl ApplicationUpdater {
     ///
     /// Until we update the releases, this should suffice.
     pub fn do_update(&self, latest: GithubRelease) -> Result<String, std::io::Error> {
+        debug!("Performing the update process");
         let latest_version = &latest.name;
 
         let bin_asset_name = if cfg!(target_os = "macos") {
@@ -180,19 +181,23 @@ impl ApplicationUpdater {
         };
 
         // Find location of assets on disk
+        debug!("Locating the installed paths for the update");
         let installed_bin_path = self.installed_asset(bin_asset_name)?;
         let installed_bash_path = self.installed_asset("phylum.bash")?;
 
         // Get the URL for each asset from the Github JSON response in `latest`.
+        debug!("Finding the github assets in the Github JSON response");
         let bin_asset_url = self.find_github_asset(&latest, bin_asset_name)?;
         let bash_asset_url = self.find_github_asset(&latest, "phylum.bash")?;
         let minisign_name = format!("{}.minisig", bin_asset_name);
         let sig_asset_url = self.find_github_asset(&latest, minisign_name.as_str())?;
 
+        debug!("Downloading the update files");
         let bin = self.download_file(bin_asset_url, "phylum.update")?;
         let bash = self.download_file(bash_asset_url, "phylum.bash")?;
         let sig = self.download_file(sig_asset_url, "phylum.update.minisig")?;
 
+        debug!("Verifying the binary signature before move");
         if !self.has_valid_signature(bin.as_str(), sig.as_str()) {
             return Err(std::io::Error::new(
                 io::ErrorKind::Other,
@@ -202,9 +207,36 @@ impl ApplicationUpdater {
 
         // If the download and validation succeeds _then_ we move it to overwrite
         // the existing binary and bash file.
-        fs::rename(bin, &installed_bin_path)?;
-        fs::rename(bash, &installed_bash_path)?;
+        debug!("Copying the files to the intended install location");
+        fs::copy(&bin, &installed_bin_path)?;
+        fs::copy(&bash, &installed_bash_path)?;
         fs::set_permissions(&installed_bin_path, fs::Permissions::from_mode(0o770))?;
+        fs::remove_file(&bin)?;
+        fs::remove_file(&bash)?;
+
+        // Ensure that the files copied to the final location were the ones
+        // we expected. This is to address a potential race condition between
+        // the check and the copy.
+        debug!("Verifying the file wasn't changed/tampered with before the move");
+        let final_bin = match installed_bin_path.clone().into_os_string().into_string() {
+            Ok(x) => x,
+            Err(_) => {
+                return Err(std::io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not create the path for the installation",
+                ))
+            }
+        };
+
+        if !self.has_valid_signature(final_bin.as_str(), sig.as_str()) {
+            fs::remove_file(&installed_bin_path)?;
+            fs::remove_file(&installed_bash_path)?;
+
+            return Err(std::io::Error::new(
+                io::ErrorKind::Other,
+                "Possible attack attempt! Binary changed after initial signature verification and was removed.",
+            ));
+        }
 
         Ok(format!("Successfully updated to {}!", latest_version))
     }
