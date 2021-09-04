@@ -182,7 +182,7 @@ impl ApplicationUpdater {
 
         // Find location of assets on disk
         debug!("Locating the installed paths for the update");
-        let installed_bin_path = self.installed_asset(bin_asset_name)?;
+        let installed_bin_path = self.installed_asset("phylum")?;
         let installed_bash_path = self.installed_asset("phylum.bash")?;
 
         // Get the URL for each asset from the Github JSON response in `latest`.
