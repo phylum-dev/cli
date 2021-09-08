@@ -169,10 +169,10 @@ impl ApplicationUpdater {
         debug!("Performing the update process");
         let latest_version = &latest.name;
 
-        let bin_asset_name = if cfg!(target_os = "macos") {
-            "phylum-macos-x86_64"
+        let (bin_asset_name, shell_asset_name) = if cfg!(target_os = "macos") {
+            ("phylum-macos-x86_64", "_phylum")
         } else if cfg!(target_os = "linux") {
-            "phylum-linux-x86_64"
+            ("phylum-linux-x86_64", "phylum.bash")
         } else {
             return Err(std::io::Error::new(
                 io::ErrorKind::Other,
@@ -183,18 +183,18 @@ impl ApplicationUpdater {
         // Find location of assets on disk
         debug!("Locating the installed paths for the update");
         let installed_bin_path = self.installed_asset("phylum")?;
-        let installed_bash_path = self.installed_asset("phylum.bash")?;
+        let installed_bash_path = self.installed_asset(shell_asset_name)?;
 
         // Get the URL for each asset from the Github JSON response in `latest`.
         debug!("Finding the github assets in the Github JSON response");
         let bin_asset_url = self.find_github_asset(&latest, bin_asset_name)?;
-        let bash_asset_url = self.find_github_asset(&latest, "phylum.bash")?;
+        let bash_asset_url = self.find_github_asset(&latest, shell_asset_name)?;
         let minisign_name = format!("{}.minisig", bin_asset_name);
         let sig_asset_url = self.find_github_asset(&latest, minisign_name.as_str())?;
 
         debug!("Downloading the update files");
         let bin = self.download_file(bin_asset_url, "phylum.update")?;
-        let bash = self.download_file(bash_asset_url, "phylum.bash")?;
+        let bash = self.download_file(bash_asset_url, shell_asset_name)?;
         let sig = self.download_file(sig_asset_url, "phylum.update.minisig")?;
 
         debug!("Verifying the binary signature before move");
