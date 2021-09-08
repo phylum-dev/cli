@@ -19,6 +19,12 @@ args:
 subcommands:
     - update:
         about: Check for a new release of the Phylum CLI tool and update if one exists
+        args:
+            - prerelease:
+                required: false
+                about: "Update to the latest prerelease (vs. stable, default: false)"
+                short: p
+                long: prerelease
     - history:
         about: Return information about historical scans
         args:

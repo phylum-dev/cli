@@ -436,7 +436,7 @@ _phylum() {
             return 0
             ;;
         phylum__update)
-            opts=" -h -V  --help --version  "
+            opts=" -p -h -V  --prerelease --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

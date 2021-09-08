@@ -41,9 +41,16 @@ fn tmp_path(filename: &str) -> Option<String> {
 /// facilities for validating the binary signature before installation.
 impl ApplicationUpdater {
     /// Locate the currently installed asset on the given host.
-    fn installed_asset(&self, asset_name: &str) -> Result<PathBuf, std::io::Error> {
+    fn installed_asset(
+        &self,
+        prefix: Option<&str>,
+        asset_name: &str,
+    ) -> Result<PathBuf, std::io::Error> {
         let mut current_bin = std::env::current_exe()?;
         current_bin.pop();
+        if let Some(p) = prefix {
+            current_bin.push(p);
+        }
         current_bin.push(asset_name);
         Ok(current_bin)
     }
@@ -72,26 +79,46 @@ impl ApplicationUpdater {
     }
 
     /// Check for an update by querying the Github releases page.
-    pub fn get_latest_version(&self) -> Option<GithubRelease> {
+    pub fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
         #[cfg(test)]
         let github_uri = &mockito::server_url();
 
         #[cfg(not(test))]
         let github_uri = "https://api.github.com";
 
-        let url = format!("{}/repos/phylum-dev/cli/releases/latest", github_uri);
+        let ver = if prerelease {
+            let url = format!("{}/repos/phylum-dev/cli/releases", github_uri);
 
-        self.get_github(url.as_str(), |r| -> Option<GithubRelease> {
-            let data = r.json::<GithubRelease>();
+            self.get_github(url.as_str(), |r| -> Option<GithubRelease> {
+                let data = r.json::<Vec<GithubRelease>>();
 
-            match data {
-                Ok(d) => Some(d),
-                Err(e) => {
-                    log::warn!("Failed latest version check: {:?}", e);
-                    None
+                match data {
+                    Ok(d) => Some(d[0].to_owned()),
+                    Err(e) => {
+                        log::warn!("Failed latest version check: {:?}", e);
+                        None
+                    }
                 }
-            }
-        })
+            })
+        } else {
+            let url = format!("{}/repos/phylum-dev/cli/releases/latest", github_uri);
+
+            self.get_github(url.as_str(), |r| -> Option<GithubRelease> {
+                let data = r.json::<GithubRelease>();
+
+                match data {
+                    Ok(d) => Some(d),
+                    Err(e) => {
+                        log::warn!("Failed latest version check: {:?}", e);
+                        None
+                    }
+                }
+            })
+        };
+
+        log::debug!("Found latest version: {:?}", ver);
+
+        ver
     }
 
     /// Download the binary specified in the Github release.
@@ -169,10 +196,10 @@ impl ApplicationUpdater {
         debug!("Performing the update process");
         let latest_version = &latest.name;
 
-        let bin_asset_name = if cfg!(target_os = "macos") {
-            "phylum-macos-x86_64"
+        let (bin_asset_name, shell_asset_name) = if cfg!(target_os = "macos") {
+            ("phylum-macos-x86_64", "_phylum")
         } else if cfg!(target_os = "linux") {
-            "phylum-linux-x86_64"
+            ("phylum-linux-x86_64", "phylum.bash")
         } else {
             return Err(std::io::Error::new(
                 io::ErrorKind::Other,
@@ -182,19 +209,24 @@ impl ApplicationUpdater {
 
         // Find location of assets on disk
         debug!("Locating the installed paths for the update");
-        let installed_bin_path = self.installed_asset("phylum")?;
-        let installed_bash_path = self.installed_asset("phylum.bash")?;
+        let installed_bin_path = self.installed_asset(None, "phylum")?;
+        let prefix = if cfg!(target_os = "macos") {
+            Some("completions")
+        } else {
+            None
+        };
+        let installed_bash_path = self.installed_asset(prefix, shell_asset_name)?;
 
         // Get the URL for each asset from the Github JSON response in `latest`.
         debug!("Finding the github assets in the Github JSON response");
         let bin_asset_url = self.find_github_asset(&latest, bin_asset_name)?;
-        let bash_asset_url = self.find_github_asset(&latest, "phylum.bash")?;
+        let bash_asset_url = self.find_github_asset(&latest, shell_asset_name)?;
         let minisign_name = format!("{}.minisig", bin_asset_name);
         let sig_asset_url = self.find_github_asset(&latest, minisign_name.as_str())?;
 
         debug!("Downloading the update files");
         let bin = self.download_file(bin_asset_url, "phylum.update")?;
-        let bash = self.download_file(bash_asset_url, "phylum.bash")?;
+        let bash = self.download_file(bash_asset_url, shell_asset_name)?;
         let sig = self.download_file(sig_asset_url, "phylum.update.minisig")?;
 
         debug!("Verifying the binary signature before move");
@@ -208,10 +240,18 @@ impl ApplicationUpdater {
         // If the download and validation succeeds _then_ we move it to overwrite
         // the existing binary and bash file.
         debug!("Copying the files to the intended install location");
+        fs::remove_file(&installed_bin_path)?;
         fs::copy(&bin, &installed_bin_path)?;
+        debug!(
+            "Copying shell script from {} to {:?}",
+            bash, installed_bash_path
+        );
         fs::copy(&bash, &installed_bash_path)?;
+        debug!("Setting permissions ");
         fs::set_permissions(&installed_bin_path, fs::Permissions::from_mode(0o770))?;
+        debug!("Removing bin");
         fs::remove_file(&bin)?;
+        debug!("Removing shell script");
         fs::remove_file(&bash)?;
 
         // Ensure that the files copied to the final location were the ones
@@ -291,7 +331,7 @@ mod tests {
             .create();
 
         let updater = ApplicationUpdater::default();
-        let latest = updater.get_latest_version().unwrap();
+        let latest = updater.get_latest_version(false).unwrap();
         assert!("1.2.3" == latest.name);
         assert!(updater.needs_update("1.0.2", &latest));
 
@@ -302,7 +342,7 @@ mod tests {
     #[test]
     fn find_installed_asset_location() {
         let updater = ApplicationUpdater::default();
-        let asset = updater.installed_asset("example.ext").unwrap();
+        let asset = updater.installed_asset(None,"example.ext").unwrap();
         assert!(asset.ends_with("example.ext"));
     }
 

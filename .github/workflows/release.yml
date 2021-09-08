@@ -34,11 +34,14 @@ jobs:
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
           cp lib/src/bin/phylum.bash phylum-cli-release/
+          cp lib/src/bin/phylum.fish phylum-cli-release/
+          cp lib/src/bin/_phylum phylum-cli-release/
           cp phylum-linux-x86_64 phylum-cli-release/
           cp phylum-macos-x86_64 phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
           cp lib/src/bin/phylum.bash .
+          cp lib/src/bin/_phylum .
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
@@ -61,6 +64,7 @@ jobs:
             install.sh
             settings.yaml
             phylum.bash
+            _phylum
             phylum-cli-release.zip
             phylum-linux-x86_64.minisig
             phylum-macos-x86_64.minisig
