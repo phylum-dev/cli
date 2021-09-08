@@ -49,9 +49,6 @@ if [ ! -f ${HOME}/.phylum/settings.yaml ]; then
     check_copy "settings.yaml" "${HOME}/.phylum/"
 fi
 
-# Copy the bash completion to phylum directory.
-check_copy "phylum.bash" "${HOME}/.phylum/"
-
 # Copy the specific platform binary.
 platform=$(get_platform)
 arch="x86_64"
@@ -62,17 +59,29 @@ chmod +x ${HOME}/.phylum/phylum
 # Update some paths.
 rc_path=""
 
-if [ -n "$ZSH_VERSION" ]; then
+# If zsh is installed, we assume that's preferred
+if [ -d ${HOME}/.zshrc ]; then
     rc_path=".zshrc"
+
+    if ! grep -q '.phylum/completions' $HOME/${rc_path}; then
+        mkdir -p "$HOME/.phylum/completions"
+        echo "fpath+=(\"$HOME/.phylum/completions\")" >> ${HOME}/${rc_path}
+    fi
+    if ! grep -q 'autoload -U compinit && compinit' $HOME/${rc_path}; then
+        echo "autoload -U compinit && compinit" >> ${HOME}/${rc_path}
+    fi
 else
     rc_path=".bashrc"
+
+    # Copy the bash completion to phylum directory.
+    check_copy "phylum.bash" "${HOME}/.phylum/"
+
+    if ! grep -q 'phylum.bash' $HOME/${rc_path}; then
+        echo "source \$HOME/.phylum/phylum.bash" >> ${HOME}/${rc_path}
+    fi
 fi
 
-if ! grep -q 'phylum.bash' $HOME/${rc_path}; then
-  echo "source \$HOME/.phylum/phylum.bash" >> ${HOME}/${rc_path}
-fi
-
-if ! grep -q '.phylum/:\$PATH' $HOME/${rc_path}; then
+if ! grep -q '.phylum:\$PATH' $HOME/${rc_path}; then
   export PATH="$HOME/.phylum:$PATH"
   echo 'export PATH="$HOME/.phylum:$PATH"' >> ${HOME}/${rc_path}
   success "Updating path to include ${HOME}/.phylum/."
