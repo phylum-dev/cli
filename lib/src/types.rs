@@ -573,13 +573,13 @@ pub struct CancelRequestResponse {
     pub msg: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct GithubRelease {
     pub name: String,
     pub assets: Vec<GithubReleaseAsset>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct GithubReleaseAsset {
     pub browser_download_url: String,
     pub name: String,
