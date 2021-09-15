@@ -530,7 +530,6 @@ pub struct Issue {
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeuristicResult {
-    pub description: String,
     pub domain: RiskDomain,
     pub score: f64,
     pub risk_level: RiskLevel,
