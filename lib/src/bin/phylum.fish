@@ -68,7 +68,7 @@ complete -c phylum -n "__fish_seen_subcommand_from ping" -s h -l help -d 'Print 
 complete -c phylum -n "__fish_seen_subcommand_from ping" -s V -l version -d 'Print version information'
 complete -c phylum -n "__fish_seen_subcommand_from analyze" -s l -r
 complete -c phylum -n "__fish_seen_subcommand_from analyze" -d 'The package lock file to submit.'
-complete -c phylum -n "__fish_seen_subcommand_from analyze" -s V -l verbose -d 'Increase verbosity of api response.'
+complete -c phylum -n "__fish_seen_subcommand_from analyze" -s v -l verbose -d 'Increase verbosity of api response.'
 complete -c phylum -n "__fish_seen_subcommand_from analyze" -s j -l json -d 'Produce output in json format (default: false)'
 complete -c phylum -n "__fish_seen_subcommand_from analyze" -s F -d 'Force re-processing of packages (even if they already exist in the system)'
 complete -c phylum -n "__fish_seen_subcommand_from analyze" -s h -l help -d 'Print help information'

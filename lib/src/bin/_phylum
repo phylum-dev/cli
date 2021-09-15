@@ -218,7 +218,7 @@ _arguments "${_arguments_options[@]}" \
 (analyze)
 _arguments "${_arguments_options[@]}" \
 '-l+[]' \
-'-V[Increase verbosity of api response.]' \
+'-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \
 '--json[Produce output in json format (default: false)]' \

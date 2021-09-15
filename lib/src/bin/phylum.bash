@@ -112,7 +112,7 @@ _phylum() {
             ;;
         
         phylum__analyze)
-            opts=" -l -V -j -F -h -V  --verbose --json --help --version  <LOCKFILE> "
+            opts=" -l -v -j -F -h -V  --verbose --json --help --version  <LOCKFILE> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
