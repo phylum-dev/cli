@@ -32,7 +32,7 @@ subcommands:
                 required: false
                 about: The job id to query (or `current` for the most recent job)
             - verbose:
-                short: V 
+                short: v 
                 long: verbose
                 about: Increase verbosity of api response.
                 takes_value: false
@@ -168,7 +168,7 @@ subcommands:
                 takes_value: true
                 required: false
             - verbose:
-                short: V 
+                short: v
                 long: verbose
                 about: Increase verbosity of api response.
                 takes_value: false
