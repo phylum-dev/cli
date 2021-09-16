@@ -44,7 +44,7 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (history)
 _arguments "${_arguments_options[@]}" \
-'-V[Increase verbosity of api response.]' \
+'-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \
 '--json[Produce output in json format (default: false)]' \

@@ -16,7 +16,7 @@ complete -c phylum -n "__fish_seen_subcommand_from update" -s p -l prerelease -d
 complete -c phylum -n "__fish_seen_subcommand_from update" -s h -l help -d 'Print help information'
 complete -c phylum -n "__fish_seen_subcommand_from update" -s V -l version -d 'Print version information'
 complete -c phylum -n "__fish_seen_subcommand_from history" -d 'The job id to query (or `current` for the most recent job)'
-complete -c phylum -n "__fish_seen_subcommand_from history" -s V -l verbose -d 'Increase verbosity of api response.'
+complete -c phylum -n "__fish_seen_subcommand_from history" -s v -l verbose -d 'Increase verbosity of api response.'
 complete -c phylum -n "__fish_seen_subcommand_from history" -s j -l json -d 'Produce output in json format (default: false)'
 complete -c phylum -n "__fish_seen_subcommand_from history" -s h -l help -d 'Print help information'
 complete -c phylum -n "__fish_seen_subcommand_from history" -s V -l version -d 'Print version information'

@@ -207,7 +207,7 @@ dependencies = [
  "indexmap",
  "lazy_static",
  "os_str_bytes",
- "strsim 0.10.0",
+ "strsim",
  "termcolor",
  "textwrap 0.14.2",
  "vec_map",
@@ -326,41 +326,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "darling"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d706e75d87e35569db781a9b5e2416cff1236a47ed380831f959382ccd5f858"
-dependencies = [
- "darling_core",
- "darling_macro",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c960ae2da4de88a91b2d920c2a7233b400bc33cb28453a2987822d8392519b"
-dependencies = [
- "fnv",
- "ident_case",
- "proc-macro2",
- "quote 1.0.9",
- "strsim 0.9.3",
- "syn 1.0.75",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
-dependencies = [
- "darling_core",
- "quote 1.0.9",
- "syn 1.0.75",
-]
-
-[[package]]
 name = "dialoguer"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -450,17 +415,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56899898ce76aaf4a0f24d914c97ea6ed976d42fec6ad33fcbb0a1103e07b2b0"
 
 [[package]]
-name = "dummy"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0444a1bba051be9becd18b5c1b66945c95fb84fe72048e43dcd5ac9366443990"
-dependencies = [
- "darling",
- "quote 1.0.9",
- "syn 1.0.75",
-]
-
-[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -504,16 +458,6 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.75",
-]
-
-[[package]]
-name = "fake"
-version = "2.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a1b9884322ee3bae3545a2a2eaa9a45007136e0dd0e62db69211f1c42005ef3"
-dependencies = [
- "dummy",
- "rand 0.8.4",
 ]
 
 [[package]]
@@ -889,12 +833,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ident_case"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
-
-[[package]]
 name = "idna"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1210,7 +1148,7 @@ checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "phylum-cli"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
  "ansi_term 0.12.1",
  "assert_cmd",
@@ -1220,7 +1158,6 @@ dependencies = [
  "clap_generate",
  "dialoguer",
  "env_logger",
- "fake",
  "futures",
  "histogram",
  "home",
@@ -1232,7 +1169,6 @@ dependencies = [
  "mockito",
  "nom",
  "prettytable-rs",
- "rand 0.8.4",
  "reqwest",
  "serde",
  "serde_derive",
@@ -1856,12 +1792,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "strsim"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
 
 [[package]]
 name = "strsim"

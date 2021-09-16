@@ -19,42 +19,38 @@ clap_generate = "3.0.0-beta.4"
 clap = { version = "3.0.0-beta.4", features = ["yaml"] }
 
 [dependencies]
+ansi_term = "0.12.1"
+base64 = "0.11"
+chrono = { version = "^0.4", features = ["serde"] }
 clap = { version = "3.0.0-beta.4", features = ["yaml"] }
-minisign-verify = "0.1.8"
 dialoguer = "0.8.0"
-spinners = "1.2.0"
-reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls"], default-features = false }
+env_logger = "0.7.1"
+futures = "^0.3"
+histogram = "0.6.9"
+home = "0.5.3"
 hyper = "^0.13.2"
 hyper-rustls = "0.21.0"
-futures = "^0.3"
-env_logger = "0.7.1"
-tokio = { version = "^0.2", features = ["full"] }
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
-serde_yaml = "0.8.14"
-serde_derive = "1.0"
-url = "2"
-log = "^0.4.6"
-base64 = "0.11"
-uuid = { version = "0.8", features = ["serde", "v4"] }
-ansi_term = "0.12.1"
-shellexpand = "2.0.0"
 lazy_static = "1.4.0"
-yaml-rust = "*"
-home = "0.5.3"
-chrono = { version = "^0.4", features = ["serde"] }
+log = "^0.4.6"
+minisign-verify = "0.1.8"
 nom = "6.1.2"
 prettytable-rs = "0.8.0"
-histogram = "0.6.9"
+reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls"], default-features = false }
+serde = { version = "^1.0", features = ["derive"] }
+serde_derive = "1.0"
+serde_json = "^1.0"
+serde_yaml = "0.8.14"
+shellexpand = "2.0.0"
+spinners = "1.2.0"
 textwrap = "0.13.4"
+tokio = { version = "^0.2", features = ["full"] }
 toml = "0.5.8"
+url = "2"
+uuid = { version = "0.8", features = ["serde", "v4"] }
+yaml-rust = "*"
 zeroize = "1.4.0"
 
-## TODO: remove these when all fakes replaced
-fake = { version = "2.4", features=['derive']}
-rand = "0.8"
-
 [dev-dependencies]
-mockito = "0.27.0"
 assert_cmd = "1.0.3"
+mockito = "0.27.0"
 
