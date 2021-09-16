@@ -293,7 +293,7 @@ _phylum() {
             return 0
             ;;
         phylum__history)
-            opts=" -V -j -h -V  --verbose --json --help --version  <JOB_ID> project"
+            opts=" -v -j -h -V  --verbose --json --help --version  <JOB_ID> project"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
