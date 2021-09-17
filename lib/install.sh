@@ -92,4 +92,11 @@ if ! grep -q 'alias ph=' $HOME/${rc_path}; then
     success "Created ph alias for phylum" 
 fi
 
-success "Successfully installed phylum"
+success "Successfully installed phylum."
+cat << __instructions__ 
+
+   Source your ${rc_path} file, add $HOME/.phylum to your \$PATH variable, or
+   log in to a new terminal in order to make \`phylum\` available"
+
+__instructions__
+
