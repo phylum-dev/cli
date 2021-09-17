@@ -1,6 +1,7 @@
 use clap::{load_yaml, App, AppSettings};
 use home::home_dir;
 use spinners::{Spinner, Spinners};
+use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -25,8 +26,6 @@ use print::*;
 
 use crate::commands::projects::handle_projects;
 
-const STATUS_THRESHOLD_BREACHED: i32 = 1;
-
 fn main() {
     env_logger::init();
 
@@ -40,36 +39,30 @@ fn main() {
     let app_helper = &mut app.clone();
 
     let matches = app.get_matches();
-    let mut exit_status: i32 = 0;
+    let mut exit_status: u8 = 0;
     let mut action = Action::None;
 
     let home_path = home_dir().unwrap_or_else(|| {
-        exit(Some("Couldn't find the user's home directory"), -1);
+        exit_fail("Couldn't find the user's home directory");
     });
     let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
 
     let config_path = matches.value_of("config").unwrap_or_else(|| {
         settings_path.to_str().unwrap_or_else(|| {
             log::error!("Unicode parsing error in configuration file path");
-            exit(
-                Some(&format!(
-                    "Unable to read path to configuration file at '{:?}'",
-                    settings_path
-                )),
-                -1,
-            );
+            exit_fail(format!(
+                "Unable to read path to configuration file at '{:?}'",
+                settings_path
+            ));
         })
     });
     log::debug!("Reading config from {}", config_path);
 
     let mut config: Config = read_configuration(config_path).unwrap_or_else(|err| {
-        exit(
-            Some(&format!(
-                "Failed to read configuration at `{}`: {}",
-                config_path, err
-            )),
-            -1,
-        );
+        exit_fail(format!(
+            "Failed to read configuration at `{}`: {}",
+            config_path, err
+        ));
     });
 
     let mut check_for_updates = false;
@@ -114,34 +107,31 @@ fn main() {
     // arguments are supplied
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
-            print_sc_help(app_helper, "analyze");
-            exit(None, 0);
+            print_help_exit(app_helper, "analyze");
         }
     } else if let Some(matches) = matches.subcommand_matches("package") {
         if !(matches.is_present("name") && matches.is_present("version")) {
-            print_sc_help(app_helper, "package");
-            exit(None, 0);
+            print_help_exit(app_helper, "package");
         }
     }
 
     if matches.subcommand_matches("version").is_some() {
         let name = yml["name"].as_str().unwrap_or("");
         let version = yml["version"].as_str().unwrap_or("");
-        print_user_success!("{} (Version {})", name, version);
-        exit(None, 0);
+        exit_ok(Some(format!("{} (Version {})", name, version)));
     }
 
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
     let mut api = PhylumApi::new(&config.connection.uri, timeout).unwrap_or_else(|err| {
-        err_exit(err, "Error creating client", -1);
+        exit_error(err, Some("Error creating client"));
     });
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
         print_response(&resp, true);
-        exit(None, 0);
+        exit_ok(None::<&str>);
     }
 
     let should_projects = matches.subcommand_matches("projects").is_some();
@@ -168,7 +158,7 @@ fn main() {
         let res = authenticate(&mut api, &mut config, should_manage_tokens);
 
         if let Err(e) = res {
-            err_exit(e, "Error attempting to authenticate", -1);
+            exit_error(e, Some("Error attempting to authenticate"));
         }
     }
 
@@ -211,21 +201,23 @@ fn main() {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
-                .unwrap_or_else(|err| err_exit(err, "Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", -4));
+                .unwrap_or_else(|err| exit_error(err, Some("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")));
             let resp = api.cancel(&request_id);
             print_response(&resp, true);
         }
     }
 
-    match action {
-        Action::None => {
+    match (exit_status, action) {
+        (status, _) if status != 0 => {
             log::debug!("Exiting with status {}", exit_status);
-            exit(None, exit_status)
+            process::exit(exit_status as i32)
         }
-        Action::Warn => exit(Some("Project failed threshold requirements!"), exit_status),
-        Action::Break => exit(
-            Some("Project failed threshold requirements, failing the build!"),
-            STATUS_THRESHOLD_BREACHED,
-        ),
+        (_, Action::None) => {
+            exit_ok(None::<&str>);
+        }
+        (_, Action::Warn) => exit_warn("Project failed threshold requirements!"),
+        (_, Action::Break) => {
+            exit_fail("Project failed threshold requirements, failing the build!")
+        }
     }
 }

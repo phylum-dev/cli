@@ -10,7 +10,7 @@ use phylum_cli::summarize::Summarize;
 use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
 
 use crate::commands::lock_files::get_packages_from_lockfile;
-use crate::exit::{err_exit, exit};
+use crate::exit::{exit_error, exit_fail};
 use crate::print::print_response;
 use crate::print_user_success;
 use crate::print_user_warning;
@@ -73,7 +73,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         } else {
             JobId::from_str(job_id_str).ok()
         }
-        .unwrap_or_else(|| exit(Some(&format!("Invalid job id: {}", job_id_str)), -3));
+        .unwrap_or_else(|| exit_fail(format!("Invalid job id: {}", job_id_str)));
 
         get_job_status(api, &job_id, verbose, pretty_print)
     };
@@ -132,21 +132,16 @@ pub fn handle_submission(
     let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
-            exit(
-                Some("Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"),
-                -1
-            );
+            exit_fail(
+                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
+            )
         });
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches.value_of("LOCKFILE").unwrap();
-        let res = get_packages_from_lockfile(lockfile).unwrap_or_else(|| {
-            exit(
-                Some("Unable to locate any valid package in package lockfile"),
-                -1,
-            )
-        });
+        let res = get_packages_from_lockfile(lockfile)
+            .unwrap_or_else(|| exit_fail("Unable to locate any valid package in package lockfile"));
 
         packages = res.0;
         request_type = res.1;
@@ -195,7 +190,7 @@ pub fn handle_submission(
                     line.clear();
                 }
                 Err(err) => {
-                    err_exit(err, "Error reading input", -6);
+                    exit_error(err, Some("Error reading input"));
                 }
             }
         }
@@ -210,7 +205,7 @@ pub fn handle_submission(
             project,
             label.map(|s| s.to_string()),
         )
-        .unwrap_or_else(|err| err_exit(err, "Error submitting package", -2));
+        .unwrap_or_else(|err| exit_error(err, Some("Error submitting package")));
 
     log::debug!("Response => {:?}", job_id);
     print_user_success!("Job ID: {}", job_id);
