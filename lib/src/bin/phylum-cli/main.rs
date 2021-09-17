@@ -207,17 +207,14 @@ fn main() {
         }
     }
 
-    match (exit_status, action) {
-        (status, _) if status != 0 => {
-            log::debug!("Exiting with status {}", exit_status);
-            process::exit(exit_status as i32)
-        }
-        (_, Action::None) => {
-            exit_ok(None::<&str>);
-        }
-        (_, Action::Warn) => exit_warn("Project failed threshold requirements!"),
-        (_, Action::Break) => {
-            exit_fail("Project failed threshold requirements, failing the build!")
-        }
+    if exit_status != 0 {
+        log::debug!("Exiting with status {}", exit_status);
+        process::exit(exit_status as i32)
+    }
+
+    match action {
+        Action::None => exit_ok(None::<&str>),
+        Action::Warn => exit_warn("Project failed threshold requirements!"),
+        Action::Break => exit_fail("Project failed threshold requirements, failing the build!"),
     }
 }

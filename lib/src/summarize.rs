@@ -175,11 +175,11 @@ where
 
     let hist = Histogram::new(scores.as_slice(), 0.0, 1.0, 10);
 
-    let mut t = table!([hist.to_string(), resp.thresholds.render()]);
-    t.set_format(table_format(1, 36));
+    let mut histogram_table = table!([hist.to_string(), resp.thresholds.render()]);
+    histogram_table.set_format(table_format(1, 36));
 
-    let mut ret = Table::new();
-    ret.add_row(row![summary]);
+    let mut table = Table::new();
+    table.add_row(row![summary]);
 
     if resp.num_incomplete > 0 {
         let notice = format!(
@@ -187,13 +187,13 @@ where
             Purple.paint("PROCESSING"), 
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
-        ret.add_row(row![notice]);
+        table.add_row(row![notice]);
     }
 
-    ret.add_row(row![t]);
-    ret.add_row(row![status]);
-    ret.set_format(table_format(0, 0));
-    ret
+    table.add_row(row![histogram_table]);
+    table.add_row(row![status]);
+    table.set_format(table_format(0, 0));
+    table
 }
 
 impl Summarize for RequestStatusResponse<PackageStatus> {
@@ -251,10 +251,10 @@ fn vuln_to_rows(
 
 impl Summarize for RequestStatusResponse<PackageStatusExtended> {
     fn summarize(&self) {
-        let t1: Table = response_to_table(self);
+        let table_1: Table = response_to_table(self);
 
-        let mut t2 = Table::new();
-        t2.set_format(table_format(3, 1));
+        let mut table_2 = Table::new();
+        table_2.set_format(table_format(3, 1));
 
         let mut issues: Vec<&Issue> = vec![];
 
@@ -269,9 +269,9 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
         for issue in issues {
             let rows: Vec<Row> = issue.into();
             for r in rows {
-                t2.add_row(r);
+                table_2.add_row(r);
             }
-            t2.add_empty_row();
+            table_2.add_empty_row();
         }
 
         let mut vulns_table = Table::new();
@@ -286,8 +286,8 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             }
         }
 
-        t1.printstd();
-        t2.printstd();
+        table_1.printstd();
+        table_2.printstd();
 
         if !vulns_table.is_empty() {
             println!("\n Vulnerabilities:");
@@ -301,11 +301,11 @@ impl Summarize for PackageStatusExtended {
         let mut issues_table = Table::new();
         issues_table.set_format(table_format(3, 0));
 
-        for i in &self.issues {
-            let rows: Vec<Row> = i.into();
-            for mut r in rows {
-                r.remove_cell(2);
-                issues_table.add_row(r);
+        for issue in &self.issues {
+            let rows: Vec<Row> = issue.into();
+            for mut row in rows {
+                row.remove_cell(2);
+                issues_table.add_row(row);
             }
             issues_table.add_empty_row();
         }

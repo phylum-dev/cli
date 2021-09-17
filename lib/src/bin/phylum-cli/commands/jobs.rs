@@ -63,7 +63,7 @@ pub fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty
 pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
-    let mut ret = Action::None;
+    let mut action = Action::None;
 
     let mut get_job = |job_id: Option<&str>| {
         let job_id_str = job_id.unwrap();
@@ -87,13 +87,13 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
                 let resp = api.get_project_details(project_name);
                 print_response(&resp, pretty_print);
             } else {
-                ret = get_job(project_job_id);
+                action = get_job(project_job_id);
             }
         } else {
             get_project_list(api, pretty_print);
         }
     } else if matches.is_present("JOB_ID") {
-        ret = get_job(matches.value_of("JOB_ID"));
+        action = get_job(matches.value_of("JOB_ID"));
     } else {
         let resp = api.get_status();
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
@@ -110,7 +110,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         }
     }
 
-    ret
+    action
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -127,7 +127,7 @@ pub fn handle_submission(
     let mut pretty_print = false;
     let mut label = None;
     let mut is_user = true; // is a user (non-batch) request
-    let mut ret = Action::None;
+    let mut action = Action::None;
 
     let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
@@ -212,8 +212,8 @@ pub fn handle_submission(
 
     if synch {
         log::debug!("Requesting status...");
-        ret = get_job_status(api, &job_id, verbose, pretty_print);
+        action = get_job_status(api, &job_id, verbose, pretty_print);
     }
 
-    ret
+    action
 }

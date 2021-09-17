@@ -78,48 +78,49 @@ impl Renderable for ProjectGetDetailsRequest {
         let threshold_author = threshold_to_str(self.thresholds.author);
         let threshold_license = threshold_to_str(self.thresholds.license);
 
-        let mut ret = String::new();
-        ret.push_str(
+        let mut renderer = String::new();
+        renderer.push_str(
             format!(
                 "{:>15} {:<50} Project ID: {}\n",
                 "Project Name:", self.name, self.id
             )
             .as_str(),
         );
-        ret.push_str(format!("{:>15} {}\n\n", "Ecosystem:", self.ecosystem).as_str());
-        ret.push_str(format!("{:>15} {}\n", "Thresholds:", "Score requirements to PASS or FAIL a run. Runs that have a score below the threshold value will FAIL.").as_str());
-        ret.push_str(format!("{:>24}: {}\n", "Project Score", threshold_total).as_str());
-        ret.push_str(
+        renderer.push_str(format!("{:>15} {}\n\n", "Ecosystem:", self.ecosystem).as_str());
+        renderer.push_str(format!("{:>15} {}\n", "Thresholds:", "Score requirements to PASS or FAIL a run. Runs that have a score below the threshold value will FAIL.").as_str());
+        renderer.push_str(format!("{:>24}: {}\n", "Project Score", threshold_total).as_str());
+        renderer.push_str(
             format!(
                 "{:>20} {}: {}\n",
                 "Malicious Code Risk", "MAL", threshold_malicious
             )
             .as_str(),
         );
-        ret.push_str(
+        renderer.push_str(
             format!(
                 "{:>20} {}: {}\n",
                 "Vulnerability Risk", "VLN", threshold_vulnerability
             )
             .as_str(),
         );
-        ret.push_str(
+        renderer.push_str(
             format!(
                 "{:>20} {}: {}\n",
                 "Engineering Risk", "ENG", threshold_engineering
             )
             .as_str(),
         );
-        ret.push_str(format!("{:>20} {}: {}\n", "Author Risk", "AUT", threshold_author).as_str());
-        ret.push_str(
+        renderer
+            .push_str(format!("{:>20} {}: {}\n", "Author Risk", "AUT", threshold_author).as_str());
+        renderer.push_str(
             format!(
                 "{:>20} {}: {}\n\n",
                 "License Risk", "LIC", threshold_license
             )
             .as_str(),
         );
-        ret.push_str(format!("Last {} jobs from project history\n", self.jobs.len()).as_str());
-        ret.push_str(
+        renderer.push_str(format!("Last {} jobs from project history\n", self.jobs.len()).as_str());
+        renderer.push_str(
             format!(
                 "{:<16}{:<20}{:<50}{:<45}   {}\n",
                 title_score, title_passfail, title_label, title_job_id, title_datetime
@@ -137,7 +138,7 @@ impl Renderable for ProjectGetDetailsRequest {
                 colored_score = format!("{}", Red.paint(&score));
             }
 
-            ret.push_str(
+            renderer.push_str(
                 format!(
                 // Differs from the title format slightly. The colored values
                 // add control characters, which introduce a base offset of 9
@@ -153,14 +154,14 @@ impl Renderable for ProjectGetDetailsRequest {
             );
         }
 
-        ret.push('\n');
-        ret
+        renderer.push('\n');
+        renderer
     }
 }
 
 impl Renderable for AllJobsStatusResponse {
     fn render(&self) -> String {
-        let mut x = format!(
+        let mut runs = format!(
             "Last {} runs of {} submitted\n\n",
             self.count, self.total_jobs
         );
@@ -194,13 +195,13 @@ impl Renderable for AllJobsStatusResponse {
                 "             {}{:>62}{:>29} dependencies",
                 job.ecosystem, "Crit:-/High:-/Med:-/Low:-", job.num_dependencies
             );
-            x.push_str(first_line.as_str());
-            x.push_str(second_line.as_str());
-            x.push_str(third_line.as_str());
-            x.push_str("\n\n");
+            runs.push_str(first_line.as_str());
+            runs.push_str(second_line.as_str());
+            runs.push_str(third_line.as_str());
+            runs.push_str("\n\n");
         }
 
-        x
+        runs
     }
 }
 
@@ -232,7 +233,7 @@ impl Renderable for RequestStatusResponse<PackageStatusExtended> {
 
 impl Renderable for PackageStatus {
     fn render(&self) -> String {
-        let mut t = table!(
+        let mut table = table!(
             ["Package Name:", self.name, "Package Version:", self.version],
             [
                 "License:",
@@ -248,20 +249,20 @@ impl Renderable for PackageStatus {
             ]
         );
 
-        t.set_format(table_format(0, 0));
-        t.to_string()
+        table.set_format(table_format(0, 0));
+        table.to_string()
     }
 }
 
 impl Renderable for PackageType {
     fn render(&self) -> String {
-        let s = match self {
+        let label = match self {
             PackageType::Npm => "NPM",
             PackageType::Ruby => "RubyGems",
             PackageType::Python => "Python",
             PackageType::Java => "Java",
         };
-        s.to_string()
+        label.to_owned()
     }
 }
 
@@ -292,7 +293,7 @@ impl Renderable for PingResponse {
 
 impl Renderable for ProjectThresholds {
     fn render(&self) -> String {
-        let mut t = table!(
+        let mut table = table!(
             [r => "Thresholds:"],
             [r => "Project Score:", self.total],
             [r => "Malicious Code Risk MAL:", self.malicious],
@@ -301,8 +302,8 @@ impl Renderable for ProjectThresholds {
             [r => "Author Risk AUT:", self.author],
             [r => "License Risk LIC:", self.license]
         );
-        t.set_format(table_format(0, 0));
-        t.to_string()
+        table.set_format(table_format(0, 0));
+        table.to_string()
     }
 }
 
