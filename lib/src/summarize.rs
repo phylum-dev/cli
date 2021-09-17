@@ -64,7 +64,10 @@ impl Histogram {
 
 impl fmt::Display for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let scale = 32.0 / *self.values.iter().max().unwrap_or(&1) as f32;
+        let scale = |s| {
+            let max = *self.values.iter().max().unwrap_or(&1) as f32;
+            56.0 * f32::log2(s) / f32::log2(max)
+        };
 
         let output =
             self.values
@@ -78,7 +81,7 @@ impl fmt::Display for Histogram {
                             (100.0 * x.1 .0).round() as u32,
                             (100.0 * x.1 .1).round() as u32,
                             x.0,
-                            "█".repeat((*x.0 as f32 * scale) as usize)
+                            "█".repeat(scale(*x.0 as f32) as usize)
                         ),
                     ]
                     .join("\n")
@@ -176,7 +179,7 @@ where
     let hist = Histogram::new(scores.as_slice(), 0.0, 1.0, 10);
 
     let mut t = table!([hist.to_string(), resp.thresholds.render()]);
-    t.set_format(table_format(1, 36));
+    t.set_format(table_format(1, 8));
 
     let mut ret = Table::new();
     ret.add_row(row![summary]);
