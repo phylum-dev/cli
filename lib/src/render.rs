@@ -298,14 +298,16 @@ impl Renderable for PingResponse {
 
 impl Renderable for ProjectThresholds {
     fn render(&self) -> String {
+        let normalize = |t: f32| (t * 100.0).round() as u32;
+
         let mut t = table!(
             [r => "Thresholds:"],
-            [r => "Project Score:", self.total],
-            [r => "Malicious Code Risk MAL:", self.malicious],
-            [r => "Vulnerability Risk VLN:", self.vulnerability],
-            [r => "Engineering Risk ENG:", self.engineering],
-            [r => "Author Risk AUT:", self.author],
-            [r => "License Risk LIC:", self.license]
+            [r => "Project Score:", normalize(self.total)],
+            [r => "Malicious Code Risk MAL:", normalize(self.malicious)],
+            [r => "Vulnerability Risk VLN:", normalize(self.vulnerability)],
+            [r => "Engineering Risk ENG:", normalize(self.engineering)],
+            [r => "Author Risk AUT:", normalize(self.author)],
+            [r => "License Risk LIC:", normalize(self.license)]
         );
         t.set_format(table_format(0, 0));
         t.to_string()
