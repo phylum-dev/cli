@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use ansi_term::Color::{Green, Purple, Red};
+use ansi_term::Color::{Green, Purple, Red, Yellow};
 use chrono::NaiveDateTime;
 use prettytable::*;
 
@@ -64,7 +64,10 @@ impl Histogram {
 
 impl fmt::Display for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let scale = 32.0 / *self.values.iter().max().unwrap_or(&1) as f32;
+        let scale = |s| {
+            let max = *self.values.iter().max().unwrap_or(&1) as f32;
+            56.0 * f32::log2(s) / f32::log2(max)
+        };
 
         let output =
             self.values
@@ -78,7 +81,7 @@ impl fmt::Display for Histogram {
                             (100.0 * x.1 .0).round() as u32,
                             (100.0 * x.1 .1).round() as u32,
                             x.0,
-                            "█".repeat((*x.0 as f32 * scale) as usize)
+                            "█".repeat(scale(*x.0 as f32) as usize)
                         ),
                     ]
                     .join("\n")
@@ -159,7 +162,13 @@ where
         .join("\n")
     });
 
-    let status = if resp.pass {
+    let status = if resp.num_incomplete > 0 {
+        format!(
+            "{:>16}: {}",
+            "Status",
+            Yellow.paint("INCOMPLETE").to_string()
+        )
+    } else if resp.pass {
         format!("{:>16}: {}", "Status", Green.paint("PASS").to_string())
     } else {
         format!(
@@ -176,14 +185,14 @@ where
     let hist = Histogram::new(scores.as_slice(), 0.0, 1.0, 10);
 
     let mut histogram_table = table!([hist.to_string(), resp.thresholds.render()]);
-    histogram_table.set_format(table_format(1, 36));
+    histogram_table.set_format(table_format(1, 8));
 
     let mut table = Table::new();
     table.add_row(row![summary]);
 
     if resp.num_incomplete > 0 {
         let notice = format!(
-            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.", 
+            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.", 
             Purple.paint("PROCESSING"), 
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );

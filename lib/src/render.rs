@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::utils::table_format;
-use ansi_term::Color::{Blue, Green, Red, White};
+use ansi_term::Color::{Blue, Green, Red, White, Yellow};
 use prettytable::*;
 
 pub trait Renderable {
@@ -133,7 +133,10 @@ impl Renderable for ProjectGetDetailsRequest {
             let mut colored_score = format!("{}", Green.paint(&score));
             let mut msg = format!("{}", Green.paint("PASS"));
 
-            if !job.pass {
+            if job.num_incomplete > 0 {
+                msg = format!("{}", Yellow.paint("INCOMPLETE"));
+                colored_score = format!("{}", Red.paint(&score));
+            } else if !job.pass {
                 msg = format!("{}", Red.paint("FAIL"));
                 colored_score = format!("{}", Red.paint(&score));
             }
@@ -172,7 +175,10 @@ impl Renderable for AllJobsStatusResponse {
             let mut colored_score = format!("{}", Green.paint(&score));
             let project_name = format!("{}", White.bold().paint(job.project.clone()));
 
-            if !job.pass {
+            if job.num_incomplete > 0 {
+                colored_score = format!("{}", Yellow.paint(&score));
+                state = format!("{}", Yellow.paint("INCOMPLETE"));
+            } else if !job.pass {
                 colored_score = format!("{}", Red.paint(&score));
                 state = format!("{}", Red.paint("FAIL"));
             }
@@ -293,14 +299,15 @@ impl Renderable for PingResponse {
 
 impl Renderable for ProjectThresholds {
     fn render(&self) -> String {
+        let normalize = |t: f32| (t * 100.0).round() as u32;
         let mut table = table!(
             [r => "Thresholds:"],
-            [r => "Project Score:", self.total],
-            [r => "Malicious Code Risk MAL:", self.malicious],
-            [r => "Vulnerability Risk VLN:", self.vulnerability],
-            [r => "Engineering Risk ENG:", self.engineering],
-            [r => "Author Risk AUT:", self.author],
-            [r => "License Risk LIC:", self.license]
+            [r => "Project Score:", normalize(self.total)],
+            [r => "Malicious Code Risk MAL:", normalize(self.malicious)],
+            [r => "Vulnerability Risk VLN:", normalize(self.vulnerability)],
+            [r => "Engineering Risk ENG:", normalize(self.engineering)],
+            [r => "Author Risk AUT:", normalize(self.author)],
+            [r => "License Risk LIC:", normalize(self.license)]
         );
         table.set_format(table_format(0, 0));
         table.to_string()
