@@ -328,7 +328,7 @@ impl From<&RiskLevel> for color::Color {
 
 impl From<&Issue> for Vec<Row> {
     fn from(issue: &Issue) -> Vec<Row> {
-        let r1 = Row::new(vec![
+        let row_1 = Row::new(vec![
             Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT)
                 .with_style(Attr::ForegroundColor(color::Color::from(&issue.risk_level))),
             Cell::new_align(
@@ -338,12 +338,12 @@ impl From<&Issue> for Vec<Row> {
             .with_style(Attr::Bold),
         ]);
 
-        let r2 = Row::new(vec![
+        let row_2 = Row::new(vec![
             Cell::new(""),
             Cell::new(&textwrap::fill(&issue.description, 80)),
             Cell::new(""),
         ]);
 
-        vec![r1, row![], r2]
+        vec![row_1, row![], row_2]
     }
 }

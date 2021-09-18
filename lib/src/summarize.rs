@@ -120,7 +120,7 @@ where
 {
     let ecosystem = PackageType::from_str(&resp.ecosystem).unwrap_or(PackageType::Npm);
 
-    let dt = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
+    let date_time = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
 
     let details = [
         (
@@ -133,7 +133,7 @@ where
             "Proj Score",
             (100.0 * resp.score).round().to_string(),
             "Date",
-            format!("{} UTC", dt),
+            format!("{} UTC", date_time),
         ),
         (
             "Num Deps",
