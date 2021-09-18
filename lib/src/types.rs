@@ -448,6 +448,8 @@ pub struct JobDescriptor {
     pub msg: String,
     pub date: String,
     pub ecosystem: String,
+    #[serde(default)]
+    pub num_incomplete: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
