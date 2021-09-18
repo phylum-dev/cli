@@ -167,7 +167,7 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("auth") {
         handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if let Some(matches) = matches.subcommand_matches("update") {
-        let sp = Spinner::new(
+        let spinner = Spinner::new(
             Spinners::Dots12,
             "Downloading update and verifying binary signatures...".into(),
         );
@@ -175,18 +175,18 @@ fn main() {
         match updater.get_latest_version(matches.is_present("prerelease")) {
             Some(ver) => match updater.do_update(ver) {
                 Ok(msg) => {
-                    sp.stop();
+                    spinner.stop();
                     println!();
                     print_user_success!("{}", msg);
                 }
                 Err(msg) => {
-                    sp.stop();
+                    spinner.stop();
                     println!();
                     print_user_failure!("{}", msg);
                 }
             },
             _ => {
-                sp.stop();
+                spinner.stop();
                 println!();
                 print_user_warning!("Failed to get version metadata");
             }
