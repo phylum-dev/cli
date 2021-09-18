@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::utils::table_format;
-use ansi_term::Color::{Blue, Green, Red, White};
+use ansi_term::Color::{Blue, Green, Red, White, Yellow};
 use prettytable::*;
 
 pub trait Renderable {
@@ -132,7 +132,10 @@ impl Renderable for ProjectGetDetailsRequest {
             let mut colored_score = format!("{}", Green.paint(&score));
             let mut msg = format!("{}", Green.paint("PASS"));
 
-            if !job.pass {
+            if job.num_incomplete > 0 {
+                msg = format!("{}", Yellow.paint("INCOMPLETE"));
+                colored_score = format!("{}", Red.paint(&score));
+            } else if !job.pass {
                 msg = format!("{}", Red.paint("FAIL"));
                 colored_score = format!("{}", Red.paint(&score));
             }
@@ -171,7 +174,10 @@ impl Renderable for AllJobsStatusResponse {
             let mut colored_score = format!("{}", Green.paint(&score));
             let project_name = format!("{}", White.bold().paint(job.project.clone()));
 
-            if !job.pass {
+            if job.num_incomplete > 0 {
+                colored_score = format!("{}", Yellow.paint(&score));
+                state = format!("{}", Yellow.paint("INCOMPLETE"));
+            } else if !job.pass {
                 colored_score = format!("{}", Red.paint(&score));
                 state = format!("{}", Red.paint("FAIL"));
             }
