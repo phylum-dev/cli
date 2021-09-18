@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use ansi_term::Color::{Green, Purple, Red};
+use ansi_term::Color::{Green, Purple, Red, Yellow};
 use chrono::NaiveDateTime;
 use prettytable::*;
 
@@ -162,7 +162,13 @@ where
         .join("\n")
     });
 
-    let status = if resp.pass {
+    let status = if resp.num_incomplete > 0 {
+        format!(
+            "{:>16}: {}",
+            "Status",
+            Yellow.paint("INCOMPLETE").to_string()
+        )
+    } else if resp.pass {
         format!("{:>16}: {}", "Status", Green.paint("PASS").to_string())
     } else {
         format!(
@@ -186,7 +192,7 @@ where
 
     if resp.num_incomplete > 0 {
         let notice = format!(
-            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.", 
+            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.", 
             Purple.paint("PROCESSING"), 
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
