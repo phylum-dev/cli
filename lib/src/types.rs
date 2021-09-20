@@ -59,8 +59,8 @@ impl FromStr for PackageType {
 
 impl fmt::Display for PackageType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = format!("{:?}", self);
-        write!(f, "{}", s.to_lowercase())
+        let package_type = format!("{:?}", self);
+        write!(f, "{}", package_type.to_lowercase())
     }
 }
 
@@ -493,8 +493,8 @@ pub enum RiskLevel {
 
 impl fmt::Display for RiskLevel {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = format!("{:?}", self);
-        write!(f, "{}", s.to_lowercase())
+        let risk_level = format!("{:?}", self);
+        write!(f, "{}", risk_level.to_lowercase())
     }
 }
 
@@ -509,14 +509,14 @@ pub enum RiskDomain {
 
 impl fmt::Display for RiskDomain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self {
+        let risk_domain = match self {
             RiskDomain::MaliciousCode => "MAL",
             RiskDomain::Vulnerabilities => "VLN",
             RiskDomain::EngineeringRisk => "ENG",
             RiskDomain::AuthorRisk => "AUT",
             RiskDomain::LicenseRisk => "LIC",
         };
-        write!(f, "{}", s)
+        write!(f, "{}", risk_domain)
     }
 }
 

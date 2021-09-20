@@ -36,11 +36,11 @@ pub fn handle_get_package(
     api: &mut PhylumApi,
     req_type: &PackageType,
     matches: &clap::ArgMatches,
-) -> i32 {
+) -> u8 {
     let pretty_print = !matches.is_present("json");
     let pkg = parse_package(matches, req_type);
     if pkg.is_none() {
-        return -1;
+        return 1;
     }
     let resp = api.get_package_details(&pkg.unwrap());
     log::debug!("==> {:?}", resp);

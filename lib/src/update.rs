@@ -130,7 +130,7 @@ impl ApplicationUpdater {
         latest: &GithubReleaseAsset,
         filename: &str,
     ) -> Result<String, std::io::Error> {
-        let ret = self.get_github(
+        let binary_path = self.get_github(
             latest.browser_download_url.as_str(),
             |r| -> Option<String> {
                 let dest = match tmp_path(filename) {
@@ -148,7 +148,7 @@ impl ApplicationUpdater {
             },
         );
 
-        match ret {
+        match binary_path {
             Some(ret) => Ok(ret),
             _ => Err(std::io::Error::new(
                 io::ErrorKind::Other,

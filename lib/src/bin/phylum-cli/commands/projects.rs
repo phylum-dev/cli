@@ -6,7 +6,7 @@ use phylum_cli::config::{get_current_project, save_config, ProjectConfig};
 use phylum_cli::types::PROJ_CONF_FILE;
 use uuid::Uuid;
 
-use crate::exit::err_exit;
+use crate::exit::exit_error;
 use crate::print::*;
 
 use crate::print_user_failure;
@@ -26,16 +26,16 @@ pub fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 /// Handle the project subcommand. Provides facilities for creating a new project,
 /// linking a current repository to an existing project, listing projects and
 /// setting project thresholds for risk domains.
-pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
+pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> u8 {
     let pretty_print = !matches.is_present("json");
 
     if let Some(matches) = matches.subcommand_matches("create") {
         let project_name = matches.value_of("name").unwrap();
 
         log::info!("Initializing new project: `{}`", project_name);
-        let project_id = api.create_project(project_name).unwrap_or_else(|err| {
-            err_exit(err, "Error initializing project", -1);
-        });
+        let project_id = api
+            .create_project(project_name)
+            .unwrap_or_else(|err| exit_error(err, Some("Error initializing project")));
 
         let proj_conf = ProjectConfig {
             id: project_id.to_owned(),
@@ -74,7 +74,7 @@ pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
             }
             Err(x) => {
                 print_user_failure!("A project with that name does not exist: {}", x);
-                return -1;
+                return 1;
             }
         }
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
@@ -126,7 +126,7 @@ pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
             Err(e) => {
                 log::error!("Failed to get projet details: {}", e);
                 print_user_failure!("Could not get project details");
-                return -1;
+                return 1;
             }
         };
 
@@ -135,7 +135,7 @@ pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> i32 {
             Err(e) => {
                 log::error!("Failed to get user settings: {}", e);
                 print_user_failure!("Could not get user settings");
-                return -1;
+                return 1;
             }
         };
 

@@ -77,13 +77,13 @@ pub fn find_project_conf(starting_directory: &str) -> Option<String> {
     const MAX_DEPTH: u8 = 32;
 
     loop {
-        let f = path.join(PROJ_CONF_FILE);
-        if f.is_file() {
-            break Some(f.to_string_lossy().to_string());
+        let search_path = path.join(PROJ_CONF_FILE);
+        if search_path.is_file() {
+            return Some(search_path.to_string_lossy().to_string());
         }
 
         if attempts > MAX_DEPTH {
-            break None;
+            return None;
         }
         path.push("..");
         attempts += 1;
