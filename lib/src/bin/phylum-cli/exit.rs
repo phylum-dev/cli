@@ -16,10 +16,10 @@ pub fn print_help_exit(app: &mut App, subcommand: &str) -> ! {
 
 /// Exit with status code 0 and optionally print a message to the user.
 pub fn exit_ok(message: Option<impl AsRef<str>>) -> ! {
-    message.map(|message| {
+    if let Some(message) = message {
         warn!("{}", message.as_ref());
         print_user_success!("{}", message.as_ref());
-    });
+    }
     process::exit(0)
 }
 
