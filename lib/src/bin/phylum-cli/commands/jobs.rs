@@ -10,7 +10,7 @@ use phylum_cli::summarize::Summarize;
 use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
 
 use crate::commands::lock_files::get_packages_from_lockfile;
-use crate::exit::{err_exit, exit};
+use crate::exit::{exit_error, exit_fail};
 use crate::print::print_response;
 use crate::print_user_success;
 use crate::print_user_warning;
@@ -63,7 +63,7 @@ pub fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty
 pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
-    let mut ret = Action::None;
+    let mut action = Action::None;
 
     let mut get_job = |job_id: Option<&str>| {
         let job_id_str = job_id.unwrap();
@@ -73,7 +73,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         } else {
             JobId::from_str(job_id_str).ok()
         }
-        .unwrap_or_else(|| exit(Some(&format!("Invalid job id: {}", job_id_str)), -3));
+        .unwrap_or_else(|| exit_fail(format!("Invalid job id: {}", job_id_str)));
 
         get_job_status(api, &job_id, verbose, pretty_print)
     };
@@ -87,13 +87,13 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
                 let resp = api.get_project_details(project_name);
                 print_response(&resp, pretty_print);
             } else {
-                ret = get_job(project_job_id);
+                action = get_job(project_job_id);
             }
         } else {
             get_project_list(api, pretty_print);
         }
     } else if matches.is_present("JOB_ID") {
-        ret = get_job(matches.value_of("JOB_ID"));
+        action = get_job(matches.value_of("JOB_ID"));
     } else {
         let resp = api.get_status();
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
@@ -110,7 +110,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         }
     }
 
-    ret
+    action
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -127,26 +127,21 @@ pub fn handle_submission(
     let mut pretty_print = false;
     let mut label = None;
     let mut is_user = true; // is a user (non-batch) request
-    let mut ret = Action::None;
+    let mut action = Action::None;
 
     let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
         .unwrap_or_else(|| {
-            exit(
-                Some("Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"),
-                -1
-            );
+            exit_fail(
+                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
+            )
         });
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches.value_of("LOCKFILE").unwrap();
-        let res = get_packages_from_lockfile(lockfile).unwrap_or_else(|| {
-            exit(
-                Some("Unable to locate any valid package in package lockfile"),
-                -1,
-            )
-        });
+        let res = get_packages_from_lockfile(lockfile)
+            .unwrap_or_else(|| exit_fail("Unable to locate any valid package in package lockfile"));
 
         packages = res.0;
         request_type = res.1;
@@ -195,7 +190,7 @@ pub fn handle_submission(
                     line.clear();
                 }
                 Err(err) => {
-                    err_exit(err, "Error reading input", -6);
+                    exit_error(err, Some("Error reading input"));
                 }
             }
         }
@@ -210,15 +205,15 @@ pub fn handle_submission(
             project,
             label.map(|s| s.to_string()),
         )
-        .unwrap_or_else(|err| err_exit(err, "Error submitting package", -2));
+        .unwrap_or_else(|err| exit_error(err, Some("Error submitting package")));
 
     log::debug!("Response => {:?}", job_id);
     print_user_success!("Job ID: {}", job_id);
 
     if synch {
         log::debug!("Requesting status...");
-        ret = get_job_status(api, &job_id, verbose, pretty_print);
+        action = get_job_status(api, &job_id, verbose, pretty_print);
     }
 
-    ret
+    action
 }

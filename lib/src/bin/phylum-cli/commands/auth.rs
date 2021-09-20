@@ -8,7 +8,7 @@ use phylum_cli::types::{ApiToken, Key};
 use std::process;
 use std::str::FromStr;
 
-use crate::exit::err_exit;
+use crate::exit::exit_error;
 use crate::print::print_response;
 use crate::print_sc_help;
 use crate::print_user_failure;
@@ -47,7 +47,7 @@ fn handle_auth_register(
 
     api.register(email.as_str(), password.as_str(), name.as_str())
         .unwrap_or_else(|err| {
-            err_exit(err, "Error registering user", -1);
+            exit_error(err, Some("Error registering user"));
         });
 
     config.auth_info.user = email;
@@ -91,7 +91,7 @@ fn handle_auth_login(
     // First login with the provided credentials. If the login is successful,
     // save the authentication information in our settings file.
     api.authenticate(&email, &password).unwrap_or_else(|err| {
-        err_exit(err, "", -1);
+        exit_error(err, None::<&str>);
     });
 
     config.auth_info.user = email;
@@ -136,7 +136,7 @@ fn handle_auth_keys(
     } else if let Some(action) = matches.subcommand_matches("remove") {
         let token_id = action.value_of("key_id").unwrap();
         let token = Key::from_str(token_id)
-            .unwrap_or_else(|err| err_exit(err, "Received invalid token id", -5));
+            .unwrap_or_else(|err| exit_error(err, Some("Received invalid token id")));
         let resp = api.delete_api_token(&token);
         log::info!("==> {:?}", resp);
         config.auth_info.api_token = None;

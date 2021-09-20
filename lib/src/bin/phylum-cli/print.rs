@@ -10,7 +10,7 @@ use phylum_cli::summarize::Summarize;
 #[macro_export]
 macro_rules! print_user_success {
     ($($tts:tt)*) => {
-        eprint!("✅ ",);
+        eprint!("✅ ");
         eprintln!($($tts)*);
     }
 }
@@ -18,7 +18,7 @@ macro_rules! print_user_success {
 #[macro_export]
 macro_rules! print_user_warning {
     ($($tts:tt)*) => {
-        eprint!("⚠️  ",);
+        eprint!("⚠️  ");
         eprintln!($($tts)*);
     }
 }
