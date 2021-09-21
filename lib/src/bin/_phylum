@@ -44,6 +44,15 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (history)
 _arguments "${_arguments_options[@]}" \
+'--filter=[Provide a filter used to limit the issues displayed
+
+EXAMPLES
+# Show only issues with severity of at least '\''high'\''
+	--filter=high
+
+# Show issues with severity of '\''critical'\'' in the '\''author'\'' and '\''engineering'\'' domains
+	--filter=crit,aut,eng
+]' \
 '-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \
@@ -218,6 +227,15 @@ _arguments "${_arguments_options[@]}" \
 (analyze)
 _arguments "${_arguments_options[@]}" \
 '-l+[]' \
+'--filter=[Provide a filter used to limit the issues displayed
+
+EXAMPLES
+# Show only issues with severity of at least '\''high'\''
+	--filter=high
+
+# Show issues with severity of '\''critical'\'' in the '\''author'\'' and '\''engineering'\'' domains
+	--filter=crit,aut,eng
+]' \
 '-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \

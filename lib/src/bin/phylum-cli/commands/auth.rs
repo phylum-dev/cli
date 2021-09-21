@@ -169,7 +169,7 @@ fn handle_auth_keys(
 
         let res = Ok(keys);
         println!("{:-^65}", "");
-        print_response(&res, true);
+        print_response(&res, true, None);
         println!();
     }
 }

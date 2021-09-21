@@ -112,7 +112,7 @@ _phylum() {
             ;;
         
         phylum__analyze)
-            opts=" -l -v -j -F -h -V  --verbose --json --help --version  <LOCKFILE> "
+            opts=" -l -v -j -F -h -V  --verbose --json --filter --help --version  <LOCKFILE> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -120,6 +120,10 @@ _phylum() {
             case "${prev}" in
                 
                 -l)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --filter)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -293,13 +297,17 @@ _phylum() {
             return 0
             ;;
         phylum__history)
-            opts=" -v -j -h -V  --verbose --json --help --version  <JOB_ID> project"
+            opts=" -v -j -h -V  --verbose --filter --json --help --version  <JOB_ID> project"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 
+                --filter)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
