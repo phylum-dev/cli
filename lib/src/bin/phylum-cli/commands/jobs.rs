@@ -6,6 +6,7 @@ use phylum_cli::config::{get_current_project, Config, ProjectConfig};
 use serde::Serialize;
 
 use phylum_cli::api::PhylumApi;
+use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
 
@@ -20,6 +21,7 @@ use super::projects::get_project_list;
 fn handle_status<T>(
     resp: Result<RequestStatusResponse<T>, phylum_cli::Error>,
     pretty: bool,
+    filter: Option<Filter>,
 ) -> Action
 where
     T: std::fmt::Debug + Serialize + Summarize,
@@ -38,20 +40,26 @@ where
                 action = resp.action.to_owned();
             }
         }
-        print_response(&resp, pretty);
+        print_response(&resp, pretty, filter);
     }
 
     action
 }
 
 /// Display user-friendly overview of a job
-pub fn get_job_status(api: &mut PhylumApi, job_id: &JobId, verbose: bool, pretty: bool) -> Action {
+pub fn get_job_status(
+    api: &mut PhylumApi,
+    job_id: &JobId,
+    verbose: bool,
+    pretty: bool,
+    filter: Option<Filter>,
+) -> Action {
     if verbose {
         let resp = api.get_job_status_ext(job_id);
-        handle_status(resp, pretty)
+        handle_status(resp, pretty, filter)
     } else {
         let resp = api.get_job_status(job_id);
-        handle_status(resp, pretty)
+        handle_status(resp, pretty, filter)
     }
 }
 
@@ -64,8 +72,11 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
     let mut action = Action::None;
+    let display_filter = matches
+        .value_of("filter")
+        .and_then(|v| Filter::from_str(v).ok());
 
-    let mut get_job = |job_id: Option<&str>| {
+    let get_job = |job_id: Option<&str>| {
         let job_id_str = job_id.unwrap();
 
         let job_id = if job_id_str == "current" {
@@ -75,7 +86,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         }
         .unwrap_or_else(|| exit_fail(format!("Invalid job id: {}", job_id_str)));
 
-        get_job_status(api, &job_id, verbose, pretty_print)
+        get_job_status(api, &job_id, verbose, pretty_print, display_filter)
     };
 
     if let Some(matches) = matches.subcommand_matches("project") {
@@ -85,7 +96,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
         if let Some(project_name) = project_name {
             if project_job_id.is_none() {
                 let resp = api.get_project_details(project_name);
-                print_response(&resp, pretty_print);
+                print_response(&resp, pretty_print, None);
             } else {
                 action = get_job(project_job_id);
             }
@@ -106,7 +117,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
                 "Projects and most recent run for {}\n",
                 Blue.paint(&config.auth_info.user)
             );
-            print_response(&resp, pretty_print);
+            print_response(&resp, pretty_print, None);
         }
     }
 
@@ -125,6 +136,7 @@ pub fn handle_submission(
     let mut synch = false; // get status after submission
     let mut verbose = false;
     let mut pretty_print = false;
+    let mut display_filter = None;
     let mut label = None;
     let mut is_user = true; // is a user (non-batch) request
     let mut action = Action::None;
@@ -149,6 +161,9 @@ pub fn handle_submission(
         label = matches.value_of("label");
         verbose = matches.is_present("verbose");
         pretty_print = !matches.is_present("json");
+        display_filter = matches
+            .value_of("filter")
+            .and_then(|v| Filter::from_str(v).ok());
         is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
@@ -212,7 +227,7 @@ pub fn handle_submission(
 
     if synch {
         log::debug!("Requesting status...");
-        action = get_job_status(api, &job_id, verbose, pretty_print);
+        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter);
     }
 
     action

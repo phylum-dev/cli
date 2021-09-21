@@ -37,6 +37,26 @@ subcommands:
                 about: Increase verbosity of api response.
                 takes_value: false
                 required: false
+            - filter:
+                long: filter
+                about: "Provide a filter used to limit the issues displayed
+
+
+                        EXAMPLES
+
+                            # Show only issues with severity of at least 'high'
+
+                            \t--filter=high
+
+
+                            # Show issues with severity of 'critical' in the 'author'
+                            and 'engineering' domains
+
+                        \t--filter=crit,aut,eng
+
+                        "
+                takes_value: true
+                required: false
             - json:
                 short: j
                 long: json
@@ -177,6 +197,26 @@ subcommands:
                 short: j
                 long: json
                 about: "Produce output in json format (default: false)"
+            - filter:
+                long: filter
+                about: "Provide a filter used to limit the issues displayed
+
+
+                        EXAMPLES
+
+                            # Show only issues with severity of at least 'high'
+
+                            \t--filter=high
+
+
+                            # Show issues with severity of 'critical' in the 'author'
+                            and 'engineering' domains
+
+                        \t--filter=crit,aut,eng
+
+                        "
+                takes_value: true
+                required: false
             - force:
                 short: F
                 about: Force re-processing of packages (even if they already exist in the system)

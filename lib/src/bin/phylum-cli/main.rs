@@ -130,7 +130,7 @@ fn main() {
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
-        print_response(&resp, true);
+        print_response(&resp, true, None);
         exit_ok(None::<&str>);
     }
 
@@ -203,7 +203,7 @@ fn main() {
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| exit_error(err, Some("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")));
             let resp = api.cancel(&request_id);
-            print_response(&resp, true);
+            print_response(&resp, true, None);
         }
     }
 

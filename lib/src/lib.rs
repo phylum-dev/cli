@@ -1,5 +1,6 @@
 pub mod api;
 pub mod config;
+pub mod filter;
 pub mod lockfiles;
 pub mod render;
 pub mod restson;

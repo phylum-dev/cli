@@ -19,7 +19,7 @@ pub fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
     let proj_title = format!("{}", Blue.paint("Project Name"));
     let id_title = format!("{}", Blue.paint("Project ID"));
     println!("{:<38}{}", proj_title, id_title);
-    print_response(&resp, pretty_print);
+    print_response(&resp, pretty_print, None);
     println!();
 }
 
