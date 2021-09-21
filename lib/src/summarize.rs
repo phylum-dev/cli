@@ -5,6 +5,7 @@ use ansi_term::Color::{Green, Purple, Red, Yellow};
 use chrono::NaiveDateTime;
 use prettytable::*;
 
+use crate::filter::Filter;
 use crate::render::Renderable;
 use crate::types::*;
 use crate::utils::table_format;
@@ -93,7 +94,7 @@ impl fmt::Display for Histogram {
 }
 
 pub trait Summarize: Renderable {
-    fn summarize(&self) {
+    fn summarize(&self, _filter: Option<Filter>) {
         println!("{}", self.render());
     }
 }
@@ -206,7 +207,7 @@ where
 }
 
 impl Summarize for RequestStatusResponse<PackageStatus> {
-    fn summarize(&self) {
+    fn summarize(&self, _filter: Option<Filter>) {
         let t: Table = response_to_table(self);
         t.printstd();
     }
@@ -259,7 +260,7 @@ fn vuln_to_rows(
 }
 
 impl Summarize for RequestStatusResponse<PackageStatusExtended> {
-    fn summarize(&self) {
+    fn summarize(&self, filter: Option<Filter>) {
         let table_1: Table = response_to_table(self);
 
         let mut table_2 = Table::new();
@@ -269,7 +270,24 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
 
         for p in &self.packages {
             for issue in &p.issues {
-                issues.push(issue);
+                if let Some(ref filter) = filter {
+                    let mut include = true;
+                    if let Some(level) = &filter.level {
+                        if issue.risk_level < *level {
+                            include = false;
+                        }
+                    }
+                    if let Some(domains) = &filter.domains {
+                        if !domains.contains(&issue.risk_domain) {
+                            include = false;
+                        }
+                    }
+                    if include {
+                        issues.push(issue);
+                    }
+                } else {
+                    issues.push(issue);
+                }
             }
         }
 
@@ -288,9 +306,21 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
 
         for p in &self.packages {
             for v in &p.vulnerabilities {
-                for r in vuln_to_rows(v, Some(&p.basic_status.name), Some(&p.basic_status.version))
-                {
-                    vulns_table.add_row(r);
+                let mut include = true;
+                if let Some(ref filter) = filter {
+                    if let Some(level) = &filter.level {
+                        if v.risk_level < *level {
+                            include = false;
+                        }
+                    }
+                }
+
+                if include {
+                    for r in
+                        vuln_to_rows(v, Some(&p.basic_status.name), Some(&p.basic_status.version))
+                    {
+                        vulns_table.add_row(r);
+                    }
                 }
             }
         }
@@ -306,11 +336,39 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
 }
 
 impl Summarize for PackageStatusExtended {
-    fn summarize(&self) {
+    fn summarize(&self, filter: Option<Filter>) {
         let mut issues_table = Table::new();
         issues_table.set_format(table_format(3, 0));
 
-        for issue in &self.issues {
+        let issues = if let Some(ref filter) = filter {
+            self.issues
+                .iter()
+                .filter_map(|i| {
+                    let mut include = true;
+
+                    if let Some(ref level) = filter.level {
+                        if i.risk_level < *level {
+                            include = false;
+                        }
+                    }
+
+                    if let Some(domains) = &filter.domains {
+                        if !domains.contains(&i.risk_domain) {
+                            include = false;
+                        }
+                    }
+                    if include {
+                        Some(i.to_owned())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<Issue>>()
+        } else {
+            self.issues.to_owned()
+        };
+
+        for issue in &issues {
             let rows: Vec<Row> = issue.into();
             for mut row in rows {
                 row.remove_cell(2);
@@ -339,8 +397,18 @@ impl Summarize for PackageStatusExtended {
         vulns_table.set_format(table_format(3, 0));
 
         for v in &self.vulnerabilities {
-            for r in vuln_to_rows(v, None, None) {
-                vulns_table.add_row(r);
+            let mut include = true;
+            if let Some(ref filter) = filter {
+                if let Some(level) = &filter.level {
+                    if v.risk_level < *level {
+                        include = false;
+                    }
+                }
+            }
+            if include {
+                for r in vuln_to_rows(v, None, None) {
+                    vulns_table.add_row(r);
+                }
             }
         }
 

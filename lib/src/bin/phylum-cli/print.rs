@@ -5,6 +5,7 @@ use ansi_term::Color::{Blue, Cyan};
 use clap::App;
 use serde::Serialize;
 
+use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
 
 #[macro_export]
@@ -31,8 +32,11 @@ macro_rules! print_user_failure {
     }
 }
 
-pub fn print_response<T>(resp: &Result<T, phylum_cli::Error>, pretty_print: bool)
-where
+pub fn print_response<T>(
+    resp: &Result<T, phylum_cli::Error>,
+    pretty_print: bool,
+    filter: Option<Filter>,
+) where
     T: std::fmt::Debug + Serialize + Summarize,
 {
     log::debug!("==> {:?}", resp);
@@ -40,7 +44,7 @@ where
     match resp {
         Ok(resp) => {
             if pretty_print {
-                resp.summarize();
+                resp.summarize(filter);
             } else {
                 // Use write! as a workaround to avoid https://github.com/rust-lang/rust/issues/46016
                 //  when piping output to an external program

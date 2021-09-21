@@ -51,7 +51,7 @@ pub fn handle_get_package(
             Blue.paint("phylum analyze <lock_file>")
         );
     } else {
-        print_response(&resp, pretty_print);
+        print_response(&resp, pretty_print, None);
     }
 
     0
