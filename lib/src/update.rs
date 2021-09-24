@@ -215,6 +215,7 @@ impl ApplicationUpdater {
         } else {
             None
         };
+        debug!("\t\tInstalled bin path = {}", installed_bash_path)
         let installed_bash_path = self.installed_asset(prefix, shell_asset_name)?;
 
         // Get the URL for each asset from the Github JSON response in `latest`.
@@ -239,7 +240,7 @@ impl ApplicationUpdater {
 
         // If the download and validation succeeds _then_ we move it to overwrite
         // the existing binary and bash file.
-        debug!("Copying the files to the intended install location");
+        debug!("Copying the files to the intended install location: src={}, dst={}", bin, installed_bin_path);
         fs::remove_file(&installed_bin_path)?;
         fs::copy(&bin, &installed_bin_path)?;
         debug!(
