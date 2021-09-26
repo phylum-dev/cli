@@ -385,7 +385,7 @@ mod tests {
                         "risk_level": "medium"
                     }
                 },
-                "dependencies": []
+                "dependencies": {}
               }
             "#,
             )
@@ -526,34 +526,11 @@ mod tests {
                         "malicious_code": 1.0,
                         "vulnerability": 1.0
                     },
-                    "dependencies": [
-                        {
-                        "name": "bar",
-                        "version": "2.3.4",
-                        "type": "npm",
-                        "last_updated": 1603311564,
-                        "license": null,
-                        "package_score": 60.0,
-                        "status": "incomplete",
-                        "vulnerabilities": [],
-                        "heuristics": []
-                        },
-                        {
-                        "name": "baz",
-                        "version": "9.8.7",
-                        "type": "npm",
-                        "last_updated": 1603311564,
-                        "license": null,
-                        "package_score": 0.75,
-                        "status": "complete",
-                        "vulnerabilities": [],
-                        "heuristics": [
-                            {
-                            "data": null,
-                            "score": 42
-                            }
-                        ]
-                        }]}]}"#,
+                    "dependencies": {
+                        "bar": "^2.3.4",
+                        "baz": "<9.8.7"
+                    }
+                }]}"#,
         )
         .create();
 

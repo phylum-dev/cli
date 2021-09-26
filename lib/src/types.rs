@@ -471,9 +471,8 @@ pub struct PackageStatusExtended {
     pub r#type: PackageType,
     #[serde(rename = "riskVectors")]
     pub risk_vectors: HashMap<String, f64>,
-    pub dependencies: Vec<PackageDescriptor>,
+    pub dependencies: HashMap<String, String>,
     pub vulnerabilities: Vec<Vulnerability>,
-    pub heuristics: HashMap<String, HeuristicResult>,
     pub issues: Vec<Issue>,
 }
 
