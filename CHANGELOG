@@ -1,3 +1,4 @@
+* 1.1.3 - Add issues filtering; display / error codes cleanup
 * 1.1.2 - Bugfix for deserialization issue. Add tab completion for zsh and fish.
 * 1.1.1 - Updates to signature verification
 * 1.1.0 - Add support for submitting Python packages; signature verification on upgrade
