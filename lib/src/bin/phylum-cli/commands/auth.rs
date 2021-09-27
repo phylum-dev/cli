@@ -1,12 +1,15 @@
+use std::process;
+use std::str::FromStr;
+
 use ansi_term::Color::{Blue, Green};
+use anyhow::Result;
 use clap::App;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Input, Password};
+
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::{save_config, Config};
-use phylum_cli::types::{ApiToken, Key};
-use std::process;
-use std::str::FromStr;
+use phylum_cli::types::Key;
 
 use crate::exit::exit_error;
 use crate::print::print_response;
@@ -14,6 +17,14 @@ use crate::print_sc_help;
 use crate::print_user_failure;
 use crate::print_user_success;
 use crate::print_user_warning;
+
+mod ip_addr_ext;
+mod oidc;
+mod server;
+
+use ip_addr_ext::*;
+use oidc::*;
+use server::*;
 
 /// Register a user. Drops the user into an interactive mode to get the user's
 /// details.
@@ -194,7 +205,7 @@ pub fn authenticate(
         }
     }
 
-    if api.api_key.is_none() {
+    if api.offline_access.is_none() {
         log::debug!("using standard auth");
         let resp = api
             .authenticate(&config.auth_info.user, &config.auth_info.pass)
