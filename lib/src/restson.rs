@@ -195,8 +195,8 @@ impl std::convert::From<hyper::Error> for Error {
     }
 }
 
-impl std::convert::From<tokio::time::Elapsed> for Error {
-    fn from(_e: tokio::time::Elapsed) -> Self {
+impl std::convert::From<tokio::time::error::Elapsed> for Error {
+    fn from(_e: tokio::time::error::Elapsed) -> Self {
         Error::TimeoutError
     }
 }
@@ -270,7 +270,7 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => Client::builder().build(HttpsConnector::new()),
+            None => Client::builder().build(HttpsConnector::with_native_roots()),
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;
@@ -568,10 +568,22 @@ impl RestClient {
             let res = self.client.request(req).await?;
 
             self.response_headers = res.headers().clone();
-            let status = res.status();
-            let body = hyper::body::aggregate(res).await?.to_bytes();
 
-            let body = String::from_utf8_lossy(&body);
+            let status = res.status();
+
+            let content_length = res
+                .headers()
+                .get("Content-Length")
+                .and_then(|header_value| header_value.to_str().ok())
+                .and_then(|s| s.parse::<usize>().ok())
+                // Otherwise max message size of 10 megabytes
+                .unwrap_or(10 * 1024 * 1024);
+
+            let bytes = hyper::body::aggregate(res)
+                .await?
+                .copy_to_bytes(content_length);
+
+            let body = String::from_utf8_lossy(&bytes);
 
             Ok::<_, hyper::Error>((body.to_string(), status))
         };
