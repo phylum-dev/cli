@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -14,6 +15,7 @@ pub struct ConnectionInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthInfo {
+    pub oidc_discovery_url: Url,
     pub user: String,
     pub pass: String,
     pub api_token: Option<ApiToken>,
@@ -110,6 +112,7 @@ mod tests {
         };
 
         let auth = AuthInfo {
+            oidc_discovery_url: Url::parse("http://example.com").unwrap(),
             user: "someone@someorg.com".into(),
             pass: "abcd1234".into(),
             api_token: Some(ApiToken {
