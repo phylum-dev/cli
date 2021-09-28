@@ -66,13 +66,15 @@ extern crate tokio;
 extern crate url;
 
 use hyper::body::Buf;
-use hyper::header::*;
+use hyper::{header::*, StatusCode};
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
 use std::time::Duration;
 use std::{error, fmt};
 use tokio::time::timeout;
 use url::Url;
+
+use crate::async_runtime::ASYNC_RUNTIME;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -558,8 +560,7 @@ impl RestClient {
         Ok(())
     }
 
-    #[tokio::main]
-    async fn run_request(&mut self, req: hyper::Request<hyper::Body>) -> Result<String, Error> {
+    fn run_request(&mut self, req: hyper::Request<hyper::Body>) -> Result<String, Error> {
         debug!("{} {}", req.method(), req.uri());
         trace!("{:?}", req);
 
@@ -588,14 +589,17 @@ impl RestClient {
             Ok::<_, hyper::Error>((body.to_string(), status))
         };
 
-        let res;
-        if duration != Duration::from_secs(std::u64::MAX) {
-            res = timeout(duration, work).await??;
-        } else {
-            res = work.await?;
-        }
+        // let res;
+        let task = async move {
+            let result = if duration != Duration::from_secs(std::u64::MAX) {
+                timeout(duration, work).await??
+            } else {
+                work.await?
+            };
+            Result::<(String, StatusCode), Error>::Ok(result)
+        };
 
-        let (body, status) = res;
+        let (body, status) = ASYNC_RUNTIME.block_on(task)?;
 
         if !status.is_success() {
             error!("server returned \"{}\" error", status);

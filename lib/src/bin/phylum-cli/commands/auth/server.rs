@@ -7,7 +7,9 @@ use anyhow::anyhow;
 use anyhow::Result;
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
+use phylum_cli::async_runtime::ASYNC_RUNTIME;
 use phylum_cli::config::Config;
+use phylum_cli::types::{AuthorizationCode, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -22,7 +24,6 @@ use super::oidc::{
     build_auth_url, check_if_routable, fetch_oidc_server_settings, CodeVerifier, OidcServerSettings,
 };
 use super::oidc::{AuthAction, ChallengeCode};
-use super::types::{AuthorizationCode, TokenResponse};
 
 pub const AUTH_CALLBACK_TEMPLATE: &str = include_str!("./auth_callback_template.html");
 
@@ -185,8 +186,7 @@ async fn spawn_server_and_get_auth_code(
 }
 
 /// Handle the user login/registration flow.
-#[tokio::main]
-pub async fn handle_auth_flow(auth_action: &AuthAction, config: &Config) -> Result<TokenResponse> {
+pub fn handle_auth_flow(auth_action: &AuthAction, config: &Config) -> Result<TokenResponse> {
     let oidc_settings = fetch_oidc_server_settings(config).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng()
@@ -194,8 +194,11 @@ pub async fn handle_auth_flow(auth_action: &AuthAction, config: &Config) -> Resu
         .take(32)
         .map(char::from)
         .collect();
-    let (auth_code, callback_url) =
-        spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
-    let tokens = acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await?;
+    let tokens = ASYNC_RUNTIME.block_on(async move {
+        let (auth_code, callback_url) =
+            spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state)
+                .await?;
+        acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await?
+    })?;
     Ok(tokens)
 }
