@@ -8,6 +8,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Input, Password};
 
 use phylum_cli::api::PhylumApi;
+use phylum_cli::auth::*;
 use phylum_cli::config::{save_config, Config};
 use phylum_cli::types::Key;
 
@@ -17,14 +18,6 @@ use crate::print_sc_help;
 use crate::print_user_failure;
 use crate::print_user_success;
 use crate::print_user_warning;
-
-mod ip_addr_ext;
-mod oidc;
-mod server;
-
-use ip_addr_ext::*;
-use oidc::*;
-use server::*;
 
 /// Register a user. Drops the user into an interactive mode to get the user's
 /// details.

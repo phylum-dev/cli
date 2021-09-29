@@ -3,13 +3,13 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::async_runtime::ASYNC_RUNTIME;
+use crate::config::Config;
+use crate::types::{AuthorizationCode, TokenResponse};
 use anyhow::anyhow;
 use anyhow::Result;
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
-use phylum_cli::async_runtime::ASYNC_RUNTIME;
-use phylum_cli::config::Config;
-use phylum_cli::types::{AuthorizationCode, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -18,7 +18,7 @@ use routerify::{Router, RouterService};
 use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
-use crate::commands::auth::oidc::acquire_tokens;
+use super::oidc::acquire_tokens;
 
 use super::oidc::{
     build_auth_url, check_if_routable, fetch_oidc_server_settings, CodeVerifier, OidcServerSettings,
@@ -187,18 +187,20 @@ async fn spawn_server_and_get_auth_code(
 
 /// Handle the user login/registration flow.
 pub fn handle_auth_flow(auth_action: &AuthAction, config: &Config) -> Result<TokenResponse> {
-    let oidc_settings = fetch_oidc_server_settings(config).await?;
-    let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
-    let state: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
     let tokens = ASYNC_RUNTIME.block_on(async move {
+        let oidc_settings = fetch_oidc_server_settings(config).await?;
+        let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
+        let state: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
         let (auth_code, callback_url) =
             spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state)
                 .await?;
-        acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await?
+        let tokens =
+            acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await?;
+        Result::<TokenResponse, anyhow::Error>::Ok(tokens)
     })?;
     Ok(tokens)
 }
