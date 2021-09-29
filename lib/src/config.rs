@@ -16,9 +16,7 @@ pub struct ConnectionInfo {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthInfo {
     pub oidc_discovery_url: Url,
-    pub user: String,
-    pub pass: String,
-    pub api_token: Option<ApiToken>,
+    pub offline_access: Option<RefreshToken>,
 }
 
 pub type Packages = Vec<PackageDescriptor>;
@@ -63,12 +61,7 @@ pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error>> {
 
     // If an api token has been set in the environment, prefer that
     if let Ok(key) = env::var("PHYLUM_API_KEY") {
-        log::debug!("Reading api token from environment");
-        let token: ApiToken = serde_json::from_str(&key).map_err(|e| {
-            log::error!("Malformed PHYLUM_API_KEY: `{}`", key);
-            e
-        })?;
-        config.auth_info.api_token = Some(token);
+        config.auth_info.offline_access = Some(RefreshToken::new(key));
     }
     Ok(config)
 }
@@ -102,9 +95,7 @@ pub fn get_current_project() -> Option<ProjectConfig> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Key, UserId};
     use std::env::temp_dir;
-    use std::str::FromStr;
 
     fn write_test_config() {
         let con = ConnectionInfo {
@@ -113,15 +104,7 @@ mod tests {
 
         let auth = AuthInfo {
             oidc_discovery_url: Url::parse("http://example.com").unwrap(),
-            user: "someone@someorg.com".into(),
-            pass: "abcd1234".into(),
-            api_token: Some(ApiToken {
-                name: Some("Foobar".to_string()),
-                active: true,
-                key: Key::from_str("5098fc16-5267-40ed-bf63-338ebdf185fe").unwrap(),
-                user_id: UserId::from_str("b4225454-13ee-4019-926e-cd5f8b128e4a").unwrap(),
-                created: "Dec 5, 2019".to_string(),
-            }),
+            offline_access: Some(RefreshToken::new("FAKE TOKEN")),
         };
 
         let packages = vec![
