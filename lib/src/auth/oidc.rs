@@ -13,11 +13,10 @@ use rand::{thread_rng, Rng};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use yaml_rust::scanner::Token;
 
-use crate::async_runtime::ASYNC_RUNTIME;
-use crate::config::Config;
-use crate::types::{AccessToken, AuthorizationCode, RefreshToken, TokenResponse};
+use crate::async_runtime::block_on;
+use crate::config::AuthInfo;
+use crate::types::{AuthorizationCode, RefreshToken, TokenResponse};
 
 use super::ip_addr_ext::IpAddrExt;
 
@@ -126,10 +125,10 @@ pub fn check_if_routable(hostname: impl AsRef<str>) -> Result<bool> {
     Ok(is_routable)
 }
 
-pub async fn fetch_oidc_server_settings(config: &Config) -> Result<OidcServerSettings> {
+pub async fn fetch_oidc_server_settings(auth_info: &AuthInfo) -> Result<OidcServerSettings> {
     let client = reqwest::Client::new();
     let response = client
-        .get(config.auth_info.oidc_discovery_url.clone())
+        .get(auth_info.oidc_discovery_url.clone())
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(5))
         .send()
@@ -217,11 +216,11 @@ pub async fn refresh_tokens(
 }
 
 pub fn handle_refresh_tokens(
-    config: &Config,
+    auth_info: &AuthInfo,
     refresh_token: &RefreshToken,
 ) -> Result<TokenResponse> {
-    ASYNC_RUNTIME.block_on(async move {
-        let oidc_settings = fetch_oidc_server_settings(config).await?;
+    block_on(async {
+        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
         let tokens = refresh_tokens(&oidc_settings, refresh_token).await?;
         Result::<TokenResponse, anyhow::Error>::Ok(tokens)
     })
