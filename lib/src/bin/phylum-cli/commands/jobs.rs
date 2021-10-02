@@ -113,10 +113,7 @@ pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMa
                 Blue.paint("phylum analyze <lock_file>")
             );
         } else {
-            println!(
-                "Projects and most recent run for {}\n",
-                Blue.paint(&config.auth_info.user)
-            );
+            println!("Projects and most recent runs\n",);
             print_response(&resp, pretty_print, None);
         }
     }

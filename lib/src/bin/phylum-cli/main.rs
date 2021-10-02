@@ -1,12 +1,10 @@
-use clap::{load_yaml, App, AppSettings};
-use home::home_dir;
-use spinners::{Spinner, Spinners};
 use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-extern crate serde;
-extern crate serde_json;
+use clap::{load_yaml, App, AppSettings};
+use home::home_dir;
+use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
@@ -124,9 +122,20 @@ fn main() {
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
-    let mut api = PhylumApi::new(&config.connection.uri, timeout).unwrap_or_else(|err| {
-        exit_error(err, Some("Error creating client"));
-    });
+
+    let mut api = PhylumApi::new(&mut config.auth_info, &config.connection.uri, timeout)
+        .unwrap_or_else(|err| {
+            exit_error(err, Some("Error creating client"));
+        });
+
+    // PhylumApi may have had to log in, updating the auth info so we should save the config
+    if let Err(error) = save_config(config_path, &config) {
+        exit_fail(format!(
+            "Failed to save configuration to '{}' : {}",
+            config_path,
+            error.to_string()
+        ))
+    };
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
@@ -134,38 +143,14 @@ fn main() {
         exit_ok(None::<&str>);
     }
 
-    let should_projects = matches.subcommand_matches("projects").is_some();
     let should_submit = matches.subcommand_matches("analyze").is_some()
         || matches.subcommand_matches("batch").is_some();
-    let should_get_history = matches.subcommand_matches("history").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
-    let should_get_packages = matches.subcommand_matches("package").is_some();
-
-    let auth_subcommand = matches.subcommand_matches("auth");
-    let should_manage_tokens = auth_subcommand.is_some()
-        && auth_subcommand
-            .unwrap()
-            .subcommand_matches("keys")
-            .is_some();
-
-    if should_projects
-        || should_submit
-        || should_get_history
-        || should_cancel
-        || should_manage_tokens
-        || should_get_packages
-    {
-        let res = authenticate(&mut api, &mut config, should_manage_tokens);
-
-        if let Err(e) = res {
-            exit_error(e, Some("Error attempting to authenticate"));
-        }
-    }
 
     if let Some(matches) = matches.subcommand_matches("projects") {
         exit_status = handle_projects(&mut api, matches);
     } else if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(&mut api, &mut config, config_path, matches, app_helper);
+        handle_auth(config, config_path, matches, app_helper);
     } else if let Some(matches) = matches.subcommand_matches("update") {
         let spinner = Spinner::new(
             Spinners::Dots12,
