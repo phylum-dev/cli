@@ -38,7 +38,7 @@ pub struct ProjectConfig {
 }
 
 // TODO: define explicit error types
-pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error>>
+pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     T: Serialize,
 {
@@ -47,7 +47,7 @@ where
     Ok(())
 }
 
-pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error>>
+pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error + Send + Sync + 'static>>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -56,7 +56,7 @@ where
     Ok(config)
 }
 
-pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error>> {
+pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error + Send + Sync + 'static>> {
     let mut config: Config = parse_config(path)?;
 
     // If an api token has been set in the environment, prefer that
