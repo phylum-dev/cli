@@ -68,7 +68,7 @@ pub fn get_job_status(
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-pub fn handle_history(api: &mut PhylumApi, config: Config, matches: &clap::ArgMatches) -> Action {
+pub fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
     let mut action = Action::None;

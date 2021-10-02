@@ -181,7 +181,7 @@ fn main() {
     } else if should_submit {
         action = handle_submission(&mut api, config, &matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        action = handle_history(&mut api, config, matches);
+        action = handle_history(&mut api, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
