@@ -30,8 +30,7 @@ SOFTWARE.
 //!
 //! # Examples
 //! ```
-//! #[macro_use]
-//! extern crate serde_derive;
+//! use serde::{Deserialize, Serialize};
 //!
 //! use phylum_cli::restson::{RestClient,RestPath,Error};
 //!
@@ -47,34 +46,30 @@ SOFTWARE.
 //!     fn get_path(_: ()) -> Result<String,Error> { Ok(String::from("anything")) }
 //! }
 //!
-//! fn main() {
-//!     // Create new client with API base URL
-//!     let mut client = RestClient::new("http://httpbin.org").unwrap();
+//! // Create new client with API base URL
+//! let mut client = RestClient::new("http://httpbin.org").unwrap();
 //!
-//!     // GET http://httpbin.org/anything and deserialize the result automatically
-//!     let data: HttpBinAnything = client.get(()).unwrap();
-//!     println!("{:?}", data);
-//! }
+//! // GET http://httpbin.org/anything and deserialize the result automatically
+//! let data: HttpBinAnything = client.get(()).unwrap();
+//! println!("{:?}", data);
 //! ```
 
-extern crate base64;
-extern crate futures;
-extern crate hyper;
-extern crate serde;
-extern crate serde_json;
-extern crate tokio;
-extern crate url;
-
+use base64;
+use hyper;
 use hyper::body::Buf;
 use hyper::{header::*, StatusCode};
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
+use serde;
+use serde_json;
 use std::time::Duration;
 use std::{error, fmt};
+use tokio;
 use tokio::time::timeout;
+use url;
 use url::Url;
 
-use crate::async_runtime::ASYNC_RUNTIME;
+use crate::async_runtime::block_on;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -590,7 +585,7 @@ impl RestClient {
         };
 
         // let res;
-        let task = async move {
+        let task = async {
             let result = if duration != Duration::from_secs(std::u64::MAX) {
                 timeout(duration, work).await??
             } else {
@@ -599,7 +594,7 @@ impl RestClient {
             Result::<(String, StatusCode), Error>::Ok(result)
         };
 
-        let (body, status) = ASYNC_RUNTIME.block_on(task)?;
+        let (body, status) = block_on(task)?;
 
         if !status.is_success() {
             error!("server returned \"{}\" error", status);
