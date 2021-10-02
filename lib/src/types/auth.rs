@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Typed wrapper for AuthorizationCode
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AuthorizationCode(String);
 
 impl AuthorizationCode {
@@ -17,7 +17,7 @@ impl Into<String> for &AuthorizationCode {
 }
 
 /// Typed wrapper for RefreshToken
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RefreshToken(String);
 
 impl RefreshToken {
@@ -33,7 +33,7 @@ impl Into<String> for &RefreshToken {
 }
 
 /// Typed wrapper for AccessToken
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccessToken(String);
 
 impl AccessToken {
@@ -49,7 +49,7 @@ impl Into<String> for &AccessToken {
 }
 
 /// Typed wrapper for IdToken
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IdToken(String);
 
 impl IdToken {
@@ -64,18 +64,18 @@ impl Into<String> for &IdToken {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TokenResponse {
-    access_token: AccessToken,
-    refresh_token: RefreshToken,
-    id_token: IdToken,
+    pub access_token: AccessToken,
+    pub refresh_token: RefreshToken,
+    pub id_token: IdToken,
     #[serde(rename = "expires_in")]
-    expires_in_seconds: u32,
+    pub expires_in_seconds: u32,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccessTokenResponse {
-    access_token: AccessToken,
+    pub access_token: AccessToken,
     #[serde(rename = "expires_in")]
-    expires_in_seconds: u32,
+    pub expires_in_seconds: u32,
 }
