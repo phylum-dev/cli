@@ -14,7 +14,6 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::async_runtime::block_on;
 use crate::config::AuthInfo;
 use crate::types::{AuthorizationCode, RefreshToken, TokenResponse};
 
@@ -215,13 +214,10 @@ pub async fn refresh_tokens(
     Ok(response)
 }
 
-pub fn handle_refresh_tokens(
+pub async fn handle_refresh_tokens(
     auth_info: &AuthInfo,
     refresh_token: &RefreshToken,
 ) -> Result<TokenResponse> {
-    block_on(async {
-        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
-        let tokens = refresh_tokens(&oidc_settings, refresh_token).await?;
-        Result::<TokenResponse, anyhow::Error>::Ok(tokens)
-    })
+    let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+    refresh_tokens(&oidc_settings, refresh_token).await
 }

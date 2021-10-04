@@ -24,7 +24,8 @@ use print::*;
 
 use crate::commands::projects::handle_projects;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
 
     let yml = load_yaml!("../.conf/cli.yaml");
@@ -124,6 +125,7 @@ fn main() {
         .and_then(|t| t.parse::<u64>().ok());
 
     let mut api = PhylumApi::new(&mut config.auth_info, &config.connection.uri, timeout)
+        .await
         .unwrap_or_else(|err| {
             exit_error(err, Some("Error creating client"));
         });
@@ -138,7 +140,7 @@ fn main() {
     };
 
     if matches.subcommand_matches("ping").is_some() {
-        let resp = api.ping();
+        let resp = api.ping().await;
         print_response(&resp, true, None);
         exit_ok(None::<&str>);
     }
@@ -147,10 +149,11 @@ fn main() {
         || matches.subcommand_matches("batch").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
 
+    // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("projects") {
-        exit_status = handle_projects(&mut api, matches);
+        exit_status = handle_projects(&mut api, matches).await;
     } else if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, config_path, matches, app_helper);
+        handle_auth(config, config_path, matches, app_helper).await;
     } else if let Some(matches) = matches.subcommand_matches("update") {
         let spinner = Spinner::new(
             Spinners::Dots12,
@@ -177,17 +180,17 @@ fn main() {
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {
-        exit_status = handle_get_package(&mut api, &config.request_type, matches);
+        exit_status = handle_get_package(&mut api, &config.request_type, matches).await;
     } else if should_submit {
-        action = handle_submission(&mut api, config, &matches);
+        action = handle_submission(&mut api, config, &matches).await;
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        action = handle_history(&mut api, matches);
+        action = handle_history(&mut api, matches).await;
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| exit_error(err, Some("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")));
-            let resp = api.cancel(&request_id);
+            let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
         }
     }

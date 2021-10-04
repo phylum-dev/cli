@@ -9,6 +9,7 @@ use phylum_cli::api::PhylumApi;
 use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
 use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
+use uuid::Uuid;
 
 use crate::commands::lock_files::get_packages_from_lockfile;
 use crate::exit::{exit_error, exit_fail};
@@ -47,7 +48,7 @@ where
 }
 
 /// Display user-friendly overview of a job
-pub fn get_job_status(
+pub async fn get_job_status(
     api: &mut PhylumApi,
     job_id: &JobId,
     verbose: bool,
@@ -55,12 +56,25 @@ pub fn get_job_status(
     filter: Option<Filter>,
 ) -> Action {
     if verbose {
-        let resp = api.get_job_status_ext(job_id);
+        let resp = api.get_job_status_ext(job_id).await;
         handle_status(resp, pretty, filter)
     } else {
-        let resp = api.get_job_status(job_id);
+        let resp = api.get_job_status(job_id).await;
         handle_status(resp, pretty, filter)
     }
+}
+
+/// Resolve a potential job_id, which could be a UUID string or the value
+/// 'current' which means the UUID of the current running job.
+fn resolve_job_id(job_id: &str) -> Uuid {
+    let maybe_job_id = if job_id == "current" {
+        get_current_project().map(|p: ProjectConfig| p.id)
+    } else {
+        JobId::from_str(job_id).ok()
+    };
+
+    maybe_job_id
+        .unwrap_or_else(|| exit_fail(format!("Unable to resolve, or invalid job id: {}", job_id)))
 }
 
 /// Handle the history subcommand.
@@ -68,7 +82,7 @@ pub fn get_job_status(
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-pub fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action {
+pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
     let mut action = Action::None;
@@ -76,37 +90,28 @@ pub fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action
         .value_of("filter")
         .and_then(|v| Filter::from_str(v).ok());
 
-    let get_job = |job_id: Option<&str>| {
-        let job_id_str = job_id.unwrap();
-
-        let job_id = if job_id_str == "current" {
-            get_current_project().map(|p: ProjectConfig| p.id)
-        } else {
-            JobId::from_str(job_id_str).ok()
-        }
-        .unwrap_or_else(|| exit_fail(format!("Invalid job id: {}", job_id_str)));
-
-        get_job_status(api, &job_id, verbose, pretty_print, display_filter)
-    };
-
     if let Some(matches) = matches.subcommand_matches("project") {
         let project_name = matches.value_of("project_name");
         let project_job_id = matches.value_of("job_id");
 
         if let Some(project_name) = project_name {
             if project_job_id.is_none() {
-                let resp = api.get_project_details(project_name);
+                let resp = api.get_project_details(project_name).await;
                 print_response(&resp, pretty_print, None);
             } else {
-                action = get_job(project_job_id);
+                // TODO The original code had unwrap in it above. This needs to
+                // be refactored in general for better flow
+                let job_id = resolve_job_id(project_job_id.expect("No job id found"));
+                action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
-            get_project_list(api, pretty_print);
+            get_project_list(api, pretty_print).await;
         }
     } else if matches.is_present("JOB_ID") {
-        action = get_job(matches.value_of("JOB_ID"));
+        let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"));
+        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else {
-        let resp = api.get_status();
+        let resp = api.get_status().await;
         if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
@@ -123,7 +128,7 @@ pub fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action
 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
-pub fn handle_submission(
+pub async fn handle_submission(
     api: &mut PhylumApi,
     config: Config,
     matches: &clap::ArgMatches,
@@ -217,6 +222,7 @@ pub fn handle_submission(
             project,
             label.map(|s| s.to_string()),
         )
+        .await
         .unwrap_or_else(|err| exit_error(err, Some("Error submitting package")));
 
     log::debug!("Response => {:?}", job_id);
@@ -224,7 +230,7 @@ pub fn handle_submission(
 
     if synch {
         log::debug!("Requesting status...");
-        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter);
+        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     }
 
     action

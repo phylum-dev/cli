@@ -13,16 +13,16 @@ use crate::print_user_warning;
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-fn handle_auth_register(mut config: Config, config_path: &str) -> Result<()> {
-    config.auth_info = PhylumApi::register(config.auth_info)?;
+async fn handle_auth_register(mut config: Config, config_path: &str) -> Result<()> {
+    config.auth_info = PhylumApi::register(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-fn handle_auth_login(mut config: Config, config_path: &str) -> Result<()> {
-    config.auth_info = PhylumApi::login(config.auth_info)?;
+async fn handle_auth_login(mut config: Config, config_path: &str) -> Result<()> {
+    config.auth_info = PhylumApi::login(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -37,14 +37,14 @@ pub fn handle_auth_status(config: &Config) {
 }
 
 /// Handle the subcommands for the `auth` subcommand.
-pub fn handle_auth(
+pub async fn handle_auth(
     config: Config,
     config_path: &str,
     matches: &clap::ArgMatches,
-    app_helper: &mut App,
+    app_helper: &mut App<'_>,
 ) {
     if matches.subcommand_matches("register").is_some() {
-        match handle_auth_register(config, config_path) {
+        match handle_auth_register(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
             }
@@ -57,7 +57,7 @@ pub fn handle_auth(
             }
         }
     } else if matches.subcommand_matches("login").is_some() {
-        match handle_auth_login(config, config_path) {
+        match handle_auth_login(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
             }

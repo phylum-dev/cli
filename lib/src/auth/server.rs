@@ -3,7 +3,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::async_runtime::block_on;
 use crate::config::AuthInfo;
 use crate::types::{AuthorizationCode, TokenResponse};
 use anyhow::anyhow;
@@ -186,21 +185,18 @@ async fn spawn_server_and_get_auth_code(
 }
 
 /// Handle the user login/registration flow.
-pub fn handle_auth_flow(auth_action: &AuthAction, auth_info: &AuthInfo) -> Result<TokenResponse> {
-    let tokens = block_on(async {
-        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
-        let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
-        let state: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(32)
-            .map(char::from)
-            .collect();
-        let (auth_code, callback_url) =
-            spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state)
-                .await?;
-        let tokens =
-            acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await?;
-        Result::<TokenResponse, anyhow::Error>::Ok(tokens)
-    })?;
-    Ok(tokens)
+pub async fn handle_auth_flow(
+    auth_action: &AuthAction,
+    auth_info: &AuthInfo,
+) -> Result<TokenResponse> {
+    let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+    let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
+    let state: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+    let (auth_code, callback_url) =
+        spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
+    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await
 }

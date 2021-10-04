@@ -38,6 +38,9 @@ pub struct ProjectConfig {
 }
 
 // TODO: define explicit error types
+// TODO: This is NOT atomic, and file corruption can occur
+// TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
+// Rename is guaranteed atomic. Need to handle case when files are on different mount point
 pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     T: Serialize,

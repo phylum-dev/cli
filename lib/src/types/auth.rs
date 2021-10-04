@@ -48,6 +48,12 @@ impl Into<String> for &AccessToken {
     }
 }
 
+impl<'a> Into<&'a str> for &'a AccessToken {
+    fn into(self) -> &'a str {
+        &self.0
+    }
+}
+
 /// Typed wrapper for IdToken
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IdToken(String);

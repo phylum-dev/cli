@@ -8,8 +8,8 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::path::PathBuf;
 
-#[cfg(test)]
-use mockito;
+// #[cfg(test)]
+// use mockito;
 
 // Phylum's public key for Minisign.
 const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
@@ -80,10 +80,10 @@ impl ApplicationUpdater {
 
     /// Check for an update by querying the Github releases page.
     pub fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
-        #[cfg(test)]
-        let github_uri = &mockito::server_url();
+        // #[cfg(test)]
+        // let github_uri = &mockito::server_url();
 
-        #[cfg(not(test))]
+        // #[cfg(not(test))]
         let github_uri = "https://api.github.com";
 
         let ver = if prerelease {
@@ -296,70 +296,70 @@ impl ApplicationUpdater {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::update::ApplicationUpdater;
-    use minisign_verify::PublicKey;
-    use mockito::mock;
-    use std::fs;
-    use std::fs::File;
-    use std::io::prelude::*;
+// #[cfg(test)]
+// mod tests {
+//     use crate::update::ApplicationUpdater;
+//     use minisign_verify::PublicKey;
+//     use mockito::mock;
+//     use std::fs;
+//     use std::fs::File;
+//     use std::io::prelude::*;
 
-    #[test]
-    fn creating_application() {
-        let correct_pubkey =
-            PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
-                .expect("Failed to create public key");
-        let updater = ApplicationUpdater::default();
-        assert!(correct_pubkey == updater.pubkey);
-    }
+//     #[test]
+//     fn creating_application() {
+//         let correct_pubkey =
+//             PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
+//                 .expect("Failed to create public key");
+//         let updater = ApplicationUpdater::default();
+//         assert!(correct_pubkey == updater.pubkey);
+//     }
 
-    #[test]
-    fn version_check() {
-        let _m = mock("GET", "/repos/phylum-dev/cli/releases/latest")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                r#"{ 
-                         "name": "1.2.3",
-                         "assets": [
-                           { "browser_download_url": "https://foo.example.com", "name": "foo" },
-                           { "browser_download_url": "https://bar.example.com", "name": "bar" }
-                         ] 
-                       }"#,
-            )
-            .create();
+//     #[test]
+//     fn version_check() {
+//         let _m = mock("GET", "/repos/phylum-dev/cli/releases/latest")
+//             .with_status(200)
+//             .with_header("content-type", "application/json")
+//             .with_body(
+//                 r#"{
+//                          "name": "1.2.3",
+//                          "assets": [
+//                            { "browser_download_url": "https://foo.example.com", "name": "foo" },
+//                            { "browser_download_url": "https://bar.example.com", "name": "bar" }
+//                          ]
+//                        }"#,
+//             )
+//             .create();
 
-        let updater = ApplicationUpdater::default();
-        let latest = updater.get_latest_version(false).unwrap();
-        assert!("1.2.3" == latest.name);
-        assert!(updater.needs_update("1.0.2", &latest));
+//         let updater = ApplicationUpdater::default();
+//         let latest = updater.get_latest_version(false).unwrap();
+//         assert!("1.2.3" == latest.name);
+//         assert!(updater.needs_update("1.0.2", &latest));
 
-        let github_asset = updater.find_github_asset(&latest, "foo").unwrap();
-        assert!("https://foo.example.com" == github_asset.browser_download_url);
-    }
+//         let github_asset = updater.find_github_asset(&latest, "foo").unwrap();
+//         assert!("https://foo.example.com" == github_asset.browser_download_url);
+//     }
 
-    #[test]
-    fn find_installed_asset_location() {
-        let updater = ApplicationUpdater::default();
-        let asset = updater.installed_asset(None, "example.ext").unwrap();
-        assert!(asset.ends_with("example.ext"));
-    }
+//     #[test]
+//     fn find_installed_asset_location() {
+//         let updater = ApplicationUpdater::default();
+//         let asset = updater.installed_asset(None, "example.ext").unwrap();
+//         assert!(asset.ends_with("example.ext"));
+//     }
 
-    #[test]
-    fn test_signature_validation() {
-        let mut file = File::create("hello.txt").unwrap();
-        let _ = file.write_all(b"Hello, world\n");
+//     #[test]
+//     fn test_signature_validation() {
+//         let mut file = File::create("hello.txt").unwrap();
+//         let _ = file.write_all(b"Hello, world\n");
 
-        let minisign_sig = b"untrusted comment: signature from minisign secret key\nRWT6G44ykbS8GJ+2A+Fjj6ZdR1/632p6WlwqAYhb8DSeKhCl3rzG1TGSF9CD9DDf9BdWrOjvnqi78yh38djVuYvAW2FhE0MvTQ4=\ntrusted comment: Phylum, Inc. - Future of software supply chain security\nkBL1siaOp2uZq2IrNKVguDGje88ghM2L0XJ6n/1rjGL2aQwbJ0fZPe5uOde3IbObPKTF4KCHbRtMALUEu6TaBQ==\n";
+//         let minisign_sig = b"untrusted comment: signature from minisign secret key\nRWT6G44ykbS8GJ+2A+Fjj6ZdR1/632p6WlwqAYhb8DSeKhCl3rzG1TGSF9CD9DDf9BdWrOjvnqi78yh38djVuYvAW2FhE0MvTQ4=\ntrusted comment: Phylum, Inc. - Future of software supply chain security\nkBL1siaOp2uZq2IrNKVguDGje88ghM2L0XJ6n/1rjGL2aQwbJ0fZPe5uOde3IbObPKTF4KCHbRtMALUEu6TaBQ==\n";
 
-        let mut sig = File::create("hello.txt.minisig").unwrap();
-        let _ = sig.write_all(minisign_sig);
-        let updater = ApplicationUpdater::default();
-        let valid = updater.has_valid_signature("hello.txt", "hello.txt.minisig");
+//         let mut sig = File::create("hello.txt.minisig").unwrap();
+//         let _ = sig.write_all(minisign_sig);
+//         let updater = ApplicationUpdater::default();
+//         let valid = updater.has_valid_signature("hello.txt", "hello.txt.minisig");
 
-        let _ = fs::remove_file("hello.txt");
-        let _ = fs::remove_file("hello.txt.minisig");
-        assert!(valid);
-    }
-}
+//         let _ = fs::remove_file("hello.txt");
+//         let _ = fs::remove_file("hello.txt.minisig");
+//         assert!(valid);
+//     }
+// }
