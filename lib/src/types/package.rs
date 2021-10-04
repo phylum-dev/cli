@@ -15,18 +15,18 @@ pub enum PackageType {
     Ruby,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum RiskLevel {
-    #[serde(rename = "critical")]
-    Crit,
-    #[serde(rename = "high")]
-    High,
-    #[serde(rename = "medium")]
-    Med,
-    #[serde(rename = "low")]
-    Low,
     #[serde(rename = "info")]
     Info,
+    #[serde(rename = "low")]
+    Low,
+    #[serde(rename = "medium")]
+    Med,
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "critical")]
+    Crit,
 }
 
 impl fmt::Display for RiskLevel {
@@ -36,7 +36,7 @@ impl fmt::Display for RiskLevel {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum RiskDomain {
     MaliciousCode,
     Vulnerabilities,
@@ -58,7 +58,7 @@ impl fmt::Display for RiskDomain {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Issue {
     pub title: String,
     pub description: String,
