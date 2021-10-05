@@ -170,42 +170,6 @@ _arguments "${_arguments_options[@]}" \
 '--version[Print version information]' \
 && ret=0
 ;;
-(keys)
-_arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
-'--version[Print version information]' \
-":: :_phylum__auth__keys_commands" \
-"*::: :->keys" \
-&& ret=0
-case $state in
-    (keys)
-        words=($line[1] "${words[@]}")
-        (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:phylum-auth-keys-command-$line[1]:"
-        case $line[1] in
-            (create)
-_arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
-'--version[Print version information]' \
-&& ret=0
-;;
-(list)
-_arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
-'--version[Print version information]' \
-&& ret=0
-;;
-(remove)
-_arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
-'--version[Print version information]' \
-':key_id:' \
-&& ret=0
-;;
-        esac
-    ;;
-esac
-;;
 (status)
 _arguments "${_arguments_options[@]}" \
 '--help[Print help information]' \
@@ -308,7 +272,6 @@ _phylum__auth_commands() {
     local commands; commands=(
 'register:Register a new account' \
 'login:Login to an existing account' \
-'keys:Manage API keys' \
 'status:Return the current authentication status' \
     )
     _describe -t commands 'phylum auth commands' commands "$@"
@@ -317,11 +280,6 @@ _phylum__auth_commands() {
 _phylum__batch_commands() {
     local commands; commands=()
     _describe -t commands 'phylum batch commands' commands "$@"
-}
-(( $+functions[_phylum__auth__keys__create_commands] )) ||
-_phylum__auth__keys__create_commands() {
-    local commands; commands=()
-    _describe -t commands 'phylum auth keys create commands' commands "$@"
 }
 (( $+functions[_phylum__projects__create_commands] )) ||
 _phylum__projects__create_commands() {
@@ -340,24 +298,10 @@ _phylum__history_commands() {
     )
     _describe -t commands 'phylum history commands' commands "$@"
 }
-(( $+functions[_phylum__auth__keys_commands] )) ||
-_phylum__auth__keys_commands() {
-    local commands; commands=(
-'create:Create a new API key' \
-'list:List current API keys' \
-'remove:Deactivate an API key' \
-    )
-    _describe -t commands 'phylum auth keys commands' commands "$@"
-}
 (( $+functions[_phylum__projects__link_commands] )) ||
 _phylum__projects__link_commands() {
     local commands; commands=()
     _describe -t commands 'phylum projects link commands' commands "$@"
-}
-(( $+functions[_phylum__auth__keys__list_commands] )) ||
-_phylum__auth__keys__list_commands() {
-    local commands; commands=()
-    _describe -t commands 'phylum auth keys list commands' commands "$@"
 }
 (( $+functions[_phylum__projects__list_commands] )) ||
 _phylum__projects__list_commands() {
@@ -398,11 +342,6 @@ _phylum__projects_commands() {
 _phylum__auth__register_commands() {
     local commands; commands=()
     _describe -t commands 'phylum auth register commands' commands "$@"
-}
-(( $+functions[_phylum__auth__keys__remove_commands] )) ||
-_phylum__auth__keys__remove_commands() {
-    local commands; commands=()
-    _describe -t commands 'phylum auth keys remove commands' commands "$@"
 }
 (( $+functions[_phylum__projects__set-thresholds_commands] )) ||
 _phylum__projects__set-thresholds_commands() {

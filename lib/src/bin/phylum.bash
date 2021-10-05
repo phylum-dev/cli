@@ -31,9 +31,6 @@ _phylum() {
             history)
                 cmd+="__history"
                 ;;
-            keys)
-                cmd+="__keys"
-                ;;
             link)
                 cmd+="__link"
                 ;;
@@ -57,9 +54,6 @@ _phylum() {
                 ;;
             register)
                 cmd+="__register"
-                ;;
-            remove)
-                cmd+="__remove"
                 ;;
             set-thresholds)
                 cmd+="__set__thresholds"
@@ -112,7 +106,7 @@ _phylum() {
             ;;
         
         phylum__analyze)
-            opts=" -l -v -j -F -h -V  --verbose --json --filter --help --version  <LOCKFILE> "
+            opts=" -l -v -j -F -h -V  --verbose --filter --json --help --version  <LOCKFILE> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -135,68 +129,8 @@ _phylum() {
             return 0
             ;;
         phylum__auth)
-            opts=" -h -V  --help --version  register login keys status"
+            opts=" -h -V  --help --version  register login status"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__auth__keys)
-            opts="  --help --version  create list remove"
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__auth__keys__create)
-            opts="  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__auth__keys__list)
-            opts="  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        phylum__auth__keys__remove)
-            opts="  --help --version  <key_id> "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
