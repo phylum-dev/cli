@@ -32,9 +32,21 @@ pub enum AuthAction {
 /// Typed wrapper for PKCE challenge code string
 pub struct ChallengeCode(String);
 
-impl Into<String> for &ChallengeCode {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<ChallengeCode> for String {
+    fn from(challenge_code: ChallengeCode) -> Self {
+        challenge_code.0
+    }
+}
+
+impl From<&ChallengeCode> for String {
+    fn from(challenge_code: &ChallengeCode) -> Self {
+        challenge_code.0.clone()
+    }
+}
+
+impl<'a> From<&'a ChallengeCode> for &'a str {
+    fn from(challenge_code: &'a ChallengeCode) -> Self {
+        &challenge_code.0
     }
 }
 
@@ -60,9 +72,21 @@ impl CodeVerifier {
     }
 }
 
-impl Into<String> for &CodeVerifier {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<CodeVerifier> for String {
+    fn from(code_verfier: CodeVerifier) -> Self {
+        code_verfier.0
+    }
+}
+
+impl From<&CodeVerifier> for String {
+    fn from(code_verfier: &CodeVerifier) -> Self {
+        code_verfier.0.clone()
+    }
+}
+
+impl<'a> From<&'a CodeVerifier> for &'a str {
+    fn from(code_verfier: &'a CodeVerifier) -> Self {
+        &code_verfier.0
     }
 }
 
@@ -102,7 +126,7 @@ pub fn build_auth_url(
         .query_pairs_mut()
         .clear()
         .append_pair("client_id", OIDC_CLIENT_ID)
-        .append_pair("code_challenge", &(Into::<String>::into(code_challenge)))
+        .append_pair("code_challenge", code_challenge.into())
         .append_pair("code_challenge_method", "S256")
         .append_pair("redirect_uri", &callback_url.to_string())
         .append_pair("response_type", "code")

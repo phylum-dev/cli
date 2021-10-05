@@ -10,9 +10,9 @@ impl AuthorizationCode {
     }
 }
 
-impl Into<String> for &AuthorizationCode {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<&AuthorizationCode> for String {
+    fn from(val: &AuthorizationCode) -> Self {
+        val.0.to_owned()
     }
 }
 
@@ -26,9 +26,9 @@ impl RefreshToken {
     }
 }
 
-impl Into<String> for &RefreshToken {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<&RefreshToken> for String {
+    fn from(val: &RefreshToken) -> Self {
+        val.0.to_owned()
     }
 }
 
@@ -42,15 +42,15 @@ impl AccessToken {
     }
 }
 
-impl Into<String> for &AccessToken {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<&AccessToken> for String {
+    fn from(val: &AccessToken) -> Self {
+        val.0.to_owned()
     }
 }
 
-impl<'a> Into<&'a str> for &'a AccessToken {
-    fn into(self) -> &'a str {
-        &self.0
+impl<'a> From<&'a AccessToken> for &'a str {
+    fn from(val: &'a AccessToken) -> Self {
+        &val.0
     }
 }
 
@@ -64,9 +64,9 @@ impl IdToken {
     }
 }
 
-impl Into<String> for &IdToken {
-    fn into(self) -> String {
-        self.0.to_owned()
+impl From<&IdToken> for String {
+    fn from(val: &IdToken) -> Self {
+        val.0.to_owned()
     }
 }
 
