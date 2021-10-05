@@ -37,6 +37,7 @@ impl FromStr for Filter {
         let domains = tokens
             .iter()
             .filter_map(|t| match *t {
+                "aut" => Some(RiskDomain::AuthorRisk),
                 "AUT" => Some(RiskDomain::AuthorRisk),
                 "auth" => Some(RiskDomain::AuthorRisk),
                 "author" => Some(RiskDomain::AuthorRisk),
@@ -45,11 +46,14 @@ impl FromStr for Filter {
                 "engineering" => Some(RiskDomain::EngineeringRisk),
                 "code" => Some(RiskDomain::MaliciousCode),
                 "malicious_code" => Some(RiskDomain::MaliciousCode),
+                "mal" => Some(RiskDomain::MaliciousCode),
                 "MAL" => Some(RiskDomain::MaliciousCode),
                 "vuln" => Some(RiskDomain::Vulnerabilities),
                 "vulnerability" => Some(RiskDomain::Vulnerabilities),
                 "VLN" => Some(RiskDomain::Vulnerabilities),
+                "vln" => Some(RiskDomain::Vulnerabilities),
                 "license" => Some(RiskDomain::LicenseRisk),
+                "lic" => Some(RiskDomain::LicenseRisk),
                 "LIC" => Some(RiskDomain::LicenseRisk),
                 _ => None,
             })

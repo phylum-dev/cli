@@ -259,6 +259,36 @@ fn vuln_to_rows(
     rows
 }
 
+fn check_filter_vuln(filter: &Filter, vuln: &Vulnerability) -> bool {
+    let mut include = true;
+    if let Some(domains) = &filter.domains {
+        if !domains.contains(&RiskDomain::Vulnerabilities) {
+            include = false;
+        }
+    }
+    if let Some(level) = &filter.level {
+        if vuln.risk_level < *level {
+            include = false;
+        }
+    }
+    include
+}
+
+fn check_filter_issue(filter: &Filter, issue: &Issue) -> bool {
+    let mut include = true;
+    if let Some(ref level) = filter.level {
+        if issue.risk_level < *level {
+            include = false;
+        }
+    }
+    if let Some(ref domains) = filter.domains {
+        if !domains.contains(&issue.risk_domain) {
+            include = false;
+        }
+    }
+    include
+}
+
 impl Summarize for RequestStatusResponse<PackageStatusExtended> {
     fn summarize(&self, filter: Option<Filter>) {
         let table_1: Table = response_to_table(self);
@@ -271,18 +301,7 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
         for p in &self.packages {
             for issue in &p.issues {
                 if let Some(ref filter) = filter {
-                    let mut include = true;
-                    if let Some(level) = &filter.level {
-                        if issue.risk_level < *level {
-                            include = false;
-                        }
-                    }
-                    if let Some(domains) = &filter.domains {
-                        if !domains.contains(&issue.risk_domain) {
-                            include = false;
-                        }
-                    }
-                    if include {
+                    if check_filter_issue(filter, issue) {
                         issues.push(issue);
                     }
                 } else {
@@ -308,11 +327,7 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             for v in &p.vulnerabilities {
                 let mut include = true;
                 if let Some(ref filter) = filter {
-                    if let Some(level) = &filter.level {
-                        if v.risk_level < *level {
-                            include = false;
-                        }
-                    }
+                    include = check_filter_vuln(filter, v);
                 }
 
                 if include {
@@ -399,6 +414,11 @@ impl Summarize for PackageStatusExtended {
         for v in &self.vulnerabilities {
             let mut include = true;
             if let Some(ref filter) = filter {
+                if let Some(domains) = &filter.domains {
+                    if !domains.contains(&RiskDomain::Vulnerabilities) {
+                        include = false;
+                    }
+                }
                 if let Some(level) = &filter.level {
                     if v.risk_level < *level {
                         include = false;
@@ -436,3 +456,46 @@ impl Summarize for PackageStatus {}
 impl Summarize for ProjectGetDetailsRequest {}
 impl Summarize for AllJobsStatusResponse {}
 impl Summarize for CancelRequestResponse {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::Vulnerability;
+
+    #[test]
+    fn test_filter_check() {
+        let filter_string = "lic";
+        let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
+
+        let issue = r#"{
+                    "title": "Commercial license risk in xmlrpc@0.3.0",
+                    "description": "license is medium risk",
+                    "risk_level": "medium",
+                    "risk_domain": "LicenseRisk",
+                    "pkg_name": "xmlrpc",
+                    "pkg_version": "0.3.0",
+                    "score": 0.7
+                    }"#;
+        let issue: Issue = serde_json::from_str(issue).unwrap();
+
+        let include = check_filter_issue(&filter, &issue);
+        assert!(include);
+
+        let vuln = Vulnerability {
+            base_severity: 0.55,
+            cve: vec![],
+            risk_level: RiskLevel::Crit,
+            title: "Some vuln".to_string(),
+            description: "".to_string(),
+            remediation: "".to_string(),
+        };
+
+        let include = check_filter_vuln(&filter, &vuln);
+        assert!(!include);
+
+        let filter_string = "mal";
+        let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
+        let include = check_filter_issue(&filter, &issue);
+        assert!(!include);
+    }
+}
