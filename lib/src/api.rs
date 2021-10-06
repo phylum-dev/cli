@@ -370,11 +370,8 @@ mod tests {
                     {
                     "title": "Commercial license risk in xmlrpc@0.3.0",
                     "description": "license is medium risk",
-                    "risk_level": "medium",
-                    "risk_domain": "LicenseRisk",
-                    "pkg_name": "xmlrpc",
-                    "pkg_version": "0.3.0",
-                    "score": 0.7
+                    "severity": "medium",
+                    "domain": "license"
                     }
                 ],
                 "heuristics": {
@@ -504,21 +501,10 @@ mod tests {
                         {
                         "title": "Commercial license risk in xmlrpc@0.3.0",
                         "description": "license is medium risk",
-                        "risk_level": "medium",
-                        "risk_domain": "LicenseRisk",
-                        "pkg_name": "xmlrpc",
-                        "pkg_version": "0.3.0",
-                        "score": 0.7
+                        "severity": "medium",
+                        "domain": "license"
                         }
                     ],
-                    "heuristics": {
-                        "something": {
-                            "description": "do stuff",
-                            "score": 3.14,
-                            "domain": "EngineeringRisk",
-                            "risk_level": "critical"
-                        }
-                    },
                     "riskVectors": {
                         "author": 0.90,
                         "engineering": 0.42,
