@@ -124,6 +124,11 @@ async fn main() {
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
 
+    if let Some(matches) = matches.subcommand_matches("auth") {
+        handle_auth(config, config_path, matches, app_helper).await;
+        exit_ok(None::<String>);
+    }
+
     let mut api = PhylumApi::new(&mut config.auth_info, &config.connection.uri, timeout)
         .await
         .unwrap_or_else(|err| {
@@ -152,8 +157,6 @@ async fn main() {
     // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("projects") {
         exit_status = handle_projects(&mut api, matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, config_path, matches, app_helper).await;
     } else if let Some(matches) = matches.subcommand_matches("update") {
         let spinner = Spinner::new(
             Spinners::Dots12,
