@@ -3,8 +3,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::config::AuthInfo;
-use crate::types::{AuthorizationCode, TokenResponse};
 use anyhow::anyhow;
 use anyhow::Result;
 use futures::TryFutureExt;
@@ -17,8 +15,10 @@ use routerify::{Router, RouterService};
 use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
-use super::oidc::acquire_tokens;
+use crate::config::AuthInfo;
+use crate::types::{AuthorizationCode, TokenResponse};
 
+use super::oidc::acquire_tokens;
 use super::oidc::{
     build_auth_url, check_if_routable, fetch_oidc_server_settings, CodeVerifier, OidcServerSettings,
 };
@@ -47,6 +47,8 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
     let auth_code: &AuthCodeState = request
         .data::<AuthCodeState>()
         .expect("State for holding auth code not set");
+
+    log::debug!("Oauth server has called redirect uri: {}", request.uri());
 
     let query_parameters: HashMap<String, String> = request
         .uri()
@@ -139,6 +141,8 @@ async fn spawn_server_and_get_auth_code(
 
     let callback_url = Url::parse(&format!("http://{}/", &server_address))?;
 
+    log::debug!("Started local login server: {:?}", server_address);
+
     // Set graceful shutdown hook
     let finished_serving = server.with_graceful_shutdown(async {
         receive_shutdown.await.ok();
@@ -152,13 +156,18 @@ async fn spawn_server_and_get_auth_code(
         state,
     )?;
 
-    // If this routable beyond the local segment / interface / host / loopback and protocol is still http
-    // we are going to throw an error because something is misconfigured.
+    log::debug!("Authorization url is {}", authorization_url);
+
+    // If this routable beyond the local segment / interface / host / loopback
+    // and protocol is still http we are going to throw an error because
+    // something is misconfigured.
     let auth_host = authorization_url
         .host_str()
         .ok_or_else(|| anyhow!("Authorization server url must be absolute"))?;
     let auth_scheme = authorization_url.scheme();
-    let is_routable = check_if_routable(auth_host)?;
+    let fallback_port: u16 = if auth_scheme == "https" { 443 } else { 80 };
+    let port = authorization_url.port().unwrap_or(fallback_port);
+    let is_routable = check_if_routable(format!("{}:{}", auth_host, port))?;
     if is_routable && auth_scheme == "http" {
         return Err(anyhow!(
             "Authorization host {} is publically routable, must use https to connect.",
@@ -166,9 +175,17 @@ async fn spawn_server_and_get_auth_code(
         ));
     }
 
+    println!("Please use browser window to complete login process");
+    println!(
+        "If browser window doesn't open, you can use the link below:\n    {}",
+        authorization_url
+    );
+
     // Open browser pointing at this server's /redirect url
     // We don't want to join on this, might not even make sense.
     open::that_in_background(&authorization_url.to_string());
+
+    log::debug!("Opened browser window");
 
     let auth_code = finished_serving
         .map_err(anyhow::Error::from)
