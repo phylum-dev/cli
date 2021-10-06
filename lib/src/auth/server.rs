@@ -31,6 +31,10 @@ pub const AUTH_CALLBACK_TEMPLATE: &str = include_str!("./auth_callback_template.
 #[derive(Clone)]
 struct AuthCodeState(Arc<Mutex<Option<String>>>);
 
+//State to store the oauth2 state parameter so it can be set and checked in the callback
+#[derive(Clone)]
+struct OAuth2CallbackState(Arc<String>);
+
 // State to store the shutdown hook state
 struct ShutdownHookState(Mutex<Option<Sender<()>>>);
 
@@ -48,6 +52,10 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
         .data::<AuthCodeState>()
         .expect("State for holding auth code not set");
 
+    let saved_state: &OAuth2CallbackState = request
+        .data::<OAuth2CallbackState>()
+        .expect("oauth2 XSRF prevention state parameter was not set");
+
     log::debug!("Oauth server has called redirect uri: {}", request.uri());
 
     let query_parameters: HashMap<String, String> = request
@@ -59,6 +67,22 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
                 .collect()
         })
         .unwrap_or_else(HashMap::new);
+
+    // Check that XSRF prevention state was properly returned.
+    match query_parameters.get("state") {
+        None => {
+            let msg = "Oauth server did return XSRF prevention state nonce";
+            log::error!("{}", msg);
+            return Err(anyhow!(msg));
+        }
+        Some(state) => {
+            if *state != *saved_state.0 {
+                let msg = "OAuth server returned wrong XSRF prevention state nonce";
+                log::error!("{}", msg);
+                return Err(anyhow!(msg));
+            }
+        }
+    };
 
     let response_body = match query_parameters.get("code") {
         None => {
@@ -127,7 +151,7 @@ async fn spawn_server_and_get_auth_code(
         .data(auth_code_state.clone())
         // Shutdown oneshot channel
         .data(ShutdownHookState(Mutex::new(Some(send_shutdown))))
-        // Todo callback handler needs to shutdown server
+        .data(OAuth2CallbackState(Arc::new(state.as_ref().to_owned())))
         .get("/", keycloak_callback_handler)
         .build()
         .expect("Failed to build router");
