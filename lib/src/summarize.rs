@@ -310,7 +310,8 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             }
         }
 
-        issues.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+        // TODO: Sort by severity
+        //issues.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
 
         for issue in issues {
             let rows: Vec<Row> = issue.into();
