@@ -130,8 +130,8 @@ pub fn build_auth_url(
         .append_pair("code_challenge_method", "S256")
         .append_pair("redirect_uri", &callback_url.to_string())
         .append_pair("response_type", "code")
-        .append_pair("response_mode", "fragment")
-        .append_pair("scope", &OIDC_SCOPES.join(""))
+        .append_pair("response_mode", "query")
+        .append_pair("scope", &OIDC_SCOPES.join(" "))
         .append_pair("state", state.as_ref());
 
     Ok(auth_url)
