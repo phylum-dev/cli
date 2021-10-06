@@ -538,10 +538,8 @@ pub struct Issue {
 
     #[serde(alias = "domain")]
     pub risk_domain: RiskDomain,
-    //pub pkg_name: String,
-    //pub pkg_version: String,
-    //pub score: f64,
 }
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeuristicResult {
     pub domain: RiskDomain,
