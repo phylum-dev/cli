@@ -1,3 +1,5 @@
+//! Module containing useful doc / unit test utilities.
+
 /// enables logging statically for any test module this module it is imported into
 pub mod logging {
 
@@ -61,7 +63,7 @@ pub mod mockito {
         }
     }
 
-    fn build_oidc_server_settings_mock_response(base_uri: &str) -> OidcServerSettings {
+    pub fn build_oidc_server_settings_mock_response(base_uri: &str) -> OidcServerSettings {
         let base_url = Url::from_str(base_uri).expect("Failed to parse base url");
         OidcServerSettings {
             issuer: base_url.clone(),
@@ -121,7 +123,7 @@ pub mod mockito {
         mock_server
     }
 
-    fn build_authenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
+    pub fn build_authenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
         AuthInfo {
             offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)),
             oidc_discovery_url: Url::from_str(&format!("{}/{}", mock_server.uri(), OIDC_URI))
@@ -137,5 +139,61 @@ pub mod mockito {
         )
         .await?;
         Ok(phylum)
+    }
+}
+
+pub mod open {
+    use std::collections::HashMap;
+    use std::io::Result;
+    use std::str::FromStr;
+    use std::time::Duration;
+
+    use reqwest::Url;
+    use tokio::runtime::Handle;
+
+    /// Dummy impl of [open::that] which instead of opening a browser for
+    /// the url, fetches it after sleeping 100ms
+    pub fn that(authorization_url: &str) -> Result<()> {
+        let authorization_url = authorization_url.to_owned();
+
+        // Fire and forget
+        Handle::current().spawn(async move {
+            let url = Url::from_str(&authorization_url).expect("Failed to parse url.");
+
+            let code = "FAKE_OAUTH_ATHORIZATION_CODE";
+
+            let query_params = url
+                .query_pairs()
+                .into_owned()
+                .collect::<HashMap<String, String>>();
+            let state = query_params
+                .get("state")
+                .expect("Failed to find request state on auth url");
+            let redirect_uri = query_params
+                .get("redirect_uri")
+                .expect("Failed to find redirect_uri on auth url");
+
+            let mut callback_url =
+                Url::from_str(redirect_uri).expect("Failed to parse redirect_uri");
+            callback_url
+                .query_pairs_mut()
+                .append_pair("code", code)
+                .append_pair("state", state);
+
+            log::debug!("Calling callback url: {}", callback_url);
+
+            // Wait for the server to be up
+            tokio::time::sleep(Duration::from_millis(100)).await;
+
+            reqwest::get(callback_url)
+                .await
+                .expect("Failed to get response")
+                .text()
+                .await
+                .expect("Failed to get body");
+
+            log::debug!("Callback complete");
+        });
+        Ok(())
     }
 }

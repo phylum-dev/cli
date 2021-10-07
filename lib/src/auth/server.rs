@@ -7,6 +7,8 @@ use anyhow::anyhow;
 use anyhow::Result;
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
+#[cfg(not(test))]
+use open;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -16,6 +18,8 @@ use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
 use crate::config::AuthInfo;
+#[cfg(test)]
+use crate::test::open;
 use crate::types::{AuthorizationCode, TokenResponse};
 
 use super::oidc::acquire_tokens;
@@ -44,6 +48,8 @@ struct ShutdownHookState(Mutex<Option<Sender<()>>>);
 ///
 /// If a code is present, it updates the internal state and stores the code in it
 async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Body>> {
+    log::debug!("Callback handler triggered!");
+
     let shutdown_hook = request
         .data::<ShutdownHookState>()
         .expect("Shutdown hook not set as hyper state");
@@ -207,7 +213,7 @@ async fn spawn_server_and_get_auth_code(
 
     // Open browser pointing at this server's /redirect url
     // We don't want to join on this, might not even make sense.
-    open::that_in_background(&authorization_url.to_string());
+    open::that(&authorization_url.to_string())?;
 
     log::debug!("Opened browser window");
 
@@ -240,4 +246,38 @@ pub async fn handle_auth_flow(
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
     acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await
+}
+
+#[cfg(test)]
+mod test {
+
+    use anyhow::Result;
+    use rand::distributions::Alphanumeric;
+    use rand::{thread_rng, Rng};
+
+    use super::spawn_server_and_get_auth_code;
+    use crate::auth::{AuthAction, CodeVerifier};
+    use crate::test::mockito::*;
+
+    #[tokio::test]
+    async fn when_started_with_good_configuration_spawn_server_and_get_auth_code_is_successful(
+    ) -> Result<()> {
+        let oidc_settings = build_oidc_server_settings_mock_response(
+            "https://127.0.0.1/.well-known/oauth-authorization-server",
+        );
+
+        let (_verifier, challenge) =
+            CodeVerifier::generate(64).expect("Failed to build PKC verifier and challenge");
+
+        let state: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
+
+        spawn_server_and_get_auth_code(&oidc_settings, &AuthAction::Login, &challenge, state)
+            .await?;
+
+        Ok(())
+    }
 }
