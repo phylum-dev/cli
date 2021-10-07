@@ -158,7 +158,7 @@ async fn spawn_server_and_get_auth_code(
     let router_service = RouterService::new(router).expect("Failed to build router service");
 
     // Fire up on a random port
-    // In keycloak, configure with a random callback pattern of http://localhost:*
+    // In keycloak, configure redirect_uri with a pattern of http://127.0.0.1:*
     let addr = SocketAddr::from(([127, 0, 0, 1], 0));
     let server = Server::bind(&addr).serve(router_service);
     let server_address = server.local_addr();
