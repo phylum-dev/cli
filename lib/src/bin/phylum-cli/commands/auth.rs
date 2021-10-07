@@ -1,10 +1,11 @@
 use ansi_term::Color::{Blue, Green};
 use clap::App;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Input, Password};
+use dialoguer::{Confirm, Input, Password};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::{save_config, Config};
 use phylum_cli::types::{ApiToken, Key};
+use std::io::{Error, ErrorKind};
 use std::process;
 use std::str::FromStr;
 
@@ -45,19 +46,29 @@ fn handle_auth_register(
         .with_confirmation("Confirm password", "Passwords do not match")
         .interact()?;
 
-    api.register(email.as_str(), password.as_str(), name.as_str())
-        .unwrap_or_else(|err| {
-            exit_error(err, Some("Error registering user"));
+    if !Confirm::new()
+        .with_prompt("Do you agree to the EULA (https://phylum.io/end-user-license-agreement/)")
+        .interact()?
+    {
+        Err(Error::new(
+            ErrorKind::Other,
+            "You must accept the EULA to continue.",
+        ))
+    } else {
+        api.register(email.as_str(), password.as_str(), name.as_str())
+            .unwrap_or_else(|err| {
+                exit_error(err, Some("Error registering user"));
+            });
+
+        config.auth_info.user = email;
+        config.auth_info.pass = password;
+        save_config(config_path, &config).unwrap_or_else(|err| {
+            log::error!("Failed to save user credentials to config: {}", err);
+            print_user_failure!("Failed to save user credentials: {}", err);
         });
 
-    config.auth_info.user = email;
-    config.auth_info.pass = password;
-    save_config(config_path, &config).unwrap_or_else(|err| {
-        log::error!("Failed to save user credentials to config: {}", err);
-        print_user_failure!("Failed to save user credentials: {}", err);
-    });
-
-    Ok("Successfully registered a new account!".to_string())
+        Ok("Successfully registered a new account!".to_string())
+    }
 }
 
 /// Authenticate a user with email and password.
