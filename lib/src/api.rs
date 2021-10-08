@@ -196,7 +196,9 @@ impl PhylumApi {
 mod tests {
 
     use std::str::FromStr;
+    use std::sync::{Arc, Mutex};
     use uuid::Uuid;
+    use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
 
@@ -207,6 +209,67 @@ mod tests {
     async fn create_client() -> Result<(), PhylumApiError> {
         let mock_server = build_mock_server().await;
         build_phylum_api(&mock_server).await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn when_creating_unauthenticated_phylum_api_it_auths_itself() -> Result<(), PhylumApiError>
+    {
+        let mock_server = build_mock_server().await;
+        let mut auth_info = build_unauthenticated_auth_info(&mock_server);
+        PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None).await?;
+        // After auth, auth_info should have a offline access token
+        assert!(
+            auth_info.offline_access.is_some(),
+            "Offline access token was not set"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn when_submitting_a_request_phylum_api_includes_access_token(
+    ) -> Result<(), PhylumApiError> {
+        let mock_server = build_mock_server().await;
+
+        let token_holder: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+
+        let responder_token_holder = token_holder.clone();
+
+        Mock::given(method("PUT"))
+            .and(path("api/v0/job"))
+            .respond_with_fn(move |request| {
+                let mut guard = responder_token_holder.lock().unwrap();
+                let auth_header = HeaderName::from_str("Authorization").unwrap();
+
+                *guard = request
+                    .headers
+                    .get(&auth_header)
+                    .map(|v| v.as_str().to_owned());
+
+                ResponseTemplate::new(200)
+                    .set_body_string(r#"{"job_id": "59482a54-423b-448d-8325-f171c9dc336b"}"#)
+            })
+            .mount(&mock_server)
+            .await;
+
+        let mut client = build_phylum_api(&mock_server).await?;
+
+        let pkg = PackageDescriptor {
+            name: "react".to_string(),
+            version: "16.13.1".to_string(),
+            r#type: PackageType::Npm,
+        };
+        let project_id = Uuid::new_v4();
+        let label = Some("mylabel".to_string());
+        client
+            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
+            .await?;
+
+        // Request should have been submitted with a bearer token
+        let bearer_token = token_holder.lock().unwrap().take();
+        assert_eq!(Some(format!("Bearer {}", DUMMY_ACCESS_TOKEN)), bearer_token);
+
         Ok(())
     }
 

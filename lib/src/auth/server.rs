@@ -255,19 +255,17 @@ mod test {
     use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};
 
-    use super::spawn_server_and_get_auth_code;
+    use super::{handle_auth_flow, spawn_server_and_get_auth_code};
     use crate::auth::{AuthAction, CodeVerifier};
     use crate::test::mockito::*;
 
     #[tokio::test]
     async fn when_started_with_good_configuration_spawn_server_and_get_auth_code_is_successful(
     ) -> Result<()> {
-        let oidc_settings = build_oidc_server_settings_mock_response(
-            "https://127.0.0.1/.well-known/oauth-authorization-server",
-        );
+        let oidc_settings = build_oidc_server_settings_mock_response("https://127.0.0.1/oauth");
 
         let (_verifier, challenge) =
-            CodeVerifier::generate(64).expect("Failed to build PKC verifier and challenge");
+            CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
         let state: String = thread_rng()
             .sample_iter(&Alphanumeric)
@@ -277,6 +275,40 @@ mod test {
 
         spawn_server_and_get_auth_code(&oidc_settings, &AuthAction::Login, &challenge, state)
             .await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn when_started_with_good_configuration_handle_auth_flow_for_login_is_successful(
+    ) -> Result<()> {
+        let mock_server = build_mock_server().await;
+
+        let auth_info = build_unauthenticated_auth_info(&mock_server);
+
+        let (_verifier, _challenge) =
+            CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
+
+        let result = handle_auth_flow(&AuthAction::Login, &auth_info).await?;
+
+        log::debug!("{:?}", result);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn when_started_with_good_configuration_handle_auth_flow_for_register_is_successful(
+    ) -> Result<()> {
+        let mock_server = build_mock_server().await;
+
+        let auth_info = build_unauthenticated_auth_info(&mock_server);
+
+        let (_verifier, _challenge) =
+            CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
+
+        let result = handle_auth_flow(&AuthAction::Register, &auth_info).await?;
+
+        log::debug!("{:?}", result);
 
         Ok(())
     }

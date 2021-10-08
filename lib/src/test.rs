@@ -26,14 +26,14 @@ pub mod mockito {
     use crate::config::AuthInfo;
     use crate::types::*;
 
-    const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
-    const DUMMY_ACCESS_TOKEN: &str = "DUMMY_ACCESS_TOKEN";
-    const DUMMY_ID_TOKEN: &str = "DUMMY_ID_TOKEN";
-    const DUMMY_AUTH_CODE: &str = "DUMMY_AUTH_CODE";
+    pub const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
+    pub const DUMMY_ACCESS_TOKEN: &str = "DUMMY_ACCESS_TOKEN";
+    pub const DUMMY_ID_TOKEN: &str = "DUMMY_ID_TOKEN";
+    pub const DUMMY_AUTH_CODE: &str = "DUMMY_AUTH_CODE";
 
-    const OIDC_URI: &str = "oidc";
-    const AUTH_URI: &str = "auth";
-    const TOKEN_URI: &str = "token";
+    pub const OIDC_URI: &str = "oidc";
+    pub const AUTH_URI: &str = "auth";
+    pub const TOKEN_URI: &str = "token";
 
     pub struct ResponderFn<F>(F)
     where
@@ -126,6 +126,14 @@ pub mod mockito {
     pub fn build_authenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
         AuthInfo {
             offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)),
+            oidc_discovery_url: Url::from_str(&format!("{}/{}", mock_server.uri(), OIDC_URI))
+                .expect("Failed to parse test url"),
+        }
+    }
+
+    pub fn build_unauthenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
+        AuthInfo {
+            offline_access: None,
             oidc_discovery_url: Url::from_str(&format!("{}/{}", mock_server.uri(), OIDC_URI))
                 .expect("Failed to parse test url"),
         }
