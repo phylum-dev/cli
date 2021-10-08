@@ -394,7 +394,7 @@ mod tests {
                 "title": "Commercial license risk in xmlrpc@0.3.0",
                 "description": "license is medium risk",
                 "risk_level": "medium",
-                "risk_domain": "LicenseRisk",
+                "risk_domain": "license",
                 "pkg_name": "xmlrpc",
                 "pkg_version": "0.3.0",
                 "score": 0.7
@@ -404,7 +404,7 @@ mod tests {
                 "something": {
                     "description": "do stuff",
                     "score": 3.14,
-                    "domain": "AuthorRisk",
+                    "domain": "author",
                     "risk_level": "medium"
                 }
             },
@@ -513,70 +513,84 @@ mod tests {
             "action": "warn",
             "packages": [
                 {
-                "name": "foo",
-                "version": "1.0.0",
-                "type": "npm",
-                "last_updated": 1603311864,
-                "license": null,
-                "num_dependencies": 2,
-                "num_vulnerabilities": 7,
-                "package_score": 0.3,
-                "status": "incomplete",
-                "vulnerabilities": [],
-                "issues": [
-                    {
-                    "title": "Commercial license risk in xmlrpc@0.3.0",
-                    "description": "license is medium risk",
-                    "risk_level": "medium",
-                    "risk_domain": "LicenseRisk",
-                    "pkg_name": "xmlrpc",
-                    "pkg_version": "0.3.0",
-                    "score": 0.7
-                    }
-                ],
-                "heuristics": {
-                    "something": {
-                        "description": "do stuff",
-                        "score": 3.14,
-                        "domain": "EngineeringRisk",
-                        "risk_level": "critical"
-                    }
-                },
-                "riskVectors": {
-                    "author": 0.90,
-                    "engineering": 0.42,
-                    "license": 1.0,
-                    "malicious_code": 1.0,
-                    "vulnerability": 1.0
-                },
-                "dependencies": [
-                    {
-                    "name": "bar",
-                    "version": "2.3.4",
+                    "name": "foo",
+                    "version": "1.0.0",
                     "type": "npm",
-                    "last_updated": 1603311564,
+                    "last_updated": 1603311864,
                     "license": null,
-                    "package_score": 60.0,
+                    "num_dependencies": 2,
+                    "num_vulnerabilities": 7,
+                    "package_score": 0.3,
                     "status": "incomplete",
                     "vulnerabilities": [],
-                    "heuristics": []
-                    },
-                    {
-                    "name": "baz",
-                    "version": "9.8.7",
-                    "type": "npm",
-                    "last_updated": 1603311564,
-                    "license": null,
-                    "package_score": 0.75,
-                    "status": "complete",
-                    "vulnerabilities": [],
-                    "heuristics": [
+                    "issues": [
                         {
-                        "data": null,
-                        "score": 42
+                            "title": "Commercial license risk in xmlrpc@0.3.0",
+                            "description": "license is medium risk",
+                            "severity": "medium",
+                            "domain": "license"
+                        }
+                    ],
+                    "heuristics": {
+                        "something": {
+                            "description": "do stuff",
+                            "score": 3.14,
+                            "domain": "engineering",
+                            "risk_level": "critical"
+                        }
+                    },
+                    "riskVectors": {
+                        "author": 0.9,
+                        "engineering": 0.42,
+                        "license": 1.0,
+                        "malicious_code": 1.0,
+                        "vulnerability": 1.0
+                    },
+                    "dependencies": [
+                        {
+                            "name": "bar",
+                            "version": "2.3.4",
+                            "type": "npm",
+                            "last_updated": 1603311564,
+                            "license": null,
+                            "package_score": 60.0,
+                            "status": "incomplete",
+                            "vulnerabilities": [],
+                            "heuristics": []
+                        },
+                        {
+                            "name": "baz",
+                            "version": "9.8.7",
+                            "type": "npm",
+                            "last_updated": 1603311564,
+                            "license": null,
+                            "package_score": 0.75,
+                            "status": "complete",
+                            "vulnerabilities": [],
+                            "heuristics": [
+                                {
+                                    "title": "Commercial license risk in xmlrpc@0.3.0",
+                                    "description": "license is medium risk",
+                                    "severity": "medium",
+                                    "domain": "license"
+                                }
+                            ],
+                            "riskVectors": {
+                                "author": 0.9,
+                                "engineering": 0.42,
+                                "license": 1.0,
+                                "malicious_code": 1.0,
+                                "vulnerability": 1.0
+                            },
+                            "dependencies": {
+                                "bar": "^2.3.4",
+                                "baz": "<9.8.7"
+                            }
                         }
                     ]
-                    }]}]}"#;
+                }
+            ]
+        }"#;
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))

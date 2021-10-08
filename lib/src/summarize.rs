@@ -310,7 +310,8 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             }
         }
 
-        issues.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+        issues.sort_by(|a, b| a.risk_level.partial_cmp(&b.risk_level).unwrap());
+        issues.reverse();
 
         for issue in issues {
             let rows: Vec<Row> = issue.into();
@@ -471,10 +472,7 @@ mod tests {
                     "title": "Commercial license risk in xmlrpc@0.3.0",
                     "description": "license is medium risk",
                     "risk_level": "medium",
-                    "risk_domain": "LicenseRisk",
-                    "pkg_name": "xmlrpc",
-                    "pkg_version": "0.3.0",
-                    "score": 0.7
+                    "domain": "license"
                     }"#;
         let issue: Issue = serde_json::from_str(issue).unwrap();
 

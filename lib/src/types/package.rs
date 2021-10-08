@@ -38,10 +38,15 @@ impl fmt::Display for RiskLevel {
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum RiskDomain {
+    #[serde(rename = "malicious_code")]
     MaliciousCode,
+    #[serde(rename = "vulnerability")]
     Vulnerabilities,
+    #[serde(rename = "engineering")]
     EngineeringRisk,
+    #[serde(rename = "author")]
     AuthorRisk,
+    #[serde(rename = "license")]
     LicenseRisk,
 }
 
@@ -62,21 +67,23 @@ impl fmt::Display for RiskDomain {
 pub struct Issue {
     pub title: String,
     pub description: String,
+    #[serde(alias = "severity")]
     pub risk_level: RiskLevel,
+    #[serde(alias = "domain")]
     pub risk_domain: RiskDomain,
-    pub pkg_name: String,
-    pub pkg_version: String,
-    pub score: f64,
 }
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeuristicResult {
     pub domain: RiskDomain,
     pub score: f64,
     pub risk_level: RiskLevel,
 }
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Vulnerability {
     pub cve: Vec<String>,
+    #[serde(rename = "severity")]
     pub base_severity: f32,
     pub risk_level: RiskLevel,
     pub title: String,
