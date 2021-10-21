@@ -14,24 +14,21 @@ fn main() {
 
     // Create tab completions files for some popular shells
     generate_to(
-        Bash,
-        &mut app, // We need to specify what generator to use
+        Bash, &mut app, // We need to specify what generator to use
         BIN_NAME, // We need to specify the bin name manually
         OUT_DIR,  // We need to specify where to write to
     )
     .unwrap();
 
     generate_to(
-        Zsh,
-        &mut app, // We need to specify what generator to use
+        Zsh, &mut app, // We need to specify what generator to use
         BIN_NAME, // We need to specify the bin name manually
         OUT_DIR,  // We need to specify where to write to
     )
     .unwrap();
 
     generate_to(
-        Fish,
-        &mut app, // We need to specify what generator to use
+        Fish, &mut app, // We need to specify what generator to use
         BIN_NAME, // We need to specify the bin name manually
         OUT_DIR,  // We need to specify where to write to
     )
