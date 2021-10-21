@@ -15,10 +15,10 @@ _phylum() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-c+[Sets a custom config file]' \
-'--config=[Sets a custom config file]' \
-'-t+[Set the timeout (in seconds) for requests to the Phylum api]' \
-'--timeout=[Set the timeout (in seconds) for requests to the Phylum api]' \
+'-c+[Sets a custom config file]:FILE: ' \
+'--config=[Sets a custom config file]:FILE: ' \
+'-t+[Set the timeout (in seconds) for requests to the Phylum api]:TIMEOUT: ' \
+'--timeout=[Set the timeout (in seconds) for requests to the Phylum api]:TIMEOUT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -38,8 +38,6 @@ _arguments "${_arguments_options[@]}" \
 '--prerelease[Update to the latest prerelease (vs. stable, default: false)]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 && ret=0
 ;;
 (history)
@@ -52,20 +50,19 @@ EXAMPLES
 
 # Show issues with severity of '\''critical'\'' in the '\''author'\'' and '\''engineering'\'' domains
 	--filter=crit,aut,eng
-]' \
+]: : ' \
 '-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \
 '--json[Produce output in json format (default: false)]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '::JOB_ID -- The job id to query (or `current` for the most recent job):' \
 ":: :_phylum__history_commands" \
 "*::: :->history" \
 && ret=0
-case $state in
+
+    case $state in
     (history)
         words=($line[2] "${words[@]}")
         (( CURRENT += 1 ))
@@ -73,10 +70,18 @@ case $state in
         case $line[2] in
             (project)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 '::project_name:' \
 '::job_id:' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" \
+'--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
         esac
@@ -87,12 +92,11 @@ esac
 _arguments "${_arguments_options[@]}" \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 ":: :_phylum__projects_commands" \
 "*::: :->projects" \
 && ret=0
-case $state in
+
+    case $state in
     (projects)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
@@ -100,29 +104,40 @@ case $state in
         case $line[1] in
             (create)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 ':name:' \
 && ret=0
 ;;
 (list)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
 (link)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 ':name:' \
 && ret=0
 ;;
 (set-thresholds)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 '::name:' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" \
+'--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
         esac
@@ -131,14 +146,12 @@ esac
 ;;
 (package)
 _arguments "${_arguments_options[@]}" \
-'-t+[The type of the package ("npm", "ruby", "pypi", etc.)]' \
-'--package-type=[The type of the package ("npm", "ruby", "pypi", etc.)]' \
+'-t+[The type of the package ("npm", "ruby", "pypi", etc.)]: : ' \
+'--package-type=[The type of the package ("npm", "ruby", "pypi", etc.)]: : ' \
 '-j[Produce output in json format (default: false)]' \
 '--json[Produce output in json format (default: false)]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '::name -- The name of the package.:' \
 '::version -- The version of the package.:' \
 && ret=0
@@ -147,12 +160,11 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 ":: :_phylum__auth_commands" \
 "*::: :->auth" \
 && ret=0
-case $state in
+
+    case $state in
     (auth)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
@@ -160,24 +172,28 @@ case $state in
         case $line[1] in
             (register)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
 (login)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
 (keys)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 ":: :_phylum__auth__keys_commands" \
 "*::: :->keys" \
 && ret=0
-case $state in
+
+    case $state in
     (keys)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
@@ -208,8 +224,16 @@ esac
 ;;
 (status)
 _arguments "${_arguments_options[@]}" \
-'--help[Print help information]' \
 '--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" \
+'--version[Print version information]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
 && ret=0
 ;;
         esac
@@ -220,13 +244,11 @@ esac
 _arguments "${_arguments_options[@]}" \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 && ret=0
 ;;
 (analyze)
 _arguments "${_arguments_options[@]}" \
-'-l+[]' \
+'-l+[]: : ' \
 '--filter=[Provide a filter used to limit the issues displayed
 
 EXAMPLES
@@ -235,7 +257,7 @@ EXAMPLES
 
 # Show issues with severity of '\''critical'\'' in the '\''author'\'' and '\''engineering'\'' domains
 	--filter=crit,aut,eng
-]' \
+]: : ' \
 '-v[Increase verbosity of api response.]' \
 '--verbose[Increase verbosity of api response.]' \
 '-j[Produce output in json format (default: false)]' \
@@ -243,38 +265,30 @@ EXAMPLES
 '-F[Force re-processing of packages (even if they already exist in the system)]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '::LOCKFILE -- The package lock file to submit.:' \
 && ret=0
 ;;
 (batch)
 _arguments "${_arguments_options[@]}" \
-'-f+[File (or piped stdin) containing the list of packages (format `<name>:<version>`)]' \
-'-t+[Package type (`npm`, `ruby`, etc)]' \
-'-l+[]' \
+'-f+[File (or piped stdin) containing the list of packages (format `<name>:<version>`)]: : ' \
+'-t+[Package type (`npm`, `ruby`, etc)]: : ' \
+'-l+[]: : ' \
 '-F[Force re-processing of packages (even if they already exist in the system)]' \
 '-L[]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 && ret=0
 ;;
 (version)
 _arguments "${_arguments_options[@]}" \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 && ret=0
 ;;
 (help)
 _arguments "${_arguments_options[@]}" \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 && ret=0
 ;;
         esac
@@ -310,6 +324,7 @@ _phylum__auth_commands() {
 'login:Login to an existing account' \
 'keys:Manage API keys' \
 'status:Return the current authentication status' \
+'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'phylum auth commands' commands "$@"
 }
@@ -328,15 +343,31 @@ _phylum__projects__create_commands() {
     local commands; commands=()
     _describe -t commands 'phylum projects create commands' commands "$@"
 }
+(( $+functions[_phylum__auth__help_commands] )) ||
+_phylum__auth__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'phylum auth help commands' commands "$@"
+}
 (( $+functions[_phylum__help_commands] )) ||
 _phylum__help_commands() {
     local commands; commands=()
     _describe -t commands 'phylum help commands' commands "$@"
 }
+(( $+functions[_phylum__history__help_commands] )) ||
+_phylum__history__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'phylum history help commands' commands "$@"
+}
+(( $+functions[_phylum__projects__help_commands] )) ||
+_phylum__projects__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'phylum projects help commands' commands "$@"
+}
 (( $+functions[_phylum__history_commands] )) ||
 _phylum__history_commands() {
     local commands; commands=(
 'project:Shows a list of projects associated with the user' \
+'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'phylum history commands' commands "$@"
 }
@@ -391,6 +422,7 @@ _phylum__projects_commands() {
 'list:List all existing projects' \
 'link:Link a repository to a project' \
 'set-thresholds:Set risk domain thresholds for a projects' \
+'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'phylum projects commands' commands "$@"
 }

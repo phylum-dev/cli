@@ -65,7 +65,6 @@ extern crate serde_json;
 extern crate tokio;
 extern crate url;
 
-use hyper::body::Buf;
 use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
@@ -569,8 +568,7 @@ impl RestClient {
 
             self.response_headers = res.headers().clone();
             let status = res.status();
-            let body = hyper::body::aggregate(res).await?.to_bytes();
-
+            let body = hyper::body::to_bytes(res).await?;
             let body = String::from_utf8_lossy(&body);
 
             Ok::<_, hyper::Error>((body.to_string(), status))

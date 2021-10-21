@@ -28,7 +28,7 @@ env_logger = "0.7.1"
 futures = "^0.3"
 histogram = "0.6.9"
 home = "0.5.3"
-hyper = "^0.13.2"
+hyper = "0.14.3"
 hyper-rustls = { version = "0.22.1", features = ["webpki-roots", "rustls-native-certs"] }
 lazy_static = "1.4.0"
 log = "^0.4.6"
