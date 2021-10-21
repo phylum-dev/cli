@@ -194,8 +194,8 @@ impl std::convert::From<hyper::Error> for Error {
     }
 }
 
-impl std::convert::From<tokio::time::Elapsed> for Error {
-    fn from(_e: tokio::time::Elapsed) -> Self {
+impl std::convert::From<tokio::time::error::Elapsed> for Error {
+    fn from(_e: tokio::time::error::Elapsed) -> Self {
         Error::TimeoutError
     }
 }
