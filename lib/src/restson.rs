@@ -270,7 +270,7 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => Client::builder().build(HttpsConnector::new().with_native_roots().with_webpki_roots()),
+            None => Client::builder().build(HttpsConnector::with_webpki_roots()),
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;
