@@ -29,7 +29,7 @@ futures = "^0.3"
 histogram = "0.6.9"
 home = "0.5.3"
 hyper = "^0.13.2"
-hyper-rustls = "0.21.0"
+hyper-rustls = { version = "0.22.1", features = ["webpki-roots", "rustls-native-certs"] }
 lazy_static = "1.4.0"
 log = "^0.4.6"
 minisign-verify = "0.1.8"
