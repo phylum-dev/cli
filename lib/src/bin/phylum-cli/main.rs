@@ -124,7 +124,12 @@ fn main() {
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
-    let mut api = PhylumApi::new(&config.connection.uri, timeout).unwrap_or_else(|err| {
+    let mut api = PhylumApi::new(
+        &config.connection.uri,
+        timeout,
+        matches.is_present("no-check-certificate"),
+    )
+    .unwrap_or_else(|err| {
         exit_error(err, Some("Error creating client"));
     });
 

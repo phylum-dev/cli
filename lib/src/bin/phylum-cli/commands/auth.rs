@@ -142,7 +142,6 @@ fn handle_auth_keys(
                 "Successfully created new API key: \n\t{}\n",
                 Green.paint(key)
             );
-            return;
         }
     } else if let Some(action) = matches.subcommand_matches("remove") {
         let token_id = action.value_of("key_id").unwrap();

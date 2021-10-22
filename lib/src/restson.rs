@@ -65,7 +65,6 @@ extern crate serde_json;
 extern crate tokio;
 extern crate url;
 
-use hyper::body::Buf;
 use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
@@ -148,6 +147,9 @@ pub struct Builder {
     /// Send null body
     send_null_body: bool,
 
+    /// Ignore certs
+    ignore_certs: bool,
+
     /// Hyper client to use for the connection
     client: Option<HyperClient>,
 }
@@ -195,8 +197,8 @@ impl std::convert::From<hyper::Error> for Error {
     }
 }
 
-impl std::convert::From<tokio::time::Elapsed> for Error {
-    fn from(_e: tokio::time::Elapsed) -> Self {
+impl std::convert::From<tokio::time::error::Elapsed> for Error {
+    fn from(_e: tokio::time::error::Elapsed) -> Self {
         Error::TimeoutError
     }
 }
@@ -212,6 +214,7 @@ impl Default for Builder {
         Self {
             timeout: Duration::from_secs(std::u64::MAX),
             send_null_body: true,
+            ignore_certs: false,
             client: None,
         }
     }
@@ -233,6 +236,12 @@ impl Builder {
     #[inline]
     pub fn send_null_body(mut self, value: bool) -> Self {
         self.send_null_body = value;
+        self
+    }
+
+    /// Ignore TLS certificates.
+    pub fn ignore_certs(mut self, value: bool) -> Self {
+        self.ignore_certs = value;
         self
     }
 
@@ -270,7 +279,14 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => Client::builder().build(HttpsConnector::new()),
+            None => {
+                if builder.ignore_certs {
+                    log::warn!("Not validating server certificate per user request.");
+                    Client::builder().build(HttpsConnector::without_cert_validation())
+                } else {
+                    Client::builder().build(HttpsConnector::with_native_roots())
+                }
+            }
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;
@@ -569,8 +585,7 @@ impl RestClient {
 
             self.response_headers = res.headers().clone();
             let status = res.status();
-            let body = hyper::body::aggregate(res).await?.to_bytes();
-
+            let body = hyper::body::to_bytes(res).await?;
             let body = String::from_utf8_lossy(&body);
 
             Ok::<_, hyper::Error>((body.to_string(), status))

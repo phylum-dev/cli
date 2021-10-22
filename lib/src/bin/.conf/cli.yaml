@@ -16,6 +16,10 @@ args:
         value_name: TIMEOUT
         about: Set the timeout (in seconds) for requests to the Phylum api
         takes_value: true
+    - no-check-certificate:
+        long: no-check-certificate
+        takes_value: false
+        about: Don't validate the server certificate when performing api requests
 subcommands:
     - update:
         about: Check for a new release of the Phylum CLI tool and update if one exists
