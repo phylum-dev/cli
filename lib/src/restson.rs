@@ -147,6 +147,9 @@ pub struct Builder {
     /// Send null body
     send_null_body: bool,
 
+    /// Ignore certs
+    ignore_certs: bool,
+
     /// Hyper client to use for the connection
     client: Option<HyperClient>,
 }
@@ -211,6 +214,7 @@ impl Default for Builder {
         Self {
             timeout: Duration::from_secs(std::u64::MAX),
             send_null_body: true,
+            ignore_certs: false,
             client: None,
         }
     }
@@ -232,6 +236,12 @@ impl Builder {
     #[inline]
     pub fn send_null_body(mut self, value: bool) -> Self {
         self.send_null_body = value;
+        self
+    }
+
+    /// Ignore TLS certificates.
+    pub fn ignore_certs(mut self, value: bool) -> Self {
+        self.ignore_certs = value;
         self
     }
 
@@ -269,7 +279,14 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => Client::builder().build(HttpsConnector::with_webpki_roots()),
+            None => {
+                if builder.ignore_certs {
+                    log::warn!("Not validating server certificate per user request.");
+                    Client::builder().build(HttpsConnector::without_cert_validation())
+                } else {
+                    Client::builder().build(HttpsConnector::with_native_roots())
+                }
+            }
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;

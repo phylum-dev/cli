@@ -8,12 +8,17 @@ pub struct PhylumApi {
 }
 
 impl PhylumApi {
-    pub fn new(base_url: &str, request_timeout: Option<u64>) -> Result<PhylumApi, Error> {
+    pub fn new(
+        base_url: &str,
+        request_timeout: Option<u64>,
+        ignore_certs: bool,
+    ) -> Result<PhylumApi, Error> {
         let timeout = request_timeout.unwrap_or(30);
         log::debug!("Setting request timeout to {} seconds", timeout);
 
         let mut client = RestClient::builder()
             .timeout(Duration::from_secs(timeout))
+            .ignore_certs(ignore_certs)
             .build(base_url)?;
 
         let yml = clap::load_yaml!("bin/.conf/cli.yaml");
@@ -216,13 +221,13 @@ mod tests {
     use super::*;
     #[test]
     fn create_client() {
-        let client = PhylumApi::new("http://127.0.0.1", None);
+        let client = PhylumApi::new("http://127.0.0.1", None, false);
         assert!(client.is_ok());
     }
 
     #[test]
     fn create_client_should_fail() {
-        let client = PhylumApi::new("not_a_real_url.123", None);
+        let client = PhylumApi::new("not_a_real_url.123", None, false);
         assert!(client.is_err());
     }
 
@@ -234,7 +239,7 @@ mod tests {
             .with_body(r#"{"access_token": "abcd1234", "refresh_token": "23456789"}"#)
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let res = client.authenticate("joe", "mypass");
         assert!(res.is_ok(), "{:?}", res);
     }
@@ -247,7 +252,7 @@ mod tests {
             .with_body(r#"{"access_token": "abcd1234", "refresh_token": "23456789"}"#)
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let jwt = JwtToken {
             access_token: "abcd1234".to_string(),
             refresh_token: Some("abcd1234".to_string()),
@@ -264,7 +269,7 @@ mod tests {
             .with_body(r#"{"job_id": "59482a54-423b-448d-8325-f171c9dc336b"}"#)
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let pkg = PackageDescriptor {
             name: "react".to_string(),
             version: "16.13.1".to_string(),
@@ -333,7 +338,7 @@ mod tests {
             )
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let res = client.get_status();
         assert!(res.is_ok(), "{:?}", res);
     }
@@ -388,7 +393,7 @@ mod tests {
             )
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let pkg = PackageDescriptor {
             name: "@schematics/angular".to_string(),
             version: "9.1.9".to_string(),
@@ -446,7 +451,7 @@ mod tests {
         )
         .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.get_job_status(&job);
         assert!(res.is_ok(), "{:?}", res);
@@ -520,7 +525,7 @@ mod tests {
         )
         .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.get_job_status_ext(&job);
         assert!(res.is_ok(), "{:?}", res);
@@ -537,7 +542,7 @@ mod tests {
         .with_body(r#"{"msg": "Job deleted"}"#)
         .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let res = client.cancel(&job);
         assert!(res.is_ok(), "{:?}", res);
@@ -560,7 +565,7 @@ mod tests {
             )
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let res = client.register("johnsmith@somedomain.com", "agreatpassword", "john smith");
         assert!(res.is_ok(), "{:?}", res);
     }
@@ -581,7 +586,7 @@ mod tests {
             )
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let res = client.create_api_token();
         assert!(res.is_ok(), "{:?}", res);
         let token = res.unwrap();
@@ -606,7 +611,7 @@ mod tests {
         .with_header("content-type", "application-json")
         .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let key = Key::from_str("b75e1f40-02a5-4580-a7d1-d842dbcc1aca").unwrap();
         let res = client.delete_api_token(&key);
         assert!(res.is_ok(), "{:?}", res);
@@ -640,7 +645,7 @@ mod tests {
             )
             .create();
 
-        let mut client = PhylumApi::new(&mockito::server_url(), None).unwrap();
+        let mut client = PhylumApi::new(&mockito::server_url(), None, false).unwrap();
         let res = client.get_api_tokens();
 
         assert!(res.is_ok(), "{:?}", res);

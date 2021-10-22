@@ -2,6 +2,7 @@ complete -c phylum -n "__fish_use_subcommand" -s c -l config -d 'Sets a custom c
 complete -c phylum -n "__fish_use_subcommand" -s t -l timeout -d 'Set the timeout (in seconds) for requests to the Phylum api' -r
 complete -c phylum -n "__fish_use_subcommand" -s h -l help -d 'Print help information'
 complete -c phylum -n "__fish_use_subcommand" -s V -l version -d 'Print version information'
+complete -c phylum -n "__fish_use_subcommand" -l no-check-certificate -d 'Don\'t validate the server certificate when performing api requests'
 complete -c phylum -n "__fish_use_subcommand" -f -a "update" -d 'Check for a new release of the Phylum CLI tool and update if one exists'
 complete -c phylum -n "__fish_use_subcommand" -f -a "history" -d 'Return information about historical scans'
 complete -c phylum -n "__fish_use_subcommand" -f -a "projects" -d 'Create, list, link and set thresholds for projects'

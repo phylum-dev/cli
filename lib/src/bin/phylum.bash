@@ -79,7 +79,7 @@ _phylum() {
 
     case "${cmd}" in
         phylum)
-            opts="-h -V -c -t --help --version --config --timeout update history projects package auth ping analyze batch version help"
+            opts="-h -V -c -t --help --version --config --timeout --no-check-certificate update history projects package auth ping analyze batch version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

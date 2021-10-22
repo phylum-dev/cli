@@ -23,6 +23,7 @@ _phylum() {
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
+'--no-check-certificate[Don'\''t validate the server certificate when performing api requests]' \
 ":: :_phylum_commands" \
 "*::: :->phylum" \
 && ret=0
