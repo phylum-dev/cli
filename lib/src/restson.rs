@@ -57,9 +57,6 @@ SOFTWARE.
 //! }
 //! ```
 
-use base64;
-use hyper;
-use hyper::body::Buf;
 use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
@@ -146,6 +143,9 @@ pub struct Builder {
     /// Send null body
     send_null_body: bool,
 
+    /// Ignore certs
+    ignore_certs: bool,
+
     /// Hyper client to use for the connection
     client: Option<HyperClient>,
 }
@@ -210,6 +210,7 @@ impl Default for Builder {
         Self {
             timeout: Duration::from_secs(std::u64::MAX),
             send_null_body: true,
+            ignore_certs: false,
             client: None,
         }
     }
@@ -231,6 +232,12 @@ impl Builder {
     #[inline]
     pub fn send_null_body(mut self, value: bool) -> Self {
         self.send_null_body = value;
+        self
+    }
+
+    /// Ignore TLS certificates.
+    pub fn ignore_certs(mut self, value: bool) -> Self {
+        self.ignore_certs = value;
         self
     }
 
@@ -268,7 +275,14 @@ impl RestClient {
     fn with_builder(url: &str, builder: Builder) -> Result<RestClient, Error> {
         let client = match builder.client {
             Some(client) => client,
-            None => Client::builder().build(HttpsConnector::with_native_roots()),
+            None => {
+                if builder.ignore_certs {
+                    log::warn!("Not validating server certificate per user request.");
+                    Client::builder().build(HttpsConnector::without_cert_validation())
+                } else {
+                    Client::builder().build(HttpsConnector::with_native_roots())
+                }
+            }
         };
 
         let baseurl = Url::parse(url).map_err(|_| Error::UrlError)?;
@@ -592,20 +606,8 @@ impl RestClient {
             self.response_headers = res.headers().clone();
 
             let status = res.status();
-
-            let content_length = res
-                .headers()
-                .get("Content-Length")
-                .and_then(|header_value| header_value.to_str().ok())
-                .and_then(|s| s.parse::<usize>().ok())
-                // Otherwise max message size of 10 megabytes
-                .unwrap_or(10 * 1024 * 1024);
-
-            let bytes = hyper::body::aggregate(res)
-                .await?
-                .copy_to_bytes(content_length);
-
-            let body = String::from_utf8_lossy(&bytes);
+            let body = hyper::body::to_bytes(res).await?;
+            let body = String::from_utf8_lossy(&body);
 
             Ok::<_, hyper::Error>((body.to_string(), status))
         };

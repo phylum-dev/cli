@@ -32,6 +32,7 @@ impl PhylumApi {
         auth_info: &mut AuthInfo,
         api_url: &str,
         request_timeout: Option<u64>,
+        ignore_certs: bool,
     ) -> Result<Self, PhylumApiError> {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &auth_info.offline_access {
@@ -41,11 +42,11 @@ impl PhylumApi {
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
 
-        let timeout = request_timeout.unwrap_or(30);
-        log::debug!("Setting request timeout to {} seconds", timeout);
-
         let mut client = RestClient::builder()
-            .timeout(Duration::from_secs(timeout))
+            .timeout(Duration::from_secs(
+                request_timeout.unwrap_or(std::u64::MAX),
+            ))
+            .ignore_certs(ignore_certs)
             .build(api_url)?;
 
         // the cli runs a command or a few short commands then exits, so we do
@@ -217,7 +218,7 @@ mod tests {
     {
         let mock_server = build_mock_server().await;
         let mut auth_info = build_unauthenticated_auth_info(&mock_server);
-        PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None).await?;
+        PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None, false).await?;
         // After auth, auth_info should have a offline access token
         assert!(
             auth_info.offline_access.is_some(),

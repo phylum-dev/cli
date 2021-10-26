@@ -129,11 +129,16 @@ async fn main() {
         exit_ok(None::<String>);
     }
 
-    let mut api = PhylumApi::new(&mut config.auth_info, &config.connection.uri, timeout)
-        .await
-        .unwrap_or_else(|err| {
-            exit_error(err, Some("Error creating client"));
-        });
+    let mut api = PhylumApi::new(
+        &mut config.auth_info,
+        &config.connection.uri,
+        timeout,
+        matches.is_present("no-check-certificate"),
+    )
+    .await
+    .unwrap_or_else(|err| {
+        exit_error(err, Some("Error creating client"));
+    });
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
     if let Err(error) = save_config(config_path, &config) {

@@ -144,6 +144,7 @@ pub mod mockito {
             &mut build_authenticated_auth_info(mock_server),
             mock_server.uri().as_str(),
             None,
+            false,
         )
         .await?;
         Ok(phylum)
