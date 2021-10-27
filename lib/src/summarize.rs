@@ -29,12 +29,13 @@ impl Histogram {
                 continue;
             }
 
-            let mut bucket_id = ((y - min) / step) as usize;
+            let mut bucket_id = ((y - min) / step).round() as usize;
 
             // Account for packages with a "perfect" (i.e. 1.0) score
             // This is generally unlikely but possible with packages that have
             //  not yet had analytics run on them
-            if bucket_id == values.len() {
+            // Also account for scores on the edge 10, 20, 30...
+            if y != 0.0 && (y * 100.0) % 10.0 == 0.0 {
                 bucket_id -= 1;
             }
 
@@ -59,6 +60,7 @@ impl Histogram {
             buckets.push((acc, acc + step));
             acc += step;
         }
+        buckets.pop();
         buckets
     }
 }
@@ -70,23 +72,28 @@ impl fmt::Display for Histogram {
             56.0 * f32::log2(s) / f32::log2(max)
         };
 
-        let output =
-            self.values
-                .iter()
-                .zip(self.buckets().iter())
-                .fold("".to_string(), |acc, x| {
-                    vec![
-                        acc,
-                        format!(
-                            "{:>4} - {:<4} [{:>5}] {}",
-                            (100.0 * x.1 .0).round() as u32,
-                            (100.0 * x.1 .1).round() as u32,
-                            x.0,
-                            "█".repeat(scale(*x.0 as f32) as usize)
-                        ),
-                    ]
-                    .join("\n")
-                });
+        let output = self
+            .values
+            .iter()
+            .rev()
+            .zip(self.buckets().iter().rev())
+            .fold("".to_string(), |acc, x| {
+                let min = (100.0 * x.1 .0).round() as u32;
+                vec![
+                    acc,
+                    format!(
+                        "{:>4} - {:<4} [{:>5}] {}",
+                        match min {
+                            0 => min,
+                            _ => min + 1,
+                        },
+                        (100.0 * x.1 .1).round() as u32,
+                        x.0,
+                        "█".repeat(scale(*x.0 as f32) as usize)
+                    ),
+                ]
+                .join("\n")
+            });
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
         write!(f, "{}", output)
