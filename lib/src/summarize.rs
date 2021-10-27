@@ -39,7 +39,7 @@ impl Histogram {
                 bucket_id -= 1;
             }
 
-            if bucket_id <= values.len() {
+            if bucket_id < values.len() {
                 values[bucket_id as usize] += 1;
             }
         }
