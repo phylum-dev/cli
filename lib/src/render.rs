@@ -265,7 +265,7 @@ impl Renderable for PackageType {
         let label = match self {
             PackageType::Npm => "NPM",
             PackageType::Ruby => "RubyGems",
-            PackageType::Python => "Python",
+            PackageType::Python => "PyPI",
             PackageType::Java => "Java",
         };
         label.to_owned()
