@@ -1,4 +1,5 @@
 use clap::{load_yaml, App, AppSettings};
+use env_logger::Env;
 use home::home_dir;
 use spinners::{Spinner, Spinners};
 use std::process;
@@ -27,7 +28,7 @@ use print::*;
 use crate::commands::projects::handle_projects;
 
 fn main() {
-    env_logger::init();
+    env_logger::from_env(Env::default().default_filter_or("warn")).init();
 
     let yml = load_yaml!("../.conf/cli.yaml");
     let app = App::from(yml)
@@ -124,14 +125,17 @@ fn main() {
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
-    let mut api = PhylumApi::new(
-        &config.connection.uri,
-        timeout,
-        matches.is_present("no-check-certificate"),
-    )
-    .unwrap_or_else(|err| {
-        exit_error(err, Some("Error creating client"));
-    });
+
+    let ignore_certs =
+        matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
+    if ignore_certs {
+        log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
+
+    let mut api =
+        PhylumApi::new(&config.connection.uri, timeout, ignore_certs).unwrap_or_else(|err| {
+            exit_error(err, Some("Error creating client"));
+        });
 
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping();
