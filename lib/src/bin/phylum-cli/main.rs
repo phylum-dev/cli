@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{load_yaml, App, AppSettings};
+use env_logger::Env;
 use home::home_dir;
 use spinners::{Spinner, Spinners};
 
@@ -26,7 +27,7 @@ use crate::commands::projects::handle_projects;
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    env_logger::from_env(Env::default().default_filter_or("warn")).init();
 
     let yml = load_yaml!("../.conf/cli.yaml");
     let app = App::from(yml)
@@ -129,11 +130,17 @@ async fn main() {
         exit_ok(None::<String>);
     }
 
+    let ignore_certs =
+        matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
+    if ignore_certs {
+        log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
+
     let mut api = PhylumApi::new(
         &mut config.auth_info,
         &config.connection.uri,
         timeout,
-        matches.is_present("no-check-certificate"),
+        ignore_certs,
     )
     .await
     .unwrap_or_else(|err| {

@@ -28,6 +28,7 @@ pub struct Config {
     pub request_type: PackageType,
     pub packages: Option<Packages>,
     pub last_update: Option<usize>,
+    pub ignore_certs: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -134,6 +135,7 @@ mod tests {
             request_type: PackageType::Npm,
             packages: Some(packages),
             last_update: None,
+            ignore_certs: None,
         };
         let temp_dir = temp_dir();
         let test_config_file = temp_dir.as_path().join("test_config");
