@@ -1,5 +1,3 @@
-use crate::types::*;
-use minisign_verify::{PublicKey, Signature};
 use std::env;
 use std::fs;
 use std::io;
@@ -8,21 +6,33 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::path::PathBuf;
 
+use futures::Future;
+use minisign_verify::{PublicKey, Signature};
+use reqwest::{Client, Response};
+
 #[cfg(test)]
-use mockito;
+use wiremock::MockServer;
+
+use crate::types::*;
 
 // Phylum's public key for Minisign.
 const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
 
+const GITHUB_URI: &str = "https://api.github.com";
+
 #[derive(Debug)]
 pub struct ApplicationUpdater {
     pubkey: PublicKey,
+    github_uri: String,
 }
 
 impl Default for ApplicationUpdater {
     fn default() -> Self {
         let pubkey = PublicKey::from_base64(PUBKEY).expect("Unable to decode the public key");
-        ApplicationUpdater { pubkey }
+        ApplicationUpdater {
+            pubkey,
+            github_uri: GITHUB_URI.to_owned(),
+        }
     }
 }
 
@@ -40,6 +50,16 @@ fn tmp_path(filename: &str) -> Option<String> {
 /// Utility for handling updating the Phylum installation in place, along with
 /// facilities for validating the binary signature before installation.
 impl ApplicationUpdater {
+    /// Build a instance for use in tests
+    #[cfg(test)]
+    fn build_test_instance(mock_server: MockServer) -> Self {
+        let pubkey = PublicKey::from_base64(PUBKEY).expect("Unable to decode the public key");
+        ApplicationUpdater {
+            pubkey,
+            github_uri: mock_server.uri(),
+        }
+    }
+
     /// Locate the currently installed asset on the given host.
     fn installed_asset(
         &self,
@@ -56,21 +76,21 @@ impl ApplicationUpdater {
     }
 
     /// Generic function for fetching data from Github.
-    fn get_github<T>(
-        &self,
-        url: &str,
-        f: impl Fn(reqwest::blocking::Response) -> Option<T>,
-    ) -> Option<T> {
-        let client = reqwest::blocking::Client::builder()
-            .user_agent("phylum-cli")
-            .build();
+    async fn get_github<T, C, F>(&self, url: &str, f: C) -> Option<T>
+    where
+        F: Future<Output = Option<T>>,
+        C: Fn(Response) -> F,
+    {
+        // let q = move |r: i32| async move { r };
+
+        let client = Client::builder().user_agent("phylum-cli").build();
 
         match client {
-            Ok(c) => {
-                let resp = c.get(url).send();
+            Ok(client) => {
+                let response = client.get(url).send().await;
 
-                match resp {
-                    Ok(r) => f(r),
+                match response {
+                    Ok(response) => f(response).await,
                     Err(_) => None,
                 }
             }
@@ -79,41 +99,37 @@ impl ApplicationUpdater {
     }
 
     /// Check for an update by querying the Github releases page.
-    pub fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
-        #[cfg(test)]
-        let github_uri = &mockito::server_url();
-
-        #[cfg(not(test))]
-        let github_uri = "https://api.github.com";
-
+    pub async fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
         let ver = if prerelease {
-            let url = format!("{}/repos/phylum-dev/cli/releases", github_uri);
+            let url = format!("{}/repos/phylum-dev/cli/releases", self.github_uri);
 
-            self.get_github(url.as_str(), |r| -> Option<GithubRelease> {
-                let data = r.json::<Vec<GithubRelease>>();
+            self.get_github(url.as_str(), |r| async move {
+                let data = r.json::<Vec<GithubRelease>>().await;
 
                 match data {
-                    Ok(d) => Some(d[0].to_owned()),
-                    Err(e) => {
-                        log::warn!("Failed latest version check: {:?}", e);
+                    Ok(data) => Some(data[0].to_owned()),
+                    Err(error) => {
+                        log::warn!("Failed latest version check: {:?}", error);
                         None
                     }
                 }
             })
+            .await
         } else {
-            let url = format!("{}/repos/phylum-dev/cli/releases/latest", github_uri);
+            let url = format!("{}/repos/phylum-dev/cli/releases/latest", self.github_uri);
 
-            self.get_github(url.as_str(), |r| -> Option<GithubRelease> {
-                let data = r.json::<GithubRelease>();
+            self.get_github(url.as_str(), |r| async move {
+                let data = r.json::<GithubRelease>().await;
 
                 match data {
-                    Ok(d) => Some(d),
-                    Err(e) => {
-                        log::warn!("Failed latest version check: {:?}", e);
+                    Ok(data) => Some(data),
+                    Err(error) => {
+                        log::warn!("Failed latest version check: {:?}", error);
                         None
                     }
                 }
             })
+            .await
         };
 
         log::debug!("Found latest version: {:?}", ver);
@@ -125,28 +141,27 @@ impl ApplicationUpdater {
     ///
     /// On success, writes the requested file to the temporary system folder
     /// with the provided filename. Returns the path to the written file.
-    fn download_file(
+    async fn download_file(
         &self,
         latest: &GithubReleaseAsset,
         filename: &str,
     ) -> Result<String, std::io::Error> {
-        let binary_path = self.get_github(
-            latest.browser_download_url.as_str(),
-            |r| -> Option<String> {
+        let binary_path = self
+            .get_github(latest.browser_download_url.as_str(), |r| async move {
                 let dest = match tmp_path(filename) {
-                    Some(x) => x,
+                    Some(path) => path,
                     None => return None,
                 };
 
-                let data = r.bytes().ok()?;
+                let data = r.bytes().await.ok()?;
 
                 let mut file =
                     std::fs::File::create(&dest).expect("Failed to create temporary update file");
                 file.write_all(&data).expect("Failed to write update file");
 
-                Some(dest)
-            },
-        );
+                Option::Some::<String>(dest)
+            })
+            .await;
 
         match binary_path {
             Some(ret) => Ok(ret),
@@ -192,7 +207,7 @@ impl ApplicationUpdater {
     /// only compiling for these OSes and architectures.
     ///
     /// Until we update the releases, this should suffice.
-    pub fn do_update(&self, latest: GithubRelease) -> Result<String, std::io::Error> {
+    pub async fn do_update(&self, latest: GithubRelease) -> Result<String, std::io::Error> {
         debug!("Performing the update process");
         let latest_version = &latest.name;
 
@@ -225,9 +240,11 @@ impl ApplicationUpdater {
         let sig_asset_url = self.find_github_asset(&latest, minisign_name.as_str())?;
 
         debug!("Downloading the update files");
-        let bin = self.download_file(bin_asset_url, "phylum.update")?;
-        let bash = self.download_file(bash_asset_url, shell_asset_name)?;
-        let sig = self.download_file(sig_asset_url, "phylum.update.minisig")?;
+        let bin = self.download_file(bin_asset_url, "phylum.update").await?;
+        let bash = self.download_file(bash_asset_url, shell_asset_name).await?;
+        let sig = self
+            .download_file(sig_asset_url, "phylum.update.minisig")
+            .await?;
 
         debug!("Verifying the binary signature before move");
         if !self.has_valid_signature(bin.as_str(), sig.as_str()) {
@@ -300,10 +317,13 @@ impl ApplicationUpdater {
 mod tests {
     use crate::update::ApplicationUpdater;
     use minisign_verify::PublicKey;
-    use mockito::mock;
     use std::fs;
     use std::fs::File;
     use std::io::prelude::*;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, ResponseTemplate};
+
+    use crate::test::mockito::*;
 
     #[test]
     fn creating_application() {
@@ -314,24 +334,26 @@ mod tests {
         assert!(correct_pubkey == updater.pubkey);
     }
 
-    #[test]
-    fn version_check() {
-        let _m = mock("GET", "/repos/phylum-dev/cli/releases/latest")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                r#"{ 
-                         "name": "1.2.3",
-                         "assets": [
-                           { "browser_download_url": "https://foo.example.com", "name": "foo" },
-                           { "browser_download_url": "https://bar.example.com", "name": "bar" }
-                         ] 
-                       }"#,
-            )
-            .create();
+    #[tokio::test]
+    async fn version_check() {
+        let body = r#"{
+            "name": "1.2.3",
+            "assets": [
+              { "browser_download_url": "https://foo.example.com", "name": "foo" },
+              { "browser_download_url": "https://bar.example.com", "name": "bar" }
+            ]
+          }"#;
 
-        let updater = ApplicationUpdater::default();
-        let latest = updater.get_latest_version(false).unwrap();
+        let mock_server = build_mock_server().await;
+        Mock::given(method("GET"))
+            .and(path("/repos/phylum-dev/cli/releases/latest"))
+            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
+            .mount(&mock_server)
+            .await;
+
+        let updater = ApplicationUpdater::build_test_instance(mock_server);
+        let latest = updater.get_latest_version(false).await.unwrap();
+        log::error!("{:?}", latest);
         assert!("1.2.3" == latest.name);
         assert!(updater.needs_update("1.0.2", &latest));
 

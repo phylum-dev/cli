@@ -21,239 +21,194 @@ args:
         takes_value: false
         about: Don't validate the server certificate when performing api requests
 subcommands:
-    - update:
-        about: Check for a new release of the Phylum CLI tool and update if one exists
-        args:
-            - prerelease:
-                required: false
-                about: "Update to the latest prerelease (vs. stable, default: false)"
-                short: p
-                long: prerelease
-    - history:
-        about: Return information about historical scans
-        args:
-            - JOB_ID:
-                required: false
-                about: The job id to query (or `current` for the most recent job)
-            - verbose:
-                short: v 
-                long: verbose
-                about: Increase verbosity of api response.
-                takes_value: false
-                required: false
-            - filter:
-                long: filter
-                about: "Provide a filter used to limit the issues displayed
+  - update:
+      about: Check for a new release of the Phylum CLI tool and update if one exists
+      args:
+        - prerelease:
+            required: false
+            about: "Update to the latest prerelease (vs. stable, default: false)"
+            short: p
+            long: prerelease
+  - history:
+      about: Return information about historical scans
+      args:
+        - JOB_ID:
+            required: false
+            about: The job id to query (or `current` for the most recent job)
+        - verbose:
+            short: v
+            long: verbose
+            about: Increase verbosity of api response.
+            takes_value: false
+            required: false
+        - filter:
+            long: filter
+            about: "Provide a filter used to limit the issues displayed
 
 
-                        EXAMPLES
+              EXAMPLES
 
-                            # Show only issues with severity of at least 'high'
+              # Show only issues with severity of at least 'high'
 
-                            \t--filter=high
-
-
-                            # Show issues with severity of 'critical' in the 'author'
-                            and 'engineering' domains
-
-                        \t--filter=crit,aut,eng
-
-                        "
-                takes_value: true
-                required: false
-            - json:
-                short: j
-                long: json
-                about: "Produce output in json format (default: false)"
-        subcommands:
-            - project:
-                about: Shows a list of projects associated with the user
-                args:
-                    - project_name:
-                        required: false
-                        takes_value: true
-                        index: 1
-                    - job_id:
-                        required: false
-                        takes_value: true
-                        index: 2
-    - projects:
-        about: Create, list, link and set thresholds for projects
-        subcommands:
-            - create:
-                about: Create a new project
-                args:
-                    - name:
-                        required: true 
-                        takes_value: true
-                        index: 1
-            - list:
-                about: List all existing projects
-            - link:
-                about: Link a repository to a project
-                args:
-                    - name:
-                        required: true 
-                        takes_value: true
-                        index: 1
-            - set-thresholds:
-                about: Set risk domain thresholds for a projects
-                args:
-                    - name:
-                        required: false 
-                        takes_value: true
-                        index: 1
-    - package:
-        about: Retrieve the details of a specific packge
-        args:
-            - name:
-                about: The name of the package.
-                takes_value: true
-                required: false
-                index: 1
-            - version:
-                about: The version of the package.
-                takes_value: true
-                required: false
-                index: 2
-            - type:
-                about: The type of the package ("npm", "ruby", "pypi", etc.)
-                short: t
-                long: package-type
-                takes_value: true
-                required: false
-            - json:
-                short: j
-                long: json
-                about: "Produce output in json format (default: false)"
-    - auth:
-        about: Manage authentication, registration, and API keys
-        subcommands:
-            - register:
-                about: Register a new account
-            - login:
-                about: Login to an existing account
-            - keys:
-                about: Manage API keys
-                after_help: "EXAMPLES
+              \t--filter=high
 
 
-                             # List existing active API keys
+              # Show issues with severity of 'critical' in the 'author'
+              and 'engineering' domains
+
+              \t--filter=crit,aut,eng
+
+              "
+            takes_value: true
+            required: false
+        - json:
+            short: j
+            long: json
+            about: "Produce output in json format (default: false)"
+      subcommands:
+        - project:
+            about: Shows a list of projects associated with the user
+            args:
+              - project_name:
+                  required: false
+                  takes_value: true
+                  index: 1
+              - job_id:
+                  required: false
+                  takes_value: true
+                  index: 2
+  - projects:
+      about: Create, list, link and set thresholds for projects
+      subcommands:
+        - create:
+            about: Create a new project
+            args:
+              - name:
+                  required: true
+                  takes_value: true
+                  index: 1
+        - list:
+            about: List all existing projects
+        - link:
+            about: Link a repository to a project
+            args:
+              - name:
+                  required: true
+                  takes_value: true
+                  index: 1
+        - set-thresholds:
+            about: Set risk domain thresholds for a projects
+            args:
+              - name:
+                  required: false
+                  takes_value: true
+                  index: 1
+  - package:
+      about: Retrieve the details of a specific packge
+      args:
+        - name:
+            about: The name of the package.
+            takes_value: true
+            required: false
+            index: 1
+        - version:
+            about: The version of the package.
+            takes_value: true
+            required: false
+            index: 2
+        - type:
+            about: The type of the package ("npm", "ruby", "pypi", etc.)
+            short: t
+            long: package-type
+            takes_value: true
+            required: false
+        - json:
+            short: j
+            long: json
+            about: "Produce output in json format (default: false)"
+  - auth:
+      about: Manage authentication, registration, and API keys
+      subcommands:
+        - register:
+            about: Register a new account
+        - login:
+            about: Login to an existing account
+        - status:
+            about: Return the current authentication status
+  - ping:
+      about: Ping the remote system to verify it is available
+  - analyze:
+      about: Submit a request for analysis to the processing system
+      args:
+        - LOCKFILE:
+            about: "The package lock file to submit."
+            required: false
+        - label:
+            short: l
+            takes_value: true
+            required: false
+        - verbose:
+            short: v
+            long: verbose
+            about: Increase verbosity of api response.
+            takes_value: false
+            required: false
+        - filter:
+            long: filter
+            about: "Provide a filter used to limit the issues displayed
 
 
-                             \tphylum auth keys list
+              EXAMPLES
+
+              # Show only issues with severity of at least 'high'
+
+              \t--filter=high
 
 
-                             # Create new API key
+              # Show issues with severity of 'critical' in the 'author'
+              and 'engineering' domains
 
+              \t--filter=crit,aut,eng
 
-                             \tphylum auth keys create
-
-
-                             # Remove (deactivate) an API key
-
-
-                             \tphylum auth keys remove <api-key>
-
-
-                             "
-                subcommands:
-                    - create:
-                        about: Create a new API key
-                        after_help: "EXAMPLES
-
-                                     # Create a new API key
-                                     
-                                     \t phylum auth create
-
-                                     "
-                    - list:
-                        about: List current API keys
-                    - remove:
-                        about: Deactivate an API key
-                        args:
-                            - key_id:
-                                required: true
-                                takes_value: true
-                                index: 1
-            - status:
-                about: Return the current authentication status
-
-    - ping:
-        about: Ping the remote system to verify it is available
-    - analyze:
-        about: Submit a request for analysis to the processing system
-        args:
-            - LOCKFILE:
-                about: "The package lock file to submit."
-                required: false
-            - label:
-                short: l
-                takes_value: true
-                required: false
-            - verbose:
-                short: v
-                long: verbose
-                about: Increase verbosity of api response.
-                takes_value: false
-                required: false
-            - json:
-                short: j
-                long: json
-                about: "Produce output in json format (default: false)"
-            - filter:
-                long: filter
-                about: "Provide a filter used to limit the issues displayed
-
-
-                        EXAMPLES
-
-                            # Show only issues with severity of at least 'high'
-
-                            \t--filter=high
-
-
-                            # Show issues with severity of 'critical' in the 'author'
-                            and 'engineering' domains
-
-                        \t--filter=crit,aut,eng
-
-                        "
-                takes_value: true
-                required: false
-            - force:
-                short: F
-                about: Force re-processing of packages (even if they already exist in the system)
-                takes_value: false
-                required: false
-    - batch:
-        about: Submits a batch of requests to the processing system
-        settings:
-            - hidden
-        args:
-            - file:
-                short: f
-                about: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
-                takes_value: true
-                required: false
-            - type:
-                short: t
-                about: Package type (`npm`, `ruby`, etc)
-                takes_value: true
-                required: false
-            - force:
-                short: F
-                about: Force re-processing of packages (even if they already exist in the system)
-                takes_value: false
-                required: false
-            - low-priority:
-                short: L
-                takes_value: false
-                required: false
-            - label:
-                short: l
-                takes_value: true
-                required: false
-    - version:
-        about: Display application version
-
+              "
+            takes_value: true
+            required: false
+        - json:
+            short: j
+            long: json
+            about: "Produce output in json format (default: false)"
+        - force:
+            short: F
+            about: Force re-processing of packages (even if they already exist in the system)
+            takes_value: false
+            required: false
+  - batch:
+      about: Submits a batch of requests to the processing system
+      settings:
+        - hidden
+      args:
+        - file:
+            short: f
+            about: File (or piped stdin) containing the list of packages (format `<name>:<version>`)
+            takes_value: true
+            required: false
+        - type:
+            short: t
+            about: Package type (`npm`, `ruby`, etc)
+            takes_value: true
+            required: false
+        - force:
+            short: F
+            about: Force re-processing of packages (even if they already exist in the system)
+            takes_value: false
+            required: false
+        - low-priority:
+            short: L
+            takes_value: false
+            required: false
+        - label:
+            short: l
+            takes_value: true
+            required: false
+  - version:
+      about: Display application version

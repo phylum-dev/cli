@@ -20,40 +20,46 @@ clap = { version = "3.0.0-beta.4", features = ["yaml"] }
 
 [dependencies]
 ansi_term = "0.12.1"
+anyhow = "1.0.44"
 base64 = "0.11"
 chrono = { version = "^0.4", features = ["serde"] }
+cidr = "0.2.0"
 clap = { version = "3.0.0-beta.4", features = ["yaml"] }
 dialoguer = "0.8.0"
 env_logger = "0.7.1"
 futures = "^0.3"
 histogram = "0.6.9"
 home = "0.5.3"
-hyper = "0.14.3"
-#hyper-rustls = { version = "0.22.1", features = ["webpki-roots", "rustls-native-certs"] }
+hyper = "^0.14"
 hyper-rustls = { git = "https://github.com/phylum-dev/hyper-rustls", branch = "master", features = ["webpki-roots", "rustls-native-certs"] }
 lazy_static = "1.4.0"
 log = "^0.4.6"
+maplit = "1.0.2"
 minisign-verify = "0.1.8"
 nom = "6.1.2"
+open = "2.0.1"
 prettytable-rs = "0.8.0"
+rand = "0.8.4"
 reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls"], default-features = false }
+routerify = { version = "2.2.0", features =["all"] }
 rustls = "0.19.1"
 serde = { version = "^1.0", features = ["derive"] }
 serde_derive = "1.0"
 serde_json = "^1.0"
 serde_yaml = "0.8.14"
+sha2 = "0.9.8"
 shellexpand = "2.0.0"
 spinners = "1.2.0"
+static_init = "1.0.1"
 textwrap = "0.13.4"
-#tokio = { version = "^0.2", features = ["full"] }
+thiserror = "1.0.29"
 tokio = { version = "^1.0", features = ["full"] }
 toml = "0.5.8"
-url = "2"
+url = { version = "2", features = ["serde"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 yaml-rust = "*"
 zeroize = "1.4.0"
 
 [dev-dependencies]
 assert_cmd = "1.0.3"
-mockito = "0.27.0"
-
+wiremock = "0.5.7"

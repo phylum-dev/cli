@@ -5,6 +5,8 @@ extern crate serde_derive;
 
 use phylum_cli::restson::{Error, RestClient, RestPath};
 
+mod logging;
+
 #[derive(Serialize, Deserialize)]
 struct HttpBinPost {
     data: String,
@@ -22,49 +24,49 @@ impl RestPath<()> for HttpBinPost {
     }
 }
 
-#[test]
-fn basic_post() {
+#[tokio::test]
+async fn basic_post() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let data = HttpBinPost {
         data: String::from("test data"),
     };
-    client.post((), &data).unwrap();
+    client.post((), &data).await.unwrap();
 }
 
-#[test]
-fn post_query_params() {
+#[tokio::test]
+async fn post_query_params() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinPost {
         data: String::from("test data"),
     };
-    client.post_with((), &data, &params).unwrap();
+    client.post_with((), &data, &params).await.unwrap();
 }
 
-#[test]
-fn post_capture() {
+#[tokio::test]
+async fn post_capture() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let data = HttpBinPost {
         data: String::from("test data"),
     };
-    let resp: HttpBinPostResp = client.post_capture((), &data).unwrap();
+    let resp: HttpBinPostResp = client.post_capture((), &data).await.unwrap();
 
     assert_eq!(resp.json.data, "test data");
     assert_eq!(resp.url, "https://httpbin.org/post");
 }
 
-#[test]
-fn post_capture_query_params() {
+#[tokio::test]
+async fn post_capture_query_params() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinPost {
         data: String::from("test data"),
     };
-    let resp: HttpBinPostResp = client.post_capture_with((), &data, &params).unwrap();
+    let resp: HttpBinPostResp = client.post_capture_with((), &data, &params).await.unwrap();
 
     assert_eq!(resp.json.data, "test data");
     assert_eq!(resp.url, "https://httpbin.org/post?a=2&b=abcd");
