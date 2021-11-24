@@ -2,9 +2,7 @@
 connection:
   uri: "https://api.phylum.io"
 auth_info:
-  user: someone@someorg.com
-  pass: abcd1234
-  api_token: ~
+  oidc_discovery_url: "https://login.phylum.io/auth/realms/phylum/.well-known/openid-configuration"
 request_type: npm
 #packages:
 #  - name: foo

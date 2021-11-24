@@ -5,6 +5,8 @@ extern crate serde_derive;
 
 use phylum_cli::restson::{Error, RestClient, RestPath};
 
+mod logging;
+
 #[derive(Serialize, Deserialize)]
 struct HttpBinDelete {
     data: String,
@@ -16,26 +18,26 @@ impl RestPath<()> for HttpBinDelete {
     }
 }
 
-#[test]
-fn basic_delete() {
+#[tokio::test]
+async fn basic_delete() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let req = HttpBinDelete {
         data: String::from("test data"),
     };
 
-    client.delete((), &req).unwrap();
+    client.delete((), &req).await.unwrap();
 }
 
-#[test]
-fn delete_with() {
+#[tokio::test]
+async fn delete_with() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinDelete {
         data: String::from("test data"),
     };
-    client.delete_with((), &data, &params).unwrap();
+    client.delete_with((), &data, &params).await.unwrap();
 
-    client.delete_with((), &data, &[]).unwrap();
+    client.delete_with((), &data, &[]).await.unwrap();
 }

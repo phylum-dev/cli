@@ -6,6 +6,8 @@ extern crate serde_derive;
 use phylum_cli::restson::{Error, RestClient, RestPath};
 use std::time::{Duration, Instant};
 
+mod logging;
+
 #[derive(Serialize, Deserialize)]
 struct InvalidResource {}
 
@@ -59,41 +61,41 @@ fn invalid_baseurl() {
     };
 }
 
-#[test]
-fn invalid_get() {
+#[tokio::test]
+async fn invalid_get() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    if client.get::<(), InvalidResource>(()).is_ok() {
+    if client.get::<(), InvalidResource>(()).await.is_ok() {
         panic!("expected error");
     }
 }
 
-#[test]
-fn invalid_post() {
+#[tokio::test]
+async fn invalid_post() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let data = InvalidResource {};
 
-    if client.post((), &data).is_ok() {
+    if client.post((), &data).await.is_ok() {
         panic!("expected error");
     }
 }
 
-#[test]
-fn path_error() {
+#[tokio::test]
+async fn path_error() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    if let Err(Error::UrlError) = client.get::<bool, InvalidResource>(false) {
+    if let Err(Error::UrlError) = client.get::<bool, InvalidResource>(false).await {
     } else {
         panic!("expected url error");
     }
 }
 
-#[test]
-fn http_error() {
+#[tokio::test]
+async fn http_error() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    match client.get::<_, HttpBinStatus>(418) {
+    match client.get::<_, HttpBinStatus>(418).await {
         Err(Error::HttpError(s, body)) => {
             assert_eq!(s, 418);
             assert!(!body.is_empty());
@@ -102,28 +104,29 @@ fn http_error() {
     };
 }
 
-#[test]
-fn request_timeout() {
+#[tokio::test]
+async fn request_timeout() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     client.set_timeout(Duration::from_secs(1));
 
     let start = Instant::now();
-    if let Err(Error::TimeoutError) = client.get::<u16, HttpBinDelay>(3) {
+    if let Err(Error::TimeoutError) = client.get::<u16, HttpBinDelay>(3).await {
         assert!(start.elapsed().as_secs() == 1);
     } else {
         panic!("expected timeout error");
     }
 }
 
-#[test]
-fn deserialize_error() {
+#[tokio::test]
+async fn deserialize_error() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     // Service returns decoded base64 in body which should be string 'test'.
     // This fails JSON deserialization and is returned in the Error
-    if let Err(Error::DeserializeParseError(_, data)) =
-        client.get::<String, HttpBinBase64>("dGVzdA==".to_string())
+    if let Err(Error::DeserializeParseError(_, data)) = client
+        .get::<String, HttpBinBase64>("dGVzdA==".to_string())
+        .await
     {
         assert!(data == "test");
     } else {
