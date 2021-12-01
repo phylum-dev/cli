@@ -3,10 +3,11 @@
 //!
 //! By simply importing or declaring this module, /tests test programs will have logging inited
 
-use static_init::dynamic;
+use lazy_static::lazy_static;
 
-#[dynamic]
-static mut _LOGGER_INIT: bool = {
-    env_logger::init();
-    true
-};
+lazy_static! {
+    static ref _LOGGER_INIT: bool = {
+        env_logger::init();
+        true
+    };
+}
