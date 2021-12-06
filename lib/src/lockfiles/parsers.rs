@@ -114,11 +114,7 @@ pub mod gem {
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
         let (input, _) = gem_header(input)?;
         let (i, consumed) = specs(input)?;
-        let pkgs = consumed
-            .lines()
-            .map(|l| package(l))
-            .flatten()
-            .collect::<Vec<_>>();
+        let pkgs = consumed.lines().map(package).flatten().collect::<Vec<_>>();
         Ok((i, pkgs))
     }
 
@@ -164,11 +160,7 @@ pub mod pypi {
     use super::*;
 
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-        let pkgs = input
-            .lines()
-            .map(|l| package(l))
-            .flatten()
-            .collect::<Vec<_>>();
+        let pkgs = input.lines().map(package).flatten().collect::<Vec<_>>();
         Ok((input, pkgs))
     }
 
