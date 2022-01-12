@@ -1,4 +1,4 @@
-use phylum_cli::types::Action;
+use phylum_types::types::job::Action;
 
 pub mod auth;
 pub mod jobs;

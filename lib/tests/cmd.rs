@@ -1,6 +1,5 @@
 use assert_cmd::Command;
-
-use phylum_cli::types::JobDescriptor;
+use phylum_types::types::job::JobDescriptor;
 
 mod logging;
 

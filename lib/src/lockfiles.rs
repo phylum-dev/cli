@@ -6,7 +6,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use crate::types::{PackageDescriptor, PackageType};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 mod parsers;
 use parsers::{gem, pypi, yarn};
@@ -50,7 +50,7 @@ impl Parseable for PackageLock {
                         .and_then(|x| x["version"].as_str())
                         .map(|x| x.to_string())
                         .ok_or("Failed to parse version")?,
-                    r#type: PackageType::Npm,
+                    package_type: PackageType::Npm,
                 };
                 Ok(pkg)
             })
@@ -152,7 +152,7 @@ impl Parseable for PipFile {
                         Ok(PackageDescriptor {
                             name: k.as_str().to_string().to_lowercase(),
                             version: v.replace("==", "").trim().to_string(),
-                            r#type: PackageType::Python,
+                            package_type: PackageType::Python,
                         })
                     }),
                     None => {
@@ -177,12 +177,12 @@ mod tests {
         assert_eq!(pkgs.len(), 17);
         assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
         assert_eq!(pkgs[0].version, "1.1.0");
-        assert_eq!(pkgs[0].r#type, PackageType::Npm);
+        assert_eq!(pkgs[0].package_type, PackageType::Npm);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "yargs-parser");
         assert_eq!(last.version, "20.2.4");
-        assert_eq!(last.r#type, PackageType::Npm);
+        assert_eq!(last.package_type, PackageType::Npm);
     }
 
     #[test]
@@ -197,12 +197,12 @@ mod tests {
             assert_eq!(pkgs.len(), 17);
             assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
             assert_eq!(pkgs[0].version, "1.1.0");
-            assert_eq!(pkgs[0].r#type, PackageType::Npm);
+            assert_eq!(pkgs[0].package_type, PackageType::Npm);
 
             let last = pkgs.last().unwrap();
             assert_eq!(last.name, "yargs");
             assert_eq!(last.version, "16.2.0");
-            assert_eq!(last.r#type, PackageType::Npm);
+            assert_eq!(last.package_type, PackageType::Npm);
         }
     }
 
@@ -222,12 +222,12 @@ mod tests {
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");
-        assert_eq!(pkgs[0].r#type, PackageType::Ruby);
+        assert_eq!(pkgs[0].package_type, PackageType::Ruby);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "xpath");
         assert_eq!(last.version, "3.2.0");
-        assert_eq!(last.r#type, PackageType::Ruby);
+        assert_eq!(last.package_type, PackageType::Ruby);
     }
 
     #[test]
@@ -238,12 +238,12 @@ mod tests {
         assert_eq!(pkgs.len(), 129);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
-        assert_eq!(pkgs[0].r#type, PackageType::Python);
+        assert_eq!(pkgs[0].package_type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "livy");
         assert_eq!(last.version, "0.7.3");
-        assert_eq!(last.r#type, PackageType::Python);
+        assert_eq!(last.package_type, PackageType::Python);
     }
 
     #[test]
@@ -255,12 +255,12 @@ mod tests {
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
-        assert_eq!(pkgs[0].r#type, PackageType::Python);
+        assert_eq!(pkgs[0].package_type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "fooproject5");
         assert_eq!(last.version, "1.5");
-        assert_eq!(last.r#type, PackageType::Python);
+        assert_eq!(last.package_type, PackageType::Python);
     }
 
     #[test]
@@ -273,13 +273,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "pypresence" {
                 assert_eq!(pkg.version, "4.0.0");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             } else if pkg.name == "chromedriver-py" {
                 assert_eq!(pkg.version, "91.0.4472.19");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             } else if pkg.name == "requests" {
                 assert_eq!(pkg.version, "2.24.0");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             }
         }
     }
@@ -294,13 +294,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "jdcal" {
                 assert_eq!(pkg.version, "1.3");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             } else if pkg.name == "certifi" {
                 assert_eq!(pkg.version, "2017.7.27.1");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             } else if pkg.name == "unittest2" {
                 assert_eq!(pkg.version, "1.1.0");
-                assert_eq!(pkg.r#type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::Python);
             }
         }
     }

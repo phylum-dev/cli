@@ -4,12 +4,14 @@ use std::str::FromStr;
 use ansi_term::Color::Blue;
 use anyhow::{anyhow, Result};
 use phylum_cli::config::{get_current_project, Config, ProjectConfig};
+use phylum_types::types::common::JobId;
+use phylum_types::types::job::*;
+use phylum_types::types::package::*;
 use serde::Serialize;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
-use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
 use uuid::Uuid;
 
 use super::{CommandResult, CommandValue};
@@ -21,13 +23,13 @@ use crate::print_user_warning;
 use super::projects::get_project_list;
 
 fn handle_status<T>(
-    resp: Result<RequestStatusResponse<T>, phylum_cli::Error>,
+    resp: Result<JobStatusResponse<T>, phylum_cli::Error>,
     pretty: bool,
     filter: Option<Filter>,
 ) -> Action
 where
     T: std::fmt::Debug + Serialize + Summarize,
-    phylum_cli::types::RequestStatusResponse<T>: Summarize,
+    JobStatusResponse<T>: Summarize,
 {
     let mut action = Action::None;
 
@@ -204,7 +206,7 @@ pub async fn handle_submission(
                     packages.push(PackageDescriptor {
                         name: pkg_info[0].to_owned(),
                         version: pkg_info[1].to_owned(),
-                        r#type: request_type.to_owned(),
+                        package_type: request_type.to_owned(),
                     });
                     line.clear();
                 }

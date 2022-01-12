@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::anyhow;
+use phylum_types::types::package::*;
 
 use clap::ArgMatches;
 use phylum_cli::api::PhylumApi;
-use phylum_cli::types::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, CommandValue};
 use crate::print::print_response;
@@ -18,18 +18,19 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
 
     let name = options.value_of("name").unwrap().to_string(); // required option
     let version = options.value_of("version").unwrap().to_string();
-    let mut r#type = request_type.to_owned();
+    let mut package_type = request_type.to_owned();
 
     // If a package type was provided on the command line, prefer that
     //  to the global setting
     if options.is_present("type") {
-        r#type = PackageType::from_str(options.value_of("type").unwrap()).unwrap_or(r#type);
+        package_type =
+            PackageType::from_str(options.value_of("type").unwrap()).unwrap_or(package_type);
     }
 
     Some(PackageDescriptor {
         name,
         version,
-        r#type,
+        package_type,
     })
 }
 

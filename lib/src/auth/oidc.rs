@@ -8,16 +8,15 @@ use std::time::Duration;
 use anyhow::{anyhow, Result};
 use base64;
 use maplit::hashmap;
+use phylum_types::types::auth::*;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::config::AuthInfo;
-use crate::types::{AuthorizationCode, RefreshToken, TokenResponse};
-
 use super::ip_addr_ext::IpAddrExt;
+use crate::config::AuthInfo;
 
 pub const OIDC_SCOPES: [&str; 4] = ["openid", "offline_access", "profile", "email"];
 

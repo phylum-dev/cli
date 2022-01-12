@@ -13,7 +13,7 @@ use reqwest::{Client, Response};
 #[cfg(test)]
 use wiremock::MockServer;
 
-use crate::types::*;
+use crate::types::{GithubRelease, GithubReleaseAsset};
 
 // Phylum's public key for Minisign.
 const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";

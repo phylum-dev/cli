@@ -12,7 +12,7 @@ use nom::{
     AsChar, IResult,
 };
 
-use crate::types::{PackageDescriptor, PackageType};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 fn take_till_line_end(input: &str) -> Result<&str, &str> {
     recognize(tuple((
@@ -72,7 +72,7 @@ pub mod yarn {
                 PackageDescriptor {
                     name: name.to_string(),
                     version: version.to_string(),
-                    r#type: PackageType::Npm,
+                    package_type: PackageType::Npm,
                 },
             )
         })
@@ -149,7 +149,7 @@ pub mod gem {
         Some(PackageDescriptor {
             name: name.to_string(),
             version: version.to_string(),
-            r#type: PackageType::Ruby,
+            package_type: PackageType::Ruby,
         })
     }
 }
@@ -199,7 +199,7 @@ pub mod pypi {
             Some((_, version)) => Some(PackageDescriptor {
                 name: name.to_lowercase(),
                 version: version.to_string().split_whitespace().collect(),
-                r#type: PackageType::Python,
+                package_type: PackageType::Python,
             }),
             None => {
                 log::warn!("Could not determine version for package: {}", name);

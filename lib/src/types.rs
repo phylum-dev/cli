@@ -2,19 +2,16 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-mod auth;
-mod common;
-mod job;
-mod package;
-mod project;
-mod user_settings;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PingResponse {
+    pub msg: String,
+}
 
-pub use auth::*;
-pub use common::*;
-pub use job::*;
-pub use package::*;
-pub use project::*;
-pub use user_settings::*;
+// TODO Deprecate
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthStatusResponse {
+    pub authenticated: bool,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -51,15 +48,15 @@ pub struct GithubReleaseAsset {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use phylum_types::types::package::RiskLevel;
 
     #[test]
     fn test_risk_level_ordering() {
         assert!(
             RiskLevel::Info < RiskLevel::Low
-                && RiskLevel::Low < RiskLevel::Med
-                && RiskLevel::Med < RiskLevel::High
-                && RiskLevel::High < RiskLevel::Crit,
+                && RiskLevel::Low < RiskLevel::Medium
+                && RiskLevel::Medium < RiskLevel::High
+                && RiskLevel::High < RiskLevel::Critical,
             "Ordering of risk levels is invalid"
         );
     }

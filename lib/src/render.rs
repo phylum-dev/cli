@@ -1,6 +1,9 @@
-use crate::types::*;
+use crate::types::PingResponse;
 use crate::utils::table_format;
 use ansi_term::Color::{Blue, Green, Red, White, Yellow};
+use phylum_types::types::job::*;
+use phylum_types::types::package::*;
+use phylum_types::types::project::*;
 use prettytable::*;
 
 pub trait Renderable {
@@ -31,7 +34,7 @@ impl Renderable for String {
     }
 }
 
-impl Renderable for ProjectGetRequest {
+impl Renderable for ProjectSummaryResponse {
     fn render(&self) -> String {
         let name = format!("{}", White.paint(self.name.clone()));
         format!("{:<38}{}", name, self.id)
@@ -57,7 +60,7 @@ fn threshold_to_str(n: f32) -> String {
     format!("{}", threshold)
 }
 
-impl Renderable for ProjectGetDetailsRequest {
+impl Renderable for ProjectDetailsResponse {
     fn render(&self) -> String {
         let title_score = format!("{}", Blue.paint("Score"));
         let title_passfail = format!("{}", Blue.paint("P/F"));
@@ -215,13 +218,13 @@ impl Renderable for JobDescriptor {
     }
 }
 
-impl Renderable for RequestStatusResponse<PackageStatus> {
+impl Renderable for JobStatusResponse<PackageStatus> {
     fn render(&self) -> String {
         "TODO".to_string()
     }
 }
 
-impl Renderable for RequestStatusResponse<PackageStatusExtended> {
+impl Renderable for JobStatusResponse<PackageStatusExtended> {
     fn render(&self) -> String {
         "TODO".to_string()
     }
@@ -268,14 +271,14 @@ impl Renderable for PackageStatusExtended {
             ["Package Name:", rB -> self.basic_status.name, "Package Version:", r -> self.basic_status.version],
             ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> self.basic_status.last_updated],
             ["Num Deps:", r -> self.basic_status.num_dependencies, "Num Vulns:", r -> self.basic_status.num_vulnerabilities],
-            ["Type", r -> self.r#type.render(), "Language", r -> self.r#type.language()]
+            ["Type", r -> self.package_type.render(), "Language", r -> self.package_type.language()]
         );
         overview_table.set_format(table_format(0, 3));
         overview_table.to_string()
     }
 }
 
-impl Renderable for CancelRequestResponse {
+impl Renderable for CancelJobResponse {
     fn render(&self) -> String {
         format!("Request canceled: {}", self.msg)
     }
@@ -301,39 +304,5 @@ impl Renderable for ProjectThresholds {
         );
         table.set_format(table_format(0, 0));
         table.to_string()
-    }
-}
-
-impl From<&RiskLevel> for color::Color {
-    fn from(level: &RiskLevel) -> Self {
-        match level {
-            RiskLevel::Crit => color::BRIGHT_RED,
-            RiskLevel::High => color::YELLOW,
-            RiskLevel::Med => color::BRIGHT_YELLOW,
-            RiskLevel::Low => color::BLUE,
-            RiskLevel::Info => color::WHITE,
-        }
-    }
-}
-
-impl From<&Issue> for Vec<Row> {
-    fn from(issue: &Issue) -> Vec<Row> {
-        let row_1 = Row::new(vec![
-            Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT)
-                .with_style(Attr::ForegroundColor(color::Color::from(&issue.risk_level))),
-            Cell::new_align(
-                &format!("{} [{}]", &issue.title, issue.risk_domain),
-                format::Alignment::LEFT,
-            )
-            .with_style(Attr::Bold),
-        ]);
-
-        let row_2 = Row::new(vec![
-            Cell::new(""),
-            Cell::new(&textwrap::fill(&issue.description, 80)),
-            Cell::new(""),
-        ]);
-
-        vec![row_1, row![], row_2]
     }
 }
