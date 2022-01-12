@@ -7,11 +7,12 @@ use clap::{load_yaml, App, AppSettings};
 use env_logger::Env;
 use home::home_dir;
 use log::*;
+use phylum_types::types::common::JobId;
+use phylum_types::types::job::Action;
 use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
-use phylum_cli::types::*;
 use phylum_cli::update::ApplicationUpdater;
 
 mod commands;

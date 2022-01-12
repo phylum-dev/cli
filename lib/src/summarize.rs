@@ -1,13 +1,17 @@
 use std::fmt;
 use std::str::FromStr;
 
-use ansi_term::Color::{Green, Purple, Red, Yellow};
+use ansi_term::Color::*;
 use chrono::NaiveDateTime;
+use color::Color;
+use phylum_types::types::job::JobStatusResponse;
+use phylum_types::types::job::{AllJobsStatusResponse, CancelJobResponse};
+use phylum_types::types::package::*;
+use phylum_types::types::project::*;
 use prettytable::*;
 
 use crate::filter::Filter;
 use crate::render::Renderable;
-use crate::types::*;
 use crate::utils::table_format;
 
 #[derive(Debug)]
@@ -123,7 +127,7 @@ impl Scored for PackageStatusExtended {
     }
 }
 
-fn response_to_table<T>(resp: &RequestStatusResponse<T>) -> Table
+fn response_to_table<T>(resp: &JobStatusResponse<T>) -> Table
 where
     T: Scored,
 {
@@ -210,7 +214,7 @@ where
     table
 }
 
-impl Summarize for RequestStatusResponse<PackageStatus> {
+impl Summarize for JobStatusResponse<PackageStatus> {
     fn summarize(&self, _filter: Option<Filter>) {
         let t: Table = response_to_table(self);
         t.printstd();
@@ -232,7 +236,7 @@ fn check_filter_issue(filter: &Filter, issue: &Issue) -> bool {
     include
 }
 
-impl Summarize for RequestStatusResponse<PackageStatusExtended> {
+impl Summarize for JobStatusResponse<PackageStatusExtended> {
     fn summarize(&self, filter: Option<Filter>) {
         let table_1: Table = response_to_table(self);
 
@@ -257,7 +261,7 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
         issues.reverse();
 
         for issue in issues {
-            let rows: Vec<Row> = issue.into();
+            let rows: Vec<Row> = issue_to_row(issue);
             for r in rows {
                 table_2.add_row(r);
             }
@@ -303,7 +307,7 @@ impl Summarize for PackageStatusExtended {
         };
 
         for issue in &issues {
-            let rows: Vec<Row> = issue.into();
+            let rows: Vec<Row> = issue_to_row(issue);
             for mut row in rows {
                 row.remove_cell(2);
                 issues_table.add_row(row);
@@ -343,9 +347,9 @@ impl<T> Summarize for Vec<T> where T: Renderable {}
 
 impl Summarize for String {}
 impl Summarize for PackageStatus {}
-impl Summarize for ProjectGetDetailsRequest {}
+impl Summarize for ProjectDetailsResponse {}
 impl Summarize for AllJobsStatusResponse {}
-impl Summarize for CancelRequestResponse {}
+impl Summarize for CancelJobResponse {}
 
 #[cfg(test)]
 mod tests {
@@ -372,4 +376,35 @@ mod tests {
         let include = check_filter_issue(&filter, &issue);
         assert!(!include);
     }
+}
+
+fn risk_level_to_color(level: &RiskLevel) -> Color {
+    match level {
+        RiskLevel::Critical => color::BRIGHT_RED,
+        RiskLevel::High => color::YELLOW,
+        RiskLevel::Medium => color::BRIGHT_YELLOW,
+        RiskLevel::Low => color::BLUE,
+        RiskLevel::Info => color::WHITE,
+    }
+}
+
+fn issue_to_row(issue: &Issue) -> Vec<Row> {
+    let row_1 = Row::new(vec![
+        Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT).with_style(
+            Attr::ForegroundColor(risk_level_to_color(&issue.risk_level)),
+        ),
+        Cell::new_align(
+            &format!("{} [{}]", &issue.title, issue.risk_domain.to_string()),
+            format::Alignment::LEFT,
+        )
+        .with_style(Attr::Bold),
+    ]);
+
+    let row_2 = Row::new(vec![
+        Cell::new(""),
+        Cell::new(&textwrap::fill(&issue.description, 80)),
+        Cell::new(""),
+    ]);
+
+    vec![row_1, row![], row_2]
 }

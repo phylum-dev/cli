@@ -25,7 +25,7 @@ pub mod mockito {
     use crate::api::{PhylumApi, PhylumApiError};
     use crate::auth::OidcServerSettings;
     use crate::config::AuthInfo;
-    use crate::types::*;
+    use phylum_types::types::auth::*;
 
     pub const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
     pub const DUMMY_ACCESS_TOKEN: &str = "DUMMY_ACCESS_TOKEN";

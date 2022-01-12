@@ -1211,6 +1211,7 @@ dependencies = [
  "minisign-verify",
  "nom 6.2.1",
  "open",
+ "phylum_types",
  "prettytable-rs",
  "rand 0.8.4",
  "reqwest",
@@ -1232,6 +1233,17 @@ dependencies = [
  "wiremock",
  "yaml-rust",
  "zeroize",
+]
+
+[[package]]
+name = "phylum_types"
+version = "0.1.0"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#47031db03f8f05bf3105c5e9ef554b59cc56f4b9"
+dependencies = [
+ "log",
+ "serde",
+ "serde_derive",
+ "uuid",
 ]
 
 [[package]]

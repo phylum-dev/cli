@@ -6,7 +6,11 @@ use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::types::*;
+use phylum_types::types::auth::*;
+use phylum_types::types::common::*;
+use phylum_types::types::package::*;
+
+pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionInfo {
@@ -115,17 +119,17 @@ mod tests {
             PackageDescriptor {
                 name: "foo".into(),
                 version: "1.2.3".into(),
-                r#type: PackageType::Npm,
+                package_type: PackageType::Npm,
             },
             PackageDescriptor {
                 name: "bar".into(),
                 version: "3.4.5".into(),
-                r#type: PackageType::Npm,
+                package_type: PackageType::Npm,
             },
             PackageDescriptor {
                 name: "baz".into(),
                 version: "2020.2.12".into(),
-                r#type: PackageType::Npm,
+                package_type: PackageType::Npm,
             },
         ];
 

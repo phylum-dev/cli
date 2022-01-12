@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::FromStr;
 
-use crate::types::{RiskDomain, RiskLevel};
+use phylum_types::types::package::{RiskDomain, RiskLevel};
 
 pub struct Filter {
     pub level: Option<RiskLevel>,
@@ -21,12 +21,12 @@ impl FromStr for Filter {
         let level = tokens
             .iter()
             .filter_map(|t| match *t {
-                "crit" => Some(RiskLevel::Crit),
-                "critical" => Some(RiskLevel::Crit),
+                "crit" => Some(RiskLevel::Critical),
+                "critical" => Some(RiskLevel::Critical),
                 "high" => Some(RiskLevel::High),
                 "hi" => Some(RiskLevel::High),
-                "med" => Some(RiskLevel::Med),
-                "medium" => Some(RiskLevel::Med),
+                "med" => Some(RiskLevel::Medium),
+                "medium" => Some(RiskLevel::Medium),
                 "info" => Some(RiskLevel::Info),
                 "low" => Some(RiskLevel::Low),
                 "lo" => Some(RiskLevel::Low),
@@ -83,13 +83,13 @@ mod tests {
 
         let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
 
-        assert_eq!(filter.level, Some(RiskLevel::Med));
+        assert_eq!(filter.level, Some(RiskLevel::Medium));
 
         let filter_string = "foo,crit,author,engineering";
 
         let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
 
-        assert_eq!(filter.level, Some(RiskLevel::Crit));
+        assert_eq!(filter.level, Some(RiskLevel::Critical));
     }
 
     #[test]

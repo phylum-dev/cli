@@ -3,8 +3,8 @@ use anyhow::anyhow;
 
 use chrono::Local;
 use phylum_cli::api::PhylumApi;
-use phylum_cli::config::{get_current_project, save_config, ProjectConfig};
-use phylum_cli::types::PROJ_CONF_FILE;
+use phylum_cli::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
+
 use uuid::Uuid;
 
 use super::{CommandResult, CommandValue};

@@ -20,7 +20,7 @@ use tokio::sync::Mutex;
 use crate::config::AuthInfo;
 #[cfg(test)]
 use crate::test::open;
-use crate::types::{AuthorizationCode, TokenResponse};
+use phylum_types::types::auth::{AuthorizationCode, TokenResponse};
 
 use super::oidc::acquire_tokens;
 use super::oidc::{

@@ -1,11 +1,28 @@
 use std::time::Duration;
 
+use phylum_types::types::auth::*;
+use phylum_types::types::common::*;
+use phylum_types::types::job::*;
+use phylum_types::types::package::*;
+use phylum_types::types::project::CreateProjectRequest;
+use phylum_types::types::project::CreateProjectResponse;
+use phylum_types::types::project::ProjectDetailsResponse;
+use phylum_types::types::project::ProjectSummaryResponse;
+use phylum_types::types::user_settings::*;
 use thiserror::Error as ThisError;
 
-use crate::auth::*;
+mod common;
+mod job;
+mod project;
+mod user_settings;
+
+use crate::auth::handle_auth_flow;
+use crate::auth::handle_refresh_tokens;
+use crate::auth::AuthAction;
 use crate::config::AuthInfo;
 use crate::restson::{Error as RestsonError, RestClient};
-use crate::types::*;
+use crate::types::AuthStatusResponse;
+use crate::types::PingResponse;
 
 pub struct PhylumApi {
     client: RestClient,
@@ -93,16 +110,16 @@ impl PhylumApi {
 
     /// Create a new project
     pub async fn create_project(&mut self, name: &str) -> Result<ProjectId, RestsonError> {
-        let req = ProjectCreateRequest {
+        let req = CreateProjectRequest {
             name: name.to_string(),
         };
-        let resp: ProjectCreateResponse = self.client.put_capture((), &req).await?;
+        let resp: CreateProjectResponse = self.client.put_capture((), &req).await?;
         Ok(resp.id)
     }
 
     /// Get a list of projects
-    pub async fn get_projects(&mut self) -> Result<Vec<ProjectGetRequest>, RestsonError> {
-        let resp: Vec<ProjectGetRequest> = self.client.get(()).await?;
+    pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>, RestsonError> {
+        let resp: Vec<ProjectSummaryResponse> = self.client.get(()).await?;
         Ok(resp)
     }
 
@@ -130,15 +147,15 @@ impl PhylumApi {
         project: ProjectId,
         label: Option<String>,
     ) -> Result<JobId, RestsonError> {
-        let req = PackageRequest {
-            r#type: req_type.to_owned(),
+        let req = SubmitPackageRequest {
+            package_type: req_type.to_owned(),
             packages: package_list.to_vec(),
             is_user,
             project,
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
         };
         log::debug!("==> Sending package submission: {:?}", req);
-        let resp: PackageSubmissionResponse = self.client.put_capture((), &req).await?;
+        let resp: SubmitPackageResponse = self.client.put_capture((), &req).await?;
         Ok(resp.job_id)
     }
 
@@ -146,8 +163,8 @@ impl PhylumApi {
     pub async fn get_job_status(
         &mut self,
         job_id: &JobId,
-    ) -> Result<RequestStatusResponse<PackageStatus>, RestsonError> {
-        let resp: RequestStatusResponse<PackageStatus> = self.client.get(job_id.to_owned()).await?;
+    ) -> Result<JobStatusResponse<PackageStatus>, RestsonError> {
+        let resp: JobStatusResponse<PackageStatus> = self.client.get(job_id.to_owned()).await?;
         Ok(resp)
     }
 
@@ -155,8 +172,8 @@ impl PhylumApi {
     pub async fn get_job_status_ext(
         &mut self,
         job_id: &JobId,
-    ) -> Result<RequestStatusResponse<PackageStatusExtended>, RestsonError> {
-        let resp: RequestStatusResponse<PackageStatusExtended> =
+    ) -> Result<JobStatusResponse<PackageStatusExtended>, RestsonError> {
+        let resp: JobStatusResponse<PackageStatusExtended> =
             self.client.get(job_id.to_owned()).await?;
         Ok(resp)
     }
@@ -171,8 +188,9 @@ impl PhylumApi {
     pub async fn get_project_details(
         &mut self,
         project_name: &str,
-    ) -> Result<ProjectGetDetailsRequest, RestsonError> {
-        let resp: ProjectGetDetailsRequest = self.client.get(project_name).await?;
+    ) -> Result<ProjectDetailsResponse, RestsonError> {
+        //TODO: POOR NAME
+        let resp: ProjectDetailsResponse = self.client.get(project_name).await?;
         Ok(resp)
     }
 
@@ -186,8 +204,8 @@ impl PhylumApi {
     }
 
     /// Cancel a job currently in progress
-    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelRequestResponse, RestsonError> {
-        let resp: CancelRequestResponse = self.client.delete_capture(job_id.to_owned()).await?;
+    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse, RestsonError> {
+        let resp: CancelJobResponse = self.client.delete_capture(job_id.to_owned()).await?;
         Ok(resp)
     }
 }
@@ -259,7 +277,7 @@ mod tests {
         let pkg = PackageDescriptor {
             name: "react".to_string(),
             version: "16.13.1".to_string(),
-            r#type: PackageType::Npm,
+            package_type: PackageType::Npm,
         };
         let project_id = Uuid::new_v4();
         let label = Some("mylabel".to_string());
@@ -291,7 +309,7 @@ mod tests {
         let pkg = PackageDescriptor {
             name: "react".to_string(),
             version: "16.13.1".to_string(),
-            r#type: PackageType::Npm,
+            package_type: PackageType::Npm,
         };
         let project_id = Uuid::new_v4();
         let label = Some("mylabel".to_string());
@@ -416,7 +434,7 @@ mod tests {
         let pkg = PackageDescriptor {
             name: "@schematics/angular".to_string(),
             version: "9.1.9".to_string(),
-            r#type: PackageType::Npm,
+            package_type: PackageType::Npm,
         };
         client.get_package_details(&pkg).await?;
 
