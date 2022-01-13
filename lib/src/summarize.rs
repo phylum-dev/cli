@@ -172,18 +172,14 @@ where
     });
 
     let status = if resp.num_incomplete > 0 {
-        format!(
-            "{:>16}: {}",
-            "Status",
-            Yellow.paint("INCOMPLETE").to_string()
-        )
+        format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
     } else if resp.pass {
-        format!("{:>16}: {}", "Status", Green.paint("PASS").to_string())
+        format!("{:>16}: {}", "Status", Green.paint("PASS"))
     } else {
         format!(
             "{:>16}: {}\n{:>16}: {}",
             "Status",
-            Red.paint("FAIL").to_string(),
+            Red.paint("FAIL"),
             "Reason",
             resp.msg
         )

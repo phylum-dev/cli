@@ -104,19 +104,19 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         println!();
         println!(
             "    * {}: print a message to standard error",
-            format!("{}", White.paint("Print a warning"))
+            format_args!("{}", White.paint("Print a warning"))
         );
         println!(
             "    * {}: If we are in CI/CD break the build and return a non-zero exit code",
-            format!("{}", White.paint("Break the build"))
+            format_args!("{}", White.paint("Break the build"))
         );
         println!(
             "    * {}: Ignore the failure and continue",
-            format!("{}", White.paint("Nothing, fail silently"))
+            format_args!("{}", White.paint("Nothing, fail silently"))
         );
         println!();
 
-        println!("Specify the thresholds and actions for {}. A threshold of zero will disable the threshold.", format!("{}", White.paint(project_name)));
+        println!("Specify the thresholds and actions for {}. A threshold of zero will disable the threshold.", format_args!("{}", White.paint(project_name)));
         println!();
 
         let project_details = match api.get_project_details(project_name).await {
