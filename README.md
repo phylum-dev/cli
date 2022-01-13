@@ -96,16 +96,17 @@ bash install.sh
 ## Configuration
 <details>
   <summary>Expand to learn more about the Phylum configuration file</summary>
-Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`
-The install.sh script copies a default configuration file, but requires user credentials or a token to communicate with the Phylum API.
 
-To register a user account, use the `auth register` subcommand to enter the user registration workflow where the phylum tool will query for user input:
+Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`  
+The `install.sh` script copies a default configuration file, but requires a token to communicate with the Phylum API. The `settings.yaml` file is automatically updated with the proper token value after a successful CLI login.
+
+To register a user account, use the `auth register` subcommand to enter the user registration workflow where the Phylum tool will open a web browser to complete the process:
 ```sh
 ❯ phylum auth register
 
-✔ Your name · demo
-✔ Email address · demo@example.com
-✔ Password · ********
+Please use browser window to complete login process
+If browser window does not open, you can use the link below:
+ <URL>
 ✅ Successfully registered a new account!
 ```
 </details>
