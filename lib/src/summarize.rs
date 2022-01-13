@@ -172,18 +172,14 @@ where
     });
 
     let status = if resp.num_incomplete > 0 {
-        format!(
-            "{:>16}: {}",
-            "Status",
-            Yellow.paint("INCOMPLETE").to_string()
-        )
+        format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
     } else if resp.pass {
-        format!("{:>16}: {}", "Status", Green.paint("PASS").to_string())
+        format!("{:>16}: {}", "Status", Green.paint("PASS"))
     } else {
         format!(
             "{:>16}: {}\n{:>16}: {}",
             "Status",
-            Red.paint("FAIL").to_string(),
+            Red.paint("FAIL"),
             "Reason",
             resp.msg
         )
@@ -219,67 +215,6 @@ impl Summarize for RequestStatusResponse<PackageStatus> {
         let t: Table = response_to_table(self);
         t.printstd();
     }
-}
-
-fn vuln_to_rows(
-    vuln: &Vulnerability,
-    pkg_name: Option<&str>,
-    pkg_version: Option<&str>,
-) -> Vec<Row> {
-    let mut rows = Vec::new();
-
-    let cve_s = if !vuln.cve.is_empty() {
-        vuln.cve.join("/")
-    } else {
-        "[No CVE listed]".to_string()
-    };
-
-    let pkg_descriptor = if pkg_name.is_some() && pkg_version.is_some() {
-        format!("{}@{}", pkg_name.unwrap(), pkg_version.unwrap())
-    } else {
-        "".to_string()
-    };
-
-    rows.push(Row::new(vec![
-        Cell::new_align(&vuln.risk_level.to_string(), format::Alignment::LEFT)
-            .with_style(Attr::ForegroundColor(color::Color::from(&vuln.risk_level))),
-        Cell::new_align(
-            &format!(
-                "{} is vulnerable to {} [{}]",
-                &pkg_descriptor, vuln.title, cve_s
-            ),
-            format::Alignment::LEFT,
-        )
-        .with_style(Attr::Bold),
-    ]));
-    rows.push(row![]);
-    rows.push(row![
-        "",
-        format!("Description: {}", textwrap::fill(&vuln.description, 80))
-    ]);
-    rows.push(row! {});
-    rows.push(row![
-        "",
-        format!("Remediation: {}", textwrap::fill(&vuln.remediation, 80))
-    ]);
-    rows.push(row! {});
-
-    rows
-}
-
-fn check_filter_vuln(filter: &Filter, vuln: &Vulnerability) -> bool {
-    let mut include = true;
-    if let Some(domains) = &filter.domains {
-        if !domains.contains(&RiskDomain::Vulnerabilities) {
-            include = false;
-        }
-    }
-    if let Some(level) = &filter.level {
-        if vuln.risk_level < *level {
-            include = false;
-        }
-    }
-    include
 }
 
 fn check_filter_issue(filter: &Filter, issue: &Issue) -> bool {
@@ -329,33 +264,8 @@ impl Summarize for RequestStatusResponse<PackageStatusExtended> {
             table_2.add_empty_row();
         }
 
-        let mut vulns_table = Table::new();
-        vulns_table.set_format(table_format(3, 0));
-
-        for p in &self.packages {
-            for v in &p.vulnerabilities {
-                let mut include = true;
-                if let Some(ref filter) = filter {
-                    include = check_filter_vuln(filter, v);
-                }
-
-                if include {
-                    for r in
-                        vuln_to_rows(v, Some(&p.basic_status.name), Some(&p.basic_status.version))
-                    {
-                        vulns_table.add_row(r);
-                    }
-                }
-            }
-        }
-
         table_1.printstd();
         table_2.printstd();
-
-        if !vulns_table.is_empty() {
-            println!("\n Vulnerabilities:");
-            vulns_table.printstd();
-        }
     }
 }
 
@@ -417,30 +327,6 @@ impl Summarize for PackageStatusExtended {
         ];
         risks_table.set_format(table_format(3, 1));
 
-        let mut vulns_table = Table::new();
-        vulns_table.set_format(table_format(3, 0));
-
-        for v in &self.vulnerabilities {
-            let mut include = true;
-            if let Some(ref filter) = filter {
-                if let Some(domains) = &filter.domains {
-                    if !domains.contains(&RiskDomain::Vulnerabilities) {
-                        include = false;
-                    }
-                }
-                if let Some(level) = &filter.level {
-                    if v.risk_level < *level {
-                        include = false;
-                    }
-                }
-            }
-            if include {
-                for r in vuln_to_rows(v, None, None) {
-                    vulns_table.add_row(r);
-                }
-            }
-        }
-
         println!("{}", self.render());
 
         println!(" Risk Vectors:");
@@ -449,11 +335,6 @@ impl Summarize for PackageStatusExtended {
         if !issues_table.is_empty() {
             println!("\n Issues:");
             issues_table.printstd();
-        }
-
-        if !vulns_table.is_empty() {
-            println!("\n Vulnerabilities:");
-            vulns_table.printstd();
         }
     }
 }
@@ -469,7 +350,6 @@ impl Summarize for CancelRequestResponse {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Vulnerability;
 
     #[test]
     fn test_filter_check() {
@@ -486,18 +366,6 @@ mod tests {
 
         let include = check_filter_issue(&filter, &issue);
         assert!(include);
-
-        let vuln = Vulnerability {
-            base_severity: 0.55,
-            cve: vec![],
-            risk_level: RiskLevel::Crit,
-            title: "Some vuln".to_string(),
-            description: "".to_string(),
-            remediation: "".to_string(),
-        };
-
-        let include = check_filter_vuln(&filter, &vuln);
-        assert!(!include);
 
         let filter_string = "mal";
         let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
