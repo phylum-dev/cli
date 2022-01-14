@@ -120,7 +120,11 @@ To have your Phylum user account enabled, please contact someone at Phylum.
   <summary>Expand to learn more about the Phylum configuration file</summary>
 
 Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`  
-The `install.sh` script copies a default configuration file, but requires a token to communicate with the Phylum API. The `settings.yaml` file is automatically updated with the proper token value after a successful CLI login.
+The `install.sh` script copies a default configuration file, but requires a token to communicate with the Phylum API. The `settings.yaml` file is automatically updated with the proper token value after a successful CLI login.  
+The `offline_access` parameter in the `settings.yaml` file contains the API token. The following command can be used to retrieve your token value:  
+```sh
+grep "offline_access" $HOME/.phylum/settings.yaml | sed 's/  offline_access: //'
+```
 </details>
 
 ## Example: First project submission
