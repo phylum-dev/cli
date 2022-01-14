@@ -1,9 +1,13 @@
-# MacOS builder
-FROM joseluisq/rust-linux-darwin-builder:1.54.0 as macos-builder
+FROM phylumdev/macos-cross-builder:latest as macos-builder
 ARG CC=o64-clang
-ARG CXX=o64-clang++
+ARG CC_aarch64_apple_darwin="aarch64-apple-darwin20.4-clang -arch arm64"
 
+WORKDIR /build/cli
 COPY . .
 
+RUN rustup target add x86_64-apple-darwin aarch64-apple-darwin
 RUN cargo build --release --target x86_64-apple-darwin
+RUN cargo build --release --target aarch64-apple-darwin
+
 RUN ls -lah target
+

@@ -25,9 +25,11 @@ jobs:
         run: |
           docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum-linux-x86_64
           docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
+          docker run --rm --entrypoint cat macos-build target/aarch64-apple-darwin/release/phylum > phylum-macos-aarch64
 
           echo -e $MINISIGN_KEY > minisign.key 
           echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-aarch64 -s minisign.key -t 'Phylum - Future of software supply chain security'
           echo $MINISIGN_PASSWORD | minisign -Sm phylum-linux-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
 
           docker run --rm --entrypoint cat static-build src/bin/_phylum > _phylum
@@ -42,6 +44,7 @@ jobs:
           cp _phylum phylum-cli-release/
           cp phylum-linux-x86_64 phylum-cli-release/
           cp phylum-macos-x86_64 phylum-cli-release/
+          cp phylum-macos-aarch64 phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
 
@@ -64,6 +67,7 @@ jobs:
           files: |
             phylum-linux-x86_64
             phylum-macos-x86_64
+            phylum-macos-aarch64
             install.sh
             settings.yaml
             phylum.bash
@@ -71,5 +75,6 @@ jobs:
             phylum-cli-release.zip
             phylum-linux-x86_64.minisig
             phylum-macos-x86_64.minisig
+            phylum-macos-aarch64.minisig
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
