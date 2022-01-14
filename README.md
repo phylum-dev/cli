@@ -21,15 +21,19 @@ The command line interface (CLI) allows users to submit their project package de
 ```
 ./install.sh
 ```
-3. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
+3. [Register](https://docs.phylum.io/docs/authentication) for an account (if you don't already have one)
+```
+phylum auth register
+```
+4. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
 ```
 phylum auth login
 ```
-4. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
+5. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
 ```
 phylum projects create <project-name>
 ```
-5. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
+6. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
 ```
 phylum analyze <package-lock-file.ext>
 ```
@@ -93,15 +97,12 @@ bash install.sh
 ```
 </details>
 
-## Configuration
+## Registration
 <details>
-  <summary>Expand to learn more about the Phylum configuration file</summary>
-
-Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`  
-The `install.sh` script copies a default configuration file, but requires a token to communicate with the Phylum API. The `settings.yaml` file is automatically updated with the proper token value after a successful CLI login.
+  <summary>Expand to learn more about Phylum account registration</summary>
 
 To register a user account, use the `auth register` subcommand to enter the user registration workflow where the Phylum tool will open a web browser to complete the process:
-```sh
+```
 ❯ phylum auth register
 
 Please use browser window to complete login process
@@ -113,6 +114,14 @@ If browser window does not open, you can use the link below:
 
 ## Activation
 To have your Phylum user account enabled, please contact someone at Phylum.
+  
+## Configuration
+<details>
+  <summary>Expand to learn more about the Phylum configuration file</summary>
+
+Phylum uses a configuration file located at `$HOME/.phylum/settings.yaml`  
+The `install.sh` script copies a default configuration file, but requires a token to communicate with the Phylum API. The `settings.yaml` file is automatically updated with the proper token value after a successful CLI login.
+</details>
 
 ## Example: First project submission
 Package submissions must be part of _projects_. Projects in Phylum correspond to software projects the users want to analyze. When a phylum project is created, the `.phylum_project` file is written to the current working directory and used correlate mulitple analysis jobs to a single software project.
