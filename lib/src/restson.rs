@@ -60,7 +60,7 @@ SOFTWARE.
 use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
-use serde;
+use serde::{self, Deserialize};
 use serde_json;
 use std::time::Duration;
 use std::{error, fmt};
@@ -150,6 +150,11 @@ pub struct Builder {
     client: Option<HyperClient>,
 }
 
+#[derive(Default, Deserialize)]
+struct HttpErrorMessage {
+    msg: String,
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let desc = match *self {
@@ -172,6 +177,10 @@ impl fmt::Display for Error {
             Error::SerializeParseError(ref err) => write!(fmt, ": {}", err),
             Error::DeserializeParseError(ref err, _) => write!(fmt, ": {}", err),
             Error::ApplicationError(ref err) => write!(fmt, ": {}", err),
+            Error::HttpError(_, ref msg) => {
+                let http_error: HttpErrorMessage = serde_json::from_str(msg).unwrap_or_default();
+                write!(fmt, ": {}", http_error.msg)
+            }
             _ => Ok(()),
         }
     }
