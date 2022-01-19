@@ -25,7 +25,7 @@ The command line interface (CLI) allows users to submit their project package de
 ```
 phylum auth register
 ```
-4. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
+4. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum (requires [activation](https://github.com/phylum-dev/cli/tree/development#activation) by Phylum)
 ```
 phylum auth login
 ```
