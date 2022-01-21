@@ -4,6 +4,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# Don't continue after failure:
+set -euo pipefail
+
 error() { 
     echo -e "${RED}ERROR${NC} ${1}" 
 }
@@ -22,6 +25,17 @@ get_platform() {
         echo "macos"
     else
         echo "unknown"
+    fi
+}
+
+# Get the platform name.
+get_arch() {
+    local platform_arch
+    platform_arch=$(uname -p)
+    if [[ "${platform_arch:0:3}" == "arm" ]]; then
+        echo "aarch64"
+    else
+        echo "x86_64"
     fi
 }
 
@@ -52,9 +66,15 @@ fi
 
 # Copy the specific platform binary.
 platform=$(get_platform)
-arch="x86_64"
+arch=$(get_arch)
 bin_name="phylum-${platform}-${arch}"
-check_copy "${bin_name}" "${HOME}/.phylum/phylum" 
+
+if [[ "$platform" == "macos" ]]; then
+    cat "${bin_name}" > "${HOME}/.phylum/phylum"
+    success "Copied ${bin_name} to ${HOME}/.phylum/phylum"
+else
+    check_copy "${bin_name}" "${HOME}/.phylum/phylum"
+fi
 chmod +x "${HOME}/.phylum/phylum"
 
 # Update some paths.
