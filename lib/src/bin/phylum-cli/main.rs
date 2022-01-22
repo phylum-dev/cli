@@ -1,4 +1,3 @@
-use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -6,7 +5,6 @@ use anyhow::anyhow;
 use clap::{load_yaml, App, AppSettings};
 use env_logger::Env;
 use home::home_dir;
-use log::*;
 use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
@@ -15,54 +13,18 @@ use phylum_cli::types::*;
 use phylum_cli::update::ApplicationUpdater;
 
 mod commands;
+mod exit;
 mod print;
 mod prompt;
 
 use commands::auth::*;
 use commands::jobs::*;
 use commands::packages::*;
-use commands::projects::handle_projects;
 use commands::{CommandResult, CommandValue};
+use exit::*;
 use print::*;
 
-/// Exit with status code 0 and optionally print a message to the user.
-pub fn exit_ok(message: Option<impl AsRef<str>>) -> ! {
-    if let Some(message) = message {
-        info!("{}", message.as_ref());
-        print_user_success!("{}", message.as_ref());
-    }
-    process::exit(0)
-}
-
-/// Print a warning message to the user before exiting with exit code 0.
-pub fn exit_warn(message: impl AsRef<str>) -> ! {
-    warn!("{}", message.as_ref());
-    print_user_warning!("Warning: {}", message.as_ref());
-    process::exit(0)
-}
-
-/// Print an error to the user before exiting with exit code 1.
-pub fn exit_fail(message: impl AsRef<str>) -> ! {
-    error!("{}", message.as_ref());
-    print_user_failure!("Error: {}", message.as_ref());
-    process::exit(1)
-}
-
-/// Exit with status code 1, and optionally print a message to the user and
-/// print error information.
-pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<str>>) -> ! {
-    match message {
-        None => {
-            error!("{}: {:?}", error, error);
-            print_user_failure!("Error: {}", error);
-        }
-        Some(message) => {
-            error!("{}: {:?}", message.as_ref(), error);
-            print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
-        }
-    }
-    process::exit(1)
-}
+use crate::commands::projects::handle_projects;
 
 async fn handle_commands() -> CommandResult {
     let yml = load_yaml!("../.conf/cli.yaml");
