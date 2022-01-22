@@ -257,6 +257,7 @@ async fn main() {
         Ok(CommandValue::String(message)) => exit_ok(Some(&message)),
         Ok(CommandValue::Void) => exit_ok(None::<&str>),
         Err(error) => {
+            log::error!("Execution failed, cause: {:?}", error);
             exit_error(error.into(), Some("Execution failed"));
         }
     }
