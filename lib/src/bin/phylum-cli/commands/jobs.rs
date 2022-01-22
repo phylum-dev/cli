@@ -2,7 +2,6 @@ use std::io;
 use std::str::FromStr;
 
 use ansi_term::Color::Blue;
-use anyhow::{anyhow, Result};
 use phylum_cli::config::{get_current_project, Config, ProjectConfig};
 use serde::Serialize;
 
@@ -12,8 +11,8 @@ use phylum_cli::summarize::Summarize;
 use phylum_cli::types::{Action, JobId, PackageDescriptor, PackageType, RequestStatusResponse};
 use uuid::Uuid;
 
-use super::{CommandResult, CommandValue};
 use crate::commands::lock_files::get_packages_from_lockfile;
+use crate::exit::{exit_error, exit_fail};
 use crate::print::print_response;
 use crate::print_user_success;
 use crate::print_user_warning;
@@ -67,14 +66,15 @@ pub async fn get_job_status(
 
 /// Resolve a potential job_id, which could be a UUID string or the value
 /// 'current' which means the UUID of the current running job.
-fn resolve_job_id(job_id: &str) -> Result<Uuid> {
+fn resolve_job_id(job_id: &str) -> Uuid {
     let maybe_job_id = if job_id == "current" {
         get_current_project().map(|p: ProjectConfig| p.id)
     } else {
         JobId::from_str(job_id).ok()
     };
 
-    maybe_job_id.ok_or_else(|| anyhow!("Unable to resolve, or invalid job id: {}", job_id))
+    maybe_job_id
+        .unwrap_or_else(|| exit_fail(format!("Unable to resolve, or invalid job id: {}", job_id)))
 }
 
 /// Handle the history subcommand.
@@ -82,7 +82,7 @@ fn resolve_job_id(job_id: &str) -> Result<Uuid> {
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Action {
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
     let mut action = Action::None;
@@ -101,14 +101,14 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             } else {
                 // TODO The original code had unwrap in it above. This needs to
                 // be refactored in general for better flow
-                let job_id = resolve_job_id(project_job_id.expect("No job id found"))?;
+                let job_id = resolve_job_id(project_job_id.expect("No job id found"));
                 action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
             get_project_list(api, pretty_print).await;
         }
     } else if matches.is_present("JOB_ID") {
-        let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"))?;
+        let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"));
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else {
         let resp = api.get_status().await;
@@ -123,7 +123,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         }
     }
 
-    CommandValue::Action(action).into()
+    action
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -132,7 +132,7 @@ pub async fn handle_submission(
     api: &mut PhylumApi,
     config: Config,
     matches: &clap::ArgMatches,
-) -> CommandResult {
+) -> Action {
     let mut packages = vec![];
     let mut request_type = config.request_type; // default request type
     let mut synch = false; // get status after submission
@@ -145,19 +145,17 @@ pub async fn handle_submission(
 
     let project = get_current_project()
         .map(|p: ProjectConfig| p.id)
-        .ok_or_else( ||
-            anyhow!(
+        .unwrap_or_else(|| {
+            exit_fail(
                 "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
             )
-        )?;
+        });
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         // Should never get here if `LOCKFILE` was not specified
-        let lockfile = matches
-            .value_of("LOCKFILE")
-            .ok_or_else(|| anyhow!("Lockfile not found"))?;
+        let lockfile = matches.value_of("LOCKFILE").unwrap();
         let res = get_packages_from_lockfile(lockfile)
-            .ok_or_else(|| anyhow!("Unable to locate any valid package in package lockfile"))?;
+            .unwrap_or_else(|| exit_fail("Unable to locate any valid package in package lockfile"));
 
         packages = res.0;
         request_type = res.1;
@@ -209,7 +207,7 @@ pub async fn handle_submission(
                     line.clear();
                 }
                 Err(err) => {
-                    anyhow!(err);
+                    exit_error(err, Some("Error reading input"));
                 }
             }
         }
@@ -224,7 +222,8 @@ pub async fn handle_submission(
             project,
             label.map(|s| s.to_string()),
         )
-        .await?;
+        .await
+        .unwrap_or_else(|err| exit_error(err, Some("Error submitting package")));
 
     log::debug!("Response => {:?}", job_id);
     print_user_success!("Job ID: {}", job_id);
@@ -233,5 +232,6 @@ pub async fn handle_submission(
         log::debug!("Requesting status...");
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     }
-    CommandValue::Action(action).into()
+
+    action
 }

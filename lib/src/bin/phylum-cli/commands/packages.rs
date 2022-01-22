@@ -1,13 +1,11 @@
 use std::str::FromStr;
 
 use ansi_term::Color::Blue;
-use anyhow::anyhow;
 
 use clap::ArgMatches;
 use phylum_cli::api::PhylumApi;
 use phylum_cli::types::{PackageDescriptor, PackageType};
 
-use crate::commands::{CommandResult, CommandValue};
 use crate::print::print_response;
 use crate::print_user_warning;
 
@@ -38,11 +36,11 @@ pub async fn handle_get_package(
     api: &mut PhylumApi,
     req_type: &PackageType,
     matches: &clap::ArgMatches,
-) -> CommandResult {
+) -> u8 {
     let pretty_print = !matches.is_present("json");
     let pkg = parse_package(matches, req_type);
     if pkg.is_none() {
-        return Err(anyhow!("Could not find or parse package information"));
+        return 1;
     }
     let resp = api.get_package_details(&pkg.unwrap()).await;
     log::debug!("==> {:?}", resp);
@@ -55,5 +53,6 @@ pub async fn handle_get_package(
     } else {
         print_response(&resp, pretty_print, None);
     }
-    CommandValue::Void.into()
+    // TODO: We should Result and Error and not return exit codes. This isn't C...
+    0
 }
