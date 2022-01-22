@@ -382,6 +382,7 @@ mod tests {
             "pass": true,
             "action": "warn",
             "status": "complete",
+            "vulnerabilities": [],
             "riskVectors": {
                 "author": 0.90,
                 "engineering": 0.42,
@@ -400,7 +401,15 @@ mod tests {
                 "score": 0.7
                 }
             ],
-            "dependencies": {}
+            "heuristics": {
+                "something": {
+                    "description": "do stuff",
+                    "score": 3.14,
+                    "domain": "author",
+                    "risk_level": "medium"
+                }
+            },
+            "dependencies": []
           }
         "#;
 
@@ -514,6 +523,7 @@ mod tests {
                     "num_vulnerabilities": 7,
                     "package_score": 0.3,
                     "status": "incomplete",
+                    "vulnerabilities": [],
                     "issues": [
                         {
                             "title": "Commercial license risk in xmlrpc@0.3.0",
@@ -522,6 +532,14 @@ mod tests {
                             "domain": "license"
                         }
                     ],
+                    "heuristics": {
+                        "something": {
+                            "description": "do stuff",
+                            "score": 3.14,
+                            "domain": "engineering",
+                            "risk_level": "critical"
+                        }
+                    },
                     "riskVectors": {
                         "author": 0.9,
                         "engineering": 0.42,
@@ -529,10 +547,48 @@ mod tests {
                         "malicious_code": 1.0,
                         "vulnerability": 1.0
                     },
-                    "dependencies": {
-                        "bar": "^2.3.4",
-                        "baz": "<9.8.7"
-                    }
+                    "dependencies": [
+                        {
+                            "name": "bar",
+                            "version": "2.3.4",
+                            "type": "npm",
+                            "last_updated": 1603311564,
+                            "license": null,
+                            "package_score": 60.0,
+                            "status": "incomplete",
+                            "vulnerabilities": [],
+                            "heuristics": []
+                        },
+                        {
+                            "name": "baz",
+                            "version": "9.8.7",
+                            "type": "npm",
+                            "last_updated": 1603311564,
+                            "license": null,
+                            "package_score": 0.75,
+                            "status": "complete",
+                            "vulnerabilities": [],
+                            "heuristics": [
+                                {
+                                    "title": "Commercial license risk in xmlrpc@0.3.0",
+                                    "description": "license is medium risk",
+                                    "severity": "medium",
+                                    "domain": "license"
+                                }
+                            ],
+                            "riskVectors": {
+                                "author": 0.9,
+                                "engineering": 0.42,
+                                "license": 1.0,
+                                "malicious_code": 1.0,
+                                "vulnerability": 1.0
+                            },
+                            "dependencies": {
+                                "bar": "^2.3.4",
+                                "baz": "<9.8.7"
+                            }
+                        }
+                    ]
                 }
             ]
         }"#;

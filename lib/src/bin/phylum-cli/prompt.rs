@@ -8,7 +8,7 @@ pub fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
     let threshold = Input::with_theme(&ColorfulTheme::default())
         .with_prompt(format!(
             "{} Threshold",
-            format_args!("{}", White.paint(name.to_uppercase()))
+            format!("{}", White.paint(name.to_uppercase()))
         ))
         .validate_with(|input: &String| -> Result<(), &str> {
             if input.chars().all(char::is_numeric) {
@@ -27,7 +27,7 @@ pub fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
     if threshold == "0" {
         println!(
             "\nDisabling {} risk domain",
-            format_args!("{}", White.paint(name))
+            format!("{}", White.paint(name))
         );
         println!("\n-----\n");
         return Ok((0, "none"));
@@ -35,7 +35,7 @@ pub fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
 
     println!(
         "\nWhat should happen if a score falls below the {} threshold?\n",
-        format_args!("{}", White.paint(name))
+        format!("{}", White.paint(name))
     );
 
     let items = vec![

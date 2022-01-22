@@ -137,12 +137,16 @@ impl Renderable for ProjectGetDetailsRequest {
 
             renderer.push_str(
                 format!(
-                    // Differs from the title format slightly. The colored values
-                    // add control characters, which introduce a base offset of 9
-                    // zero-width chracters.
-                    "{:<16}{:<20}{:<41}{:<40}   {}\n",
-                    colored_score, msg, job.label, job.job_id, job.date,
-                )
+                // Differs from the title format slightly. The colored values
+                // add control characters, which introduce a base offset of 9
+                // zero-width chracters.
+                "{:<16}{:<20}{:<41}{:<40}   {}\n",
+                colored_score,
+                msg,
+                job.label,
+                job.job_id,
+                job.date,
+            )
                 .as_str(),
             );
         }
@@ -322,7 +326,7 @@ impl From<&Issue> for Vec<Row> {
             Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT)
                 .with_style(Attr::ForegroundColor(color::Color::from(&issue.risk_level))),
             Cell::new_align(
-                &format!("{} [{}]", &issue.title, issue.risk_domain),
+                &format!("{} [{}]", &issue.title, issue.risk_domain.to_string()),
                 format::Alignment::LEFT,
             )
             .with_style(Attr::Bold),
