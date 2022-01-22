@@ -30,21 +30,18 @@ jobs:
           echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
           echo $MINISIGN_PASSWORD | minisign -Sm phylum-linux-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
 
-          docker run --rm --entrypoint cat static-build src/bin/_phylum > _phylum
-          docker run --rm --entrypoint cat static-build src/bin/phylum.bash > phylum.bash
-          docker run --rm --entrypoint cat static-build src/bin/phylum.fish > phylum.fish
-          
           mkdir phylum-cli-release
           cp lib/install.sh phylum-cli-release/
           cp lib/src/bin/settings.yaml phylum-cli-release/
-          cp phylum.bash phylum-cli-release/
-          cp phylum.fish phylum-cli-release/
-          cp _phylum phylum-cli-release/
+          cp lib/src/bin/phylum.bash phylum-cli-release/
+          cp lib/src/bin/phylum.fish phylum-cli-release/
+          cp lib/src/bin/_phylum phylum-cli-release/
           cp phylum-linux-x86_64 phylum-cli-release/
           cp phylum-macos-x86_64 phylum-cli-release/
           cp lib/install.sh .
           cp lib/src/bin/settings.yaml .
-
+          cp lib/src/bin/phylum.bash .
+          cp lib/src/bin/_phylum .
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
