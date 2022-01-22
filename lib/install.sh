@@ -60,7 +60,7 @@ chmod +x ${HOME}/.phylum/phylum
 rc_path=""
 
 # If zsh is installed, we assume that's preferred
-if [ -f ${HOME}/.zshrc ]; then
+if [ -d ${HOME}/.zshrc ]; then
     rc_path=".zshrc"
 
     if ! grep -q '.phylum/completions' $HOME/${rc_path}; then
