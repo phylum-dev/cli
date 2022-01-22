@@ -211,13 +211,15 @@ async fn main() {
     env_logger::from_env(Env::default().default_filter_or("warn")).init();
 
     match handle_commands().await {
+        Ok(CommandValue::String(message)) => println!("{}", message),
         Ok(CommandValue::Action(action)) => match action {
             Action::None => exit_ok(None::<&str>),
             Action::Warn => exit_warn("Project failed threshold requirements!"),
             Action::Break => exit_fail("Project failed threshold requirements, failing the build!"),
         },
-        Ok(CommandValue::String(message)) => exit_ok(Some(&message)),
-        Ok(CommandValue::Void) => exit_ok(None::<&str>),
+        Ok(CommandValue::Void) => {
+            //nop
+        }
         Err(error) => {
             log::error!("Execution failed, cause: {:?}", error);
             exit_error(error.into(), Some("Execution failed"));
