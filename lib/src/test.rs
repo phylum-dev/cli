@@ -3,14 +3,13 @@
 /// enables logging statically for any test module this module it is imported into
 pub mod logging {
 
-    use lazy_static::lazy_static;
+    use static_init::dynamic;
 
-    lazy_static! {
-        static ref _LOGGER_INIT: bool = {
-            env_logger::init();
-            true
-        };
-    }
+    #[dynamic]
+    static mut _LOGGER_INIT: bool = {
+        env_logger::init();
+        true
+    };
 }
 
 pub mod mockito {

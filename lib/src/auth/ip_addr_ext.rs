@@ -7,16 +7,14 @@ mod ipv4 {
     use std::net::Ipv4Addr;
 
     use cidr::Ipv4Cidr;
-    use lazy_static::lazy_static;
+    use static_init::dynamic;
 
-    lazy_static! {
-        pub static ref SOFTWARE_SCOPE: Ipv4Cidr =
-            Ipv4Cidr::new(Ipv4Addr::new(0, 0, 0, 0), 8).unwrap();
-        pub static ref HOST_LOOPBACK: Ipv4Cidr =
-            Ipv4Cidr::new(Ipv4Addr::new(127, 0, 0, 0), 8).unwrap();
-        pub static ref LINK_LOCAL: Ipv4Cidr =
-            Ipv4Cidr::new(Ipv4Addr::new(169, 254, 0, 0), 16).unwrap();
-    }
+    #[dynamic(lazy)]
+    static SOFTWARE_SCOPE: Ipv4Cidr = Ipv4Cidr::new(Ipv4Addr::new(0, 0, 0, 0), 8).unwrap();
+    #[dynamic(lazy)]
+    static HOST_LOOPBACK: Ipv4Cidr = Ipv4Cidr::new(Ipv4Addr::new(127, 0, 0, 0), 8).unwrap();
+    #[dynamic(lazy)]
+    static LINK_LOCAL: Ipv4Cidr = Ipv4Cidr::new(Ipv4Addr::new(169, 254, 0, 0), 16).unwrap();
 
     /// Determine if a address is possibly routable beyond the local network
     /// segment. This method considers ANY ip address that is not software scope
@@ -33,16 +31,17 @@ mod ipv6 {
     use std::net::Ipv6Addr;
 
     use cidr::Ipv6Cidr;
-    use lazy_static::lazy_static;
+    use static_init::dynamic;
 
-    lazy_static! {
-        pub static ref SOFTWARE_SCOPE: Ipv6Cidr =
-            Ipv6Cidr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128).unwrap();
-        pub static ref HOST_LOOPBACK: Ipv6Cidr =
-            Ipv6Cidr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 128).unwrap();
-        pub static ref LINK_LOCAL: Ipv6Cidr =
-            Ipv6Cidr::new(Ipv6Addr::new(0xfe80, 0, 0, 0, 0, 0, 0, 0), 10).unwrap();
-    }
+    #[dynamic(lazy)]
+    static SOFTWARE_SCOPE: Ipv6Cidr =
+        Ipv6Cidr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128).unwrap();
+    #[dynamic(lazy)]
+    static HOST_LOOPBACK: Ipv6Cidr =
+        Ipv6Cidr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 128).unwrap();
+    #[dynamic(lazy)]
+    static LINK_LOCAL: Ipv6Cidr =
+        Ipv6Cidr::new(Ipv6Addr::new(0xfe80, 0, 0, 0, 0, 0, 0, 0), 10).unwrap();
 
     /// Determine if an address is possibly routable beyond the local network
     /// segment. This method considers ANY ip address that is not software scope
