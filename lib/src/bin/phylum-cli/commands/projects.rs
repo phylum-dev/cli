@@ -14,8 +14,8 @@ use crate::print_user_success;
 use crate::prompt::prompt_threshold;
 
 /// List the projects in this account.
-pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
-    let resp = api.get_projects().await;
+pub fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
+    let resp = api.get_projects();
     let proj_title = format!("{}", Blue.paint("Project Name"));
     let id_title = format!("{}", Blue.paint("Project ID"));
     println!("{:<38}{}", proj_title, id_title);
@@ -26,19 +26,15 @@ pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 /// Handle the project subcommand. Provides facilities for creating a new project,
 /// linking a current repository to an existing project, listing projects and
 /// setting project thresholds for risk domains.
-pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> u8 {
+pub fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> u8 {
     let pretty_print = !matches.is_present("json");
 
     if let Some(matches) = matches.subcommand_matches("create") {
         let project_name = matches.value_of("name").unwrap();
 
         log::info!("Initializing new project: `{}`", project_name);
-        // TODO: We shouldn't exit directly from functions or return error codes
-        // but use Result and Error, and leave final error handling to main()
-        // function.
         let project_id = api
             .create_project(project_name)
-            .await
             .unwrap_or_else(|err| exit_error(err, Some("Error initializing project")));
 
         let proj_conf = ProjectConfig {
@@ -54,10 +50,10 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         print_user_success!("Successfully created new project, {}", project_name);
         return 0;
     } else if matches.subcommand_matches("list").is_some() {
-        get_project_list(api, pretty_print).await;
+        get_project_list(api, pretty_print);
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.value_of("name").unwrap();
-        let resp = api.get_project_details(project_name).await;
+        let resp = api.get_project_details(project_name);
 
         match resp {
             Ok(proj) => {
@@ -125,7 +121,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         println!("Specify the thresholds and actions for {}. A threshold of zero will disable the threshold.", format!("{}", White.paint(project_name)));
         println!();
 
-        let project_details = match api.get_project_details(project_name).await {
+        let project_details = match api.get_project_details(project_name) {
             Ok(x) => x,
             Err(e) => {
                 log::error!("Failed to get projet details: {}", e);
@@ -134,7 +130,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
             }
         };
 
-        let mut user_settings = match api.get_user_settings().await {
+        let mut user_settings = match api.get_user_settings() {
             Ok(x) => x,
             Err(e) => {
                 log::error!("Failed to get user settings: {}", e);
@@ -170,7 +166,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
             );
         }
 
-        let resp = api.put_user_settings(&user_settings).await;
+        let resp = api.put_user_settings(&user_settings);
         match resp {
             Ok(_) => {
                 print_user_success!(
@@ -186,7 +182,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
             }
         }
     } else {
-        get_project_list(api, pretty_print).await;
+        get_project_list(api, pretty_print);
     }
 
     0

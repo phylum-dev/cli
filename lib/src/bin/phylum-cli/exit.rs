@@ -30,7 +30,6 @@ pub fn exit_warn(message: impl AsRef<str>) -> ! {
     process::exit(0)
 }
 
-/// Print an error to the user before exiting with exit code 1.
 pub fn exit_fail(message: impl AsRef<str>) -> ! {
     error!("{}", message.as_ref());
     print_user_failure!("Error: {}", message.as_ref());

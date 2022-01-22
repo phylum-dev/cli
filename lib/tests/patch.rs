@@ -5,8 +5,6 @@ extern crate serde_derive;
 
 use phylum_cli::restson::{Error, RestClient, RestPath};
 
-mod logging;
-
 #[derive(Serialize, Deserialize)]
 struct HttpBinPatch {
     data: String,
@@ -18,23 +16,23 @@ impl RestPath<()> for HttpBinPatch {
     }
 }
 
-#[tokio::test]
-async fn basic_patch() {
+#[test]
+fn basic_patch() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let data = HttpBinPatch {
         data: String::from("test data"),
     };
-    client.patch((), &data).await.unwrap();
+    client.patch((), &data).unwrap();
 }
 
-#[tokio::test]
-async fn patch_query_params() {
+#[test]
+fn patch_query_params() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinPatch {
         data: String::from("test data"),
     };
-    client.patch_with((), &data, &params).await.unwrap();
+    client.patch_with((), &data, &params).unwrap();
 }

@@ -2,8 +2,6 @@ use assert_cmd::Command;
 
 use phylum_cli::types::JobDescriptor;
 
-mod logging;
-
 fn is_sub<T: PartialEq>(haystack: &[T], needle: &[T]) -> bool {
     haystack.windows(needle.len()).any(|c| c == needle)
 }

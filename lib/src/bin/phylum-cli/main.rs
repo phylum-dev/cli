@@ -1,11 +1,13 @@
-use std::process;
-use std::str::FromStr;
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use clap::{load_yaml, App, AppSettings};
 use env_logger::Env;
 use home::home_dir;
 use spinners::{Spinner, Spinners};
+use std::process;
+use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+extern crate serde;
+extern crate serde_json;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
@@ -25,8 +27,7 @@ use print::*;
 
 use crate::commands::projects::handle_projects;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     env_logger::from_env(Env::default().default_filter_or("warn")).init();
 
     let yml = load_yaml!("../.conf/cli.yaml");
@@ -93,7 +94,7 @@ async fn main() {
 
     if check_for_updates {
         let updater = ApplicationUpdater::default();
-        match updater.get_latest_version(false).await {
+        match updater.get_latest_version(false) {
             Some(latest) => {
                 if updater.needs_update(ver, &latest) {
                     print_update_message();
@@ -125,61 +126,63 @@ async fn main() {
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
 
-    if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, config_path, matches, app_helper).await;
-        exit_ok(None::<String>);
-    }
-
     let ignore_certs =
         matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
     if ignore_certs {
         log::warn!("Ignoring TLS server certificate verification per user request.");
     }
 
-    let mut api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
-        timeout,
-        ignore_certs,
-    )
-    .await
-    .unwrap_or_else(|err| {
-        exit_error(err, Some("Error creating client"));
-    });
-
-    // PhylumApi may have had to log in, updating the auth info so we should save the config
-    if let Err(error) = save_config(config_path, &config) {
-        exit_fail(format!(
-            "Failed to save configuration to '{}' : {}",
-            config_path,
-            error.to_string()
-        ))
-    };
+    let mut api =
+        PhylumApi::new(&config.connection.uri, timeout, ignore_certs).unwrap_or_else(|err| {
+            exit_error(err, Some("Error creating client"));
+        });
 
     if matches.subcommand_matches("ping").is_some() {
-        let resp = api.ping().await;
+        let resp = api.ping();
         print_response(&resp, true, None);
         exit_ok(None::<&str>);
     }
 
+    let should_projects = matches.subcommand_matches("projects").is_some();
     let should_submit = matches.subcommand_matches("analyze").is_some()
         || matches.subcommand_matches("batch").is_some();
+    let should_get_history = matches.subcommand_matches("history").is_some();
     let should_cancel = matches.subcommand_matches("cancel").is_some();
+    let should_get_packages = matches.subcommand_matches("package").is_some();
 
-    // TODO: switch from if/else to non-exhaustive pattern match
+    let auth_subcommand = matches.subcommand_matches("auth");
+    let should_manage_tokens = auth_subcommand.is_some()
+        && auth_subcommand
+            .unwrap()
+            .subcommand_matches("keys")
+            .is_some();
+
+    if should_projects
+        || should_submit
+        || should_get_history
+        || should_cancel
+        || should_manage_tokens
+        || should_get_packages
+    {
+        let res = authenticate(&mut api, &mut config, should_manage_tokens);
+
+        if let Err(e) = res {
+            exit_error(e, Some("Error attempting to authenticate"));
+        }
+    }
+
     if let Some(matches) = matches.subcommand_matches("projects") {
-        exit_status = handle_projects(&mut api, matches).await;
+        exit_status = handle_projects(&mut api, matches);
+    } else if let Some(matches) = matches.subcommand_matches("auth") {
+        handle_auth(&mut api, &mut config, config_path, matches, app_helper);
     } else if let Some(matches) = matches.subcommand_matches("update") {
         let spinner = Spinner::new(
             Spinners::Dots12,
             "Downloading update and verifying binary signatures...".into(),
         );
         let updater = ApplicationUpdater::default();
-        match updater
-            .get_latest_version(matches.is_present("prerelease"))
-            .await
-        {
-            Some(ver) => match updater.do_update(ver).await {
+        match updater.get_latest_version(matches.is_present("prerelease")) {
+            Some(ver) => match updater.do_update(ver) {
                 Ok(msg) => {
                     spinner.stop();
                     println!();
@@ -198,17 +201,17 @@ async fn main() {
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {
-        exit_status = handle_get_package(&mut api, &config.request_type, matches).await;
+        exit_status = handle_get_package(&mut api, &config.request_type, matches);
     } else if should_submit {
-        action = handle_submission(&mut api, config, &matches).await;
+        action = handle_submission(&mut api, config, &matches);
     } else if let Some(matches) = matches.subcommand_matches("history") {
-        action = handle_history(&mut api, matches).await;
+        action = handle_history(&mut api, config, matches);
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
                 .unwrap_or_else(|err| exit_error(err, Some("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")));
-            let resp = api.cancel(&request_id).await;
+            let resp = api.cancel(&request_id);
             print_response(&resp, true, None);
         }
     }

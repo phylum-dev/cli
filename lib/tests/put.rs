@@ -5,8 +5,6 @@ extern crate serde_derive;
 
 use phylum_cli::restson::{Error, RestClient, RestPath};
 
-mod logging;
-
 #[derive(Serialize, Deserialize)]
 struct HttpBinPut {
     data: String,
@@ -24,49 +22,49 @@ impl RestPath<()> for HttpBinPut {
     }
 }
 
-#[tokio::test]
-async fn basic_put() {
+#[test]
+fn basic_put() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let data = HttpBinPut {
         data: String::from("test data"),
     };
-    client.put((), &data).await.unwrap();
+    client.put((), &data).unwrap();
 }
 
-#[tokio::test]
-async fn put_query_params() {
+#[test]
+fn put_query_params() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinPut {
         data: String::from("test data"),
     };
-    client.put_with((), &data, &params).await.unwrap();
+    client.put_with((), &data, &params).unwrap();
 }
 
-#[tokio::test]
-async fn put_capture() {
+#[test]
+fn put_capture() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let data = HttpBinPut {
         data: String::from("test data"),
     };
-    let resp: HttpBinPutResp = client.put_capture((), &data).await.unwrap();
+    let resp: HttpBinPutResp = client.put_capture((), &data).unwrap();
 
     assert_eq!(resp.json.data, "test data");
     assert_eq!(resp.url, "https://httpbin.org/put");
 }
 
-#[tokio::test]
-async fn put_capture_query_params() {
+#[test]
+fn put_capture_query_params() {
     let mut client = RestClient::new("https://httpbin.org").unwrap();
 
     let params = vec![("a", "2"), ("b", "abcd")];
     let data = HttpBinPut {
         data: String::from("test data"),
     };
-    let resp: HttpBinPutResp = client.put_capture_with((), &data, &params).await.unwrap();
+    let resp: HttpBinPutResp = client.put_capture_with((), &data, &params).unwrap();
 
     assert_eq!(resp.json.data, "test data");
     assert_eq!(resp.url, "https://httpbin.org/put?a=2&b=abcd");

@@ -1,5 +1,4 @@
 use chrono::{DateTime, Local};
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -15,8 +14,9 @@ pub struct ConnectionInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthInfo {
-    pub oidc_discovery_url: Url,
-    pub offline_access: Option<RefreshToken>,
+    pub user: String,
+    pub pass: String,
+    pub api_token: Option<ApiToken>,
 }
 
 pub type Packages = Vec<PackageDescriptor>;
@@ -39,10 +39,7 @@ pub struct ProjectConfig {
 }
 
 // TODO: define explicit error types
-// TODO: This is NOT atomic, and file corruption can occur
-// TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
-// Rename is guaranteed atomic. Need to handle case when files are on different mount point
-pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error>>
 where
     T: Serialize,
 {
@@ -51,7 +48,7 @@ where
     Ok(())
 }
 
-pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error + Send + Sync + 'static>>
+pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error>>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -60,12 +57,17 @@ where
     Ok(config)
 }
 
-pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error + Send + Sync + 'static>> {
+pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error>> {
     let mut config: Config = parse_config(path)?;
 
     // If an api token has been set in the environment, prefer that
     if let Ok(key) = env::var("PHYLUM_API_KEY") {
-        config.auth_info.offline_access = Some(RefreshToken::new(key));
+        log::debug!("Reading api token from environment");
+        let token: ApiToken = serde_json::from_str(&key).map_err(|e| {
+            log::error!("Malformed PHYLUM_API_KEY: `{}`", key);
+            e
+        })?;
+        config.auth_info.api_token = Some(token);
     }
     Ok(config)
 }
@@ -99,7 +101,9 @@ pub fn get_current_project() -> Option<ProjectConfig> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::{Key, UserId};
     use std::env::temp_dir;
+    use std::str::FromStr;
 
     fn write_test_config() {
         let con = ConnectionInfo {
@@ -107,8 +111,15 @@ mod tests {
         };
 
         let auth = AuthInfo {
-            oidc_discovery_url: Url::parse("http://example.com").unwrap(),
-            offline_access: Some(RefreshToken::new("FAKE TOKEN")),
+            user: "someone@someorg.com".into(),
+            pass: "abcd1234".into(),
+            api_token: Some(ApiToken {
+                name: Some("Foobar".to_string()),
+                active: true,
+                key: Key::from_str("5098fc16-5267-40ed-bf63-338ebdf185fe").unwrap(),
+                user_id: UserId::from_str("b4225454-13ee-4019-926e-cd5f8b128e4a").unwrap(),
+                created: "Dec 5, 2019".to_string(),
+            }),
         };
 
         let packages = vec![

@@ -32,7 +32,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
 }
 
 /// Handle the subcommands for the `package` subcommand.
-pub async fn handle_get_package(
+pub fn handle_get_package(
     api: &mut PhylumApi,
     req_type: &PackageType,
     matches: &clap::ArgMatches,
@@ -42,7 +42,7 @@ pub async fn handle_get_package(
     if pkg.is_none() {
         return 1;
     }
-    let resp = api.get_package_details(&pkg.unwrap()).await;
+    let resp = api.get_package_details(&pkg.unwrap());
     log::debug!("==> {:?}", resp);
 
     if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
@@ -53,6 +53,6 @@ pub async fn handle_get_package(
     } else {
         print_response(&resp, pretty_print, None);
     }
-    // TODO: We should Result and Error and not return exit codes. This isn't C...
+
     0
 }

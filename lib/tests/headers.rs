@@ -6,8 +6,6 @@ extern crate serde_derive;
 
 use phylum_cli::restson::{Error, RestClient, RestPath};
 
-mod logging;
-
 #[derive(Deserialize)]
 struct HttpBinAnything {
     headers: TestHeaders,
@@ -30,47 +28,47 @@ impl RestPath<()> for HttpBinAnything {
     }
 }
 
-#[tokio::test]
-async fn headers() {
+#[test]
+fn headers() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     client.set_header("user-agent", "restson-test").unwrap();
 
-    let data: HttpBinAnything = client.get(()).await.unwrap();
+    let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(data.headers.user_agent, "restson-test");
 }
 
-#[tokio::test]
-async fn headers_clear() {
+#[test]
+fn headers_clear() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
     client.set_header("X-Test", "12345").unwrap();
 
-    let data: HttpBinAnything = client.get(()).await.unwrap();
+    let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(data.headers.test, "12345");
 
     client.clear_headers();
 
-    let data: HttpBinAnything = client.get(()).await.unwrap();
+    let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(data.headers.test, "");
 }
 
-#[tokio::test]
-async fn default_user_agent() {
+#[test]
+fn default_user_agent() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    let data: HttpBinAnything = client.get(()).await.unwrap();
+    let data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(
         data.headers.user_agent,
         "phylum-cli/".to_owned() + env!("CARGO_PKG_VERSION")
     );
 }
 
-#[tokio::test]
-async fn response_headers() {
+#[test]
+fn response_headers() {
     let mut client = RestClient::new("http://httpbin.org").unwrap();
 
-    let _data: HttpBinAnything = client.get(()).await.unwrap();
+    let _data: HttpBinAnything = client.get(()).unwrap();
     assert_eq!(
         client.response_headers()["content-type"],
         "application/json"

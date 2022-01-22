@@ -31,6 +31,12 @@ impl Renderable for String {
     }
 }
 
+impl Renderable for ApiToken {
+    fn render(&self) -> String {
+        format!("{:<10} | {:>48}", self.created, self.key)
+    }
+}
+
 impl Renderable for ProjectGetRequest {
     fn render(&self) -> String {
         let name = format!("{}", White.paint(self.name.clone()));
