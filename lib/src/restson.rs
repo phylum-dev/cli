@@ -281,6 +281,7 @@ impl RestClient {
             Some(client) => client,
             None => {
                 if builder.ignore_certs {
+                    log::warn!("Not validating server certificate per user request.");
                     Client::builder().build(HttpsConnector::without_cert_validation())
                 } else {
                     Client::builder().build(HttpsConnector::with_native_roots())
