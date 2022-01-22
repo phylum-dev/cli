@@ -23,14 +23,13 @@ impl Histogram {
         let mut values: Vec<usize> = vec![0; bins];
 
         let step = (max - min) / bins as f64;
-        let scale = 100.0;
 
         for &y in data.iter() {
             if y < min || y > max {
                 continue;
             }
 
-            let mut bucket_id = ((y * scale).floor() / (step * scale)) as usize;
+            let mut bucket_id = ((y - min) / step).round() as usize;
 
             // Account for packages with a "perfect" (i.e. 1.0) score
             // This is generally unlikely but possible with packages that have
