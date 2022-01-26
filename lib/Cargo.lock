@@ -1188,7 +1188,7 @@ checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "phylum-cli"
-version = "1.1.5"
+version = "1.2.0"
 dependencies = [
  "ansi_term 0.12.1",
  "anyhow",
@@ -1238,7 +1238,7 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#47031db03f8f05bf3105c5e9ef554b59cc56f4b9"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=master#34cfab86b9a6e0c4b66e5899063347b726c732b0"
 dependencies = [
  "log",
  "serde",
