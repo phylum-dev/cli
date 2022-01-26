@@ -30,19 +30,21 @@ impl RestPath<()> for PingResponse {
     }
 }
 
-/// GET /job
+/// GET /job/
 impl RestPath<u32> for AllJobsStatusResponse {
     fn get_path(limit: u32) -> Result<String, Error> {
         Ok(format!("{}/job/?limit={}&verbose=1", API_PATH, limit))
     }
 }
 
+/// Get /job/<job_id> summary
 impl<'a> RestPath<JobId> for JobStatusResponse<PackageStatus> {
     fn get_path(job_id: JobId) -> Result<String, Error> {
         Ok(format!("{}/job/{}", API_PATH, job_id))
     }
 }
 
+/// Get /job/<job_id> verbose
 impl<'a> RestPath<JobId> for JobStatusResponse<PackageStatusExtended> {
     fn get_path(job_id: JobId) -> Result<String, Error> {
         Ok(format!("{}/job/{}?verbose=True", API_PATH, job_id))
