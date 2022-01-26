@@ -394,7 +394,7 @@ fn issue_to_row(issue: &Issue) -> Vec<Row> {
             Attr::ForegroundColor(risk_level_to_color(&issue.risk_level)),
         ),
         Cell::new_align(
-            &format!("{} [{}]", &issue.title, issue.risk_domain.to_string()),
+            &format!("{} [{}]", &issue.title, issue.risk_domain),
             format::Alignment::LEFT,
         )
         .with_style(Attr::Bold),
