@@ -57,13 +57,15 @@ SOFTWARE.
 //! }
 //! ```
 
+use std::time::Duration;
+use std::{error, fmt};
+
 use hyper::header::*;
 use hyper::{Client, Method, Request};
 use hyper_rustls::HttpsConnector;
+use log::*;
 use serde::{self, Deserialize};
 use serde_json;
-use std::time::Duration;
-use std::{error, fmt};
 use tokio;
 use tokio::time::timeout;
 use url;

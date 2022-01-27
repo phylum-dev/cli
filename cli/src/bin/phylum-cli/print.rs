@@ -5,6 +5,7 @@ use ansi_term::Color::{Blue, Cyan};
 use clap::App;
 use serde::Serialize;
 
+use phylum_cli::api::PhylumApiError;
 use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
 
@@ -33,7 +34,7 @@ macro_rules! print_user_failure {
 }
 
 pub fn print_response<T>(
-    resp: &Result<T, phylum_cli::Error>,
+    resp: &Result<T, PhylumApiError>,
     pretty_print: bool,
     filter: Option<Filter>,
 ) where

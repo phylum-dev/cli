@@ -4,15 +4,12 @@ pub mod config;
 pub mod filter;
 pub mod lockfiles;
 pub mod render;
-pub mod restson;
 pub mod summarize;
 #[cfg(test)]
 mod test;
 pub mod types;
 pub mod update;
 pub mod utils;
-
-pub use restson::Error;
 
 #[cfg(test)]
 #[allow(unused_imports)]
@@ -24,3 +21,4 @@ extern crate log;
 
 //#[macro_use]
 //extern crate prettytable;
+pub use reqwest::Error;

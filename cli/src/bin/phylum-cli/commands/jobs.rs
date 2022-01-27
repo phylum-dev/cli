@@ -7,9 +7,10 @@ use phylum_cli::config::{get_current_project, Config, ProjectConfig};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
+use reqwest::StatusCode;
 use serde::Serialize;
 
-use phylum_cli::api::PhylumApi;
+use phylum_cli::api::{PhylumApi, PhylumApiError};
 use phylum_cli::filter::Filter;
 use phylum_cli::summarize::Summarize;
 use uuid::Uuid;
@@ -23,7 +24,7 @@ use crate::print_user_warning;
 use super::projects::get_project_list;
 
 fn handle_status<T>(
-    resp: Result<JobStatusResponse<T>, phylum_cli::Error>,
+    resp: Result<JobStatusResponse<T>, PhylumApiError>,
     pretty: bool,
     filter: Option<Filter>,
 ) -> Action
@@ -33,7 +34,8 @@ where
 {
     let mut action = Action::None;
 
-    if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+    // if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+    if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
         print_user_warning!(
             "No results found. Submit a lockfile for processing:\n\n\t{}\n",
             Blue.paint("phylum analyze <lock_file>")
@@ -114,7 +116,8 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else {
         let resp = api.get_status().await;
-        if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+        // if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
+        if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
                 Blue.paint("phylum analyze <lock_file>")

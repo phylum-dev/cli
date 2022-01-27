@@ -9,6 +9,8 @@ use phylum_types::types::project::CreateProjectResponse;
 use phylum_types::types::project::ProjectDetailsResponse;
 use phylum_types::types::project::ProjectSummaryResponse;
 use phylum_types::types::user_settings::*;
+use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::{Client, StatusCode};
 use thiserror::Error as ThisError;
 
 mod common;
@@ -20,24 +22,35 @@ use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::AuthAction;
 use crate::config::AuthInfo;
-use crate::restson::{Error as RestsonError, RestClient};
 use crate::types::AuthStatusResponse;
 use crate::types::PingResponse;
 
+type Result<T> = std::result::Result<T, PhylumApiError>;
+
 pub struct PhylumApi {
-    client: RestClient,
+    client: Client,
+    api_uri: String,
 }
 
 /// Phylum Api Error type
 #[derive(ThisError, Debug)]
 pub enum PhylumApiError {
     #[error("Error invoking restson endpoint")]
-    RestsonError {
+    ReqwestError {
         #[from]
-        source: RestsonError,
+        source: reqwest::Error,
     },
     #[error(transparent)]
     Other(#[from] anyhow::Error),
+}
+
+impl PhylumApiError {
+    pub fn status(&self) -> Option<StatusCode> {
+        match self {
+            PhylumApiError::ReqwestError { source } => source.status(),
+            PhylumApiError::Other(_) => None,
+        }
+    }
 }
 
 impl PhylumApi {
@@ -47,10 +60,10 @@ impl PhylumApi {
     /// information. It is the duty of the calling code to save any changes
     pub async fn new(
         auth_info: &mut AuthInfo,
-        api_url: &str,
+        api_uri: &str,
         request_timeout: Option<u64>,
         ignore_certs: bool,
-    ) -> Result<Self, PhylumApiError> {
+    ) -> Result<Self> {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &auth_info.offline_access {
             Some(refresh_token) => handle_refresh_tokens(auth_info, refresh_token).await?,
@@ -59,29 +72,44 @@ impl PhylumApi {
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
 
-        let mut client = RestClient::builder()
-            .timeout(Duration::from_secs(
-                request_timeout.unwrap_or(std::u64::MAX),
-            ))
-            .ignore_certs(ignore_certs)
-            .build(api_url)?;
-
+        let yml = clap::load_yaml!("../bin/.conf/cli.yaml");
+        let version = yml["version"].as_str().unwrap_or("");
+        let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do
         // not need to worry about refreshing the access token. We just set it
         // here and be done.
-        client.set_jwt_auth((&tokens.access_token).into())?;
+        headers.insert(
+            "Authorization",
+            HeaderValue::from_str(&format!("Bearer {}", String::from(&tokens.access_token)))
+                .unwrap(),
+        );
+        headers.insert("version", HeaderValue::from_str(version).unwrap());
 
-        let yml = clap::load_yaml!("bin/.conf/cli.yaml");
-        let version = yml["version"].as_str().unwrap_or("");
-        client.set_header("version", version)?;
+        let client = Client::builder()
+            .timeout(Duration::from_secs(
+                request_timeout.unwrap_or(std::u64::MAX),
+            ))
+            .danger_accept_invalid_certs(ignore_certs)
+            // .ignore_certs(ignore_certs)
+            .default_headers(headers)
+            .build()?;
 
-        Ok(Self { client })
+        // client.set_jwt_auth((&tokens.access_token).into())?;
+
+        // let yml = clap::load_yaml!("../bin/.conf/cli.yaml");
+        // let version = yml["version"].as_str().unwrap_or("");
+        // client.set_header("version", version)?;
+
+        Ok(Self {
+            client,
+            api_uri: api_uri.to_string(),
+        })
     }
 
     /// update auth info by forcing the login flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn login(mut auth_info: AuthInfo) -> Result<AuthInfo, PhylumApiError> {
+    pub async fn login(mut auth_info: AuthInfo) -> Result<AuthInfo> {
         let tokens = handle_auth_flow(&AuthAction::Login, &auth_info).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
@@ -90,51 +118,82 @@ impl PhylumApi {
     /// update auth info by forcing the registration flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn register(mut auth_info: AuthInfo) -> Result<AuthInfo, PhylumApiError> {
+    pub async fn register(mut auth_info: AuthInfo) -> Result<AuthInfo> {
         let tokens = handle_auth_flow(&AuthAction::Register, &auth_info).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
     }
 
     /// Ping the system and verify it's up
-    pub async fn ping(&mut self) -> Result<String, RestsonError> {
-        let resp: PingResponse = self.client.get(()).await?;
-        Ok(resp.msg)
+    pub async fn ping(&mut self) -> Result<String> {
+        Ok(self
+            .client
+            .get(job::get_ping(&self.api_uri))
+            .send()
+            .await?
+            .json::<PingResponse>()
+            .await?
+            .msg)
     }
 
     /// Check auth status of the current user
-    pub async fn auth_status(&mut self) -> Result<bool, RestsonError> {
-        let resp: AuthStatusResponse = self.client.get(()).await?;
-        Ok(resp.authenticated)
+    pub async fn auth_status(&mut self) -> Result<bool> {
+        Ok(self
+            .client
+            .get(job::get_auth_status(&self.api_uri))
+            .send()
+            .await?
+            .json::<AuthStatusResponse>()
+            .await?
+            .authenticated)
     }
 
     /// Create a new project
-    pub async fn create_project(&mut self, name: &str) -> Result<ProjectId, RestsonError> {
-        let req = CreateProjectRequest {
-            name: name.to_string(),
-        };
-        let resp: CreateProjectResponse = self.client.put_capture((), &req).await?;
-        Ok(resp.id)
+    pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
+        Ok(self
+            .client
+            .put(project::put_create_project(&self.api_uri))
+            .json(&CreateProjectRequest {
+                name: name.to_string(),
+            })
+            .send()
+            .await?
+            .json::<CreateProjectResponse>()
+            .await?
+            .id)
     }
 
     /// Get a list of projects
-    pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>, RestsonError> {
-        let resp: Vec<ProjectSummaryResponse> = self.client.get(()).await?;
-        Ok(resp)
+    pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>> {
+        Ok(self
+            .client
+            .get(project::get_project_summary(&self.api_uri))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Get user settings
-    pub async fn get_user_settings(&mut self) -> Result<UserSettings, RestsonError> {
-        let resp: UserSettings = self.client.get(()).await?;
-        Ok(resp)
+    pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
+        Ok(self
+            .client
+            .get(user_settings::get_user_settings(&self.api_uri))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Put updated user settings
-    pub async fn put_user_settings(
-        &mut self,
-        settings: &UserSettings,
-    ) -> Result<bool, RestsonError> {
-        let _resp: UserSettings = self.client.put_capture((), settings).await?;
+    pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
+        self.client
+            .put(user_settings::put_user_settings(&self.api_uri))
+            .json(&settings)
+            .send()
+            .await?
+            .json::<UserSettings>()
+            .await?;
         Ok(true)
     }
 
@@ -146,7 +205,7 @@ impl PhylumApi {
         is_user: bool,
         project: ProjectId,
         label: Option<String>,
-    ) -> Result<JobId, RestsonError> {
+    ) -> Result<JobId> {
         let req = SubmitPackageRequest {
             package_type: req_type.to_owned(),
             packages: package_list.to_vec(),
@@ -155,7 +214,14 @@ impl PhylumApi {
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
         };
         log::debug!("==> Sending package submission: {:?}", req);
-        let resp: SubmitPackageResponse = self.client.put_capture((), &req).await?;
+        let resp: SubmitPackageResponse = self
+            .client
+            .put(job::put_submit_package(&self.api_uri))
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(resp.job_id)
     }
 
@@ -163,50 +229,79 @@ impl PhylumApi {
     pub async fn get_job_status(
         &mut self,
         job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatus>, RestsonError> {
-        let resp: JobStatusResponse<PackageStatus> = self.client.get(job_id.to_owned()).await?;
-        Ok(resp)
+    ) -> Result<JobStatusResponse<PackageStatus>> {
+        Ok(self
+            .client
+            .get(job::get_job_status(&self.api_uri, job_id, false))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Get the status of a previously submitted job (verbose output)
     pub async fn get_job_status_ext(
         &mut self,
         job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatusExtended>, RestsonError> {
-        let resp: JobStatusResponse<PackageStatusExtended> =
-            self.client.get(job_id.to_owned()).await?;
-        Ok(resp)
+    ) -> Result<JobStatusResponse<PackageStatusExtended>> {
+        Ok(self
+            .client
+            .get(job::get_job_status(&self.api_uri, job_id, true))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Get the status of all jobs
-    pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse, RestsonError> {
-        let resp: AllJobsStatusResponse = self.client.get(30).await?;
-        Ok(resp)
+    pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
+        Ok(self
+            .client
+            .get(job::get_all_jobs_status(&self.api_uri, 30))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Get the details of a specific project
     pub async fn get_project_details(
         &mut self,
         project_name: &str,
-    ) -> Result<ProjectDetailsResponse, RestsonError> {
+    ) -> Result<ProjectDetailsResponse> {
         //TODO: POOR NAME
-        let resp: ProjectDetailsResponse = self.client.get(project_name).await?;
-        Ok(resp)
+        Ok(self
+            .client
+            .get(job::get_project_details(&self.api_uri, project_name))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Get package details
     pub async fn get_package_details(
         &mut self,
         pkg: &PackageDescriptor,
-    ) -> Result<PackageStatusExtended, RestsonError> {
-        let resp: PackageStatusExtended = self.client.get(pkg.to_owned()).await?;
-        Ok(resp)
+    ) -> Result<PackageStatusExtended> {
+        Ok(self
+            .client
+            .get(job::get_package_status(&self.api_uri, pkg))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     /// Cancel a job currently in progress
-    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse, RestsonError> {
-        let resp: CancelJobResponse = self.client.delete_capture(job_id.to_owned()).await?;
-        Ok(resp)
+    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse> {
+        Ok(self
+            .client
+            .delete(job::delete_job(&self.api_uri, job_id))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 }
 
@@ -225,15 +320,14 @@ mod tests {
 
     use super::*;
     #[tokio::test]
-    async fn create_client() -> Result<(), PhylumApiError> {
+    async fn create_client() -> Result<()> {
         let mock_server = build_mock_server().await;
         build_phylum_api(&mock_server).await?;
         Ok(())
     }
 
     #[tokio::test]
-    async fn when_creating_unauthenticated_phylum_api_it_auths_itself() -> Result<(), PhylumApiError>
-    {
+    async fn when_creating_unauthenticated_phylum_api_it_auths_itself() -> Result<()> {
         let mock_server = build_mock_server().await;
         let mut auth_info = build_unauthenticated_auth_info(&mock_server);
         PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None, false).await?;
@@ -247,8 +341,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn when_submitting_a_request_phylum_api_includes_access_token(
-    ) -> Result<(), PhylumApiError> {
+    async fn when_submitting_a_request_phylum_api_includes_access_token() -> Result<()> {
         let mock_server = build_mock_server().await;
 
         let token_holder: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
@@ -293,7 +386,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn submit_request() -> Result<(), PhylumApiError> {
+    async fn submit_request() -> Result<()> {
         let mock_server = build_mock_server().await;
         Mock::given(method("PUT"))
             .and(path("api/v0/job"))
@@ -320,7 +413,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_status() -> Result<(), PhylumApiError> {
+    async fn get_status() -> Result<()> {
         let body = r#"
         {
             "count": 1,
@@ -385,7 +478,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_package_details() -> Result<(), PhylumApiError> {
+    async fn get_package_details() -> Result<()> {
         let body = r#"
         {
             "name": "@schematics/angular",
@@ -442,7 +535,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_job_status() -> Result<(), PhylumApiError> {
+    async fn get_job_status() -> Result<()> {
         let body = r#"
         {
             "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
@@ -496,7 +589,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_job_status_ext() -> Result<(), PhylumApiError> {
+    async fn get_job_status_ext() -> Result<()> {
         let body = r#"
         {
             "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
@@ -572,7 +665,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn cancel() -> Result<(), PhylumApiError> {
+    async fn cancel() -> Result<()> {
         let body = r#"{"msg": "Job deleted"}"#;
 
         let mock_server = build_mock_server().await;
