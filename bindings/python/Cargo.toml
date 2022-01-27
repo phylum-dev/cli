@@ -9,7 +9,7 @@ name = "cli_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-phylum-cli = { path = "../../lib" }
+phylum-cli = { path = "../../cli" }
 serde_json = "^1.0"
 
 [dependencies.pyo3]
