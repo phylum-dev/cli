@@ -111,7 +111,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
     let home_path =
         home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
 
-    Ok(home_path.as_path().join(".phylum").join("settings.yaml"))
+    Ok(home_path.join(".phylum").join("settings.yaml"))
     // let settings_path = settings_path.to_string().ok_or_else(|| {
     //     log::error!("Unicode parsing error in configuration file path");
     //     anyhow!(
