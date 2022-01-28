@@ -7,7 +7,7 @@ build = "build.rs"
 
 [[bin]]
 name = "phylum"
-path = "src/bin/phylum-cli/main.rs"
+path = "src/bin/phylum/main.rs"
 
 [features]
 phylum-online = []

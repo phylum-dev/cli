@@ -1,17 +1,18 @@
+use std::path::Path;
+
 use ansi_term::Color::{Blue, White};
 use anyhow::anyhow;
-
 use chrono::Local;
+use uuid::Uuid;
+
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 
-use uuid::Uuid;
-
 use super::{CommandResult, CommandValue};
 use crate::print::*;
+use crate::prompt::prompt_threshold;
 use crate::print_user_failure;
 use crate::print_user_success;
-use crate::prompt::prompt_threshold;
 
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
@@ -42,7 +43,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
             created_at: Local::now(),
         };
 
-        save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
+        save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
             print_user_failure!("Failed to save user projects file: {}", err);
         });
 
@@ -62,7 +63,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
                     name: proj.name,
                     created_at: Local::now(),
                 };
-                save_config(PROJ_CONF_FILE, &proj_conf).unwrap_or_else(|err| {
+                save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
                     log::error!("Failed to save user credentials to config: {}", err)
                 });
 

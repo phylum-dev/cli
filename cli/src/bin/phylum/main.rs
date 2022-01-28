@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -5,15 +6,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::anyhow;
 use clap::{load_yaml, App, AppSettings};
 use env_logger::Env;
-use home::home_dir;
 use log::*;
-use phylum_types::types::common::JobId;
-use phylum_types::types::job::Action;
 use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::*;
 use phylum_cli::update::ApplicationUpdater;
+use phylum_types::types::common::JobId;
+use phylum_types::types::job::Action;
 
 mod commands;
 mod print;
@@ -66,7 +66,7 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<
 }
 
 async fn handle_commands() -> CommandResult {
-    let yml = load_yaml!("../.conf/cli.yaml");
+    let yml = load_yaml!("../../cli.yaml");
     let app = App::from(yml)
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::SubcommandRequiredElseHelp);
@@ -77,24 +77,32 @@ async fn handle_commands() -> CommandResult {
 
     let matches = app.get_matches();
 
-    let home_path = home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
+    // let home_path = home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
+    // let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
+    // let settings_path = settings_path.to_str().ok_or_else(|| {
+    //     log::error!("Unicode parsing error in configuration file path");
+    //     anyhow!(
+    //         "Unable to read path to configuration file at, invalud unicode '{:?}'",
+    //         home_path
+    //     )
+    // })?;
+    let settings_path = get_home_settings_path()?;
 
-    let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
+    let config_path = matches
+        .value_of("config")
+        .and_then(|config_path| shellexpand::env(config_path).ok())
+        .map(|config_path| PathBuf::from(config_path.to_string()))
+        .unwrap_or(settings_path);
 
-    let settings_path = settings_path.to_str().ok_or_else(|| {
-        log::error!("Unicode parsing error in configuration file path");
+    log::debug!("Reading config from {}", config_path.to_string_lossy());
+
+    let mut config: Config = read_configuration(&config_path).map_err(|err| {
         anyhow!(
-            "Unable to read path to configuration file at, invalud unicode '{:?}'",
-            home_path
+            "Failed to read configuration at `{}`: {}",
+            config_path.to_string_lossy(),
+            err
         )
     })?;
-
-    let config_path = matches.value_of("config").unwrap_or(settings_path);
-
-    log::debug!("Reading config from {}", config_path);
-
-    let mut config: Config = read_configuration(config_path)
-        .map_err(|err| anyhow!("Failed to read configuration at `{}`: {}", config_path, err))?;
 
     let mut check_for_updates = false;
 
@@ -117,7 +125,7 @@ async fn handle_commands() -> CommandResult {
 
         if check_for_updates {
             config.last_update = Some(now);
-            save_config(config_path, &config)
+            save_config(&config_path, &config)
                 .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
         }
     }
@@ -160,7 +168,7 @@ async fn handle_commands() -> CommandResult {
         .and_then(|t| t.parse::<u64>().ok());
 
     if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, config_path, matches, app_helper).await?;
+        handle_auth(config, &config_path, matches, app_helper).await?;
         return CommandValue::Void.into();
     }
 
@@ -180,8 +188,11 @@ async fn handle_commands() -> CommandResult {
     .map_err(|err| anyhow!("Error creating client").context(err))?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(config_path, &config).map_err(|error| {
-        let msg = format!("Failed to save configuration to '{}'", config_path);
+    save_config(&config_path, &config).map_err(|error| {
+        let msg = format!(
+            "Failed to save configuration to '{}'",
+            config_path.to_string_lossy()
+        );
         anyhow!(msg).context(error)
     })?;
 

@@ -1,3 +1,1 @@
-src/bin/_phylum
-src/bin/phylum.bash
-src/bin/phylum.fish
+src/bin/completions

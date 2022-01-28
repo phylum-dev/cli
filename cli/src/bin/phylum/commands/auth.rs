@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::anyhow;
 use clap::App;
 
@@ -11,7 +13,7 @@ use crate::print_user_warning;
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(mut config: Config, config_path: &str) -> CommandResult {
+async fn handle_auth_register(mut config: Config, config_path: &Path) -> CommandResult {
     config.auth_info = PhylumApi::register(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     CommandValue::Void.into()
@@ -19,7 +21,7 @@ async fn handle_auth_register(mut config: Config, config_path: &str) -> CommandR
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-async fn handle_auth_login(mut config: Config, config_path: &str) -> CommandResult {
+async fn handle_auth_login(mut config: Config, config_path: &Path) -> CommandResult {
     config.auth_info = PhylumApi::login(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     CommandValue::Void.into()
@@ -37,7 +39,7 @@ pub fn handle_auth_status(config: &Config) {
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
-    config_path: &str,
+    config_path: &Path,
     matches: &clap::ArgMatches,
     app_helper: &mut App<'_>,
 ) -> CommandResult {

@@ -5,11 +5,11 @@ use clap_generate::{
 };
 
 const BIN_NAME: &str = "phylum";
-const OUT_DIR: &str = "src/bin/";
+const OUT_DIR: &str = "src/bin/completions";
 
 fn main() {
     println!("Running build");
-    let yml = load_yaml!("src/bin/.conf/cli.yaml");
+    let yml = load_yaml!("src/cli.yaml");
     let mut app = App::from(yml);
 
     // Create tab completions files for some popular shells

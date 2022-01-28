@@ -7,10 +7,11 @@ use pyo3::prelude::*;
 //use pyo3::wrap_pyfunction;
 
 use phylum_cli::api::PhylumApi as RustPhylumApi;
-use phylum_cli::types::ApiToken as RustApiToken;
-use phylum_cli::types::JwtToken as RustJwtToken;
-use phylum_cli::types::Key;
-use phylum_cli::types::{JobId, PackageDescriptor, PackageType, ProjectId, UserId};
+// use phylum_cli::types::ApiToken as RustApiToken;
+// use phylum_cli::types::JwtToken as RustJwtToken;
+// use phylum_cli::types::Key;
+// use phylum_cli::types::{JobId, PackageDescriptor, PackageType, ProjectId, UserId};
+use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_cli::Error;
 
 #[pyclass]

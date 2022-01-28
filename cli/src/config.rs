@@ -1,10 +1,11 @@
+use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::env;
-use std::error::Error;
-use std::fs;
-use std::path::PathBuf;
 
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
@@ -46,25 +47,31 @@ pub struct ProjectConfig {
 // TODO: This is NOT atomic, and file corruption can occur
 // TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
 // Rename is guaranteed atomic. Need to handle case when files are on different mount point
-pub fn save_config<T>(path: &str, config: &T) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
     let yaml = serde_yaml::to_string(config)?;
-    fs::write(shellexpand::env(path)?.as_ref(), yaml)?;
+    // REFACTOR do we need shellexpand?
+    // fs::write(shellexpand::env(path)?.as_ref(), yaml)?;
+    fs::write(path, yaml)?;
     Ok(())
 }
 
-pub fn parse_config<T>(path: &str) -> Result<T, Box<dyn Error + Send + Sync + 'static>>
+pub fn parse_config<T>(path: &Path) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
-    let config: T = serde_yaml::from_str(&contents)?;
-    Ok(config)
+    // REFACTOR do we need shellexpand?
+    // let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
+    // let config: T = serde_yaml::from_str(&contents)?;
+    // Ok(config)
+
+    let contents = fs::read_to_string(path)?;
+    Ok(serde_yaml::from_str::<T>(&contents)?)
 }
 
-pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error + Send + Sync + 'static>> {
+pub fn read_configuration(path: &Path) -> Result<Config> {
     let mut config: Config = parse_config(path)?;
 
     // If an api token has been set in the environment, prefer that
@@ -74,7 +81,7 @@ pub fn read_configuration(path: &str) -> Result<Config, Box<dyn Error + Send + S
     Ok(config)
 }
 
-pub fn find_project_conf(starting_directory: &str) -> Option<String> {
+pub fn find_project_conf(starting_directory: &Path) -> Option<PathBuf> {
     let mut path: PathBuf = starting_directory.into();
     let mut attempts = 0;
     const MAX_DEPTH: u8 = 32;
@@ -82,7 +89,7 @@ pub fn find_project_conf(starting_directory: &str) -> Option<String> {
     loop {
         let search_path = path.join(PROJ_CONF_FILE);
         if search_path.is_file() {
-            return Some(search_path.to_string_lossy().to_string());
+            return Some(search_path);
         }
 
         if attempts > MAX_DEPTH {
@@ -94,10 +101,24 @@ pub fn find_project_conf(starting_directory: &str) -> Option<String> {
 }
 
 pub fn get_current_project() -> Option<ProjectConfig> {
-    find_project_conf(".").and_then(|s| {
-        log::info!("Found project configuration file at {}", s);
+    find_project_conf(Path::new(".")).and_then(|s| {
+        log::info!("Found project configuration file at {}", s.to_string_lossy());
         parse_config(&s).ok()
     })
+}
+
+pub fn get_home_settings_path() -> Result<PathBuf> {
+    let home_path =
+        home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
+
+    Ok(home_path.as_path().join(".phylum").join("settings.yaml"))
+    // let settings_path = settings_path.to_string().ok_or_else(|| {
+    //     log::error!("Unicode parsing error in configuration file path");
+    //     anyhow!(
+    //         "Unable to read path to configuration file at, invalud unicode '{:?}'",
+    //         home_path
+    //     )
+    // })?;
 }
 
 #[cfg(test)]
@@ -143,7 +164,7 @@ mod tests {
         };
         let temp_dir = temp_dir();
         let test_config_file = temp_dir.as_path().join("test_config");
-        save_config(test_config_file.to_str().unwrap(), &config).unwrap();
+        save_config(&test_config_file, &config).unwrap();
     }
 
     #[test]
@@ -156,7 +177,7 @@ mod tests {
         write_test_config();
         let temp_dir = temp_dir();
         let test_config_file = temp_dir.as_path().join("test_config");
-        let config: Config = parse_config(test_config_file.to_str().unwrap()).unwrap();
+        let config: Config = parse_config(&test_config_file).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
     }
 }
