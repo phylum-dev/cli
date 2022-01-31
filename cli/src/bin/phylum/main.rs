@@ -66,11 +66,13 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<
 }
 
 async fn handle_commands() -> CommandResult {
-    let yml = load_yaml!("../../cli.yaml");
-    let app = App::from(yml)
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .setting(AppSettings::SubcommandRequiredElseHelp);
-    let ver = &app.render_version();
+    // let yml = load_yaml!("../../cli.yaml");
+    // let app = App::from(yml)
+    //     .setting(AppSettings::ArgRequiredElseHelp)
+    //     .setting(AppSettings::SubcommandRequiredElseHelp);
+    let app = phylum_cli::app::app();
+    let app_name = app.get_name().to_string();
+    let ver = app.render_version();
 
     // Required for printing help messages since `get_matches()` consumes `App`
     let app_helper = &mut app.clone();
@@ -134,7 +136,7 @@ async fn handle_commands() -> CommandResult {
         let updater = ApplicationUpdater::default();
         match updater.get_latest_version(false).await {
             Some(latest) => {
-                if updater.needs_update(ver, &latest) {
+                if updater.needs_update(&ver, &latest) {
                     print_update_message();
                 }
             }
@@ -157,10 +159,11 @@ async fn handle_commands() -> CommandResult {
     }
 
     if matches.subcommand_matches("version").is_some() {
-        let name = yml["name"].as_str().unwrap_or("");
-        let version = yml["version"].as_str().unwrap_or("");
+        // let name = yml["name"].as_str().unwrap_or("");
+        // let version = yml["version"].as_str().unwrap_or("");
 
-        return CommandValue::String(format!("{} (Version {})", name, version)).into();
+        // return CommandValue::String(format!("{} (Version {})", name, version)).into();
+        return CommandValue::String(format!("{app_name} (Version {ver})")).into();
     }
 
     let timeout = matches

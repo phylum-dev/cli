@@ -3,7 +3,6 @@ name = "phylum-cli"
 version = "1.2.0"
 authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
-build = "build.rs"
 
 [[bin]]
 name = "phylum"
@@ -25,7 +24,7 @@ anyhow = "1.0.44"
 base64 = "0.13.0"
 chrono = { version = "^0.4", features = ["serde"] }
 cidr = "0.2.0"
-clap = { version = "3.0.0-beta.4", features = ["yaml"] }
+clap = { version = "3.0.13", features = ["yaml"] }
 dialoguer = "0.8.0"
 env_logger = "0.7.1"
 futures = "^0.3"
