@@ -78,15 +78,6 @@ async fn handle_commands() -> CommandResult {
 
     let matches = app.get_matches();
 
-    // let home_path = home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
-    // let settings_path = home_path.as_path().join(".phylum").join("settings.yaml");
-    // let settings_path = settings_path.to_str().ok_or_else(|| {
-    //     log::error!("Unicode parsing error in configuration file path");
-    //     anyhow!(
-    //         "Unable to read path to configuration file at, invalud unicode '{:?}'",
-    //         home_path
-    //     )
-    // })?;
     let settings_path = get_home_settings_path()?;
 
     let config_path = matches

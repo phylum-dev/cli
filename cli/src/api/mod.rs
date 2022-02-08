@@ -72,8 +72,6 @@ impl PhylumApi {
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
 
-        // let yml = clap::load_yaml!("../cli.yaml");
-        // let version = yml["version"].as_str().unwrap_or("");
         let version = env!("CARGO_PKG_VERSION");
         let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do
@@ -91,15 +89,8 @@ impl PhylumApi {
                 request_timeout.unwrap_or(std::u64::MAX),
             ))
             .danger_accept_invalid_certs(ignore_certs)
-            // .ignore_certs(ignore_certs)
             .default_headers(headers)
             .build()?;
-
-        // client.set_jwt_auth((&tokens.access_token).into())?;
-
-        // let yml = clap::load_yaml!("../bin/.conf/cli.yaml");
-        // let version = yml["version"].as_str().unwrap_or("");
-        // client.set_header("version", version)?;
 
         Ok(Self {
             client,

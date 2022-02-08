@@ -49,7 +49,6 @@ pub async fn handle_get_package(
     let resp = api.get_package_details(&pkg.unwrap()).await;
     log::debug!("==> {:?}", resp);
 
-    // if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
     if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
         print_user_warning!(
             "No matching packages found. Submit a lockfile for processing:\n\n\t{}\n",

@@ -34,7 +34,6 @@ where
 {
     let mut action = Action::None;
 
-    // if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
     if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
         print_user_warning!(
             "No results found. Submit a lockfile for processing:\n\n\t{}\n",
@@ -116,7 +115,6 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else {
         let resp = api.get_status().await;
-        // if let Err(phylum_cli::Error::HttpError(404, _)) = resp {
         if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
