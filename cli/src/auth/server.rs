@@ -213,9 +213,11 @@ async fn spawn_server_and_get_auth_code(
 
     // Open browser pointing at this server's /redirect url
     // We don't want to join on this, might not even make sense.
-    open::that(&authorization_url.to_string())?;
-
-    log::debug!("Opened browser window");
+    if let Err(e) = open::that(&authorization_url.to_string()) {
+        log::debug!("Could not open browser: {}", e);
+    } else {
+        log::debug!("Opened browser window");
+    }
 
     let auth_code = finished_serving
         .map_err(anyhow::Error::from)
