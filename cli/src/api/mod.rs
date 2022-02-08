@@ -72,8 +72,9 @@ impl PhylumApi {
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
 
-        let yml = clap::load_yaml!("../cli.yaml");
-        let version = yml["version"].as_str().unwrap_or("");
+        // let yml = clap::load_yaml!("../cli.yaml");
+        // let version = yml["version"].as_str().unwrap_or("");
+        let version = env!("CARGO_PKG_VERSION");
         let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do
         // not need to worry about refreshing the access token. We just set it

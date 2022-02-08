@@ -4,7 +4,6 @@ use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::anyhow;
-use clap::{load_yaml, App, AppSettings};
 use env_logger::Env;
 use log::*;
 use spinners::{Spinner, Spinners};

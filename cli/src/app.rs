@@ -1,6 +1,6 @@
 use clap::{arg, App, AppSettings};
 
-const FILTER_ABOUT: &'static str = 
+const FILTER_ABOUT: &str = 
 r#"Provide a filter used to limit the issues displayed
 
 EXAMPLES
