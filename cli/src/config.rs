@@ -95,7 +95,10 @@ pub fn find_project_conf(starting_directory: &Path) -> Option<PathBuf> {
 
 pub fn get_current_project() -> Option<ProjectConfig> {
     find_project_conf(Path::new(".")).and_then(|s| {
-        log::info!("Found project configuration file at {}", s.to_string_lossy());
+        log::info!(
+            "Found project configuration file at {}",
+            s.to_string_lossy()
+        );
         parse_config(&s).ok()
     })
 }

@@ -10,9 +10,9 @@ use phylum_cli::config::{get_current_project, save_config, ProjectConfig, PROJ_C
 
 use super::{CommandResult, CommandValue};
 use crate::print::*;
-use crate::prompt::prompt_threshold;
 use crate::print_user_failure;
 use crate::print_user_success;
+use crate::prompt::prompt_threshold;
 
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {

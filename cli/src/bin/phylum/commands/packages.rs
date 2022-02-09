@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::anyhow;
-use reqwest::StatusCode;
 use phylum_types::types::package::*;
+use reqwest::StatusCode;
 
 use clap::ArgMatches;
 use phylum_cli::api::PhylumApi;
@@ -24,8 +24,8 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
     // If a package type was provided on the command line, prefer that
     //  to the global setting
     if options.is_present("package-type") {
-        package_type =
-            PackageType::from_str(options.value_of("package-type").unwrap()).unwrap_or(package_type);
+        package_type = PackageType::from_str(options.value_of("package-type").unwrap())
+            .unwrap_or(package_type);
     }
 
     Some(PackageDescriptor {

@@ -15,8 +15,8 @@ use phylum_types::types::common::JobId;
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 
-use crate::commands::{CommandResult, CommandValue};
 use crate::commands::lock_files::get_packages_from_lockfile;
+use crate::commands::{CommandResult, CommandValue};
 use crate::print::print_response;
 use crate::print_user_success;
 use crate::print_user_warning;

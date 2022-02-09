@@ -243,7 +243,8 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, false)).await
+        self.get(job::get_job_status(&self.api_uri, job_id, false))
+            .await
     }
 
     /// Get the status of a previously submitted job (verbose output)
@@ -251,7 +252,8 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, true)).await
+        self.get(job::get_job_status(&self.api_uri, job_id, true))
+            .await
     }
 
     /// Get the status of all jobs
@@ -264,7 +266,8 @@ impl PhylumApi {
         &mut self,
         project_name: &str,
     ) -> Result<ProjectDetailsResponse> {
-        self.get(job::get_project_details(&self.api_uri, project_name)).await
+        self.get(job::get_project_details(&self.api_uri, project_name))
+            .await
     }
 
     /// Get package details

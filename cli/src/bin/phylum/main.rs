@@ -125,7 +125,7 @@ async fn handle_commands() -> CommandResult {
         let updater = ApplicationUpdater::default();
         match updater.get_latest_version(false).await {
             Some(latest) => {
-                if updater.needs_update(&ver, &latest) {
+                if updater.needs_update(ver, &latest) {
                     print_update_message();
                 }
             }

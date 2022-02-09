@@ -254,9 +254,7 @@ mod cli_args_test {
             .join("xtask")
             .join("fixtures")
             .join("test-project");
-        let dst = project_root()
-            .join("target")
-            .join("tmp");
+        let dst = project_root().join("target").join("tmp");
         std::fs::remove_dir_all(&dst).ok();
         std::fs::create_dir_all(&dst).ok();
         fs_extra::dir::copy(&src, &dst, &fs_extra::dir::CopyOptions::new())?;
