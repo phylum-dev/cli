@@ -20,6 +20,4 @@ use test::logging;
 #[macro_use]
 extern crate log;
 
-//#[macro_use]
-//extern crate prettytable;
 pub use reqwest::Error;

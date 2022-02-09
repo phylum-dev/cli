@@ -205,9 +205,3 @@ fn project_root() -> PathBuf {
         .unwrap()
         .to_path_buf()
 }
-
-fn install_root() -> Result<PathBuf> {
-    home::home_dir()
-        .ok_or_else(|| Error::msg("could not find home directory"))
-        .map(|dir| dir.join(".phylum"))
-}

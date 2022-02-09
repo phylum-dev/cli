@@ -35,7 +35,7 @@ pub struct PhylumApi {
 /// Phylum Api Error type
 #[derive(ThisError, Debug)]
 pub enum PhylumApiError {
-    #[error("Error invoking restson endpoint")]
+    #[error("Error invoking REST endpoint")]
     ReqwestError {
         #[from]
         source: reqwest::Error,

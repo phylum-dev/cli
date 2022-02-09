@@ -52,8 +52,6 @@ where
     T: Serialize,
 {
     let yaml = serde_yaml::to_string(config)?;
-    // REFACTOR do we need shellexpand?
-    // fs::write(shellexpand::env(path)?.as_ref(), yaml)?;
     fs::write(path, yaml)?;
     Ok(())
 }
@@ -62,11 +60,6 @@ pub fn parse_config<T>(path: &Path) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    // REFACTOR do we need shellexpand?
-    // let contents = fs::read_to_string(shellexpand::env(path)?.as_ref())?;
-    // let config: T = serde_yaml::from_str(&contents)?;
-    // Ok(config)
-
     let contents = fs::read_to_string(path)?;
     Ok(serde_yaml::from_str::<T>(&contents)?)
 }

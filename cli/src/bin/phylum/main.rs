@@ -4,6 +4,7 @@ use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::anyhow;
+use clap::AppSettings;
 use env_logger::Env;
 use log::*;
 use spinners::{Spinner, Spinners};
@@ -65,13 +66,11 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<
 }
 
 async fn handle_commands() -> CommandResult {
-    // let yml = load_yaml!("../../cli.yaml");
-    // let app = App::from(yml)
-    //     .setting(AppSettings::ArgRequiredElseHelp)
-    //     .setting(AppSettings::SubcommandRequiredElseHelp);
-    let app = phylum_cli::app::app();
+    let app = phylum_cli::app::app()
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
     let app_name = app.get_name().to_string();
-    let ver = app.render_version();
+    let ver = app.get_version().unwrap();
 
     // Required for printing help messages since `get_matches()` consumes `App`
     let app_helper = &mut app.clone();
@@ -149,10 +148,6 @@ async fn handle_commands() -> CommandResult {
     }
 
     if matches.subcommand_matches("version").is_some() {
-        // let name = yml["name"].as_str().unwrap_or("");
-        // let version = yml["version"].as_str().unwrap_or("");
-
-        // return CommandValue::String(format!("{} (Version {})", name, version)).into();
         return CommandValue::String(format!("{app_name} (Version {ver})")).into();
     }
 
@@ -197,7 +192,12 @@ async fn handle_commands() -> CommandResult {
 
     let should_submit = matches.subcommand_matches("analyze").is_some()
         || matches.subcommand_matches("batch").is_some();
-    let should_cancel = matches.subcommand_matches("cancel").is_some();
+
+    // TODO this panicks with the type-checked `App` since the "cancel"
+    // subcommand is undefined. Is the backend feature implemented, or
+    // should we just keep this short circuited for now?
+    let should_cancel = false;
+    // let should_cancel = matches.subcommand_matches("cancel").is_some();
 
     // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("projects") {
