@@ -259,7 +259,7 @@ impl Renderable for PackageType {
             PackageType::Npm => "NPM",
             PackageType::Ruby => "RubyGems",
             PackageType::Python => "PyPI",
-            PackageType::Java => "Java",
+            PackageType::Maven => "Maven",
         };
         label.to_owned()
     }

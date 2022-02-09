@@ -225,6 +225,7 @@ mod cli_args_test {
             vec!["ping"],
             vec!["projects"],
             vec!["projects", "create", "test-project"],
+            vec!["projects", "link", "test-project"],
             vec!["projects", "--json"],
             vec!["projects", "--json", "list"],
             vec!["projects", "list", "--json"],
@@ -240,8 +241,8 @@ mod cli_args_test {
 
         for (args, outcome) in tests {
             match outcome {
-                Ok(()) => println!("✅ {}", args.join(" ")),
-                Err(e) => println!("❌ {}: {}", args.join(" "), e),
+                Ok(()) => println!("✅ phylum {}", args.join(" ")),
+                Err(e) => println!("❌ phylum {}: {}", args.join(" "), e),
             }
         }
 
@@ -255,14 +256,10 @@ mod cli_args_test {
             .join("test-project");
         let dst = project_root()
             .join("target")
-            .join("tmp")
-            .join("test-project");
+            .join("tmp");
+        std::fs::remove_dir_all(&dst).ok();
         std::fs::create_dir_all(&dst).ok();
-        std::fs::read_dir(&src)?.into_iter().for_each(|entry| {
-            if let Ok(entry) = entry {
-                std::fs::copy(entry.path(), &dst).ok();
-            }
-        });
+        fs_extra::dir::copy(&src, &dst, &fs_extra::dir::CopyOptions::new())?;
         Ok(())
     }
 

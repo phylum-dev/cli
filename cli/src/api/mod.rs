@@ -11,6 +11,7 @@ use phylum_types::types::project::ProjectSummaryResponse;
 use phylum_types::types::user_settings::*;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, StatusCode};
+use serde::Deserialize;
 use thiserror::Error as ThisError;
 
 mod common;
@@ -49,6 +50,52 @@ impl PhylumApiError {
         match self {
             PhylumApiError::ReqwestError { source } => source.status(),
             PhylumApiError::Other(_) => None,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum APIResult<T> {
+    Ok(T),
+    Err { msg: String },
+}
+
+impl PhylumApi {
+    async fn get<T: serde::de::DeserializeOwned>(&self, path: String) -> Result<T> {
+        let body = self.client.get(path).send().await?.text().await?;
+
+        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
+            .map_err(|e| PhylumApiError::Other(e.into()))?;
+        match api_obj {
+            APIResult::Ok(api_obj) => Ok(api_obj),
+            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
+        }
+    }
+
+    async fn put<T: serde::de::DeserializeOwned, S: serde::Serialize>(
+        &self,
+        path: String,
+        s: S,
+    ) -> Result<T> {
+        let body = self.client.put(path).json(&s).send().await?.text().await?;
+
+        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
+            .map_err(|e| PhylumApiError::Other(e.into()))?;
+        match api_obj {
+            APIResult::Ok(api_obj) => Ok(api_obj),
+            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
+        }
+    }
+
+    async fn delete<T: serde::de::DeserializeOwned>(&self, path: String) -> Result<T> {
+        let body = self.client.delete(path).send().await?.text().await?;
+
+        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
+            .map_err(|e| PhylumApiError::Other(e.into()))?;
+        match api_obj {
+            APIResult::Ok(api_obj) => Ok(api_obj),
+            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
         }
     }
 }
@@ -119,11 +166,7 @@ impl PhylumApi {
     /// Ping the system and verify it's up
     pub async fn ping(&mut self) -> Result<String> {
         Ok(self
-            .client
-            .get(job::get_ping(&self.api_uri))
-            .send()
-            .await?
-            .json::<PingResponse>()
+            .get::<PingResponse>(job::get_ping(&self.api_uri))
             .await?
             .msg)
     }
@@ -131,11 +174,7 @@ impl PhylumApi {
     /// Check auth status of the current user
     pub async fn auth_status(&mut self) -> Result<bool> {
         Ok(self
-            .client
-            .get(job::get_auth_status(&self.api_uri))
-            .send()
-            .await?
-            .json::<AuthStatusResponse>()
+            .get::<AuthStatusResponse>(job::get_auth_status(&self.api_uri))
             .await?
             .authenticated)
     }
@@ -143,38 +182,25 @@ impl PhylumApi {
     /// Create a new project
     pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
         Ok(self
-            .client
-            .put(project::put_create_project(&self.api_uri))
-            .json(&CreateProjectRequest {
-                name: name.to_string(),
-            })
-            .send()
-            .await?
-            .json::<CreateProjectResponse>()
+            .put::<CreateProjectResponse, _>(
+                project::put_create_project(&self.api_uri),
+                CreateProjectRequest {
+                    name: name.to_string(),
+                },
+            )
             .await?
             .id)
     }
 
     /// Get a list of projects
     pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>> {
-        Ok(self
-            .client
-            .get(project::get_project_summary(&self.api_uri))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(project::get_project_summary(&self.api_uri)).await
     }
 
     /// Get user settings
     pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
-        Ok(self
-            .client
-            .get(user_settings::get_user_settings(&self.api_uri))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(user_settings::get_user_settings(&self.api_uri))
+            .await
     }
 
     /// Put updated user settings
@@ -207,12 +233,7 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
-            .client
-            .put(job::put_submit_package(&self.api_uri))
-            .json(&req)
-            .send()
-            .await?
-            .json()
+            .put(job::put_submit_package(&self.api_uri), req)
             .await?;
         Ok(resp.job_id)
     }
@@ -222,13 +243,7 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatus>> {
-        Ok(self
-            .client
-            .get(job::get_job_status(&self.api_uri, job_id, false))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(job::get_job_status(&self.api_uri, job_id, false)).await
     }
 
     /// Get the status of a previously submitted job (verbose output)
@@ -236,24 +251,12 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        Ok(self
-            .client
-            .get(job::get_job_status(&self.api_uri, job_id, true))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(job::get_job_status(&self.api_uri, job_id, true)).await
     }
 
     /// Get the status of all jobs
     pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
-        Ok(self
-            .client
-            .get(job::get_all_jobs_status(&self.api_uri, 30))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(job::get_all_jobs_status(&self.api_uri, 30)).await
     }
 
     /// Get the details of a specific project
@@ -261,14 +264,7 @@ impl PhylumApi {
         &mut self,
         project_name: &str,
     ) -> Result<ProjectDetailsResponse> {
-        //TODO: POOR NAME
-        Ok(self
-            .client
-            .get(job::get_project_details(&self.api_uri, project_name))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(job::get_project_details(&self.api_uri, project_name)).await
     }
 
     /// Get package details
@@ -276,24 +272,12 @@ impl PhylumApi {
         &mut self,
         pkg: &PackageDescriptor,
     ) -> Result<PackageStatusExtended> {
-        Ok(self
-            .client
-            .get(job::get_package_status(&self.api_uri, pkg))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.get(job::get_package_status(&self.api_uri, pkg)).await
     }
 
     /// Cancel a job currently in progress
     pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse> {
-        Ok(self
-            .client
-            .delete(job::delete_job(&self.api_uri, job_id))
-            .send()
-            .await?
-            .json()
-            .await?)
+        self.delete(job::delete_job(&self.api_uri, job_id)).await
     }
 }
 
