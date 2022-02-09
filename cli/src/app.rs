@@ -1,7 +1,6 @@
 use clap::{arg, App, AppSettings};
 
-const FILTER_ABOUT: &str = 
-r#"Provide a filter used to limit the issues displayed
+const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displayed
 
 EXAMPLES
 # Show only issues with severity of at least 'high'
@@ -51,6 +50,7 @@ pub fn app<'a>() -> clap::App<'a> {
         .subcommand(
             App::new("projects")
                 .about("Create, list, link and set thresholds for projects")
+                .arg(arg!(-j --json "Produce output in json format (default: false)"))
                 .subcommand(
                     App::new("create")
                         .about("Create a new project")
@@ -59,6 +59,7 @@ pub fn app<'a>() -> clap::App<'a> {
                 .subcommand(
                     App::new("list")
                         .about("List all existing projects")
+                        .arg(arg!(-j --json "Produce output in json format (default: false)"))
                 )
                 .subcommand(
                     App::new("link")

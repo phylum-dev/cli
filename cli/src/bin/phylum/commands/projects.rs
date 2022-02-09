@@ -49,7 +49,8 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
 
         print_user_success!("Successfully created new project, {}", project_name);
         return CommandValue::Void.into();
-    } else if matches.subcommand_matches("list").is_some() {
+    } else if let Some(matches) = matches.subcommand_matches("list") {
+        let pretty_print = pretty_print && !matches.is_present("json");
         get_project_list(api, pretty_print).await;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.value_of("name").unwrap();

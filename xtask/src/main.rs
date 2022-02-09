@@ -19,6 +19,7 @@ fn main() -> Result<()> {
     )?;
     match std::env::args().nth(1).as_deref() {
         Some("dist") => dist::dist(),
+        Some("test") => cli_args_test::test(),
         None | Some("help") => {
             print_help();
             Ok(())
@@ -34,7 +35,20 @@ fn main() -> Result<()> {
 // Help task
 //
 
-fn print_help() {}
+fn print_help() {
+    println!(
+        r#"
+    Usage
+
+    cargo xtask <task>
+
+    Available tasks:
+
+    dist .......... Build distribution artifacts
+    test .......... Run various CLI subcommand paths
+    "#
+    );
+}
 
 //
 // Dist task
@@ -191,6 +205,90 @@ mod dist {
         }
 
         Ok(())
+    }
+}
+
+//
+// CLI arguments test
+//
+
+mod cli_args_test {
+    use super::*;
+
+    pub(super) fn test() -> Result<()> {
+        copy_fixtures()?;
+
+        let tests = [
+            vec!["auth", "status"],
+            vec!["history"],
+            vec!["package", "react", "16.13.0"],
+            vec!["ping"],
+            vec!["projects"],
+            vec!["projects", "create", "test-project"],
+            vec!["projects", "--json"],
+            vec!["projects", "--json", "list"],
+            vec!["projects", "list", "--json"],
+            vec!["analyze", "yarn.lock"],
+            vec!["analyze", "yarn.lock", "--json"],
+            vec!["version"],
+        ]
+        .into_iter()
+        .map(|args| (args.clone(), run_cli_with_args(&args)))
+        .collect::<Vec<_>>();
+
+        println!("\nTest report\n");
+
+        for (args, outcome) in tests {
+            match outcome {
+                Ok(()) => println!("✅ {}", args.join(" ")),
+                Err(e) => println!("❌ {}: {}", args.join(" "), e),
+            }
+        }
+
+        Ok(())
+    }
+
+    fn copy_fixtures() -> Result<()> {
+        let src = project_root()
+            .join("xtask")
+            .join("fixtures")
+            .join("test-project");
+        let dst = project_root()
+            .join("target")
+            .join("tmp")
+            .join("test-project");
+        std::fs::create_dir_all(&dst).ok();
+        std::fs::read_dir(&src)?.into_iter().for_each(|entry| {
+            if let Ok(entry) = entry {
+                std::fs::copy(entry.path(), &dst).ok();
+            }
+        });
+        Ok(())
+    }
+
+    fn run_cli_with_args(phylum_args: &[&str]) -> Result<()> {
+        print!("\n  🔎 Running `phylum");
+        for a in phylum_args {
+            print!(" {a}");
+        }
+        println!("`\n");
+
+        let workdir = project_root()
+            .join("target")
+            .join("tmp")
+            .join("test-project");
+        let mut args = vec!["run", "--quiet", "--bin", "phylum", "--"];
+        args.extend(phylum_args);
+        let status = Command::new("cargo")
+            .current_dir(&workdir)
+            .args(&args)
+            .status()?;
+
+        if !status.success() {
+            Err(Error::msg("cargo run failed"))
+        } else {
+            Ok(())
+        }
     }
 }
 

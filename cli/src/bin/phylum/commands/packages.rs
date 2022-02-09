@@ -23,9 +23,9 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
 
     // If a package type was provided on the command line, prefer that
     //  to the global setting
-    if options.is_present("type") {
+    if options.is_present("package-type") {
         package_type =
-            PackageType::from_str(options.value_of("type").unwrap()).unwrap_or(package_type);
+            PackageType::from_str(options.value_of("package-type").unwrap()).unwrap_or(package_type);
     }
 
     Some(PackageDescriptor {
