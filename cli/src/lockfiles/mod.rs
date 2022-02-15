@@ -192,7 +192,7 @@ impl Parseable for Pom {
         Ok(Pom(std::fs::read_to_string(filename)?))
     }
 
-    /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
+    /// Parses maven effecti-pom files into a vec of packages
     fn parse(&self) -> ParseResult {
         // Get plugin dependencies
         fn get_plugin_deps(plugins: &[Plugin]) -> Vec<Dependency> {
