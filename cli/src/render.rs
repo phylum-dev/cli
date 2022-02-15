@@ -257,9 +257,10 @@ impl Renderable for PackageType {
     fn render(&self) -> String {
         let label = match self {
             PackageType::Npm => "NPM",
-            PackageType::Ruby => "RubyGems",
-            PackageType::Python => "PyPI",
+            PackageType::RubyGems => "RubyGems",
+            PackageType::PyPi => "PyPI",
             PackageType::Maven => "Maven",
+            PackageType::Nuget => ".NET",
         };
         label.to_owned()
     }
