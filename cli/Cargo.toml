@@ -40,6 +40,7 @@ routerify = { version = "2.2.0", features =["all"] }
 serde = { version = "^1.0", features = ["derive"] }
 serde_derive = "1.0"
 serde_json = "^1.0"
+serde-xml-rs = "0.5.1"
 serde_yaml = "0.8.14"
 sha2 = "0.9.9"
 shellexpand = "2.0.0"

@@ -1,0 +1,93 @@
+
+------------------------------------------------------------
+Root project 'basic-pom' - Dependabot Basic POM
+------------------------------------------------------------
+
+annotationProcessor - Annotation processors and their dependencies for source set 'main'.
+No dependencies
+
+apiElements - API elements for main. (n)
+No dependencies
+
+archives - Configuration for archive artifacts. (n)
+No dependencies
+
+compileClasspath - Compile classpath for source set 'main'.
++--- com.google.guava:guava:23.3-jre
+|    +--- com.google.code.findbugs:jsr305:1.3.9
+|    +--- com.google.errorprone:error_prone_annotations:2.0.18
+|    +--- com.google.j2objc:j2objc-annotations:1.1
+|    \--- org.codehaus.mojo:animal-sniffer-annotations:1.14
+\--- io.mockk:mockk:1.0
+     +--- org.javassist:javassist:3.22.0-GA
+     \--- org.objenesis:objenesis:2.6
+
+compileOnly - Compile only dependencies for source set 'main'. (n)
+No dependencies
+
+default - Configuration for default artifacts. (n)
+No dependencies
+
+implementation - Implementation only dependencies for source set 'main'. (n)
++--- com.google.guava:guava:23.3-jre (n)
+\--- io.mockk:mockk:1.0 (n)
+
+runtimeClasspath - Runtime classpath of source set 'main'.
++--- com.google.guava:guava:23.3-jre
+|    +--- com.google.code.findbugs:jsr305:1.3.9
+|    +--- com.google.errorprone:error_prone_annotations:2.0.18
+|    +--- com.google.j2objc:j2objc-annotations:1.1
+|    \--- org.codehaus.mojo:animal-sniffer-annotations:1.14
+\--- io.mockk:mockk:1.0
+     +--- org.javassist:javassist:3.22.0-GA
+     \--- org.objenesis:objenesis:2.6
+
+runtimeElements - Elements of runtime for main. (n)
+No dependencies
+
+runtimeOnly - Runtime only dependencies for source set 'main'. (n)
+No dependencies
+
+testAnnotationProcessor - Annotation processors and their dependencies for source set 'test'.
+No dependencies
+
+testCompileClasspath - Compile classpath for source set 'test'.
++--- com.google.guava:guava:23.3-jre
+|    +--- com.google.code.findbugs:jsr305:1.3.9
+|    +--- com.google.errorprone:error_prone_annotations:2.0.18
+|    +--- com.google.j2objc:j2objc-annotations:1.1
+|    \--- org.codehaus.mojo:animal-sniffer-annotations:1.14
++--- io.mockk:mockk:1.0
+|    +--- org.javassist:javassist:3.22.0-GA
+|    \--- org.objenesis:objenesis:2.6
+\--- org.apache.httpcomponents:httpclient:4.5.3
+     +--- org.apache.httpcomponents:httpcore:4.4.6
+     +--- commons-logging:commons-logging:1.2
+     \--- commons-codec:commons-codec:1.9
+
+testCompileOnly - Compile only dependencies for source set 'test'. (n)
+No dependencies
+
+testImplementation - Implementation only dependencies for source set 'test'. (n)
+\--- org.apache.httpcomponents:httpclient:4.5.3 (n)
+
+testRuntimeClasspath - Runtime classpath of source set 'test'.
++--- com.google.guava:guava:23.3-jre
+|    +--- com.google.code.findbugs:jsr305:1.3.9
+|    +--- com.google.errorprone:error_prone_annotations:2.0.18
+|    +--- com.google.j2objc:j2objc-annotations:1.1
+|    \--- org.codehaus.mojo:animal-sniffer-annotations:1.14
++--- io.mockk:mockk:1.0
+|    +--- org.javassist:javassist:3.22.0-GA
+|    \--- org.objenesis:objenesis:2.6
+\--- org.apache.httpcomponents:httpclient:4.5.3
+     +--- org.apache.httpcomponents:httpcore:4.4.6
+     +--- commons-logging:commons-logging:1.2
+     \--- commons-codec:commons-codec:1.9
+
+testRuntimeOnly - Runtime only dependencies for source set 'test'. (n)
+No dependencies
+
+(n) - Not resolved (configuration is not meant to be resolved)
+
+A web-based, searchable dependency report is available by adding the --scan option.
