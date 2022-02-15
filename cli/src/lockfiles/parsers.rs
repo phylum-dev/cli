@@ -149,7 +149,7 @@ pub mod gem {
         Some(PackageDescriptor {
             name: name.to_string(),
             version: version.to_string(),
-            package_type: PackageType::Ruby,
+            package_type: PackageType::RubyGems,
         })
     }
 }
@@ -248,7 +248,7 @@ pub mod pypi {
         Some(PackageDescriptor {
             name: name.trim().to_lowercase(),
             version: version.trim().to_string(),
-            package_type: PackageType::Python,
+            package_type: PackageType::PyPi,
         })
     }
 }
