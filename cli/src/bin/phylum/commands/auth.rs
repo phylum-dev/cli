@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::anyhow;
-use clap::App;
+use clap::Command;
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::config::{save_config, Config};
@@ -41,7 +41,7 @@ pub async fn handle_auth(
     config: Config,
     config_path: &Path,
     matches: &clap::ArgMatches,
-    app_helper: &mut App<'_>,
+    app_helper: &mut Command<'_>,
 ) -> CommandResult {
     if matches.subcommand_matches("register").is_some() {
         match handle_auth_register(config, config_path).await {

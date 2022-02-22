@@ -1,4 +1,4 @@
-use clap::{arg, App, AppSettings};
+use clap::{arg, Command};
 
 const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displayed
 
@@ -11,8 +11,8 @@ and 'engineering' domains
     --filter=crit,aut,eng
 "#;
 
-pub fn app<'a>() -> clap::App<'a> {
-    App::new("phylum")
+pub fn app<'a>() -> clap::Command<'a> {
+    Command::new("phylum")
         .bin_name("phylum")
         .version(env!("CARGO_PKG_VERSION"))
         .author("Phylum, Inc.")
@@ -23,14 +23,14 @@ pub fn app<'a>() -> clap::App<'a> {
             arg!(--"no-check-certificate" "Don't validate the server certificate when performing api requests"),
         ])
         .subcommand(
-            App::new("update")
+            Command::new("update")
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
                 .arg(arg!(
                     -p --prerelease "Update to the latest prerelease (vs. stable, default: false)"
                 ))
         )
         .subcommand(
-            App::new("history")
+            Command::new("history")
                 .about("Return information about historical scans")
                 .args(&[
                     arg!([JOB_ID] "The job id to query (or `current` for the most recent job)"),
@@ -39,7 +39,7 @@ pub fn app<'a>() -> clap::App<'a> {
                     arg!(-j --json "Produce output in json format (default: false)"),
                 ])
                 .subcommand(
-                    App::new("project")
+                    Command::new("project")
                         .about("Shows a list of projects associated with the user")
                         .args(&[
                             arg!(<project_name>).required(false),
@@ -48,32 +48,32 @@ pub fn app<'a>() -> clap::App<'a> {
                 )
         )
         .subcommand(
-            App::new("projects")
+            Command::new("projects")
                 .about("Create, list, link and set thresholds for projects")
                 .arg(arg!(-j --json "Produce output in json format (default: false)"))
                 .subcommand(
-                    App::new("create")
+                    Command::new("create")
                         .about("Create a new project")
                         .arg(arg!(<name>))
                 )
                 .subcommand(
-                    App::new("list")
+                    Command::new("list")
                         .about("List all existing projects")
                         .arg(arg!(-j --json "Produce output in json format (default: false)"))
                 )
                 .subcommand(
-                    App::new("link")
+                    Command::new("link")
                         .about("Link a repository to a project")
                         .arg(arg!(<name>))
                 )
                 .subcommand(
-                    App::new("set-thresholds")
+                    Command::new("set-thresholds")
                         .about("Set risk domain thresholds for a projects")
                         .arg(arg!(<name>))
                 )
         )
         .subcommand(
-            App::new("package")
+            Command::new("package")
                 .about("Retrieve the details of a specific package")
                 .args(&[
                     arg!(<name> "The name of the package."),
@@ -83,17 +83,17 @@ pub fn app<'a>() -> clap::App<'a> {
                 ])
         )
         .subcommand(
-            App::new("auth")
+            Command::new("auth")
                 .about("Manage authentication, registration, and API keys")
-                .subcommand(App::new("register").about("Register a new account"))
-                .subcommand(App::new("login").about("Login to an existing account"))
-                .subcommand(App::new("status").about("Return the current authentication status"))
+                .subcommand(Command::new("register").about("Register a new account"))
+                .subcommand(Command::new("login").about("Login to an existing account"))
+                .subcommand(Command::new("status").about("Return the current authentication status"))
         )
         .subcommand(
-            App::new("ping").about("Ping the remote system to verify it is available")
+            Command::new("ping").about("Ping the remote system to verify it is available")
         )
         .subcommand(
-            App::new("analyze")
+            Command::new("analyze")
                 .about("Submit a request for analysis to the processing system")
                 .args(&[
                     arg!([LOCKFILE] "The package lock file to submit."),
@@ -105,9 +105,9 @@ pub fn app<'a>() -> clap::App<'a> {
                 ])
         )
         .subcommand(
-            App::new("batch")
+            Command::new("batch")
+                .hide(true)
                 .about("Submits a batch of requests to the processing system")
-                .setting(AppSettings::Hidden)
                 .args(&[
                     arg!(-f --file <file> "File (or piped stdin) containing the list of packages (format `<name>:<version>`)"),
                     arg!(-t --type <type> "Package type (`npm`, `ruby`, etc)"),
@@ -117,7 +117,7 @@ pub fn app<'a>() -> clap::App<'a> {
                 ])
         )
         .subcommand(
-            App::new("version")
+            Command::new("version")
                 .about("Display application version")
         )
 }
