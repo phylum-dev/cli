@@ -1,4 +1,5 @@
-name: Release
+# Modified Release github action. Replace the current with this when ready.
+name: Release New
 
 on:
   push:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          sudo add-apt-repository ppa:dysfunctionalprogramming/minisign
+          sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
           sudo apt update
           sudo apt install -yq build-essential zip minisign
       - uses: actions/checkout@master
@@ -18,41 +19,22 @@ jobs:
         with:
           toolchain: stable
       - name: Build Linux
-        run: docker build lib/ --file lib/Dockerfile.linux --tag static-build
-      - name: Build MacOS
-        run: docker build lib/ --file lib/Dockerfile.macos --tag macos-build
-      - name: Collect files 
+        run: cargo xtask dist
+      - name: Sign files
         run: |
-          docker run --rm --entrypoint cat static-build target/x86_64-unknown-linux-musl/release/phylum > phylum-linux-x86_64
-          docker run --rm --entrypoint cat macos-build target/x86_64-apple-darwin/release/phylum > phylum-macos-x86_64
-          docker run --rm --entrypoint cat macos-build target/aarch64-apple-darwin/release/phylum > phylum-macos-aarch64
-
           echo -e $MINISIGN_KEY > minisign.key 
-          echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm phylum-macos-aarch64 -s minisign.key -t 'Phylum - Future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm phylum-linux-x86_64 -s minisign.key -t 'Phylum - Future of software supply chain security'
-
-          docker run --rm --entrypoint cat static-build src/bin/_phylum > _phylum
-          docker run --rm --entrypoint cat static-build src/bin/phylum.bash > phylum.bash
-          docker run --rm --entrypoint cat static-build src/bin/phylum.fish > phylum.fish
-          
-          mkdir phylum-cli-release
-          cp lib/install.sh phylum-cli-release/
-          cp lib/src/bin/settings.yaml phylum-cli-release/
-          cp phylum.bash phylum-cli-release/
-          cp phylum.fish phylum-cli-release/
-          cp _phylum phylum-cli-release/
-          cp phylum-linux-x86_64 phylum-cli-release/
-          cp phylum-macos-x86_64 phylum-cli-release/
-          cp phylum-macos-aarch64 phylum-cli-release/
-          cp lib/install.sh .
-          cp lib/src/bin/settings.yaml .
-
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
-      - name: Build zipfile
-        run: zip -r phylum-cli-release phylum-cli-release
+      - name: Build zipfiles
+        working-directory: ./target/dist
+        run: |
+          zip -r phylum-linux-x86_64 phylum-linux-x86_64 
+          zip -r phylum-macos-x86_64 phylum-macos-x86_64 
+          zip -r phylum-macos-aarch64 phylum-macos-aarch64 
       - name: Determine prerelease status
         uses: haya14busa/action-cond@v1
         id: preRelease
@@ -65,14 +47,9 @@ jobs:
         with:
           prerelease: ${{ steps.preRelease.outputs.value }}
           files: |
-            phylum-linux-x86_64
-            phylum-macos-x86_64
-            phylum-macos-aarch64
-            install.sh
-            settings.yaml
-            phylum.bash
-            _phylum
-            phylum-cli-release.zip
+            phylum-linux-x86_64.zip
+            phylum-macos-x86_64.zip
+            phylum-macos-aarch64.zip
             phylum-linux-x86_64.minisig
             phylum-macos-x86_64.minisig
             phylum-macos-aarch64.minisig

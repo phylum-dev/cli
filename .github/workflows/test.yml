@@ -19,20 +19,20 @@ jobs:
         with:
           toolchain: stable
       - name: Build
-        run: lib/build.sh
+        run: cargo build --release
       - uses: actions-rs/cargo@v1
         name: Format check
         with:
           command: fmt
-          args: --manifest-path lib/Cargo.toml -- --check
+          args: --manifest-path cli/Cargo.toml -- --check
       - uses: actions-rs/cargo@v1
         name: Lint
         with:
           command: clippy
-          args: --manifest-path lib/Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
+          args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
       - uses: actions-rs/cargo@v1
         name: Test
         with:
           command: test
-          args: --lib --manifest-path lib/Cargo.toml
+          args: --lib --manifest-path Cargo.toml
 
