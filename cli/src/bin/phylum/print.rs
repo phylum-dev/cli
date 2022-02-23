@@ -2,7 +2,7 @@ use std::io;
 use std::io::Write;
 
 use ansi_term::Color::{Blue, Cyan};
-use clap::App;
+use clap::Command;
 use serde::Serialize;
 
 use phylum_cli::api::PhylumApiError;
@@ -81,7 +81,7 @@ pub fn print_update_message() {
     eprintln!("{:-^50}\n\n", "");
 }
 
-pub fn print_sc_help(app: &mut App, subcommand: &str) {
+pub fn print_sc_help(app: &mut Command, subcommand: &str) {
     for sc in app.get_subcommands_mut() {
         if sc.get_name() == subcommand {
             let _ = sc.print_help();

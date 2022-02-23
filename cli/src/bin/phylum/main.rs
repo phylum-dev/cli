@@ -4,7 +4,6 @@ use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::anyhow;
-use clap::AppSettings;
 use env_logger::Env;
 use log::*;
 use spinners::{Spinner, Spinners};
@@ -67,8 +66,8 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<
 
 async fn handle_commands() -> CommandResult {
     let app = phylum_cli::app::app()
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .setting(AppSettings::SubcommandRequiredElseHelp);
+        .arg_required_else_help(true)
+        .subcommand_required(true);
     let app_name = app.get_name().to_string();
     let ver = app.get_version().unwrap();
 
