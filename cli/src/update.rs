@@ -180,7 +180,7 @@ impl ApplicationUpdater {
         let latest = latest_version
             .name
             .replace("phylum ", "")
-            .replace("v", "")
+            .replace('v', "")
             .trim()
             .to_owned();
         let current = current_version.replace("phylum ", "").trim().to_owned();

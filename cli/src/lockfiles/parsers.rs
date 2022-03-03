@@ -114,7 +114,7 @@ pub mod gem {
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
         let (input, _) = gem_header(input)?;
         let (i, consumed) = specs(input)?;
-        let pkgs = consumed.lines().map(package).flatten().collect::<Vec<_>>();
+        let pkgs = consumed.lines().filter_map(package).collect::<Vec<_>>();
         Ok((i, pkgs))
     }
 
@@ -160,7 +160,7 @@ pub mod pypi {
     use super::*;
 
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-        let pkgs = input.lines().map(package).flatten().collect::<Vec<_>>();
+        let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
         Ok((input, pkgs))
     }
 
@@ -185,7 +185,7 @@ pub mod pypi {
 
     fn filter_pip_name(input: &str) -> Result<&str, &str> {
         let (_, input) = verify(rest, |s: &str| {
-            s.contains("@") && (s.contains("http://") || s.contains("https://"))
+            s.contains('@') && (s.contains("http://") || s.contains("https://"))
         })(input)?;
         recognize(alt((take_until("@"), not_line_ending)))(input)
     }
@@ -200,9 +200,9 @@ pub mod pypi {
     }
 
     fn get_git_version(input: &str) -> Result<&str, &str> {
-        Ok(verify(rest, |s: &str| {
+        verify(rest, |s: &str| {
             s.contains("http://") || s.contains("https://")
-        })(input)?)
+        })(input)
     }
 
     fn filter_line(input: &str) -> Result<&str, &str> {
@@ -223,7 +223,7 @@ pub mod pypi {
                     let (version, name) = filter_pip_name(s).ok()?;
                     (
                         name.to_string(),
-                        version.trim_start_matches("@").to_string(),
+                        version.trim_start_matches('@').to_string(),
                     )
                 }
             },
@@ -259,7 +259,7 @@ pub mod gradle_dep {
     use super::*;
 
     pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-        let pkgs = input.lines().map(package).flatten().collect::<Vec<_>>();
+        let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
         Ok((input, pkgs))
     }
 

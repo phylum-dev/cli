@@ -127,7 +127,7 @@ pub fn build_auth_url(
         .append_pair("client_id", OIDC_CLIENT_ID)
         .append_pair("code_challenge", code_challenge.into())
         .append_pair("code_challenge_method", "S256")
-        .append_pair("redirect_uri", &callback_url.to_string())
+        .append_pair("redirect_uri", callback_url.as_ref())
         .append_pair("response_type", "code")
         .append_pair("response_mode", "query")
         .append_pair("scope", &OIDC_SCOPES.join(" "))
