@@ -167,7 +167,7 @@ pub mod pypi {
     fn filter_package_name(input: &str) -> Result<&str, &str> {
         recognize(pair(
             alphanumeric1,
-            many0(alt((alphanumeric1, alt((tag("-"), tag("_")))))),
+            many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag(".")))))),
         ))(input)
     }
 

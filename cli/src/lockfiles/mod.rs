@@ -366,14 +366,14 @@ mod tests {
         let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 129);
+        assert_eq!(pkgs.len(), 130);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
         assert_eq!(pkgs[0].package_type, PackageType::Python);
 
         let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "livy");
-        assert_eq!(last.version, "0.7.3");
+        assert_eq!(last.name, "zope.interface");
+        assert_eq!(last.version, "5.4.0");
         assert_eq!(last.package_type, PackageType::Python);
     }
 
