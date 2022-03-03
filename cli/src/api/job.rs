@@ -38,7 +38,7 @@ pub(crate) fn delete_job(api_uri: &str, job_id: &JobId) -> String {
 
 /// GET /job/packages/<type>/<name>/<version>
 pub(crate) fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> String {
-    let name_escaped = pkg.name.replace("/", "~");
+    let name_escaped = pkg.name.replace('/', "~");
     let PackageDescriptor {
         package_type,
         version,

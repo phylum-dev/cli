@@ -54,3 +54,6 @@ FooProject6 != 1.6
 FooProject7 ~= 1.7
 FooProject8 > 1.8.*
 FooProject9 > 2.0.*, !=2.1
+-e https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0#egg=my-git-package
+git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0#egg=my-git-package
+git-for-pip-example @ git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0
