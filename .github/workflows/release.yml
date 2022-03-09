@@ -3,28 +3,31 @@
 name: Release New
 
 on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
   push:
     tags:
       - '*'
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Install host dependencies
+        run: |
           sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
           sudo apt update
           sudo apt install -yq build-essential zip minisign
-      - uses: actions/checkout@master
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout the repo
+        uses: actions/checkout@master
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build Linux
+      - name: Build Distributions
         run: cargo xtask dist
-      - name: Sign files
+      # TODO: determine if it makes more sense to sign the entire zipfile or just the binaries w/i the zipfiles
+      - name: Sign binaries
         run: |
           echo -e $MINISIGN_KEY > minisign.key
           echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
@@ -36,9 +39,9 @@ jobs:
       - name: Build zipfiles
         working-directory: ./target/dist
         run: |
-          zip -r phylum-linux-x86_64 phylum-linux-x86_64
-          zip -r phylum-macos-x86_64 phylum-macos-x86_64
-          zip -r phylum-macos-aarch64 phylum-macos-aarch64
+          zip -r phylum-linux-x86_64.zip phylum-linux-x86_64
+          zip -r phylum-macos-x86_64.zip phylum-macos-x86_64
+          zip -r phylum-macos-aarch64.zip phylum-macos-aarch64
       - name: Determine prerelease status
         uses: haya14busa/action-cond@v1
         id: preRelease
@@ -46,16 +49,10 @@ jobs:
           cond: ${{ contains(github.ref, 'rc') }}
           if_true: 'true'  # string value
           if_false: 'false'  # string value
-      - uses: softprops/action-gh-release@v0.1.7
-        name: Release
+      - name: Release
+        uses: softprops/action-gh-release@v0.1.14
         with:
           prerelease: ${{ steps.preRelease.outputs.value }}
-          files: |
-            phylum-linux-x86_64.zip
-            phylum-macos-x86_64.zip
-            phylum-macos-aarch64.zip
-            phylum-linux-x86_64.minisig
-            phylum-macos-x86_64.minisig
-            phylum-macos-aarch64.minisig
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./target/dist/phylum-*.zip
