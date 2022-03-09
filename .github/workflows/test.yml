@@ -1,3 +1,4 @@
+---
 name: Test
 
 on:
@@ -7,13 +8,16 @@ on:
       - master
       - development
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - run: |
           sudo apt update
-          sudo apt install -yq build-essential 
+          sudo apt install -yq build-essential
       - uses: actions/checkout@master
       - uses: actions-rs/toolchain@v1
         with:
@@ -35,4 +39,3 @@ jobs:
         with:
           command: test
           args: --lib --manifest-path Cargo.toml
-

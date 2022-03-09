@@ -1,10 +1,14 @@
 # Modified Release github action. Replace the current with this when ready.
+---
 name: Release New
 
 on:
   push:
     tags:
-      - '*' 
+      - '*'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   release:
@@ -22,7 +26,7 @@ jobs:
         run: cargo xtask dist
       - name: Sign files
         run: |
-          echo -e $MINISIGN_KEY > minisign.key 
+          echo -e $MINISIGN_KEY > minisign.key
           echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
           echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
           echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
@@ -32,16 +36,16 @@ jobs:
       - name: Build zipfiles
         working-directory: ./target/dist
         run: |
-          zip -r phylum-linux-x86_64 phylum-linux-x86_64 
-          zip -r phylum-macos-x86_64 phylum-macos-x86_64 
-          zip -r phylum-macos-aarch64 phylum-macos-aarch64 
+          zip -r phylum-linux-x86_64 phylum-linux-x86_64
+          zip -r phylum-macos-x86_64 phylum-macos-x86_64
+          zip -r phylum-macos-aarch64 phylum-macos-aarch64
       - name: Determine prerelease status
         uses: haya14busa/action-cond@v1
         id: preRelease
         with:
           cond: ${{ contains(github.ref, 'rc') }}
           if_true: 'true'  # string value
-          if_false: 'false' # string value
+          if_false: 'false'  # string value
       - uses: softprops/action-gh-release@v0.1.7
         name: Release
         with:
