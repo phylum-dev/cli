@@ -11,6 +11,8 @@ on:
     branches:
       - master
       - development
+    tags:
+      - '*'
 
 jobs:
   Build-Release-Artifacts:
