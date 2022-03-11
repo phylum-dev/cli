@@ -32,13 +32,7 @@ jobs:
           toolchain: stable
       # TODO: determine if it is possible to break out the build into multiple targets, to enable parallel job execution
       - name: Build Distributions
-        # TODO: re-enable the 'real' step
-        # run: cargo xtask dist
-        run: |
-          mkdir -p target/dist/{phylum-linux-x86_64,phylum-macos-x86_64,phylum-macos-aarch64}
-          echo test > target/dist/phylum-linux-x86_64/phylum
-          echo test > target/dist/phylum-macos-x86_64/phylum
-          echo test > target/dist/phylum-macos-aarch64/phylum
+        run: cargo xtask dist
       - name: Sign binaries
         run: |
           echo -e $MINISIGN_KEY > minisign.key
