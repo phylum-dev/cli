@@ -199,14 +199,17 @@ pub async fn handle_submission(
                 Ok(0) => eof = true,
                 Ok(_) => {
                     line.pop();
-                    let pkg_info = line.split(':').collect::<Vec<&str>>();
-                    if pkg_info.len() != 2 {
+                    let mut pkg_info = line.split(':').collect::<Vec<&str>>();
+                    if pkg_info.len() < 2 {
                         log::debug!("Invalid package input: `{}`", line);
                         continue;
                     }
+                    let pkg_version = pkg_info.pop().unwrap();
+                    let pkg_name = pkg_info.join(":");
+
                     packages.push(PackageDescriptor {
-                        name: pkg_info[0].to_owned(),
-                        version: pkg_info[1].to_owned(),
+                        name: pkg_name.to_owned(),
+                        version: pkg_version.to_owned(),
                         package_type: request_type.to_owned(),
                     });
                     line.clear();

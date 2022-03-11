@@ -155,7 +155,7 @@ impl Parseable for PipFile {
                         Ok(PackageDescriptor {
                             name: k.as_str().to_string().to_lowercase(),
                             version: v.replace("==", "").trim().to_string(),
-                            package_type: PackageType::Python,
+                            package_type: PackageType::PyPi,
                         })
                     }),
                     None => {
@@ -353,12 +353,12 @@ mod tests {
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");
-        assert_eq!(pkgs[0].package_type, PackageType::Ruby);
+        assert_eq!(pkgs[0].package_type, PackageType::RubyGems);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "xpath");
         assert_eq!(last.version, "3.2.0");
-        assert_eq!(last.package_type, PackageType::Ruby);
+        assert_eq!(last.package_type, PackageType::RubyGems);
     }
 
     #[test]
@@ -369,12 +369,12 @@ mod tests {
         assert_eq!(pkgs.len(), 130);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
-        assert_eq!(pkgs[0].package_type, PackageType::Python);
+        assert_eq!(pkgs[0].package_type, PackageType::PyPi);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "zope.interface");
         assert_eq!(last.version, "5.4.0");
-        assert_eq!(last.package_type, PackageType::Python);
+        assert_eq!(last.package_type, PackageType::PyPi);
     }
 
     #[test]
@@ -386,7 +386,7 @@ mod tests {
         assert_eq!(pkgs.len(), 8);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
-        assert_eq!(pkgs[0].package_type, PackageType::Python);
+        assert_eq!(pkgs[0].package_type, PackageType::PyPi);
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "git-for-pip-example");
@@ -394,7 +394,7 @@ mod tests {
             last.version,
             "git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0"
         );
-        assert_eq!(last.package_type, PackageType::Python);
+        assert_eq!(last.package_type, PackageType::PyPi);
     }
 
     #[test]
@@ -407,13 +407,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "pypresence" {
                 assert_eq!(pkg.version, "4.0.0");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             } else if pkg.name == "chromedriver-py" {
                 assert_eq!(pkg.version, "91.0.4472.19");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             } else if pkg.name == "requests" {
                 assert_eq!(pkg.version, "2.24.0");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             }
         }
     }
@@ -428,13 +428,13 @@ mod tests {
         for pkg in &pkgs {
             if pkg.name == "jdcal" {
                 assert_eq!(pkg.version, "1.3");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             } else if pkg.name == "certifi" {
                 assert_eq!(pkg.version, "2017.7.27.1");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             } else if pkg.name == "unittest2" {
                 assert_eq!(pkg.version, "1.1.0");
-                assert_eq!(pkg.package_type, PackageType::Python);
+                assert_eq!(pkg.package_type, PackageType::PyPi);
             }
         }
     }

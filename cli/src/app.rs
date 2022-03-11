@@ -109,8 +109,8 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .hide(true)
                 .about("Submits a batch of requests to the processing system")
                 .args(&[
-                    arg!(-f --file <file> "File (or piped stdin) containing the list of packages (format `<name>:<version>`)"),
-                    arg!(-t --type <type> "Package type (`npm`, `ruby`, etc)"),
+                    arg!(-f --file <file> "File (or piped stdin) containing the list of packages (format `<name>:<version>`)").required(false),
+                    arg!(-t --type <type> "Package type (`npm`, `rubygems`, `pypi`, etc)").required(false),
                     arg!(-F --force "Force re-processing of packages (even if they already exist in the system)"),
                     arg!(-L --"low-priority"),
                     arg!(-l --label),

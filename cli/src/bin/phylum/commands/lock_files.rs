@@ -27,19 +27,19 @@ pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageT
     let packages = GemLock::new(path).ok()?.parse();
     if packages.is_ok() {
         log::debug!("Submitting file as type gem lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Ruby));
+        return packages.ok().map(|pkgs| (pkgs, PackageType::RubyGems));
     }
 
     let packages = PyRequirements::new(path).ok()?.parse();
     if packages.is_ok() {
         log::debug!("Submitting file as type pip requirements.txt");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
+        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
     let packages = PipFile::new(path).ok()?.parse();
     if packages.is_ok() {
         log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Python));
+        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
     let packages = Pom::new(path).ok()?.parse();
@@ -67,7 +67,10 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
     let res = match file {
         "Gemfile.lock" => {
             let parser = GemLock::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Ruby))
+            parser
+                .parse()
+                .ok()
+                .map(|pkgs| (pkgs, PackageType::RubyGems))
         }
         "package-lock.json" => {
             let parser = PackageLock::new(path).ok()?;
@@ -79,11 +82,11 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
         }
         "requirements.txt" => {
             let parser = PyRequirements::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
         }
         "Pipfile.txt" | "Pipfile.lock" => {
             let parser = PipFile::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Python))
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
         }
         "effective-pom.xml" => {
             let parser = Pom::new(path).ok()?;
