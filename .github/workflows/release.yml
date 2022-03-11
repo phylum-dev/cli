@@ -4,7 +4,7 @@
 name: Release
 
 on:
-  # Allows you to run this workflow manually from the Actions tab
+  # Allow running this workflow manually from the Actions tab
   workflow_dispatch:
   pull_request:
   push:
@@ -24,15 +24,19 @@ jobs:
           sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
           sudo apt update
           sudo apt install -yq build-essential zip minisign
+
       - name: Checkout the repo
         uses: actions/checkout@master
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+
       # TODO: determine if it is possible to break out the build into multiple targets, to enable parallel job execution
       - name: Build Distributions
         run: cargo xtask dist
+
       - name: Sign binaries
         run: |
           echo -e $MINISIGN_KEY > minisign.key
@@ -42,12 +46,14 @@ jobs:
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+
       - name: Build zipfiles
         working-directory: ./target/dist
         run: |
           zip -r phylum-linux-x86_64.zip phylum-linux-x86_64
           zip -r phylum-macos-x86_64.zip phylum-macos-x86_64
           zip -r phylum-macos-aarch64.zip phylum-macos-aarch64
+
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -67,6 +73,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: release-archives
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v0.1.14
         with:

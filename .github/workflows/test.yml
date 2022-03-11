@@ -18,24 +18,30 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -yq build-essential
+
       - name: Checkout the repo
         uses: actions/checkout@master
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+
       - name: Build
         run: cargo build --release
+
       - name: Format check
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --manifest-path cli/Cargo.toml -- --check
+
       - name: Lint
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
+
       - name: Test
         uses: actions-rs/cargo@v1
         with:
