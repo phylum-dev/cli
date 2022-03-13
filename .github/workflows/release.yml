@@ -17,7 +17,7 @@ on:
 jobs:
   Build-Release-Artifacts:
     name: Build the release artifacts
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Install host dependencies
         run: |
@@ -67,7 +67,7 @@ jobs:
     needs: Build-Release-Artifacts
     # Only run this job when pushing a tag
     if: startsWith(github.ref, 'refs/tags/')
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v3
