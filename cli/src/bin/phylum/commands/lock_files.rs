@@ -1,9 +1,7 @@
 use phylum_types::types::package::*;
 use std::path::Path;
 
-use phylum_cli::lockfiles::{
-    GemLock, GradleDeps, PackageLock, Parseable, PipFile, Pom, PyRequirements, YarnLock,
-};
+use phylum_cli::lockfiles::*;
 
 /// Attempt to get packages from an unknown lockfile type
 pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
@@ -13,45 +11,51 @@ pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageT
     );
 
     let packages = YarnLock::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type yarn lock");
         return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
     }
 
     let packages = PackageLock::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type package lock");
         return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
     }
 
     let packages = GemLock::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type gem lock");
         return packages.ok().map(|pkgs| (pkgs, PackageType::RubyGems));
     }
 
     let packages = PyRequirements::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type pip requirements.txt");
         return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
     let packages = PipFile::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
         return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
     let packages = Pom::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type pom xml");
         return packages.ok().map(|pkgs| (pkgs, PackageType::Maven));
     }
 
     let packages = GradleDeps::new(path).ok()?.parse();
-    if packages.is_ok() {
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type gradle dependencies");
         return packages.ok().map(|pkgs| (pkgs, PackageType::Maven));
+    }
+
+    let packages = CSProj::new(path).ok()?.parse();
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+        log::debug!("Submitting file as type csproj");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::Nuget));
     }
 
     log::error!("Failed to identify lock file type");
@@ -63,8 +67,14 @@ pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageT
 pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, PackageType)> {
     let path = Path::new(path);
     let file = path.file_name()?.to_str()?;
+    let ext = path.extension().and_then(|ext| ext.to_str());
 
-    let res = match file {
+    let pattern = match ext {
+        Some("csproj") => ".csproj",
+        _ => file,
+    };
+
+    let res = match pattern {
         "Gemfile.lock" => {
             let parser = GemLock::new(path).ok()?;
             parser
@@ -96,6 +106,10 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
             let parser = GradleDeps::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::Maven))
         }
+        ".csproj" => {
+            let parser = CSProj::new(path).ok()?;
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Nuget))
+        }
         _ => try_get_packages(path),
     };
 
@@ -104,4 +118,30 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
     log::debug!("Read {} packages from file `{}`", pkg_count, file);
 
     res
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_can_identify_lock_file_types() {
+        let test_cases = [
+            ("tests/fixtures/Gemfile.lock", PackageType::RubyGems),
+            ("tests/fixtures/yarn.lock", PackageType::Npm),
+            ("tests/fixtures/yarn.lock", PackageType::Npm),
+            ("tests/fixtures/package-lock.json", PackageType::Npm),
+            ("tests/fixtures/sample.csproj", PackageType::Nuget),
+            ("tests/fixtures/gradle-dependencies.txt", PackageType::Maven),
+            ("tests/fixtures/effective-pom.xml", PackageType::Maven),
+            ("tests/fixtures/requirements.txt", PackageType::PyPi),
+            ("tests/fixtures/Pipfile", PackageType::PyPi),
+            ("tests/fixtures/Pipfile.lock", PackageType::PyPi),
+        ];
+
+        for (file, expected_type) in &test_cases {
+            let (_, pkg_type) = try_get_packages(Path::new(file)).unwrap();
+            assert_eq!(pkg_type, *expected_type, "{}", file);
+        }
+    }
 }

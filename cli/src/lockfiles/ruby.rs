@@ -24,6 +24,7 @@ impl Parseable for GemLock {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use phylum_types::types::package::PackageType;
 
     #[test]
     fn lock_parse_gem() {
