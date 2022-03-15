@@ -59,7 +59,7 @@ impl Parseable for Pom {
         }
 
         // Get project reference
-        let pom: Project = serde_xml_rs::from_str(&self.0).unwrap_or_default();
+        let pom: Project = serde_xml_rs::from_str(&self.0)?;
 
         // Get project dependencies
         let mut dependencies = pom.dependencies.unwrap_or_default().dependencies;
@@ -140,6 +140,8 @@ impl Parseable for Pom {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn lock_parse_gradledeps() {
         let parser = GradleDeps::new(Path::new("tests/fixtures/gradle-dependencies.txt")).unwrap();

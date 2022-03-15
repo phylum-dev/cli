@@ -57,6 +57,7 @@ impl Parseable for YarnLock {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

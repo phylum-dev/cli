@@ -12,6 +12,7 @@ mod parsers;
 mod python;
 mod ruby;
 
+pub use csharp::CSProj;
 pub use java::{GradleDeps, Pom};
 pub use javascript::{PackageLock, YarnLock};
 pub use python::{PipFile, PyRequirements};

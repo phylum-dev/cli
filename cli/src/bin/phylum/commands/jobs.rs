@@ -215,7 +215,7 @@ pub async fn handle_submission(
                     line.clear();
                 }
                 Err(err) => {
-                    anyhow!(err);
+                    return Err(anyhow!(err));
                 }
             }
         }
