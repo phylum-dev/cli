@@ -42,33 +42,33 @@ The command line interface (CLI) allows users to submit their project package de
    
 3. Run the installer script for [installation](https://docs.phylum.io/docs/installation)
 
-```
-./install.sh
-```
+   ```
+   ./install.sh
+   ```
 
 4. [Register](https://docs.phylum.io/docs/registration) for an account (if you don't already have one)
 
-```
-phylum auth register
-```
+   ```
+   phylum auth register
+   ```
 
 5. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
 
-```
-phylum auth login
-```
+   ```
+   phylum auth login
+   ```
 
 6. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
 
-```
-phylum projects create <project-name>
-```
+   ```
+   phylum projects create <project-name>
+   ```
 
 7. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
 
-```
-phylum analyze <package-lock-file.ext>
-```
+   ```
+   phylum analyze <package-lock-file.ext>
+   ```
 
 ---
 
