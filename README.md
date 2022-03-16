@@ -123,13 +123,17 @@ Phylum is written in Rust, so you'll need a recent Rust installation to build it
    git clone https://github.com/phylum-dev/cli
    ```
 
-2. Run build and install scripts in cli/lib
+2. Build the project
 
-   ```sh
-   cd cli/lib
-   bash build.sh
-   bash install.sh
-   ```
+```sh
+cargo build
+```
+
+3. You can use the executable directly as `./target/debug/phylum` or install it like so:
+
+```sh
+cargo install --path cli
+```
 
 </details>
 
