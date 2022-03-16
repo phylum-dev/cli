@@ -2,40 +2,48 @@
 name: Test
 
 on:
+  # Allow running this workflow manually from the Actions tab
+  workflow_dispatch:
   pull_request:
   push:
     branches:
       - master
       - development
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Install host dependencies
+        run: |
           sudo apt update
           sudo apt install -yq build-essential
-      - uses: actions/checkout@master
-      - uses: actions-rs/toolchain@v1
+
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build
-        run: cargo build --release
-      - uses: actions-rs/cargo@v1
-        name: Format check
+
+      - name: Format check
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --manifest-path cli/Cargo.toml -- --check
-      - uses: actions-rs/cargo@v1
-        name: Lint
+
+      - name: Lint
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
-      - uses: actions-rs/cargo@v1
-        name: Test
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Test
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --lib --manifest-path Cargo.toml

@@ -1,61 +1,84 @@
-# Modified Release github action. Replace the current with this when ready.
+# This is the workflow for building release artifacts.
+# Optionally, creating a release with those artifacts is possible by pushing a tag.
 ---
-name: Release New
+name: Release
 
 on:
+  # Allow running this workflow manually from the Actions tab
+  workflow_dispatch:
+  pull_request:
   push:
+    branches:
+      - master
+      - development
     tags:
       - '*'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 jobs:
-  release:
+  Build-Release-Artifacts:
+    name: Build the release artifacts
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Install host dependencies
+        run: |
           sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
           sudo apt update
           sudo apt install -yq build-essential zip minisign
-      - uses: actions/checkout@master
-      - uses: actions-rs/toolchain@v1
+
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build Linux
+
+      # TODO: determine if it is possible to break out the build into multiple targets, to enable parallel job execution
+      - name: Build Distributions
         run: cargo xtask dist
-      - name: Sign files
+
+      - name: Sign binaries
         run: |
           echo -e $MINISIGN_KEY > minisign.key
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - Future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
+          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+
       - name: Build zipfiles
         working-directory: ./target/dist
         run: |
-          zip -r phylum-linux-x86_64 phylum-linux-x86_64
-          zip -r phylum-macos-x86_64 phylum-macos-x86_64
-          zip -r phylum-macos-aarch64 phylum-macos-aarch64
-      - name: Determine prerelease status
-        uses: haya14busa/action-cond@v1
-        id: preRelease
+          zip -r phylum-linux-x86_64.zip phylum-linux-x86_64
+          zip -r phylum-macos-x86_64.zip phylum-macos-x86_64
+          zip -r phylum-macos-aarch64.zip phylum-macos-aarch64
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
         with:
-          cond: ${{ contains(github.ref, 'rc') }}
-          if_true: 'true'  # string value
-          if_false: 'false'  # string value
-      - uses: softprops/action-gh-release@v0.1.7
-        name: Release
+          name: release-archives
+          path: ./target/dist/phylum-*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  Release:
+    name: Create release from tag
+    needs: Build-Release-Artifacts
+    # Only run this job when pushing a tag
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
         with:
-          prerelease: ${{ steps.preRelease.outputs.value }}
-          files: |
-            phylum-linux-x86_64.zip
-            phylum-macos-x86_64.zip
-            phylum-macos-aarch64.zip
-            phylum-linux-x86_64.minisig
-            phylum-macos-x86_64.minisig
-            phylum-macos-aarch64.minisig
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: release-archives
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          # This check is already filtered down to only 'refs/tags/' and shouldn't "overmatch"
+          prerelease: ${{ contains(github.ref, 'rc') }}
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: phylum-*.zip
