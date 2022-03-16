@@ -1,0 +1,22 @@
+---
+
+name: Sync `docs` directory to ReadMe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  
+jobs:
+  Update-Documentation:
+    name: Update the documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+       
+      - name: Update using rdme
+        uses: readmeio/rdme@7.0.0
+        with:
+          rdme: docs ./docs --key=${{ secrets.README_API }} --version=1.2
