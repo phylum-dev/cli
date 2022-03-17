@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -43,6 +44,27 @@ pub struct ProjectConfig {
     pub created_at: DateTime<Local>,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            connection: ConnectionInfo {
+                uri: "https://api.phylum.io".into(),
+            },
+            auth_info: AuthInfo {
+                oidc_discovery_url:
+                    "https://login.phylum.io/auth/realms/phylum/.well-known/openid-configuration"
+                        .parse()
+                        .unwrap(),
+                offline_access: None,
+            },
+            request_type: PackageType::Npm,
+            packages: None,
+            last_update: None,
+            ignore_certs: None,
+        }
+    }
+}
+
 // TODO: define explicit error types
 // TODO: This is NOT atomic, and file corruption can occur
 // TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
@@ -51,6 +73,9 @@ pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
+    if let Some(config_dir) = path.parent() {
+        fs::create_dir_all(config_dir)?
+    }
     let yaml = serde_yaml::to_string(config)?;
     fs::write(path, yaml)?;
     Ok(())
@@ -65,7 +90,13 @@ where
 }
 
 pub fn read_configuration(path: &Path) -> Result<Config> {
-    let mut config: Config = parse_config(path)?;
+    let mut config: Config = match parse_config(path) {
+        Ok(c) => c,
+        Err(orig_err) => match orig_err.downcast_ref::<io::Error>() {
+            Some(e) if e.kind() == io::ErrorKind::NotFound => Config::default(),
+            _ => return Err(orig_err),
+        },
+    };
 
     // If an api token has been set in the environment, prefer that
     if let Ok(key) = env::var("PHYLUM_API_KEY") {
