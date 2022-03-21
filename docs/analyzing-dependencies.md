@@ -8,7 +8,7 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
 * Ruby Gems
 * PyPI
 
-After setting up a Phylum [project](doc:projects) , you can begin analysis by running:
+After setting up a Phylum [project](https://docs.phylum.io/docs/projects) , you can begin analysis by running:
 
 ```sh
 phylum analyze <package-lock-file.ext>
