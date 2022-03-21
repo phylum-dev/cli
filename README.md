@@ -33,7 +33,7 @@ The command line interface (CLI) allows users to submit their project package de
    Trusted comment: Phylum - the future of software supply chain security
    ```
    
-3. Run the installer script for [installation](https://docs.phylum.io/docs/installation)
+3. Run the installer script for installation
 
    ```
    ./install.sh
