@@ -1,0 +1,30 @@
+---
+
+name: Sync `docs` directory to ReadMe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+  
+jobs:
+  Update-Documentation:
+    name: Update the documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+       
+      - name: Update v1-latest using rdme
+        if: ${{ github.ref == ‘refs/heads/master’ }}
+        uses: readmeio/rdme@7.0.0
+        with:
+          rdme: docs ./docs --key=${{ secrets.README_API }} --version=1-latest
+          
+      - name: Update v1-development using rdme
+        if: ${{ github.ref == ‘refs/heads/development’ }}
+        uses: readmeio/rdme@7.0.0
+        with:
+          rdme: docs ./docs --key=${{ secrets.README_API }} --version=1-development

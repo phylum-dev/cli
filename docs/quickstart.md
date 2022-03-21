@@ -1,3 +1,9 @@
+---
+title: Quickstart
+excerpt: This page will help you get started with Phylum CLI tool. You'll be up and running in a jiffy!
+category: 61e72e3a50a88e001a92ee5d
+---
+
 <p align="center">
   <img height="100" src="https://phylum.io/logo/dark-bckg.svg">
 </p>
