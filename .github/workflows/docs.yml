@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - master
-      - development
   
 jobs:
   Update-Documentation:
@@ -18,13 +17,6 @@ jobs:
         uses: actions/checkout@v3
        
       - name: Update v1-latest using rdme
-        if: ${{ github.ref_name == 'master' }}
         uses: readmeio/rdme@7.0.0
         with:
           rdme: docs ./docs --key=${{ secrets.README_API }} --version=1-latest
-          
-      - name: Update v1-development using rdme
-        if: ${{ github.ref_name == 'development' }}
-        uses: readmeio/rdme@7.0.0
-        with:
-          rdme: docs ./docs --key=${{ secrets.README_API }} --version=1-development
