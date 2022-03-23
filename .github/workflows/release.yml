@@ -15,9 +15,37 @@ on:
       - '*'
 
 jobs:
-  Build-Release-Artifacts:
-    name: Build the release artifacts
+  Generate-Completion-Files:
+    name: Generate shell completion files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Generate shell completion files
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: gencomp
+
+      - name: Upload shell completions
+        uses: actions/upload-artifact@v3
+        with:
+          name: shell-completions
+          path: ./target/completions/
+          if-no-files-found: error
+          retention-days: 7
+
+  Build-CLI:
+    name: Build the CLI binary
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-unknown-linux-musl
@@ -50,6 +78,48 @@ jobs:
         with:
           name: phylum-${{ matrix.target }}
           path: ./target/${{ matrix.target }}/release/phylum
+          if-no-files-found: error
+          retention-days: 7
+
+  Build-Release-Artifacts:
+    name: Build the release artifacts
+    needs: [Generate-Completion-Files, Build-CLI]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install host dependencies
+        run: |
+          sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
+          sudo apt update
+          sudo apt install -yq build-essential zip minisign
+
+      - name: Checkout the repo
+        uses: actions/checkout@master
+        with:
+          path: cli
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Sign binaries and prep archives
+        run: |
+          echo -e $MINISIGN_KEY > minisign.key
+          for archive in phylum-*/;
+          do
+            archive=$(echo ${archive} | sed -e "s/\/$//")
+            echo $MINISIGN_PASSWORD | minisign -Sm ${archive}/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
+            cp -R shell-completions ${archive}/completions
+            cp cli/cli/src/install.sh ${archive}/install.sh
+            zip -r ${archive}.zip ${archive}
+          done
+        env:
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-archives
+          path: phylum-*.zip
           if-no-files-found: error
           retention-days: 7
 
