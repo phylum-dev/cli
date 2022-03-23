@@ -17,14 +17,17 @@ on:
 jobs:
   Build-Release-Artifacts:
     name: Build the release artifacts
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Install host dependencies
-        run: |
-          sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
-          sudo apt update
-          sudo apt install -yq build-essential zip minisign
-
       - name: Checkout the repo
         uses: actions/checkout@master
 
@@ -32,33 +35,20 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: ${{ matrix.target }}
+          profile: minimal
 
-      # TODO: determine if it is possible to break out the build into multiple targets, to enable parallel job execution
       - name: Build Distributions
-        run: cargo xtask dist
-
-      - name: Sign binaries
-        run: |
-          echo -e $MINISIGN_KEY > minisign.key
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
-        env:
-          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
-          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
-
-      - name: Build zipfiles
-        working-directory: ./target/dist
-        run: |
-          zip -r phylum-linux-x86_64.zip phylum-linux-x86_64
-          zip -r phylum-macos-x86_64.zip phylum-macos-x86_64
-          zip -r phylum-macos-aarch64.zip phylum-macos-aarch64
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: release-archives
-          path: ./target/dist/phylum-*.zip
+          name: phylum-${{ matrix.target }}
+          path: ./target/${{ matrix.target }}/release/phylum
           if-no-files-found: error
           retention-days: 7
 
