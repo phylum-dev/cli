@@ -27,9 +27,9 @@ The command line interface (CLI) allows users to submit their project package de
 
    | Target | Package |
    | --- | --- |
-   | x86_64-unknown-linux-musl | [phylum-linux-x86_64.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-linux-x86_64.zip) |
-   | x86_64-apple-darwin | [phylum-macos-x86_64.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-macos-x86_64.zip) |
-   | aarch64-apple-darwin | [phylum-macos-aarch64.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-macos-aarch64.zip) |
+   | x86_64-unknown-linux-musl | [phylum-x86_64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip) |
+   | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) |
+   | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) |
 
 2. Confirm the signature of the `phylum` binary located within the archive with [minisign](https://jedisct1.github.io/minisign/) and the public key for Phylum
 
