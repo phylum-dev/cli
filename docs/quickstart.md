@@ -23,7 +23,7 @@ The command line interface (CLI) allows users to submit their project package de
 
 ## Quickstart for Linux or macOS
 
-1. Download and unzip the latest release package for your target:
+1. Download the latest release package for your target:
 
    | Target | Package |
    | --- | --- |
@@ -31,39 +31,45 @@ The command line interface (CLI) allows users to submit their project package de
    | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) |
    | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) |
 
-2. Confirm the signature of the `phylum` binary located within the archive with [minisign](https://jedisct1.github.io/minisign/) and the public key for Phylum
+1. Confirm the signature of the archive with [minisign](https://jedisct1.github.io/minisign/) and the public key for Phylum
 
    ```sh
-   $ minisign -Vm phylum -P RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf
+   $ minisign -Vm phylum-*.zip -P RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf
    Signature and comment signature verified
    Trusted comment: Phylum - the future of software supply chain security
    ```
-   
-3. Run the installer script for installation
+
+1. Unzip the archive
+
+   ```sh
+   unzip phylum-*.zip
+   ```
+
+1. Run the installer script for installation
 
    ```
    ./install.sh
    ```
 
-4. [Register](https://docs.phylum.io/docs/registration) for an account (if you don't already have one)
+1. [Register](https://docs.phylum.io/docs/registration) for an account (if you don't already have one)
 
    ```
    phylum auth register
    ```
 
-5. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
+1. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
 
    ```
    phylum auth login
    ```
 
-6. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
+1. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
 
    ```
    phylum projects create <project-name>
    ```
 
-7. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
+1. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
 
    ```
    phylum analyze <package-lock-file.ext>

@@ -100,22 +100,17 @@ jobs:
       - name: Download release artifacts
         uses: actions/download-artifact@v3
 
-      - name: Sign binaries and prep archives
+      - name: Prep archives
         run: |
-          echo -e $MINISIGN_KEY > minisign.key
           for archive in phylum-*/;
           do
             archive=$(echo ${archive} | sed -e "s/\/$//")
-            echo $MINISIGN_PASSWORD | minisign -Sm ${archive}/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
             cp -R shell-completions ${archive}/completions
             cp cli/cli/src/install.sh ${archive}/install.sh
             cp cli/cli/src/settings.yaml ${archive}/settings.yaml
             chmod a+x ${archive}/phylum
             zip -r ${archive}.zip ${archive}
           done
-        env:
-          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
-          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
@@ -136,6 +131,17 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: release-archives
+
+      - name: Sign archives
+        run: |
+          echo -e $MINISIGN_KEY > minisign.key
+          for archive in phylum-*.zip;
+          do
+            echo $MINISIGN_PASSWORD | minisign -Sm ${archive} -s minisign.key -t 'Phylum - the future of software supply chain security'
+          done
+        env:
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v0.1.14
