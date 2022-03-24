@@ -8,15 +8,15 @@ NC='\033[0m'
 set -euo pipefail
 
 error() {
-    echo -e "${RED}ERROR${NC} ${1}"
+    echo -e "${RED}    ERROR${NC} ${1}"
 }
 
 success() {
-    echo -e "${GREEN}   OK${NC} ${1}"
+    echo -e "${GREEN}    OK${NC} ${1}"
 }
 
 banner() {
-    echo -e "\n   ${GREEN}phylum-cli${NC} installer\n"
+    echo -e "\n    ${GREEN}phylum-cli${NC} installer\n"
 }
 
 # Get the platform name.
@@ -59,7 +59,7 @@ check_copy() {
         success "Copied ${src} to ${dst}."
     else
         error "Failed to copy. Could not find ${src}."
-        exit
+        exit 1
     fi
 }
 
@@ -88,7 +88,6 @@ patch_zshrc() {
     fi
 
     if ! grep -q '.phylum/completions' "${rc_path}"; then
-        mkdir -p "$HOME/.phylum/completions"
         echo "fpath+=(\"\$HOME/.phylum/completions\")" >> "${rc_path}"
     fi
     if ! grep -q 'autoload -U compinit && compinit' "${rc_path}"; then
@@ -144,7 +143,7 @@ copy_files() {
     # Copy completions over
     mkdir -p "${HOME}/.phylum/completions"
     cp -a "completions" "${HOME}/.phylum/"
-    success "Copied completions."
+    success "Copied completions to ${HOME}/.phylum/completions"
 }
 
 pushd "$(dirname "$0")" >/dev/null
