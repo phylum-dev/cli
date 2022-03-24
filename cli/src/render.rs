@@ -260,7 +260,7 @@ impl Renderable for PackageType {
             PackageType::RubyGems => "RubyGems",
             PackageType::PyPi => "PyPI",
             PackageType::Maven => "Maven",
-            PackageType::Nuget => ".NET",
+            PackageType::Nuget => "NuGet",
         };
         label.to_owned()
     }
