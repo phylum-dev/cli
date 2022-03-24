@@ -6,10 +6,10 @@
 
 # Introduction
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/phylum-dev/cli)
-[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)
-![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=master)
-[![README](https://img.shields.io/badge/docs-README-yellowgreen)](https://docs.phylum.io/docs/welcome)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/phylum-dev/cli)](https://github.com/phylum-dev/cli/releases/latest/)
+[![MIT License](https://img.shields.io/github/license/phylum-dev/cli)](./LICENSE)
+[![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/phylum-dev/cli/actions/workflows/test.yml)
+[![README](https://img.shields.io/badge/docs-README-blue)](https://docs.phylum.io/docs/welcome)
 
 The command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. For other platforms (e.g., Windows), binaries can easily be [built](https://docs.phylum.io/docs/building).
 
