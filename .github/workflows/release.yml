@@ -15,8 +15,75 @@ on:
       - '*'
 
 jobs:
+  Generate-Completion-Files:
+    name: Generate shell completion files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Generate shell completion files
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: gencomp
+
+      - name: Upload shell completions
+        uses: actions/upload-artifact@v3
+        with:
+          name: shell-completions
+          path: ./target/completions/
+          if-no-files-found: error
+          retention-days: 7
+
+  Build-CLI:
+    name: Build the CLI binary
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          profile: minimal
+
+      - name: Build Distributions
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+          use-cross: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: phylum-${{ matrix.target }}
+          path: ./target/${{ matrix.target }}/release/phylum
+          if-no-files-found: error
+          retention-days: 7
+
   Build-Release-Artifacts:
     name: Build the release artifacts
+    needs: [Generate-Completion-Files, Build-CLI]
     runs-on: ubuntu-latest
     steps:
       - name: Install host dependencies
@@ -27,38 +94,34 @@ jobs:
 
       - name: Checkout the repo
         uses: actions/checkout@master
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          path: cli
 
-      # TODO: determine if it is possible to break out the build into multiple targets, to enable parallel job execution
-      - name: Build Distributions
-        run: cargo xtask dist
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
 
-      - name: Sign binaries
+      - name: Sign binaries and prep archives
         run: |
           echo -e $MINISIGN_KEY > minisign.key
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-linux-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-x86_64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
-          echo $MINISIGN_PASSWORD | minisign -Sm target/dist/phylum-macos-aarch64/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
+          for archive in phylum-*/;
+          do
+            archive=$(echo ${archive} | sed -e "s/\/$//")
+            echo $MINISIGN_PASSWORD | minisign -Sm ${archive}/phylum -s minisign.key -t 'Phylum - the future of software supply chain security'
+            cp -R shell-completions ${archive}/completions
+            cp cli/cli/src/install.sh ${archive}/install.sh
+            cp cli/cli/src/settings.yaml ${archive}/settings.yaml
+            chmod a+x ${archive}/phylum
+            zip -r ${archive}.zip ${archive}
+          done
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
-
-      - name: Build zipfiles
-        working-directory: ./target/dist
-        run: |
-          zip -r phylum-linux-x86_64.zip phylum-linux-x86_64
-          zip -r phylum-macos-x86_64.zip phylum-macos-x86_64
-          zip -r phylum-macos-aarch64.zip phylum-macos-aarch64
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
         with:
           name: release-archives
-          path: ./target/dist/phylum-*.zip
+          path: phylum-*.zip
           if-no-files-found: error
           retention-days: 7
 
