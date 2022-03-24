@@ -6,8 +6,8 @@ read -r version
 printf "changelog: "
 read -r changelog
 
-sed -E -i "1 s#^#* $version - $changelog\n#" CHANGELOG
-sed -E -i "s/^version = \"([^\"]*)\"/version = \"$version\"/" cli/Cargo.toml
+sed -E -i "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
+sed -E -i "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
 git add CHANGELOG
 git add cli/Cargo.toml
 git commit -m "Bump version"

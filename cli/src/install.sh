@@ -23,9 +23,9 @@ banner() {
 get_platform() {
     local platform_str
     platform_str=$(uname)
-    if [[ "$platform_str" == "Linux" ]]; then
+    if [[ "${platform_str}" == "Linux" ]]; then
         echo "linux"
-    elif [[ "$platform_str" == "Darwin" ]]; then
+    elif [[ "${platform_str}" == "Darwin" ]]; then
         echo "macos"
     else
         echo "unknown"
@@ -33,7 +33,7 @@ get_platform() {
 }
 
 get_rc_file() {
-    case $(basename "$SHELL") in
+    case $(basename "${SHELL}") in
         bash)
             echo "${HOME}/.bashrc"
             ;;
@@ -54,7 +54,7 @@ check_copy() {
     local src=${1}
     local dst=${2}
 
-    if [ -f "${src}" ]; then
+    if [[ -f "${src}" ]]; then
         cp -f "${src}" "${dst}"
         success "Copied ${src} to ${dst}."
     else
@@ -69,7 +69,7 @@ add_to_path_and_alias() {
 
     # shellcheck disable=SC2016 # we don't want to expand $PATH here
     if ! grep -q '.phylum:\$PATH' "${rc_path}"; then
-        export PATH="$HOME/.phylum:$PATH"
+        export PATH="${HOME}/.phylum:${PATH}"
         echo 'export PATH="$HOME/.phylum:$PATH"' >> "${rc_path}"
         success "Updated ${shell}'s \$PATH to include ${HOME}/.phylum/."
     fi
@@ -83,7 +83,7 @@ add_to_path_and_alias() {
 patch_zshrc() {
     rc_path="${HOME}/.zshrc"
 
-    if [ ! -f "${rc_path}" ]; then
+    if [[ ! -f "${rc_path}" ]]; then
         touch "${rc_path}"
     fi
 
@@ -101,7 +101,7 @@ patch_zshrc() {
 patch_bashrc() {
     rc_path="${HOME}/.bashrc"
 
-    if [ ! -f "${rc_path}" ]; then
+    if [[ ! -f "${rc_path}" ]]; then
         touch "${rc_path}"
     fi
 
@@ -115,7 +115,7 @@ patch_bashrc() {
 
 create_directory() {
     # Create the config directory if one does not already exist.
-    if [ ! -d "${HOME}/.phylum" ]; then
+    if [[ ! -d "${HOME}/.phylum" ]]; then
         mkdir -p "${HOME}/.phylum"
         success "Created directory .phylum in home directory."
     fi
@@ -123,10 +123,10 @@ create_directory() {
 
 copy_files() {
     # Copy the specific platform binary.
-    platform=$(get_platform)
+    platform=$(set -e; get_platform)
     bin_name="phylum"
 
-    if [[ "$platform" == "macos" ]]; then
+    if [[ "${platform}" == "macos" ]]; then
         cat "${bin_name}" > "${HOME}/.phylum/phylum"
         success "Copied ${bin_name} to ${HOME}/.phylum/phylum."
     else
@@ -135,7 +135,7 @@ copy_files() {
     chmod +x "${HOME}/.phylum/phylum"
 
     # Copy the settings over, if settings do not already exist at the target.
-    if [ ! -f "${HOME}/.phylum/settings.yaml" ]; then
+    if [[ ! -f "${HOME}/.phylum/settings.yaml" ]]; then
         check_copy "settings.yaml" "${HOME}/.phylum/"
     fi
     chmod 600 "${HOME}/.phylum/settings.yaml"
@@ -155,9 +155,10 @@ patch_zshrc
 popd >/dev/null
 
 success "Successfully installed phylum."
+rc_file=$(set -e; get_rc_file)
 cat << __instructions__
 
-    Source your $(get_rc_file) file, add $HOME/.phylum to your \$PATH variable, or
+    Source your ${rc_file} file, add ${HOME}/.phylum to your \$PATH variable, or
     log in to a new terminal in order to make \`phylum\` available.
 
 __instructions__
