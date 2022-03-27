@@ -88,6 +88,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(Command::new("register").about("Register a new account"))
                 .subcommand(Command::new("login").about("Login to an existing account"))
                 .subcommand(Command::new("status").about("Return the current authentication status"))
+                .subcommand(Command::new("token").about("Return the current authentication token"))
         )
         .subcommand(
             Command::new("ping").about("Ping the remote system to verify it is available")

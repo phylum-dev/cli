@@ -36,6 +36,18 @@ pub fn handle_auth_status(config: &Config) {
     }
 }
 
+/// Display the current authentication token to the user, if one exists.
+pub fn handle_auth_token(config: &Config) {
+    match config.auth_info.offline_access.clone() {
+        Some(token) => {
+            print_user_success!("{}", token);
+        },
+        None => {
+            print_user_warning!("User is not currently authenticated, you can login with phylum auth login");
+        }
+    };
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -69,6 +81,8 @@ pub async fn handle_auth(
         }
     } else if matches.subcommand_matches("status").is_some() {
         handle_auth_status(&config);
+    } else if matches.subcommand_matches("token").is_some() {
+        handle_auth_token(&config);
     } else {
         print_sc_help(app_helper, "auth");
     }
