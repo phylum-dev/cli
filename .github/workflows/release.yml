@@ -104,7 +104,6 @@ jobs:
             archive=$(echo ${archive} | sed -e "s/\/$//")
             cp -R shell-completions ${archive}/completions
             cp cli/cli/src/install.sh ${archive}/install.sh
-            cp cli/cli/src/settings.yaml ${archive}/settings.yaml
             chmod a+x ${archive}/phylum
             zip -r ${archive}.zip ${archive}
           done

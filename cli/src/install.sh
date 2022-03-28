@@ -134,11 +134,10 @@ copy_files() {
     fi
     chmod +x "${HOME}/.phylum/phylum"
 
-    # Copy the settings over, if settings do not already exist at the target.
-    if [[ ! -f "${HOME}/.phylum/settings.yaml" ]]; then
-        check_copy "settings.yaml" "${HOME}/.phylum/"
+    # Ensure correct permissions on settings.yaml (if it exists).
+    if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
+        chmod 600 "${HOME}/.phylum/settings.yaml"
     fi
-    chmod 600 "${HOME}/.phylum/settings.yaml"
 
     # Copy completions over
     mkdir -p "${HOME}/.phylum/completions"
