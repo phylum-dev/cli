@@ -155,4 +155,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             phylum-*.zip
-            phlyum-*.zip.minisig
+            phylum-*.zip.minisig
