@@ -153,4 +153,4 @@ jobs:
           prerelease: ${{ contains(github.ref, 'rc') }}
           fail_on_unmatched_files: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: phylum-*.zip
+          files: phylum-*.zip phlyum-*.zip.minisig
