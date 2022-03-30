@@ -1,9 +1,12 @@
 pub mod api;
 pub mod app;
 pub mod auth;
+pub mod commands;
 pub mod config;
 pub mod filter;
 pub mod lockfiles;
+pub mod print;
+pub mod prompt;
 pub mod render;
 pub mod summarize;
 #[cfg(test)]

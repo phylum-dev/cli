@@ -3,11 +3,10 @@ use std::path::Path;
 use anyhow::anyhow;
 use clap::Command;
 
-use phylum_cli::api::PhylumApi;
-use phylum_cli::config::{save_config, Config};
-
 use super::{CommandResult, CommandValue};
-use crate::print_sc_help;
+use crate::api::PhylumApi;
+use crate::config::{save_config, Config};
+use crate::print::print_sc_help;
 use crate::print_user_success;
 use crate::print_user_warning;
 

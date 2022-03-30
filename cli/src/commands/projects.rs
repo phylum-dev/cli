@@ -5,10 +5,9 @@ use anyhow::anyhow;
 use chrono::Local;
 use uuid::Uuid;
 
-use phylum_cli::api::PhylumApi;
-use phylum_cli::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
-
 use super::{CommandResult, CommandValue};
+use crate::api::PhylumApi;
+use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 use crate::print::*;
 use crate::print_user_failure;
 use crate::print_user_success;
