@@ -5,9 +5,9 @@ use ansi_term::Color::{Blue, Cyan};
 use clap::Command;
 use serde::Serialize;
 
-use phylum_cli::api::PhylumApiError;
-use phylum_cli::filter::Filter;
-use phylum_cli::summarize::Summarize;
+use crate::api::PhylumApiError;
+use crate::filter::Filter;
+use crate::summarize::Summarize;
 
 #[macro_export]
 macro_rules! print_user_success {

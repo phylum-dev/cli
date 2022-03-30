@@ -2,12 +2,11 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::anyhow;
+use clap::ArgMatches;
 use phylum_types::types::package::*;
 use reqwest::StatusCode;
 
-use clap::ArgMatches;
-use phylum_cli::api::PhylumApi;
-
+use crate::api::PhylumApi;
 use crate::commands::{CommandResult, CommandValue};
 use crate::print::print_response;
 use crate::print_user_warning;

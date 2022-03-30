@@ -7,19 +7,19 @@ use reqwest::StatusCode;
 use serde::Serialize;
 use uuid::Uuid;
 
-use phylum_cli::api::{PhylumApi, PhylumApiError};
-use phylum_cli::config::{get_current_project, Config, ProjectConfig};
-use phylum_cli::filter::Filter;
-use phylum_cli::summarize::Summarize;
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 
+use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::lock_files::get_packages_from_lockfile;
 use crate::commands::{CommandResult, CommandValue};
+use crate::config::{get_current_project, Config, ProjectConfig};
+use crate::filter::Filter;
 use crate::print::print_response;
 use crate::print_user_success;
 use crate::print_user_warning;
+use crate::summarize::Summarize;
 
 use super::projects::get_project_list;
 
