@@ -41,9 +41,11 @@ pub fn handle_auth_token(config: &Config) {
     match config.auth_info.offline_access.clone() {
         Some(token) => {
             print_user_success!("{}", token);
-        },
+        }
         None => {
-            print_user_warning!("User is not currently authenticated, you can login with phylum auth login");
+            print_user_warning!(
+                "User is not currently authenticated, please login with `phylum auth login`"
+            );
         }
     };
 }
