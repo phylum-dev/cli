@@ -9,21 +9,17 @@ use log::*;
 use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
+use phylum_cli::commands::auth::*;
+use phylum_cli::commands::jobs::*;
+use phylum_cli::commands::packages::*;
+use phylum_cli::commands::projects::handle_projects;
+use phylum_cli::commands::{CommandResult, CommandValue};
 use phylum_cli::config::*;
+use phylum_cli::print::*;
 use phylum_cli::update::ApplicationUpdater;
+use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
-
-mod commands;
-mod print;
-mod prompt;
-
-use commands::auth::*;
-use commands::jobs::*;
-use commands::packages::*;
-use commands::projects::handle_projects;
-use commands::{CommandResult, CommandValue};
-use print::*;
 
 /// Exit with status code 0 and optionally print a message to the user.
 pub fn exit_ok(message: Option<impl AsRef<str>>) -> ! {

@@ -4,10 +4,6 @@ version = "1.2.0"
 authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 
-[[bin]]
-name = "phylum"
-path = "src/bin/phylum/main.rs"
-
 [features]
 phylum-online = []
 

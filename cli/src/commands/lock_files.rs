@@ -1,7 +1,7 @@
 use phylum_types::types::package::*;
 use std::path::Path;
 
-use phylum_cli::lockfiles::*;
+use crate::lockfiles::*;
 
 /// Attempt to get packages from an unknown lockfile type
 pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
