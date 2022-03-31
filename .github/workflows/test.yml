@@ -11,7 +11,7 @@ on:
       - development
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Install host dependencies
@@ -39,11 +39,23 @@ jobs:
           command: clippy
           args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
 
-      - name: Build
-        run: cargo build --release
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@master
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
 
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --lib --manifest-path Cargo.toml
