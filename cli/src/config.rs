@@ -65,6 +65,24 @@ impl Default for Config {
     }
 }
 
+/// Create or open a file. If the file is created, it will restrict permissions to allow read/write
+/// access only to the current user.
+fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
+    // Use OpenOptions so that we can specify the permission bits
+    let mut opts = fs::OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+
+    // Windows file permissions are complicated and home folders aren't usually globally readable,
+    // so we can ignore Windows for now.
+
+    opts.open(path)
+}
+
 // TODO: define explicit error types
 // TODO: This is NOT atomic, and file corruption can occur
 // TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
@@ -73,11 +91,15 @@ pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
+    use std::io::Write;
+
     if let Some(config_dir) = path.parent() {
         fs::create_dir_all(config_dir)?
     }
     let yaml = serde_yaml::to_string(config)?;
-    fs::write(path, yaml)?;
+
+    create_private_file(path)?.write_all(yaml.as_ref())?;
+
     Ok(())
 }
 
