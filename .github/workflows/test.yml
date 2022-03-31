@@ -14,11 +14,6 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Install host dependencies
-        run: |
-          sudo apt update
-          sudo apt install -yq build-essential
-
       - name: Checkout the repo
         uses: actions/checkout@master
 
