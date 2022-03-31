@@ -49,20 +49,6 @@ get_rc_file() {
     esac
 }
 
-# Check if the provided path exists and copy to the specified location.
-check_copy() {
-    local src=${1}
-    local dst=${2}
-
-    if [[ -f "${src}" ]]; then
-        cp -f "${src}" "${dst}"
-        success "Copied ${src} to ${dst}."
-    else
-        error "Failed to copy. Could not find ${src}."
-        exit 1
-    fi
-}
-
 add_to_path_and_alias() {
     rc_path=${1}
     shell=${2}
@@ -115,10 +101,7 @@ patch_bashrc() {
 
 create_directory() {
     # Create the config directory if one does not already exist.
-    if [[ ! -d "${HOME}/.phylum" ]]; then
-        mkdir -p "${HOME}/.phylum"
-        success "Created directory .phylum in home directory."
-    fi
+    install -d "${HOME}/.phylum"
 }
 
 copy_files() {
@@ -126,13 +109,11 @@ copy_files() {
     platform=$(set -e; get_platform)
     bin_name="phylum"
 
+    install -m 0755 "${bin_name}" "${HOME}/.phylum/phylum"
     if [[ "${platform}" == "macos" ]]; then
-        cat "${bin_name}" > "${HOME}/.phylum/phylum"
-        success "Copied ${bin_name} to ${HOME}/.phylum/phylum."
-    else
-        check_copy "${bin_name}" "${HOME}/.phylum/phylum"
+        # Don't be suspicious. Don't be suspicious
+        xattr -d com.apple.quarantine "${HOME}/.phylum/phylum"
     fi
-    chmod +x "${HOME}/.phylum/phylum"
 
     # Ensure correct permissions on settings.yaml (if it exists).
     if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
