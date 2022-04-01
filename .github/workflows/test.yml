@@ -40,7 +40,7 @@ jobs:
           command: clippy
           args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
 
-  test:
+  test-matrix:
     strategy:
       fail-fast: false
       matrix:
@@ -60,3 +60,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+
+  # This job reports the results of the test matrix above
+  test:
+    if: always()
+    needs: test-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.test-matrix.result != 'success'
+        name: Fail the build
+        run: exit 1
