@@ -16,7 +16,7 @@ use phylum_cli::commands::projects::handle_projects;
 use phylum_cli::commands::{CommandResult, CommandValue};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
-use phylum_cli::update::ApplicationUpdater;
+use phylum_cli::update;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
@@ -116,16 +116,8 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if check_for_updates {
-        let updater = ApplicationUpdater::default();
-        match updater.get_latest_version(false).await {
-            Some(latest) => {
-                if updater.needs_update(ver, &latest) {
-                    print_update_message();
-                }
-            }
-            None => log::debug!("Failed to get the latest version for update check"),
-        }
+    if check_for_updates && update::needs_update(ver, false).await {
+        print_update_message();
     }
 
     // For these commands, we want to just provide verbose help and exit if no
@@ -202,27 +194,16 @@ async fn handle_commands() -> CommandResult {
             Spinners::Dots12,
             "Downloading update and verifying binary signatures...".into(),
         );
-        let updater = ApplicationUpdater::default();
-        match updater
-            .get_latest_version(matches.is_present("prerelease"))
-            .await
-        {
-            Some(ver) => match updater.do_update(ver).await {
-                Ok(msg) => {
-                    spinner.stop();
-                    println!();
-                    print_user_success!("{}", msg);
-                }
-                Err(msg) => {
-                    spinner.stop();
-                    println!();
-                    print_user_failure!("{}", msg);
-                }
-            },
-            _ => {
+        match update::do_update(matches.is_present("prerelease")).await {
+            Ok(msg) => {
                 spinner.stop();
                 println!();
-                print_user_warning!("Failed to get version metadata");
+                print_user_success!("{}", msg);
+            }
+            Err(msg) => {
+                spinner.stop();
+                println!();
+                print_user_failure!("{}", msg);
             }
         };
     } else if let Some(matches) = matches.subcommand_matches("package") {

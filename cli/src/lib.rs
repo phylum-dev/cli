@@ -20,7 +20,4 @@ pub mod utils;
 // Enable logging for ALL doc & local tests
 use test::logging;
 
-#[macro_use]
-extern crate log;
-
 pub use reqwest::Error;

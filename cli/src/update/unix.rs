@@ -7,6 +7,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use futures::Future;
+use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::{Client, Response};
 
@@ -20,8 +21,30 @@ const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
 
 const GITHUB_URI: &str = "https://api.github.com";
 
+/// Check if a newer version of the client is available
+pub async fn needs_update(current_version: &str, prerelease: bool) -> bool {
+    let updater = ApplicationUpdater::default();
+    match updater.get_latest_version(prerelease).await {
+        Some(latest) => updater.needs_update(current_version, &latest),
+        None => {
+            log::debug!("Failed to get the latest version for update check");
+            false
+        }
+    }
+}
+
+/// Perform a self-update to the latest version
+pub async fn do_update(prerelease: bool) -> anyhow::Result<String> {
+    let updater = ApplicationUpdater::default();
+    let ver = updater
+        .get_latest_version(prerelease)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("Failed to get version metadata"))?;
+    updater.do_update(ver).await.map_err(|e| e.into())
+}
+
 #[derive(Debug)]
-pub struct ApplicationUpdater {
+struct ApplicationUpdater {
     pubkey: PublicKey,
     github_uri: String,
 }
@@ -99,7 +122,7 @@ impl ApplicationUpdater {
     }
 
     /// Check for an update by querying the Github releases page.
-    pub async fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
+    async fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
         let ver = if prerelease {
             let url = format!("{}/repos/phylum-dev/cli/releases", self.github_uri);
 
@@ -176,7 +199,7 @@ impl ApplicationUpdater {
     /// published on Github. We do the naive thing here: If the latest version on
     /// Github does not match the Clap version, we indicate that we need to
     /// update. We do not compare semvers to determine if an update is required.
-    pub fn needs_update(&self, current_version: &str, latest_version: &GithubRelease) -> bool {
+    fn needs_update(&self, current_version: &str, latest_version: &GithubRelease) -> bool {
         let latest = latest_version
             .name
             .replace("phylum ", "")
@@ -188,7 +211,7 @@ impl ApplicationUpdater {
     }
 
     /// Locate the specified asset in the Github response structure.
-    pub fn find_github_asset<'a>(
+    fn find_github_asset<'a>(
         &self,
         latest: &'a GithubRelease,
         name: &str,
@@ -207,7 +230,7 @@ impl ApplicationUpdater {
     /// only compiling for these OSes and architectures.
     ///
     /// Until we update the releases, this should suffice.
-    pub async fn do_update(&self, latest: GithubRelease) -> Result<String, std::io::Error> {
+    async fn do_update(&self, latest: GithubRelease) -> Result<String, std::io::Error> {
         debug!("Performing the update process");
         let latest_version = &latest.name;
 
@@ -300,7 +323,7 @@ impl ApplicationUpdater {
 
     /// Verify that the downloaded binary matches the expected signature. Returns
     /// `true` for a valid signature, `false` otherwise.
-    pub fn has_valid_signature(&self, file: &str, sig_path: &str) -> bool {
+    fn has_valid_signature(&self, file: &str, sig_path: &str) -> bool {
         let sig = fs::read_to_string(sig_path).expect("Unable to read signature file");
         let bin = fs::read(file).expect("Unable to read binary data from disk");
 
@@ -315,7 +338,7 @@ impl ApplicationUpdater {
 
 #[cfg(test)]
 mod tests {
-    use crate::update::ApplicationUpdater;
+    use super::ApplicationUpdater;
     use minisign_verify::PublicKey;
     use std::fs;
     use std::fs::File;
