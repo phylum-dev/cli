@@ -17,7 +17,7 @@ jobs:
   lint:
     # It is possible for lints to break after merge (e.g., new clippy checks), but it's not worth
     # breaking the build if that happens. So we'll skip this job for scheduled runs.
-    if: github.event_name != "schedule"
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
