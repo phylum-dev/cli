@@ -7,6 +7,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use futures::Future;
+use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::{Client, Response};
 
