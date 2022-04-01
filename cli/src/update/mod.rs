@@ -1,7 +1,7 @@
 //! Self-update functions
 //!
-//! Self-update is currently only supported on macos and Linux. All other platforms are unsupported
-//! and will display an error when `phylum update` is run.
+//! Self-update is currently supported on macos and Linux. All other platforms are unsupported and
+//! will display an error when `phylum update` is run. For Windows support, see issue #221
 
 #[cfg(unix)]
 mod unix;

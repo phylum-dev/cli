@@ -9,7 +9,7 @@ on:
     branches:
       - master
       - development
-  # Run weekly on the development branch to make sure it always builds with the latest rust release
+  # Run weekly on the default branch to make sure it always builds with the latest rust release
   schedule:
     - cron: '30 5 * * 1'
 
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
