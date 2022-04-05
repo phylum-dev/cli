@@ -146,7 +146,7 @@ async fn handle_commands() -> CommandResult {
         let res = update::do_update(matches.is_present("prerelease")).await;
         spinner.stop();
         println!();
-        return res.map(|s| CommandValue::String(s));
+        return res.map(CommandValue::String);
     }
 
     let timeout = matches
