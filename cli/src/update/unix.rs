@@ -1,6 +1,8 @@
-use std::io;
+use std::io::{self, Cursor};
 use std::process::Command;
+use std::str;
 
+use anyhow::Context;
 use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::Client;
@@ -20,9 +22,9 @@ const GITHUB_URI: &str = "https://api.github.com";
 pub async fn needs_update(current_version: &str, prerelease: bool) -> bool {
     let updater = ApplicationUpdater::default();
     match updater.get_latest_version(prerelease).await {
-        Some(latest) => updater.needs_update(current_version, &latest),
-        None => {
-            log::debug!("Failed to get the latest version for update check");
+        Ok(latest) => updater.needs_update(current_version, &latest),
+        Err(e) => {
+            log::debug!("Failed to get the latest version for update check: {:?}", e);
             false
         }
     }
@@ -34,7 +36,7 @@ pub async fn do_update(prerelease: bool) -> anyhow::Result<String> {
     let ver = updater
         .get_latest_version(prerelease)
         .await
-        .ok_or_else(|| anyhow::anyhow!("Failed to get version metadata"))?;
+        .context("Failed to get the latest version")?;
     updater
         .do_update(ver)
         .await
@@ -118,35 +120,25 @@ impl ApplicationUpdater {
     }
 
     /// Check for an update by querying the Github releases page.
-    async fn get_latest_version(&self, prerelease: bool) -> Option<GithubRelease> {
-        async fn inner(github_uri: &str, prerelease: bool) -> anyhow::Result<GithubRelease> {
-            if prerelease {
-                let url = format!("{}/repos/phylum-dev/cli/releases", github_uri);
-                let r = http_get(&url).await?;
-                let releases = r.json::<Vec<GithubRelease>>().await?;
-                // Use the first one in the list, which should be the most recent
-                releases
-                    .first()
-                    .cloned()
-                    .ok_or_else(|| anyhow::anyhow!("no releases found"))
-            } else {
-                let url = format!("{}/repos/phylum-dev/cli/releases/latest", github_uri);
-                let r = http_get(&url).await?;
-                Ok(r.json::<GithubRelease>().await?)
-            }
-        }
-
-        let ver = match inner(&self.github_uri, prerelease).await {
-            Ok(ver) => ver,
-            Err(e) => {
-                log::warn!("Failed getting latest version: {:?}", e);
-                return None;
-            }
+    async fn get_latest_version(&self, prerelease: bool) -> anyhow::Result<GithubRelease> {
+        let ver = if prerelease {
+            let url = format!("{}/repos/phylum-dev/cli/releases", self.github_uri);
+            let r = http_get(&url).await?;
+            let releases = r.json::<Vec<GithubRelease>>().await?;
+            // Use the first one in the list, which should be the most recent
+            releases
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("no releases found"))?
+        } else {
+            let url = format!("{}/repos/phylum-dev/cli/releases/latest", self.github_uri);
+            let r = http_get(&url).await?;
+            r.json::<GithubRelease>().await?
         };
 
         log::debug!("Found latest version: {:?}", ver);
 
-        Some(ver)
+        Ok(ver)
     }
 
     /// Compare the current version as reported by Clap with the version currently
@@ -169,10 +161,10 @@ impl ApplicationUpdater {
         &self,
         latest: &'a GithubRelease,
         name: &str,
-    ) -> Result<&'a GithubReleaseAsset, std::io::Error> {
+    ) -> Result<&'a GithubReleaseAsset, io::Error> {
         match latest.assets.iter().find(|x| x.name == name) {
             Some(x) => Ok(x),
-            _ => Err(std::io::Error::new(
+            _ => Err(io::Error::new(
                 io::ErrorKind::Other,
                 format!("Failed to download update file: {}", name),
             )),
@@ -200,13 +192,13 @@ impl ApplicationUpdater {
         let sig = download_github_asset(sig_asset).await?;
 
         debug!("Verifying the package signature");
-        if !self.has_valid_signature(zip.as_ref(), std::str::from_utf8(sig.as_ref())?) {
+        if !self.has_valid_signature(&zip, str::from_utf8(&sig)?) {
             anyhow::bail!("The update binary failed signature validation");
         }
 
         debug!("Extracting package to temporary directory");
         let temp_dir = tempfile::tempdir()?;
-        ZipArchive::new(std::io::Cursor::new(zip))?.extract(temp_dir.path())?;
+        ZipArchive::new(Cursor::new(zip))?.extract(temp_dir.path())?;
 
         debug!("Running the installer");
         let working_dir = temp_dir.path().join(archive_name);
