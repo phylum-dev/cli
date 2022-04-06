@@ -4,9 +4,17 @@ category: 61e72e3a50a88e001a92ee5d
 ---
 
 The Phylum CLI natively supports processing the lock/requirements files for several ecosystems, namely:
-* NPM
-* Ruby Gems
+* npm
+    * `package-lock.json`
+* RubyGems
+    * `Gemfile.lock`
 * PyPI
+    * `requirements.txt`
+* NuGet
+    * `*.csproj`
+* Maven
+    * `pom.xml`
+    * `gradle.lockfile`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/projects) , you can begin analysis by running:
 
