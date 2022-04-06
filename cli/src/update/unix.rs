@@ -66,7 +66,7 @@ async fn http_get(url: &str) -> anyhow::Result<reqwest::Response> {
 
 /// Download the specified Github asset. Returns a bytes object containing the contents of the asset.
 async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<bytes::Bytes> {
-    let r = http_get(latest.browser_download_url.as_str()).await?;
+    let r = http_get(&latest.browser_download_url).await?;
     Ok(r.bytes().await?)
 }
 
@@ -76,7 +76,7 @@ const SUPPORTED_PLATFORMS: &[&str] = &[
     "aarch64-apple-darwin",
 ];
 
-/// Determine the current platform. Error if unsupported
+/// Determine the current platform. Error if unsupported.
 fn current_platform() -> anyhow::Result<String> {
     let arch = if cfg!(target_arch = "x86_64") {
         "x86_64"
@@ -100,7 +100,7 @@ fn current_platform() -> anyhow::Result<String> {
     if SUPPORTED_PLATFORMS.contains(&platform.as_str()) {
         Ok(platform)
     } else {
-        Err(anyhow::anyhow!("unsupported platform: {}", &platform))
+        Err(anyhow::anyhow!("unsupported platform: {}", platform))
     }
 }
 
@@ -191,10 +191,9 @@ impl ApplicationUpdater {
 
         // Get the URL for each asset from the Github JSON response in `latest`.
         debug!("Finding the github assets in the Github JSON response");
-        let zip_asset =
-            self.find_github_asset(&latest, format!("{}.zip", archive_name).as_str())?;
+        let zip_asset = self.find_github_asset(&latest, &format!("{}.zip", archive_name))?;
         let sig_asset =
-            self.find_github_asset(&latest, format!("{}.zip.minisig", archive_name).as_str())?;
+            self.find_github_asset(&latest, &format!("{}.zip.minisig", archive_name))?;
 
         debug!("Downloading the update files");
         let zip = download_github_asset(zip_asset).await?;
