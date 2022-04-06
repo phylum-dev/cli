@@ -1311,7 +1311,6 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=master#582271f37bbceac2304b9839af5bc16449bf0062"
 dependencies = [
  "log",
  "serde",

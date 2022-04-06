@@ -11,26 +11,26 @@ use crate::summarize::Summarize;
 
 #[macro_export]
 macro_rules! print_user_success {
-    ($($tts:tt)*) => {
+    ($($tts:tt)*) => {{
         eprint!("✅ ");
         eprintln!($($tts)*);
-    }
+    }}
 }
 
 #[macro_export]
 macro_rules! print_user_warning {
-    ($($tts:tt)*) => {
+    ($($tts:tt)*) => {{
         eprint!("⚠️  ");
         eprintln!($($tts)*);
-    }
+    }}
 }
 
 #[macro_export]
 macro_rules! print_user_failure {
-    ($($tts:tt)*) => {
+    ($($tts:tt)*) => {{
         eprint!("❗ ");
         eprintln!($($tts)*);
-    }
+    }}
 }
 
 pub fn print_response<T>(

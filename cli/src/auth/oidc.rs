@@ -96,6 +96,7 @@ pub struct OidcServerSettings {
     pub issuer: Url,
     pub authorization_endpoint: Url,
     pub token_endpoint: Url,
+    pub userinfo_endpoint: Url,
 }
 
 /// Using config information, build the url for the keycloak login page.

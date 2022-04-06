@@ -19,6 +19,7 @@ mod job;
 mod project;
 mod user_settings;
 
+use crate::auth::fetch_oidc_server_settings;
 use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::AuthAction;
@@ -177,6 +178,12 @@ impl PhylumApi {
             .get::<AuthStatusResponse>(job::get_auth_status(&self.api_uri))
             .await?
             .authenticated)
+    }
+
+    /// Get information about the authenticated user
+    pub async fn user_info(&self, auth_info: &AuthInfo) -> Result<UserInfo> {
+        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+        self.get(oidc_settings.userinfo_endpoint.into()).await
     }
 
     /// Create a new project
