@@ -13,6 +13,7 @@ phylum-online = []
 ansi_term = "0.12.1"
 anyhow = "1.0.44"
 base64 = "0.13.0"
+bytes = "1.1.0"
 chrono = { version = "^0.4", features = ["serde"] }
 cidr = "0.2.0"
 clap = { version = "3.0.14" }
@@ -41,6 +42,7 @@ serde_yaml = "0.8.14"
 sha2 = "0.9.9"
 shellexpand = "2.0.0"
 spinners = "1.2.0"
+tempfile = "3.3.0"
 textwrap = "0.13.4"
 thiserror = "1.0.29"
 tokio = { version = "^1.0", features = ["full"] }
@@ -49,6 +51,7 @@ url = { version = "2", features = ["serde"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 yaml-rust = "*"
 zeroize = "1.4.0"
+zip = "0.6.2"
 
 [dev-dependencies]
 assert_cmd = "1.0.3"

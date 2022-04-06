@@ -138,6 +138,17 @@ async fn handle_commands() -> CommandResult {
         return CommandValue::String(format!("{app_name} (Version {ver})")).into();
     }
 
+    if let Some(matches) = matches.subcommand_matches("update") {
+        let spinner = Spinner::new(
+            Spinners::Dots12,
+            "Downloading update and verifying binary signatures...".into(),
+        );
+        let res = update::do_update(matches.is_present("prerelease")).await;
+        spinner.stop();
+        println!();
+        return res.map(CommandValue::String);
+    }
+
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
@@ -189,23 +200,6 @@ async fn handle_commands() -> CommandResult {
     // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("projects") {
         handle_projects(&mut api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("update") {
-        let spinner = Spinner::new(
-            Spinners::Dots12,
-            "Downloading update and verifying binary signatures...".into(),
-        );
-        match update::do_update(matches.is_present("prerelease")).await {
-            Ok(msg) => {
-                spinner.stop();
-                println!();
-                print_user_success!("{}", msg);
-            }
-            Err(msg) => {
-                spinner.stop();
-                println!();
-                print_user_failure!("{}", msg);
-            }
-        };
     } else if let Some(matches) = matches.subcommand_matches("package") {
         return handle_get_package(&mut api, &config.request_type, matches).await;
     } else if should_submit {
