@@ -34,6 +34,7 @@ pub mod mockito {
 
     pub const OIDC_URI: &str = "oidc";
     pub const AUTH_URI: &str = "auth";
+    pub const USER_URI: &str = "user";
     pub const TOKEN_URI: &str = "token";
 
     pub struct ResponderFn<F>(F)
@@ -70,6 +71,7 @@ pub mod mockito {
             issuer: base_url.clone(),
             authorization_endpoint: base_url.join(AUTH_URI).unwrap(),
             token_endpoint: base_url.join(TOKEN_URI).unwrap(),
+            userinfo_endpoint: base_url.join(USER_URI).unwrap(),
         }
     }
 

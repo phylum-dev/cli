@@ -153,15 +153,22 @@ async fn handle_commands() -> CommandResult {
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
 
-    if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, &config_path, matches, app_helper).await?;
-        return CommandValue::Void.into();
-    }
-
     let ignore_certs =
         matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
     if ignore_certs {
         log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
+
+    if let Some(matches) = matches.subcommand_matches("auth") {
+        return handle_auth(
+            config,
+            &config_path,
+            matches,
+            app_helper,
+            timeout,
+            ignore_certs,
+        )
+        .await;
     }
 
     let mut api = PhylumApi::new(

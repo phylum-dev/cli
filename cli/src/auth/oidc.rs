@@ -96,6 +96,7 @@ pub struct OidcServerSettings {
     pub issuer: Url,
     pub authorization_endpoint: Url,
     pub token_endpoint: Url,
+    pub userinfo_endpoint: Url,
 }
 
 /// Using config information, build the url for the keycloak login page.
@@ -243,4 +244,16 @@ pub async fn handle_refresh_tokens(
 ) -> Result<TokenResponse> {
     let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
     refresh_tokens(&oidc_settings, refresh_token).await
+}
+
+/// Represents the userdata stored for an authentication token.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UserInfo {
+    pub email: String,
+    pub sub: Option<String>,
+    pub name: Option<String>,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
+    pub preferred_username: Option<String>,
+    pub email_verified: Option<bool>,
 }
