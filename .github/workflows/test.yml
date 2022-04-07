@@ -38,7 +38,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
+          args: --locked --all-features -- -D warnings
 
   test-matrix:
     strategy:
