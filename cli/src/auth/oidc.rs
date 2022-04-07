@@ -245,3 +245,15 @@ pub async fn handle_refresh_tokens(
     let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
     refresh_tokens(&oidc_settings, refresh_token).await
 }
+
+/// Represents the userdata stored for an authentication token.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UserInfo {
+    pub sub: String,
+    pub name: String,
+    pub given_name: String,
+    pub family_name: String,
+    pub preferred_username: String,
+    pub email: String,
+    pub email_verified: bool,
+}
