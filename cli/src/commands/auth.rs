@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use clap::Command;
 
 use super::{CommandResult, CommandValue};
@@ -32,6 +32,11 @@ pub async fn handle_auth_status(
     timeout: Option<u64>,
     ignore_certs: bool,
 ) -> CommandResult {
+    if config.auth_info.offline_access.is_none() {
+        print_user_warning!("User is not currently authenticated");
+        return Ok(CommandValue::Void);
+    }
+
     // Create a client with our auth token attached.
     let api = PhylumApi::new(
         &mut config.auth_info,
@@ -40,7 +45,7 @@ pub async fn handle_auth_status(
         ignore_certs,
     )
     .await
-    .map_err(|err| anyhow!("Error creating client").context(err))?;
+    .context("Error creating client")?;
 
     let user_info = api.user_info(&config.auth_info).await;
 
@@ -49,9 +54,9 @@ pub async fn handle_auth_status(
             print_user_success!(
                 "Currently authenticated as '{}' with long lived refresh token",
                 user.email
-            );
+            )
         }
-        Err(_err) => print_user_warning!("User is not currently authenticated"),
+        Err(_err) => print_user_warning!("Refresh token could not be validated"),
     }
 
     Ok(CommandValue::Void)

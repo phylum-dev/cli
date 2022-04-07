@@ -249,11 +249,11 @@ pub async fn handle_refresh_tokens(
 /// Represents the userdata stored for an authentication token.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UserInfo {
-    pub sub: String,
-    pub name: String,
-    pub given_name: String,
-    pub family_name: String,
-    pub preferred_username: String,
     pub email: String,
-    pub email_verified: bool,
+    pub sub: Option<String>,
+    pub name: Option<String>,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
+    pub preferred_username: Option<String>,
+    pub email_verified: Option<bool>,
 }
