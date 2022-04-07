@@ -3,7 +3,7 @@ use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use env_logger::Env;
 use log::*;
 use spinners::{Spinner, Spinners};
@@ -178,15 +178,14 @@ async fn handle_commands() -> CommandResult {
         ignore_certs,
     )
     .await
-    .map_err(|err| anyhow!("Error creating client").context(err))?;
+    .context("Error creating client")?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(&config_path, &config).map_err(|error| {
-        let msg = format!(
+    save_config(&config_path, &config).with_context(|| {
+        format!(
             "Failed to save configuration to '{}'",
             config_path.to_string_lossy()
-        );
-        anyhow!(msg).context(error)
+        )
     })?;
 
     if matches.subcommand_matches("ping").is_some() {
@@ -217,7 +216,7 @@ async fn handle_commands() -> CommandResult {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
-                .map_err(|err| anyhow!("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx").context(err))?;
+                .context("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")?;
             let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
         }
