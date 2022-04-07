@@ -9,3 +9,5 @@ The `offline_access` parameter in the `settings.yaml` file contains the API toke
 ```sh
 grep "offline_access" $HOME/.phylum/settings.yaml | sed 's/  offline_access: //'
 ```
+
+The API token can also be set via the environment variable `PHYLUM_API_KEY`. This environment variable will take precedence over the `offline_access` parameter in your `settings.yaml` file.
