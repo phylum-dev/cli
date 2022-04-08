@@ -5,7 +5,9 @@ authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 
 [features]
+default = ["selfmanage"]
 phylum-online = []
+selfmanage = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
