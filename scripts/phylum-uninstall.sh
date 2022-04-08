@@ -37,12 +37,12 @@ remove_from_path_and_alias() {
 
     if grep -q ".phylum:\$PATH" "${rc_path}"; then
         # shellcheck disable=SC2016 # Expanding variables here would be a bad idea
-        sed -i '/^export PATH="$HOME\/.phylum:$PATH"$/d' "${rc_path}"
+        sed -i'' '/^export PATH="$HOME\/.phylum:$PATH"$/d' "${rc_path}"
         success "Removed ${HOME}/.phylum/ from ${shell}'s \$PATH."
     fi
 
     if grep -q 'alias ph=' "${rc_path}"; then
-        sed -i "/^alias ph='phylum'$/d" "${rc_path}"
+        sed -i'' "/^alias ph='phylum'$/d" "${rc_path}"
         success "Removed ph alias for phylum from ${shell}."
     fi
 }
@@ -52,10 +52,10 @@ cleanup_zshrc() {
 
     if grep -q '.phylum/completions' "${rc_path}"; then
         # shellcheck disable=SC2016 # Expanding variables here would be a bad idea
-        sed -i '/^fpath+=("$HOME\/.phylum\/completions")$/d' "${rc_path}"
+        sed -i'' '/^fpath+=("$HOME\/.phylum\/completions")$/d' "${rc_path}"
     fi
     if grep -q 'autoload -U compinit && compinit' "${rc_path}"; then
-        sed -i '/^autoload -U compinit && compinit$/d' "${rc_path}"
+        sed -i'' '/^autoload -U compinit && compinit$/d' "${rc_path}"
     fi
     success "Removed completions from zsh config."
 
