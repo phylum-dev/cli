@@ -18,7 +18,8 @@ and 'engineering' domains
 "#;
 
 pub fn app<'a>() -> clap::Command<'a> {
-    Command::new("phylum")
+    #[allow(unused_mut)]
+    let mut app = Command::new("phylum")
         .bin_name("phylum")
         .version(VERSION)
         .author("Phylum, Inc.")
@@ -131,5 +132,18 @@ pub fn app<'a>() -> clap::Command<'a> {
         .subcommand(
             Command::new("version")
                 .about("Display application version")
-        )
+        );
+
+    #[cfg(feature = "selfmanage")]
+    {
+        app = app.subcommand(
+            Command::new("uninstall")
+                .about("Uninstall the Phylum CLI")
+                .arg(arg!(
+                    -p --purge "Remove all files, including configuration files (default: false)"
+                )),
+        );
+    }
+
+    app
 }

@@ -13,6 +13,8 @@ use phylum_cli::commands::auth::*;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
 use phylum_cli::commands::project::handle_project;
+#[cfg(feature = "selfmanage")]
+use phylum_cli::commands::uninstall::*;
 use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
@@ -54,6 +56,11 @@ async fn handle_commands() -> CommandResult {
     let app_helper = &mut app.clone();
 
     let matches = app.get_matches();
+
+    #[cfg(feature = "selfmanage")]
+    if let Some(matches) = matches.subcommand_matches("uninstall") {
+        return handle_uninstall(matches);
+    }
 
     let settings_path = get_home_settings_path()?;
 
