@@ -115,6 +115,9 @@ copy_files() {
         xattr -d com.apple.quarantine "${HOME}/.phylum/phylum"
     fi
 
+    # Copy uninstall script.
+    install -m 0755 "uninstall.sh" "${HOME}/.phylum/uninstall.sh"
+
     # Ensure correct permissions on settings.yaml (if it exists).
     if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
         chmod 600 "${HOME}/.phylum/settings.yaml"

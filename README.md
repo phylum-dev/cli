@@ -69,6 +69,20 @@ The command line interface (CLI) allows users to submit their project package de
    phylum analyze <package-lock-file.ext>
    ```
 
+## Uninstalling the Phylum CLI
+
+The Phylum CLI can be uninstalled using the `phylum_uninstall.sh` script, which
+should be in your `$PATH` and at `~/.phylum/phylum_uninstall.sh` if you followed
+the installation instructions:
+
+    ```
+    # Uninstall all files created by the installer
+    phylum_uninstall.sh
+
+    # Remove everything, including configuration files
+    phylum_uninstall.sh --purge
+    ```
+
 ---
 
 ## Questions/Issues
