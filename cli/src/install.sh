@@ -1,31 +1,30 @@
-#!/bin/bash
+#!/bin/sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
 # Don't continue after failure:
-set -euo pipefail
+set -eu
 
 error() {
-    echo -e "${RED}    ERROR${NC} ${1}"
+    printf "%b    ERROR%b %s\n" "${RED}" "${NC}" "${1}"
 }
 
 success() {
-    echo -e "${GREEN}    OK${NC} ${1}"
+    printf "%b    OK%b %s\n" "${GREEN}" "${NC}" "${1}"
 }
 
 banner() {
-    echo -e "\n    ${GREEN}phylum-cli${NC} installer\n"
+    printf "\n    %bphylum-cli%b installer\n\n" "${GREEN}" "${NC}"
 }
 
 # Get the platform name.
 get_platform() {
-    local platform_str
     platform_str=$(uname)
-    if [[ "${platform_str}" == "Linux" ]]; then
+    if [ "${platform_str}" = "Linux" ]; then
         echo "linux"
-    elif [[ "${platform_str}" == "Darwin" ]]; then
+    elif [ "${platform_str}" = "Darwin" ]; then
         echo "macos"
     else
         echo "unknown"
@@ -69,7 +68,7 @@ add_to_path_and_alias() {
 patch_zshrc() {
     rc_path="${HOME}/.zshrc"
 
-    if [[ ! -f "${rc_path}" ]]; then
+    if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
@@ -87,7 +86,7 @@ patch_zshrc() {
 patch_bashrc() {
     rc_path="${HOME}/.bashrc"
 
-    if [[ ! -f "${rc_path}" ]]; then
+    if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
@@ -110,13 +109,13 @@ copy_files() {
     bin_name="phylum"
 
     install -m 0755 "${bin_name}" "${HOME}/.phylum/phylum"
-    if [[ "${platform}" == "macos" ]]; then
+    if [ "${platform}" = "macos" ]; then
         # Don't be suspicious. Don't be suspicious
         xattr -d com.apple.quarantine "${HOME}/.phylum/phylum"
     fi
 
     # Ensure correct permissions on settings.yaml (if it exists).
-    if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
+    if [ -f "${HOME}/.phylum/settings.yaml" ]; then
         chmod 600 "${HOME}/.phylum/settings.yaml"
     fi
 
@@ -126,16 +125,15 @@ copy_files() {
     success "Copied completions to ${HOME}/.phylum/completions"
 }
 
-pushd "$(dirname "$0")" >/dev/null
+cd "$(dirname "$0")"
 banner
 create_directory
 copy_files
 patch_bashrc
 patch_zshrc
-popd >/dev/null
 
 success "Successfully installed phylum."
-rc_file=$(set -e; get_rc_file)
+rc_file=$(get_rc_file)
 cat << __instructions__
 
     Source your ${rc_file} file, add ${HOME}/.phylum to your \$PATH variable, or
