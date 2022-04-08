@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use clap::Command;
 
 use super::{CommandResult, CommandValue};
@@ -27,12 +27,39 @@ async fn handle_auth_login(mut config: Config, config_path: &Path) -> CommandRes
 }
 
 /// Display the current authentication status to the user.
-pub fn handle_auth_status(config: &Config) {
-    if config.auth_info.offline_access.is_some() {
-        print_user_success!("Currently authenticated with long lived refresh token");
-    } else {
+pub async fn handle_auth_status(
+    mut config: Config,
+    timeout: Option<u64>,
+    ignore_certs: bool,
+) -> CommandResult {
+    if config.auth_info.offline_access.is_none() {
         print_user_warning!("User is not currently authenticated");
+        return Ok(CommandValue::Void);
     }
+
+    // Create a client with our auth token attached.
+    let api = PhylumApi::new(
+        &mut config.auth_info,
+        &config.connection.uri,
+        timeout,
+        ignore_certs,
+    )
+    .await
+    .context("Error creating client")?;
+
+    let user_info = api.user_info(&config.auth_info).await;
+
+    match user_info {
+        Ok(user) => {
+            print_user_success!(
+                "Currently authenticated as '{}' with long lived refresh token",
+                user.email
+            )
+        }
+        Err(_err) => print_user_warning!("Refresh token could not be validated"),
+    }
+
+    Ok(CommandValue::Void)
 }
 
 /// Display the current authentication token to the user, if one exists.
@@ -55,6 +82,8 @@ pub async fn handle_auth(
     config_path: &Path,
     matches: &clap::ArgMatches,
     app_helper: &mut Command<'_>,
+    timeout: Option<u64>,
+    ignore_certs: bool,
 ) -> CommandResult {
     if matches.subcommand_matches("register").is_some() {
         match handle_auth_register(config, config_path).await {
@@ -81,7 +110,7 @@ pub async fn handle_auth(
             }
         }
     } else if matches.subcommand_matches("status").is_some() {
-        handle_auth_status(&config);
+        handle_auth_status(config, timeout, ignore_certs).await?;
     } else if matches.subcommand_matches("token").is_some() {
         handle_auth_token(&config);
     } else {

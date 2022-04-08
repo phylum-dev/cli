@@ -3,7 +3,7 @@ use std::process;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use env_logger::Env;
 use log::*;
 use spinners::{Spinner, Spinners};
@@ -16,7 +16,7 @@ use phylum_cli::commands::projects::handle_projects;
 use phylum_cli::commands::{CommandResult, CommandValue};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
-use phylum_cli::update::ApplicationUpdater;
+use phylum_cli::update;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
@@ -116,16 +116,8 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if check_for_updates {
-        let updater = ApplicationUpdater::default();
-        match updater.get_latest_version(false).await {
-            Some(latest) => {
-                if updater.needs_update(ver, &latest) {
-                    print_update_message();
-                }
-            }
-            None => log::debug!("Failed to get the latest version for update check"),
-        }
+    if check_for_updates && update::needs_update(ver, false).await {
+        print_update_message();
     }
 
     // For these commands, we want to just provide verbose help and exit if no
@@ -146,19 +138,37 @@ async fn handle_commands() -> CommandResult {
         return CommandValue::String(format!("{app_name} (Version {ver})")).into();
     }
 
+    if let Some(matches) = matches.subcommand_matches("update") {
+        let spinner = Spinner::new(
+            Spinners::Dots12,
+            "Downloading update and verifying binary signatures...".into(),
+        );
+        let res = update::do_update(matches.is_present("prerelease")).await;
+        spinner.stop();
+        println!();
+        return res.map(CommandValue::String);
+    }
+
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
-
-    if let Some(matches) = matches.subcommand_matches("auth") {
-        handle_auth(config, &config_path, matches, app_helper).await?;
-        return CommandValue::Void.into();
-    }
 
     let ignore_certs =
         matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
     if ignore_certs {
         log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
+
+    if let Some(matches) = matches.subcommand_matches("auth") {
+        return handle_auth(
+            config,
+            &config_path,
+            matches,
+            app_helper,
+            timeout,
+            ignore_certs,
+        )
+        .await;
     }
 
     let mut api = PhylumApi::new(
@@ -168,15 +178,14 @@ async fn handle_commands() -> CommandResult {
         ignore_certs,
     )
     .await
-    .map_err(|err| anyhow!("Error creating client").context(err))?;
+    .context("Error creating client")?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(&config_path, &config).map_err(|error| {
-        let msg = format!(
+    save_config(&config_path, &config).with_context(|| {
+        format!(
             "Failed to save configuration to '{}'",
             config_path.to_string_lossy()
-        );
-        anyhow!(msg).context(error)
+        )
     })?;
 
     if matches.subcommand_matches("ping").is_some() {
@@ -197,34 +206,6 @@ async fn handle_commands() -> CommandResult {
     // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("projects") {
         handle_projects(&mut api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("update") {
-        let spinner = Spinner::new(
-            Spinners::Dots12,
-            "Downloading update and verifying binary signatures...".into(),
-        );
-        let updater = ApplicationUpdater::default();
-        match updater
-            .get_latest_version(matches.is_present("prerelease"))
-            .await
-        {
-            Some(ver) => match updater.do_update(ver).await {
-                Ok(msg) => {
-                    spinner.stop();
-                    println!();
-                    print_user_success!("{}", msg);
-                }
-                Err(msg) => {
-                    spinner.stop();
-                    println!();
-                    print_user_failure!("{}", msg);
-                }
-            },
-            _ => {
-                spinner.stop();
-                println!();
-                print_user_warning!("Failed to get version metadata");
-            }
-        };
     } else if let Some(matches) = matches.subcommand_matches("package") {
         return handle_get_package(&mut api, &config.request_type, matches).await;
     } else if should_submit {
@@ -235,7 +216,7 @@ async fn handle_commands() -> CommandResult {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
             let request_id = JobId::from_str(&request_id)
-                .map_err(|err| anyhow!("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx").context(err))?;
+                .context("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")?;
             let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
         }
