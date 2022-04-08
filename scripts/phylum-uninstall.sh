@@ -3,8 +3,8 @@
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# Fail when trying to expand unset variables
-set -u
+# Don't continue after failure:
+set -eu
 
 success() {
     printf "%b    OK%b %s\n" "${GREEN}" "${NC}" "${1}"

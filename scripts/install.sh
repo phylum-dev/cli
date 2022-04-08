@@ -116,7 +116,7 @@ copy_files() {
     fi
 
     # Copy uninstall script.
-    install -m 0755 "uninstall.sh" "${HOME}/.phylum/uninstall.sh"
+    install -m 0755 "phylum-uninstall.sh" "${HOME}/.phylum/phylum-uninstall.sh"
 
     # Ensure correct permissions on settings.yaml (if it exists).
     if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
