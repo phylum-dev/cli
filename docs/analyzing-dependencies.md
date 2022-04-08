@@ -12,7 +12,7 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
     * `requirements.txt`
     * `Pipfile.lock`
     * `Pipfile`
-    * `Poetry.lock`
+    * `poetry.lock`
 * NuGet
     * `*.csproj`
 * Maven

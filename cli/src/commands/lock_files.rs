@@ -147,7 +147,7 @@ mod tests {
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),
             ("tests/fixtures/Pipfile.lock", PackageType::PyPi),
-            ("tests/fixtures/Poetry.lock", PackageType::PyPi),
+            ("tests/fixtures/poetry.lock", PackageType::PyPi),
         ];
 
         for (file, expected_type) in &test_cases {
