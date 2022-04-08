@@ -1,22 +1,24 @@
-use serde_json::Value;
 use std::collections::HashMap;
-use std::io;
 use std::path::Path;
+use std::{fs, io};
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
+use serde::Deserialize;
+use serde_json::Value;
 
 use super::parsers::pypi;
 use crate::lockfiles::{ParseResult, Parseable};
 
 pub struct PyRequirements(String);
 pub struct PipFile(String);
+pub struct Poetry(String);
 
 impl Parseable for PyRequirements {
     fn new(filename: &Path) -> Result<Self, io::Error>
     where
         Self: Sized,
     {
-        Ok(PyRequirements(std::fs::read_to_string(filename)?))
+        Ok(PyRequirements(fs::read_to_string(filename)?))
     }
 
     /// Parses `requirements.txt` files into a vec of packages
@@ -32,7 +34,7 @@ impl Parseable for PipFile {
     where
         Self: Sized,
     {
-        Ok(PipFile(std::fs::read_to_string(filename)?))
+        Ok(PipFile(fs::read_to_string(filename)?))
     }
 
     /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
@@ -86,6 +88,60 @@ impl Parseable for PipFile {
             })
             .collect::<Result<Vec<_>, _>>()
     }
+}
+
+impl Parseable for Poetry {
+    fn new(filename: &Path) -> Result<Self, io::Error>
+    where
+        Self: Sized,
+    {
+        Ok(Poetry(fs::read_to_string(filename)?))
+    }
+
+    /// Parses `poetry.lock` files into a vec of packages
+    fn parse(&self) -> ParseResult {
+        let mut lock: PoetryLock = toml::from_str(&self.0)?;
+
+        // Warn if the version of this lockfile might not be supported.
+        if !lock.metadata.lock_version.starts_with("1.") {
+            log::warn!(
+                "Expected poetry lockfile version ^1.0.0, found {}. \
+                Attempting to continue, but results might be inaccurate.",
+                lock.metadata.lock_version
+            );
+        }
+
+        Ok(lock.packages.drain(..).map(Package::into).collect())
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct PoetryLock {
+    #[serde(rename = "package")]
+    packages: Vec<Package>,
+    metadata: PoetryMetadata,
+}
+
+#[derive(Deserialize, Debug)]
+struct Package {
+    name: String,
+    version: String,
+}
+
+impl From<Package> for PackageDescriptor {
+    fn from(package: Package) -> Self {
+        Self {
+            name: package.name,
+            version: package.version,
+            package_type: PackageType::PyPi,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case")]
+struct PoetryMetadata {
+    lock_version: String,
 }
 
 #[cfg(test)]
@@ -165,6 +221,27 @@ mod tests {
                 assert_eq!(pkg.package_type, PackageType::PyPi);
             } else if pkg.name == "unittest2" {
                 assert_eq!(pkg.version, "1.1.0");
+                assert_eq!(pkg.package_type, PackageType::PyPi);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_poetry_lock() {
+        let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+        assert_eq!(pkgs.len(), 62);
+
+        for pkg in &pkgs {
+            if pkg.name == "toml" {
+                assert_eq!(pkg.version, "0.10.2");
+                assert_eq!(pkg.package_type, PackageType::PyPi);
+            } else if pkg.name == "certifi" {
+                assert_eq!(pkg.version, "2021.10.8");
+                assert_eq!(pkg.package_type, PackageType::PyPi);
+            } else if pkg.name == "html5lib" {
+                assert_eq!(pkg.version, "1.1");
                 assert_eq!(pkg.package_type, PackageType::PyPi);
             }
         }

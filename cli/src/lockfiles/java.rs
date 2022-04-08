@@ -18,7 +18,7 @@ impl Parseable for GradleDeps {
         Ok(GradleDeps(std::fs::read_to_string(filename)?))
     }
 
-    /// Parses `requirements.txt` files into a vec of packages
+    /// Parses `gradle-dependencies.txt` files into a vec of packages
     fn parse(&self) -> ParseResult {
         let (_, entries) =
             gradle_dep::parse(&self.0).map_err(|_e| "Failed to parse requirements file")?;
