@@ -116,7 +116,7 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if check_for_updates && update::needs_update(ver, false).await {
+    if check_for_updates && update::needs_update(false).await {
         print_update_message();
     }
 
