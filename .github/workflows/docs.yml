@@ -3,9 +3,8 @@
 name: Sync `docs` directory to ReadMe
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types: [released]
   
 jobs:
   Update-Documentation:
