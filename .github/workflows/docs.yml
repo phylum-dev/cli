@@ -4,13 +4,14 @@ name: Sync `docs` directory to ReadMe
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - '*'
   
 jobs:
   Update-Documentation:
     name: Update the documentation
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref, 'rc') }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v3
