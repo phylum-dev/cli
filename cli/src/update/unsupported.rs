@@ -1,7 +1,7 @@
 //! Dummy functions for platforms where self-update is unsupported
 
 /// Check if a newer version of the client is available
-pub async fn needs_update(_current_version: &str, _prerelease: bool) -> bool {
+pub async fn needs_update(_prerelease: bool) -> bool {
     false
 }
 
