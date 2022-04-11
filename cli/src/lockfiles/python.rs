@@ -111,7 +111,7 @@ impl Parseable for Poetry {
             );
         }
 
-        Ok(lock.packages.drain(..).map(Package::into).collect())
+        Ok(lock.packages.drain(..).map(PackageDescriptor::from).collect())
     }
 }
 
@@ -233,17 +233,14 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 62);
 
-        for pkg in &pkgs {
-            if pkg.name == "toml" {
-                assert_eq!(pkg.version, "0.10.2");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "certifi" {
-                assert_eq!(pkg.version, "2021.10.8");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "html5lib" {
-                assert_eq!(pkg.version, "1.1");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            }
+        let packages = [
+            PackageDescriptor::new("toml", "0.10.2", PackageType::PiPi),
+            PackageDescriptor::new("certifi", "2021.10.8", PackageType::PiPi),
+            PackageDescriptor::new("html5lib", "1.1", PackageType::PiPi),
+        ];
+
+        for package in packages {
+            assert!(pkgs.contains(package));
         }
     }
 }
