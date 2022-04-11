@@ -111,7 +111,11 @@ impl Parseable for Poetry {
             );
         }
 
-        Ok(lock.packages.drain(..).map(PackageDescriptor::from).collect())
+        Ok(lock
+            .packages
+            .drain(..)
+            .map(PackageDescriptor::from)
+            .collect())
     }
 }
 
@@ -191,17 +195,26 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 4);
 
-        for pkg in &pkgs {
-            if pkg.name == "pypresence" {
-                assert_eq!(pkg.version, "4.0.0");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "chromedriver-py" {
-                assert_eq!(pkg.version, "91.0.4472.19");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "requests" {
-                assert_eq!(pkg.version, "2.24.0");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            }
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "pypresence".into(),
+                version: "4.0.0".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "chromedriver-py".into(),
+                version: "91.0.4472.19".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "requests".into(),
+                version: "2.24.0".into(),
+                package_type: PackageType::PyPi,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
         }
     }
 
@@ -212,17 +225,26 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 27);
 
-        for pkg in &pkgs {
-            if pkg.name == "jdcal" {
-                assert_eq!(pkg.version, "1.3");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "certifi" {
-                assert_eq!(pkg.version, "2017.7.27.1");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            } else if pkg.name == "unittest2" {
-                assert_eq!(pkg.version, "1.1.0");
-                assert_eq!(pkg.package_type, PackageType::PyPi);
-            }
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "jdcal".into(),
+                version: "1.3".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "certifi".into(),
+                version: "2017.7.27.1".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "unittest2".into(),
+                version: "1.1.0".into(),
+                package_type: PackageType::PyPi,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
         }
     }
 
@@ -233,14 +255,26 @@ mod tests {
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 62);
 
-        let packages = [
-            PackageDescriptor::new("toml", "0.10.2", PackageType::PiPi),
-            PackageDescriptor::new("certifi", "2021.10.8", PackageType::PiPi),
-            PackageDescriptor::new("html5lib", "1.1", PackageType::PiPi),
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "toml".into(),
+                version: "0.10.2".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "certifi".into(),
+                version: "2021.10.8".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "html5lib".into(),
+                version: "1.1".into(),
+                package_type: PackageType::PyPi,
+            },
         ];
 
-        for package in packages {
-            assert!(pkgs.contains(package));
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
         }
     }
 }
