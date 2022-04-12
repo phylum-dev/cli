@@ -155,25 +155,16 @@ where
             resp.job_id.to_string(),
         ),
         (
-            "Type",
-            ecosystem.render(),
-            "Language",
-            ecosystem.language().to_string(),
-        ),
-        (
             "User ID",
             resp.user_email.to_string(),
             "View in Phylum UI",
             format!("https://app.phylum.io/projects/{}", resp.project),
         ),
     ];
-    let summary = details.iter().fold("".to_string(), |acc, x| {
-        vec![
-            acc,
-            format!("{:>16}: {:<36} {:>24}: {:<36}", x.0, x.1, x.2, x.3),
-        ]
-        .join("\n")
+    let mut summary = details.iter().fold("".to_string(), |acc, x| {
+        format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
     });
+    summary = format!("{}\n       Ecosystem: {}", summary, ecosystem.render());
 
     let status = if resp.num_incomplete > 0 {
         format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
@@ -201,8 +192,8 @@ where
 
     if resp.num_incomplete > 0 {
         let notice = format!(
-            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.", 
-            Purple.paint("PROCESSING"), 
+            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.",
+            Purple.paint("PROCESSING"),
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
         table.add_row(row![notice]);
