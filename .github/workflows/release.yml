@@ -56,7 +56,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1

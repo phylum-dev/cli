@@ -1,4 +1,10 @@
 use clap::{arg, Command};
+use git_version::git_version;
+
+const VERSION: &str = git_version!(
+    args = ["--dirty=-modified", "--tags"],
+    cargo_prefix = "cargo:"
+);
 
 const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displayed
 
@@ -14,7 +20,7 @@ and 'engineering' domains
 pub fn app<'a>() -> clap::Command<'a> {
     Command::new("phylum")
         .bin_name("phylum")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(VERSION)
         .author("Phylum, Inc.")
         .about("Client interface to the Phylum system")
         .args(&[

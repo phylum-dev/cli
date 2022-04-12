@@ -18,11 +18,14 @@ const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
 
 const GITHUB_URI: &str = "https://api.github.com";
 
+// For updates, we use the cargo version instead of git_version
+const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Check if a newer version of the client is available
-pub async fn needs_update(current_version: &str, prerelease: bool) -> bool {
+pub async fn needs_update(prerelease: bool) -> bool {
     let updater = ApplicationUpdater::default();
     match updater.get_latest_version(prerelease).await {
-        Ok(latest) => updater.needs_update(current_version, &latest),
+        Ok(latest) => updater.needs_update(CURRENT_VERSION, &latest),
         Err(e) => {
             log::debug!("Failed to get the latest version for update check: {:?}", e);
             false
