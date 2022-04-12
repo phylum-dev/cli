@@ -110,8 +110,9 @@ copy_files() {
 
     install -m 0755 "${bin_name}" "${HOME}/.phylum/phylum"
     if [ "${platform}" = "macos" ]; then
-        # Don't be suspicious. Don't be suspicious
-        xattr -d com.apple.quarantine "${HOME}/.phylum/phylum"
+        # Clear all extended attributes. The important one to remove here is 'com.apple.quarantine'
+        # but there might be others or there might be none. `xattr -c` works in all of those cases.
+        xattr -c "${HOME}/.phylum/phylum"
     fi
 
     # Ensure correct permissions on settings.yaml (if it exists).
