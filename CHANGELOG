@@ -1,3 +1,4 @@
+* 2.0.1 - Poetry lock support
 * 2.0.0 - Support for maven / nuget. Numerous bugfixes and error message cleanup.
 * 1.2.0 - Add support for new authentication backend and ARM architectures
 * 1.1.5 - Option to ignore cert check; various bugfixes
