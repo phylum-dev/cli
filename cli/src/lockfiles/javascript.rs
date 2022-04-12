@@ -67,8 +67,38 @@ impl Parseable for YarnLock {
 
     /// Parses `yarn.lock` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let (_, entries) = yarn::parse(&self.0).map_err(|_e| "Failed to parse yarn lock file")?;
-        Ok(entries)
+        let yaml_v2: serde_yaml::Value = match serde_yaml::from_str(&self.0) {
+            Ok(yaml) => yaml,
+            Err(_) => {
+                let (_, entries) =
+                    yarn::parse(&self.0).map_err(|_e| "Failed to parse yarn lock file")?;
+                return Ok(entries);
+            }
+        };
+
+        let mapping = yaml_v2.as_mapping().ok_or("Invalid yarn v2 lock file")?;
+        Ok(mapping
+            .iter()
+            .flat_map(|(_k, v)| v.as_mapping())
+            .flat_map(|package| {
+                let name = package
+                    .get(&"resolution".into())
+                    .and_then(|package| package.as_str())
+                    .and_then(|package| package.rsplit_once("@npm:"))
+                    .map(|(name, _version)| name);
+
+                let version = package
+                    .get(&"version".into())
+                    .and_then(|version| version.as_str());
+
+                name.zip(version)
+            })
+            .map(|(name, version)| PackageDescriptor {
+                name: name.to_owned(),
+                version: version.to_owned(),
+                package_type: PackageType::Npm,
+            })
+            .collect())
     }
 }
 
@@ -118,10 +148,10 @@ mod tests {
     }
 
     #[test]
-    fn lock_parse_yarn() {
+    fn lock_parse_yarn_v1() {
         for p in &[
-            "tests/fixtures/yarn.lock",
-            "tests/fixtures/yarn.trailing_newlines.lock",
+            "tests/fixtures/yarn-v1.lock",
+            "tests/fixtures/yarn-v1.trailing_newlines.lock",
         ] {
             let parser = YarnLock::new(Path::new(p)).unwrap();
 
@@ -140,9 +170,40 @@ mod tests {
 
     #[should_panic]
     #[test]
-    fn lock_parse_yarn_malformed_fails() {
-        let parser = YarnLock::new(Path::new("tests/fixtures/yarn.lock.bad")).unwrap();
+    fn lock_parse_yarn_v1_malformed_fails() {
+        let parser = YarnLock::new(Path::new("tests/fixtures/yarn-v1.lock.bad")).unwrap();
 
         parser.parse().unwrap();
+    }
+
+    #[test]
+    fn lock_parse_yarn() {
+        let parser = YarnLock::new(Path::new("tests/fixtures/yarn.lock")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+
+        assert_eq!(pkgs.len(), 50);
+
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "accepts".into(),
+                version: "1.3.8".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "mime-types".into(),
+                version: "2.1.35".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "statuses".into(),
+                version: "1.5.0".into(),
+                package_type: PackageType::Npm,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
     }
 }
