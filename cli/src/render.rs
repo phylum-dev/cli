@@ -272,7 +272,7 @@ impl Renderable for PackageStatusExtended {
             ["Package Name:", rB -> self.basic_status.name, "Package Version:", r -> self.basic_status.version],
             ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> self.basic_status.last_updated],
             ["Num Deps:", r -> self.basic_status.num_dependencies, "Num Vulns:", r -> self.basic_status.num_vulnerabilities],
-            ["Type", r -> self.package_type.render(), "Language", r -> self.package_type.language()]
+            ["Ecosystem:", r -> self.package_type.render()]
         );
         overview_table.set_format(table_format(0, 3));
         overview_table.to_string()
