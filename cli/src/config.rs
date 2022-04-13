@@ -167,15 +167,16 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
         .map(PathBuf::from)
         .unwrap_or_else(|| home_path.join(".config"));
 
-    let config = config_dir.join("phylum").join("settings.yaml");
-    let fallback_config = home_path.join(".phylum").join("settings.yaml");
+    let config_path = config_dir.join("phylum").join("settings.yaml");
+    let old_config_path = home_path.join(".phylum").join("settings.yaml");
 
-    // Pick ~/.phylum/settings.yaml only when it exists and the XDG directory does not.
-    if !config.exists() && fallback_config.exists() {
-        Ok(fallback_config)
-    } else {
-        Ok(config)
+    // Migrate the config from the old location.
+    if !config_path.exists() && old_config_path.exists() {
+        fs::create_dir_all(config_path.parent().unwrap())?;
+        fs::rename(old_config_path, &config_path).unwrap();
     }
+
+    Ok(config_path)
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ NC='\033[0m'
 # Don't continue after failure:
 set -eu
 
+config_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/phylum"
 data_dir="${XDG_DATA_HOME:-${HOME}/.local/share}/phylum"
 completions_dir="${data_dir}/completions"
 bin_dir="${HOME}/.local/bin"
@@ -56,7 +57,6 @@ add_to_path_and_alias() {
     rc_path=${1}
     shell=${2}
 
-    # shellcheck disable=SC2016 # we don't want to expand $PATH here
     if ! echo "${PATH}" | grep "${bin_dir}" > /dev/null \
         && ! grep -q "${bin_dir}:\$PATH" "${rc_path}";
     then
@@ -64,8 +64,6 @@ add_to_path_and_alias() {
         success "Updated ${shell}'s \$PATH to include ${bin_dir}."
     fi
 
-    # TODO: Is it necessary to set an alias? Phylum doesn't exactly take long to
-    # type and it might be better to leave this up to the user?
     if ! grep -q 'alias ph=' "${rc_path}"; then
         echo "alias ph='phylum'" >> "${rc_path}"
         success "Created ph alias for phylum in ${shell}."
@@ -118,10 +116,9 @@ copy_files() {
         xattr -c "${bin_dir}/${bin_name}"
     fi
 
-    # TODO: Why are we modifying a file unrelated to the installation process?
-    # Ensure correct permissions on settings.yaml (if it exists).
-    if [ -f "${HOME}/.phylum/settings.yaml" ]; then
-        chmod 600 "${HOME}/.phylum/settings.yaml"
+    # Correct inaccurate settings.yaml permissions set by previous installers.
+    if [ -f "${config_dir}/settings.yaml" ]; then
+        chmod 600 "${config_dir}/settings.yaml"
     fi
 
     # Copy completions over
@@ -130,8 +127,28 @@ copy_files() {
     success "Copied completions to ${completions_dir}"
 }
 
+# Remove old files and entries added before XDG directories conformity.
+cleanup_pre_xdg() {
+    # Remove old entries from bashrc.
+    sed "/^source \$HOME/.phylum\/completions\/phylum.bash$/d"
+    sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d"
+    sed "/^alias ph='phylum'$/d"
+
+    # Remove old entries from bashrc.
+    sed "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d"
+    sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d"
+    sed "/^alias ph='phylum'$/d"
+
+    # Remove old phylum executable.
+    rm -f "${HOME}/.phylum/phylum"
+
+    # Remove old completions directory.
+    rm -rf "${HOME}/.phylum/completions"
+}
+
 cd "$(dirname "$0")"
 banner
+cleanup_pre_xdg
 copy_files
 patch_bashrc
 patch_zshrc
