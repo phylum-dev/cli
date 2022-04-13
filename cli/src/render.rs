@@ -1,10 +1,12 @@
-use crate::types::PingResponse;
-use crate::utils::table_format;
 use ansi_term::Color::{Blue, Green, Red, White, Yellow};
+use chrono::{Local, TimeZone};
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 use phylum_types::types::project::*;
 use prettytable::*;
+
+use crate::types::PingResponse;
+use crate::utils::table_format;
 
 pub trait Renderable {
     fn render(&self) -> String;
@@ -268,9 +270,11 @@ impl Renderable for PackageType {
 
 impl Renderable for PackageStatusExtended {
     fn render(&self) -> String {
+        let time = Local.timestamp((self.basic_status.last_updated / 1000) as i64, 0);
+
         let mut overview_table = table!(
             ["Package Name:", rB -> self.basic_status.name, "Package Version:", r -> self.basic_status.version],
-            ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> self.basic_status.last_updated],
+            ["License:", r -> self.basic_status.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> time.format("%+")],
             ["Num Deps:", r -> self.basic_status.num_dependencies, "Num Vulns:", r -> self.basic_status.num_vulnerabilities],
             ["Ecosystem:", r -> self.package_type.render()]
         );
