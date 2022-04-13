@@ -22,23 +22,38 @@ impl Parseable for PackageLock {
     fn parse(&self) -> ParseResult {
         let parsed: Value = serde_json::from_str(&self.0)?;
 
-        parsed["dependencies"]
-            .as_object()
-            .ok_or("Failed to find dependencies")?
-            .into_iter()
-            .map(|(k, v)| {
-                let pkg = PackageDescriptor {
-                    name: k.as_str().to_string(),
-                    version: v
-                        .as_object()
-                        .and_then(|x| x["version"].as_str())
-                        .map(|x| x.to_string())
-                        .ok_or("Failed to parse version")?,
-                    package_type: PackageType::Npm,
-                };
-                Ok(pkg)
-            })
-            .collect::<Result<Vec<_>, _>>()
+        let into_descriptor = |(name, v): (String, &Value)| {
+            let pkg = PackageDescriptor {
+                name,
+                version: v
+                    .as_object()
+                    .and_then(|x| x["version"].as_str())
+                    .map(|x| x.to_string())
+                    .ok_or("Failed to parse version")?,
+                package_type: PackageType::Npm,
+            };
+            Ok(pkg)
+        };
+
+        if let Some(deps) = parsed["packages"].as_object() {
+            deps.into_iter()
+                // Ignore empty reference to package itself.
+                .filter(|(k, _v)| !k.is_empty())
+                // Get module name from path.
+                .map(|(k, v)| {
+                    let module = k.rsplit_once("node_modules/").map(|(_, k)| k).unwrap_or(k);
+                    (module.to_owned(), v)
+                })
+                .map(into_descriptor)
+                .collect()
+        } else if let Some(deps) = parsed["dependencies"].as_object() {
+            deps.into_iter()
+                .map(|(k, v)| (k.to_string(), v))
+                .map(into_descriptor)
+                .collect()
+        } else {
+            Err("Failed to find dependencies".into())
+        }
     }
 }
 
@@ -63,7 +78,7 @@ mod tests {
 
     #[test]
     fn lock_parse_package() {
-        let parser = PackageLock::new(Path::new("tests/fixtures/package-lock.json")).unwrap();
+        let parser = PackageLock::new(Path::new("tests/fixtures/package-lock-v6.json")).unwrap();
 
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 17);
@@ -75,6 +90,31 @@ mod tests {
         assert_eq!(last.name, "yargs-parser");
         assert_eq!(last.version, "20.2.4");
         assert_eq!(last.package_type, PackageType::Npm);
+    }
+
+    #[test]
+    fn lock_parse_package_v7() {
+        let parser = PackageLock::new(Path::new("tests/fixtures/package-lock.json")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+
+        assert_eq!(pkgs.len(), 50);
+
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "accepts".into(),
+                version: "1.3.8".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "vary".into(),
+                version: "1.1.2".into(),
+                package_type: PackageType::Npm,
+            },
+        ];
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
     }
 
     #[test]
