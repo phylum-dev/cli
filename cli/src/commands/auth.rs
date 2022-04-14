@@ -66,7 +66,7 @@ pub async fn handle_auth_status(
 pub fn handle_auth_token(config: &Config) {
     match config.auth_info.offline_access.clone() {
         Some(token) => {
-            print_user_success!("{}", token);
+            println!("{}", token);
         }
         None => {
             print_user_warning!(
