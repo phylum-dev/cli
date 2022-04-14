@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use chrono::Local;
 use uuid::Uuid;
 
-use super::{CommandResult, CommandValue};
+use super::{CommandResult, ExitCode};
 use crate::api::PhylumApi;
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 use crate::print::*;
@@ -47,7 +47,6 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         });
 
         print_user_success!("Successfully created new project, {}", project_name);
-        return CommandValue::Void.into();
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let pretty_print = pretty_print && !matches.is_present("json");
         get_project_list(api, pretty_print).await;
@@ -176,11 +175,12 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
                     "Failed to set thresholds for the {} project",
                     White.paint(project_name)
                 );
+                return Ok(ExitCode::SetThresholdsFailure.into());
             }
         }
     } else {
         get_project_list(api, pretty_print).await;
     }
 
-    CommandValue::Void.into()
+    Ok(ExitCode::Ok.into())
 }
