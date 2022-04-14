@@ -62,3 +62,18 @@ pub(crate) fn get_user_settings(api_uri: &str) -> String {
 pub(crate) fn put_user_settings(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/settings/current-user")
 }
+
+/// GET /groups/list
+pub(crate) fn group_list(api_uri: &str) -> String {
+    format!("{api_uri}/{API_PATH}/groups")
+}
+
+/// POST /groups/create
+pub(crate) fn group_create(api_uri: &str) -> String {
+    format!("{api_uri}/{API_PATH}/groups")
+}
+
+/// GET /groups/<groupName>/projects
+pub fn group_project_summary(api_uri: &str, group: &str) -> String {
+    format!("{api_uri}/{API_PATH}/groups/{}/projects", group)
+}

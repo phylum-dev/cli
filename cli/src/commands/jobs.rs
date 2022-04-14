@@ -123,7 +123,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 "`phylum history project` is deprecated, use `phylum project` instead"
             );
 
-            get_project_list(api, pretty_print).await;
+            get_project_list(api, pretty_print, None).await;
         }
     } else if matches.is_present("JOB_ID") {
         let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"))?;
@@ -167,10 +167,11 @@ pub async fn handle_submission(
     let mut action = Action::None;
     let is_user; // is a user (non-batch) request
     let project;
+    let group;
     let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
-        project = project_uuid(api, matches).await?;
+        (project, group) = cli_project(api, matches).await?;
 
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches
@@ -191,7 +192,7 @@ pub async fn handle_submission(
         is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
-        project = project_uuid(api, matches).await?;
+        (project, group) = cli_project(api, matches).await?;
 
         let mut eof = false;
         let mut line = String::new();
@@ -249,7 +250,8 @@ pub async fn handle_submission(
             &packages,
             is_user,
             project,
-            label.map(|s| s.to_string()),
+            label.map(String::from),
+            group.map(String::from),
         )
         .await?;
 
@@ -263,18 +265,23 @@ pub async fn handle_submission(
     Ok(CommandValue::Action(action))
 }
 
-/// Get the current project's UUID.
+/// Get the current project.
 ///
-/// Assumes that the clap `matches` has a `project` arguments option.
-async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<ProjectId> {
-    // Prefer `--project` if it was specified.
+/// Assumes that the clap `matches` has a `project` and `group` arguments option.
+async fn cli_project(
+    api: &mut PhylumApi,
+    matches: &clap::ArgMatches,
+) -> Result<(ProjectId, Option<String>)> {
+    // Prefer `--project` and `--group` if they were specified.
     if let Some(project_name) = matches.value_of("project") {
-        return Ok(api.get_project_id(project_name).await?);
+        let group = matches.value_of("group").map(String::from);
+        let project = api.get_project_id(project_name).await?;
+        return Ok((project, group));
     }
 
     // Retrieve the project from the `.phylum_project` file.
     get_current_project()
-        .map(|p: ProjectConfig| p.id)
+        .map(|p: ProjectConfig| (p.id, p.group_name))
         .ok_or_else(|| {
             anyhow!(
                 "Failed to find a valid project configuration. Specify an existing project using \

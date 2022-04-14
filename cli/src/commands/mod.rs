@@ -1,6 +1,7 @@
 use phylum_types::types::job::Action;
 
 pub mod auth;
+pub mod group;
 pub mod jobs;
 pub mod packages;
 pub mod parse;

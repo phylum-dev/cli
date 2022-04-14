@@ -13,8 +13,8 @@ use crate::print_user_success;
 use crate::prompt::prompt_threshold;
 
 /// List the projects in this account.
-pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
-    let resp = api.get_projects().await;
+pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Option<String>) {
+    let resp = api.get_projects(group).await;
 
     // Print table header when we're not outputting in JSON format.
     if pretty_print {
@@ -34,28 +34,33 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     let pretty_print = !matches.is_present("json");
 
     if let Some(matches) = matches.subcommand_matches("create") {
-        let project_name = matches.value_of("name").unwrap();
+        let name = matches.value_of("name").unwrap();
+        let group = matches.value_of("group");
 
-        log::info!("Initializing new project: `{}`", project_name);
+        log::info!("Initializing new project: `{}`", name);
 
-        let project_id = api.create_project(project_name).await?;
+        let project_id = api.create_project(name, group).await?;
 
         let proj_conf = ProjectConfig {
             id: project_id.to_owned(),
-            name: project_name.to_owned(),
             created_at: Local::now(),
+            group_name: group.map(String::from),
+            name: name.to_owned(),
         };
 
         save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
             print_user_failure!("Failed to save project file: {}", err);
         });
 
-        print_user_success!("Successfully created new project, {}", project_name);
+        print_user_success!("Successfully created new project, {}", name);
     } else if let Some(matches) = matches.subcommand_matches("list") {
+        let group = matches.value_of("group").map(String::from);
         let pretty_print = pretty_print && !matches.is_present("json");
-        get_project_list(api, pretty_print).await;
+        get_project_list(api, pretty_print, group).await;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.value_of("name").unwrap();
+        let group_name = matches.value_of("group");
+
         let proj_uuid = api
             .get_project_id(project_name)
             .await
@@ -65,6 +70,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             id: proj_uuid,
             name: project_name.into(),
             created_at: Local::now(),
+            group_name: group_name.map(String::from),
         };
         save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
@@ -177,7 +183,8 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             }
         }
     } else {
-        get_project_list(api, pretty_print).await;
+        let group = matches.value_of("group").map(String::from);
+        get_project_list(api, pretty_print, group).await;
     }
 
     Ok(ExitCode::Ok.into())

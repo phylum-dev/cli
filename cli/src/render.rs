@@ -1,5 +1,8 @@
+use std::fmt::Write;
+
 use ansi_term::Color::{Blue, Green, Red, White, Yellow};
 use chrono::{Local, TimeZone};
+use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 use phylum_types::types::project::*;
@@ -299,5 +302,22 @@ impl Renderable for ProjectThresholds {
         );
         table.set_format(table_format(0, 0));
         table.to_string()
+    }
+}
+
+impl Renderable for ListUserGroupsResponse {
+    fn render(&self) -> String {
+        let mut table = Blue
+            .paint(
+                "Group Name                 Owner                                Creation Time\n",
+            )
+            .to_string();
+        for group in &self.groups {
+            let _ = write!(table, "{:<25}  ", print::truncate(&group.group_name, 25));
+            let _ = write!(table, "{:<35}  ", print::truncate(&group.owner_email, 35));
+            let _ = write!(table, "{}", group.created_at.format("%FT%RZ"));
+            table.push('\n');
+        }
+        table.trim_end().to_owned()
     }
 }
