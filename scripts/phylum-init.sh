@@ -80,7 +80,7 @@ Fetch and install the phylum CLI.
 
 Options
     -t, --target       Specify the target triple to install
-    -y, --yes          Do not prompt for comfirmation during install
+    -y, --yes          Do not prompt for confirmation during install
     --no-verify        Disable signature verification (NOT RECOMMENDED)
     -h, --help         Show this help message
 EOF
