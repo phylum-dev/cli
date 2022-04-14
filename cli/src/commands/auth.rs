@@ -1,10 +1,10 @@
 use std::path::Path;
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use clap::Command;
 
-use super::{CommandResult, CommandValue};
 use crate::api::PhylumApi;
+use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::print::print_sc_help;
 use crate::print_user_success;
@@ -12,18 +12,18 @@ use crate::print_user_warning;
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(mut config: Config, config_path: &Path) -> CommandResult {
+async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<()> {
     config.auth_info = PhylumApi::register(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
-    CommandValue::Void.into()
+    Ok(())
 }
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-async fn handle_auth_login(mut config: Config, config_path: &Path) -> CommandResult {
+async fn handle_auth_login(mut config: Config, config_path: &Path) -> Result<()> {
     config.auth_info = PhylumApi::login(config.auth_info).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
-    CommandValue::Void.into()
+    Ok(())
 }
 
 /// Display the current authentication status to the user.
@@ -34,7 +34,7 @@ pub async fn handle_auth_status(
 ) -> CommandResult {
     if config.auth_info.offline_access.is_none() {
         print_user_warning!("User is not currently authenticated");
-        return Ok(CommandValue::Void);
+        return Ok(ExitCode::NotAuthenticated.into());
     }
 
     // Create a client with our auth token attached.
@@ -54,26 +54,30 @@ pub async fn handle_auth_status(
             print_user_success!(
                 "Currently authenticated as '{}' with long lived refresh token",
                 user.email
-            )
+            );
+            Ok(ExitCode::Ok.into())
         }
-        Err(_err) => print_user_warning!("Refresh token could not be validated"),
+        Err(_err) => {
+            print_user_warning!("Refresh token could not be validated");
+            Ok(ExitCode::AuthenticationFailure.into())
+        }
     }
-
-    Ok(CommandValue::Void)
 }
 
 /// Display the current authentication token to the user, if one exists.
-pub fn handle_auth_token(config: &Config) {
+pub fn handle_auth_token(config: &Config) -> CommandResult {
     match config.auth_info.offline_access.clone() {
         Some(token) => {
             println!("{}", token);
+            Ok(ExitCode::Ok.into())
         }
         None => {
             print_user_warning!(
                 "User is not currently authenticated, please login with `phylum auth login`"
             );
+            Ok(ExitCode::NotAuthenticated.into())
         }
-    };
+    }
 }
 
 /// Handle the subcommands for the `auth` subcommand.
@@ -89,32 +93,30 @@ pub async fn handle_auth(
         match handle_auth_register(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
+                Ok(ExitCode::Ok.into())
             }
-            Err(error) => {
-                return Err(anyhow!(
-                    "User registration failed: {}",
-                    error.root_cause().to_string()
-                ))
-            }
+            Err(error) => Err(anyhow!(
+                "User registration failed: {}",
+                error.root_cause().to_string()
+            )),
         }
     } else if matches.subcommand_matches("login").is_some() {
         match handle_auth_login(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
+                Ok(ExitCode::Ok.into())
             }
-            Err(error) => {
-                return Err(anyhow!(
-                    "User login failed: {}",
-                    error.root_cause().to_string()
-                ));
-            }
+            Err(error) => Err(anyhow!(
+                "User login failed: {}",
+                error.root_cause().to_string()
+            )),
         }
     } else if matches.subcommand_matches("status").is_some() {
-        handle_auth_status(config, timeout, ignore_certs).await?;
+        handle_auth_status(config, timeout, ignore_certs).await
     } else if matches.subcommand_matches("token").is_some() {
-        handle_auth_token(&config);
+        handle_auth_token(&config)
     } else {
         print_sc_help(app_helper, "auth");
+        Ok(ExitCode::Ok.into())
     }
-    CommandValue::Void.into()
 }
