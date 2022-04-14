@@ -138,6 +138,7 @@ echo "Release archive URL: ${URL}"
 if [ -z "${SKIP_CONFIRM:-}" ]; then
     printf "Continue install? [y/N] "
     read -r yn
+    yn="$(echo "${yn}" | tr "[:upper:]" "[:lower:]")"
     if [ "${yn}" != "y" ] && [ "${yn}" != "yes" ]; then
         echo "Aborting install"
         exit 1
