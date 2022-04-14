@@ -12,8 +12,10 @@ read -r version
 printf "changelog: "
 read -r changelog
 
-sed -E -i "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
-sed -E -i "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
+sed -E -i.bak "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
+sed -E -i.bak "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
+cargo check
+git add Cargo.lock
 git add CHANGELOG
 git add cli/Cargo.toml
 git commit -m "v${version} - ${changelog}"
