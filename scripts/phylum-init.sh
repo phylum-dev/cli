@@ -68,6 +68,21 @@ require_command() {
     fi
 }
 
+usage() {
+    cat 1>&2 <<EOF
+phylum-init.sh [options]
+
+Fetch and install the phylum CLI.
+
+Options
+    -t, --target       Specify the target triple to install
+    -y, --yes          Do not prompt for comfirmation during install
+    --no-verify        Disable signature verification (NOT RECOMMENDED)
+    -h, --help         Show this help message
+
+EOF
+}
+
 # All of the required commands (outside of POSIX)
 require_command mktemp
 require_command curl
@@ -88,8 +103,13 @@ while [ "$#" -gt 0 ]; do
             NO_VERIFY=1
             shift 1
             ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
         *)
-            echo "Unsupported option: $1" >&2
+            printf "Unsupported option: %s\n\n" "$1" >&2
+            usage
             exit 1
             ;;
     esac
