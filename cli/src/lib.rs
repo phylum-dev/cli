@@ -13,7 +13,6 @@ pub mod summarize;
 mod test;
 pub mod types;
 pub mod update;
-pub mod utils;
 
 #[cfg(test)]
 #[allow(unused_imports)]

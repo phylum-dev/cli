@@ -11,9 +11,8 @@ use phylum_types::types::project::*;
 use prettytable::*;
 
 use crate::filter::Filter;
-use crate::print;
+use crate::print::{self, table_format};
 use crate::render::Renderable;
-use crate::utils::table_format;
 
 #[derive(Debug)]
 pub struct Histogram {
