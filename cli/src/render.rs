@@ -5,6 +5,7 @@ use phylum_types::types::package::*;
 use phylum_types::types::project::*;
 use prettytable::*;
 
+use crate::print;
 use crate::types::PingResponse;
 use crate::utils::table_format;
 
@@ -38,8 +39,8 @@ impl Renderable for String {
 
 impl Renderable for ProjectSummaryResponse {
     fn render(&self) -> String {
-        let name = format!("{}", White.paint(self.name.clone()));
-        format!("{:<38}{}", name, self.id)
+        let name = print::truncate(&self.name, 28);
+        format!("{:<37} {}", White.paint(name).to_string(), self.id)
     }
 }
 
@@ -165,10 +166,11 @@ impl Renderable for AllJobsStatusResponse {
         );
 
         for (i, job) in self.jobs.iter().enumerate() {
-            let mut state = format!("{}", Green.paint("PASS"));
+            let mut state = Green.paint("PASS").to_string();
             let score = format!("{}", (job.score * 100.0) as u32);
-            let mut colored_score = format!("{}", Green.paint(&score));
-            let project_name = format!("{}", White.bold().paint(job.project.clone()));
+            let mut colored_score = Green.paint(&score).to_string();
+            let project_name = print::truncate(&job.project, 39);
+            let colored_project_name = White.bold().paint(project_name).to_string();
 
             if job.num_incomplete > 0 {
                 colored_score = format!("{}", Yellow.paint(&score));
@@ -185,7 +187,7 @@ impl Renderable for AllJobsStatusResponse {
                     (i + 1),
                     colored_score,
                     state,
-                    project_name,
+                    colored_project_name,
                     job.label,
                     job.job_id,
                     job.date
