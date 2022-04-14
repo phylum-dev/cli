@@ -13,6 +13,7 @@ get_platform() {
     case "${platform}" in
         linux) platform="unknown-linux-musl" ;;
         darwin) platform="apple-darwin" ;;
+        *) ;;
     esac
 
     echo "${platform}"
@@ -25,6 +26,7 @@ get_arch() {
     case "${arch}" in
         arm64) arch="aarch64" ;;
         amd64) arch="x86_64" ;;
+        *) ;;
     esac
 
     echo "${arch}"
@@ -32,7 +34,9 @@ get_arch() {
 
 # Get the target triple
 get_target_triple() {
-    echo "$(get_arch)-$(get_platform)"
+    arch="$(get_arch)"
+    platform="$(get_platform)"
+    echo "${arch}-${platform}"
 }
 
 # Check if a target is supported
@@ -79,7 +83,6 @@ Options
     -y, --yes          Do not prompt for comfirmation during install
     --no-verify        Disable signature verification (NOT RECOMMENDED)
     -h, --help         Show this help message
-
 EOF
 }
 
@@ -123,6 +126,7 @@ if [ -z "${TARGET:-}" ]; then
     TARGET="$(get_target_triple)"
 fi
 
+# shellcheck disable=SC2310
 if ! is_supported "${TARGET}"; then
     echo "ERROR: Target not supported: ${TARGET}" >&2
     exit 1
