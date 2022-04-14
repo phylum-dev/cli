@@ -16,9 +16,14 @@ use crate::prompt::prompt_threshold;
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
     let resp = api.get_projects().await;
-    let proj_title = format!("{}", Blue.paint("Project Name"));
-    let id_title = format!("{}", Blue.paint("Project ID"));
-    println!("{:<38}{}", proj_title, id_title);
+
+    // Print table header when we're not outputting in JSON format.
+    if pretty_print {
+        let proj_title = format!("{}", Blue.paint("Project Name"));
+        let id_title = format!("{}", Blue.paint("Project ID"));
+        println!("{:<38}{}", proj_title, id_title);
+    }
+
     print_response(&resp, pretty_print, None);
     println!();
 }
