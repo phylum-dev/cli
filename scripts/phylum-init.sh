@@ -3,8 +3,8 @@
 set -eu
 
 SUPPORTED_TARGETS="aarch64-apple-darwin x86_64-apple-darwin x86_64-unknown-linux-musl"
-
 BASE_URL="https://github.com/phylum-dev/cli/releases/latest/download"
+MINISIG_PUBKEY="RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf"
 
 # Get the platform name.
 get_platform() {
@@ -48,10 +48,22 @@ is_supported() {
     return 1
 }
 
+# Download the file to the given location
+download() {
+    curl --fail --silent --show-error --location --output "$1" "$2"
+}
+
 # Check for a required command
 require_command() {
-    if ! type "$1" > /dev/null; then
-        echo "This script requires \`$1\`. Please install it and re-run this script to continue." >&2
+    cmd="$1"
+    help_msg="${2:-}"
+
+    if ! type "${cmd}" > /dev/null 2>&1; then
+        echo "ERROR: This script requires \`${cmd}\`. Please install it and re-run this script to continue." >&2
+        if [ -n "${help_msg}" ]; then
+            printf "\n" >&2
+            echo "${help_msg}" >&2
+        fi
         exit 1
     fi
 }
@@ -72,12 +84,20 @@ while [ "$#" -gt 0 ]; do
             SKIP_CONFIRM=1
             shift 1
             ;;
+        --no-verify)
+            NO_VERIFY=1
+            shift 1
+            ;;
         *)
             echo "Unsupported option: $1" >&2
             exit 1
             ;;
     esac
 done
+
+if [ -z "${NO_VERIFY:-}" ]; then
+    require_command minisign "See https://jedisct1.github.io/minisign/ for information on installing minisign"
+fi
 
 if [ -z "${TARGET:-}" ]; then
     TARGET="$(get_target_triple)"
@@ -103,8 +123,18 @@ fi
 tempdir="$(mktemp -d)"
 archive="${tempdir}/phylum.zip"
 
-# Download and extract
-curl --fail --silent --show-error --location --output "${archive}" "${URL}"
+# Download the archive
+download "${archive}" "${URL}"
+
+# Validate the archive
+if [ -z "${NO_VERIFY:-}" ]; then
+    download "${archive}.minisig" "${URL}.minisig"
+    if ! minisign -V -q -P "${MINISIG_PUBKEY}" -m "${archive}" -x "${archive}.minisig"; then
+        echo "ERROR: File signature is invalid! Aborting install" >&2
+        exit 1
+    fi
+fi
+
 unzip -qq "${archive}" -d "${tempdir}"
 
 install_script="${tempdir}/phylum-${TARGET}/install.sh"
