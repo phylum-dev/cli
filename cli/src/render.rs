@@ -5,9 +5,8 @@ use phylum_types::types::package::*;
 use phylum_types::types::project::*;
 use prettytable::*;
 
-use crate::print;
+use crate::print::{self, table_format};
 use crate::types::PingResponse;
-use crate::utils::table_format;
 
 pub trait Renderable {
     fn render(&self) -> String;
