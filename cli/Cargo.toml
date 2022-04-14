@@ -53,6 +53,7 @@ uuid = { version = "0.8", features = ["serde", "v4"] }
 yaml-rust = "*"
 zeroize = "1.4.0"
 zip = "0.6.2"
+unicode-width = "0.1.9"
 
 [dev-dependencies]
 assert_cmd = "1.0.3"

@@ -11,8 +11,8 @@ use phylum_types::types::project::*;
 use prettytable::*;
 
 use crate::filter::Filter;
+use crate::print::{self, table_format};
 use crate::render::Renderable;
-use crate::utils::table_format;
 
 #[derive(Debug)]
 pub struct Histogram {
@@ -138,7 +138,7 @@ where
     let details = [
         (
             "Project",
-            resp.project_name.to_string(),
+            print::truncate(&resp.project_name, 36).to_string(),
             "Label",
             resp.label.as_ref().unwrap_or(&"".to_string()).to_owned(),
         ),

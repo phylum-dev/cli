@@ -126,7 +126,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         }
     }
 
-    CommandValue::Action(action).into()
+    Ok(CommandValue::Action(action))
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -239,5 +239,5 @@ pub async fn handle_submission(
         log::debug!("Requesting status...");
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     }
-    CommandValue::Action(action).into()
+    Ok(CommandValue::Action(action))
 }

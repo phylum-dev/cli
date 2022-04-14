@@ -1323,6 +1323,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
+ "unicode-width",
  "url",
  "uuid",
  "wiremock",

@@ -1,9 +1,11 @@
-use std::io;
-use std::io::Write;
+use std::borrow::Cow;
+use std::io::{self, Write};
 
 use ansi_term::Color::{Blue, Cyan};
 use clap::Command;
+use prettytable::format;
 use serde::Serialize;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::api::PhylumApiError;
 use crate::filter::Filter;
@@ -89,4 +91,34 @@ pub fn print_sc_help(app: &mut Command, subcommand: &str) {
         }
     }
     println!();
+}
+
+/// Limit a string to a specific length, using an ellipsis to indicate truncation.
+pub fn truncate(text: &str, max_length: usize) -> Cow<str> {
+    if text.width() > max_length {
+        let mut len = 0;
+        let truncated = text
+            .chars()
+            .take_while(|c| {
+                len += c.width().unwrap_or(0);
+                len < max_length
+            })
+            .collect::<String>()
+            + "…";
+        Cow::Owned(truncated)
+    } else {
+        Cow::Borrowed(text)
+    }
+}
+
+pub fn table_format(left_pad: usize, right_pad: usize) -> format::TableFormat {
+    format::FormatBuilder::new()
+        .column_separator(' ')
+        .borders(' ')
+        .separators(
+            &[format::LinePosition::Top, format::LinePosition::Bottom],
+            format::LineSeparator::new(' ', ' ', ' ', ' '),
+        )
+        .padding(left_pad, right_pad)
+        .build()
 }

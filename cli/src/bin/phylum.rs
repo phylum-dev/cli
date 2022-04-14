@@ -13,22 +13,13 @@ use phylum_cli::commands::auth::*;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
 use phylum_cli::commands::projects::handle_projects;
-use phylum_cli::commands::{CommandResult, CommandValue};
+use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
 use phylum_cli::update;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
-
-/// Exit with status code 0 and optionally print a message to the user.
-pub fn exit_ok(message: Option<impl AsRef<str>>) -> ! {
-    if let Some(message) = message {
-        info!("{}", message.as_ref());
-        print_user_success!("{}", message.as_ref());
-    }
-    process::exit(0)
-}
 
 /// Print a warning message to the user before exiting with exit code 0.
 pub fn exit_warn(message: impl AsRef<str>) -> ! {
@@ -46,17 +37,9 @@ pub fn exit_fail(message: impl AsRef<str>) -> ! {
 
 /// Exit with status code 1, and optionally print a message to the user and
 /// print error information.
-pub fn exit_error(error: Box<dyn std::error::Error>, message: Option<impl AsRef<str>>) -> ! {
-    match message {
-        None => {
-            error!("{}: {:?}", error, error);
-            print_user_failure!("Error: {}", error);
-        }
-        Some(message) => {
-            error!("{}: {:?}", message.as_ref(), error);
-            print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
-        }
-    }
+pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -> ! {
+    error!("{}: {:?}", message.as_ref(), error);
+    print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
     process::exit(1)
 }
 
@@ -125,17 +108,18 @@ async fn handle_commands() -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
             print_sc_help(app_helper, "analyze");
-            return Ok(CommandValue::Void);
+            return Ok(ExitCode::Ok.into());
         }
     } else if let Some(matches) = matches.subcommand_matches("package") {
         if !(matches.is_present("name") && matches.is_present("version")) {
             print_sc_help(app_helper, "package");
-            return Ok(CommandValue::Void);
+            return Ok(ExitCode::Ok.into());
         }
     }
 
     if matches.subcommand_matches("version").is_some() {
-        return CommandValue::String(format!("{app_name} (Version {ver})")).into();
+        print_user_success!("{app_name} (Version {ver})");
+        return Ok(ExitCode::Ok.into());
     }
 
     if let Some(matches) = matches.subcommand_matches("update") {
@@ -146,7 +130,9 @@ async fn handle_commands() -> CommandResult {
         let res = update::do_update(matches.is_present("prerelease")).await;
         spinner.stop();
         println!();
-        return res.map(CommandValue::String);
+        let message = res?;
+        print_user_success!("{}", message);
+        return Ok(ExitCode::Ok.into());
     }
 
     let timeout = matches
@@ -191,7 +177,7 @@ async fn handle_commands() -> CommandResult {
     if matches.subcommand_matches("ping").is_some() {
         let resp = api.ping().await;
         print_response(&resp, true, None);
-        return CommandValue::Void.into();
+        return Ok(ExitCode::Ok.into());
     }
 
     let should_submit = matches.subcommand_matches("analyze").is_some()
@@ -222,7 +208,7 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    CommandValue::Void.into()
+    Ok(ExitCode::Ok.into())
 }
 
 #[tokio::main]
@@ -231,14 +217,11 @@ async fn main() {
 
     match handle_commands().await {
         Ok(CommandValue::Action(action)) => match action {
-            Action::None => exit_ok(None::<&str>),
+            Action::None => process::exit(0),
             Action::Warn => exit_warn("Project failed threshold requirements!"),
             Action::Break => exit_fail("Project failed threshold requirements, failing the build!"),
         },
-        Ok(CommandValue::String(message)) => exit_ok(Some(&message)),
-        Ok(CommandValue::Void) => exit_ok(None::<&str>),
-        Err(error) => {
-            exit_error(error.into(), Some("Execution failed"));
-        }
+        Ok(CommandValue::Code(code)) => process::exit(code as i32),
+        Err(error) => exit_error(error.into(), "Execution failed"),
     }
 }

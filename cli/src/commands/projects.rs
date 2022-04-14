@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use chrono::Local;
 use uuid::Uuid;
 
-use super::{CommandResult, CommandValue};
+use super::{CommandResult, ExitCode};
 use crate::api::PhylumApi;
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 use crate::print::*;
@@ -16,9 +16,14 @@ use crate::prompt::prompt_threshold;
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
     let resp = api.get_projects().await;
-    let proj_title = format!("{}", Blue.paint("Project Name"));
-    let id_title = format!("{}", Blue.paint("Project ID"));
-    println!("{:<38}{}", proj_title, id_title);
+
+    // Print table header when we're not outputting in JSON format.
+    if pretty_print {
+        let proj_title = format!("{}", Blue.paint("Project Name"));
+        let id_title = format!("{}", Blue.paint("Project ID"));
+        println!("{:<38}{}", proj_title, id_title);
+    }
+
     print_response(&resp, pretty_print, None);
     println!();
 }
@@ -47,7 +52,6 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         });
 
         print_user_success!("Successfully created new project, {}", project_name);
-        return CommandValue::Void.into();
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let pretty_print = pretty_print && !matches.is_present("json");
         get_project_list(api, pretty_print).await;
@@ -176,11 +180,12 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
                     "Failed to set thresholds for the {} project",
                     White.paint(project_name)
                 );
+                return Ok(ExitCode::SetThresholdsFailure.into());
             }
         }
     } else {
         get_project_list(api, pretty_print).await;
     }
 
-    CommandValue::Void.into()
+    Ok(ExitCode::Ok.into())
 }
