@@ -127,5 +127,5 @@ happybase==1.2.0
 thriftpy2==0.4.12
 beautifulsoup4==4.9.3
 livy==0.7.3
-celery[redis]==1.2.3
+celery[redis]==5.0.5
 zope.interface == 5.4.0

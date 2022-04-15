@@ -155,19 +155,46 @@ pub mod gem {
 }
 
 pub mod pypi {
-    use nom::character::complete::char;
+    use nom::{character::complete::char, multi::separated_list1, sequence::terminated};
+
+    use crate::lockfiles::ParseResult;
 
     use super::*;
 
-    pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-        let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
-        Ok((input, pkgs))
+    pub fn parse(input: &str) -> ParseResult {
+        let lines = input.lines().filter_map(|line| {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                None
+            } else {
+                Some(line)
+            }
+        });
+
+        let mut pkgs = Vec::new();
+        for line in lines {
+            let pkg = match package(line) {
+                Ok((_, pkg)) => pkg,
+                Err(e) => {
+                    log::debug!("nom error: {:?}", e);
+                    return Err(format!("Failed to parse requirement: {}", line).into());
+                }
+            };
+            pkgs.push(pkg);
+        }
+        Ok(pkgs)
     }
 
-    fn filter_package_name(input: &str) -> Result<&str, &str> {
+    fn package_identifier(input: &str) -> Result<&str, &str> {
         recognize(pair(
             alphanumeric1,
-            many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag(".")))))),
+            many0(alt((
+                alphanumeric1,
+                recognize(pair(
+                    many0(alt((tag("-"), tag("_"), tag(".")))),
+                    alphanumeric1,
+                )),
+            ))),
         ))(input)
     }
 
@@ -181,13 +208,6 @@ pub mod pypi {
     fn filter_egg_name(input: &str) -> Result<&str, &str> {
         let (_, input) = verify(rest, |s: &str| s.contains("#egg="))(input)?;
         recognize(alt((take_until("#egg="), not_line_ending)))(input)
-    }
-
-    fn filter_pip_name(input: &str) -> Result<&str, &str> {
-        let (_, input) = verify(rest, |s: &str| {
-            s.contains('@') && (s.contains("http://") || s.contains("https://"))
-        })(input)?;
-        recognize(alt((take_until("@"), not_line_ending)))(input)
     }
 
     fn get_package_version(input: &str) -> Result<&str, &str> {
@@ -205,51 +225,59 @@ pub mod pypi {
         })(input)
     }
 
-    fn filter_line(input: &str) -> Result<&str, &str> {
-        // filter out comments, features, and install options
-        let (_, input) = verify(rest, |s: &str| !s.starts_with('#'))(input)?;
-        recognize(alt((take_until(";"), take_until("--"), not_line_ending)))(input)
+    fn package_extras(input: &str) -> Result<&str, &str> {
+        delimited(
+            pair(space0, tag("[")),
+            recognize(separated_list1(
+                pair(space0, tag(",")),
+                pair(space0, package_identifier),
+            )),
+            pair(space0, tag("]")),
+        )(input)
     }
 
-    fn package(input: &str) -> Option<PackageDescriptor> {
-        let (_, name) = filter_line(input).ok()?;
-        let (name, version) = match filter_git_repo(name).ok() {
+    fn package_name(input: &str) -> Result<&str, &str> {
+        let (input, _) = space0(input)?;
+        terminated(package_identifier, opt(package_extras))(input)
+    }
+
+    fn package(input: &str) -> Result<&str, PackageDescriptor> {
+        let (input, name) = match filter_git_repo(input).ok() {
             Some((_, s)) => match filter_egg_name(s).ok() {
                 Some((n, v)) => (
+                    v.trim_start_matches("-e"),
                     n.trim_start_matches("#egg=").to_string(),
-                    v.trim_start_matches("-e").to_string(),
                 ),
                 None => {
-                    let (version, name) = filter_pip_name(s).ok()?;
-                    (
-                        name.to_string(),
-                        version.trim_start_matches('@').to_string(),
-                    )
+                    let (input, name) = package_name(s)?;
+                    (input.trim().trim_start_matches('@'), name.to_string())
                 }
             },
             None => {
-                let (version, name) = filter_package_name(name).ok()?;
+                let (input, name) = package_name(input)?;
                 let name: String = name.to_string().split_whitespace().collect();
-                (name, version.to_string())
+                (input, name)
             }
         };
 
-        let version: String = match get_package_version(version.trim()).ok() {
-            Some((_, version)) => Some(version.to_string().split_whitespace().collect()),
-            None => match get_git_version(&version).ok() {
-                Some((_, s)) => Some(s.to_string()),
-                None => {
-                    log::warn!("Could not determine version for package: {}", name);
-                    None
-                }
-            },
-        }?;
+        let input = input.trim();
 
-        Some(PackageDescriptor {
-            name: name.trim().to_lowercase(),
-            version: version.trim().to_string(),
-            package_type: PackageType::PyPi,
-        })
+        let version = match get_package_version(input).ok() {
+            Some((_, version)) => version.to_string().split_whitespace().collect(),
+            None => {
+                let (_, v) = get_git_version(input)?;
+                v.to_string()
+            }
+        };
+
+        Ok((
+            "",
+            PackageDescriptor {
+                name: name.trim().to_lowercase(),
+                version: version.trim().to_string(),
+                package_type: PackageType::PyPi,
+            },
+        ))
     }
 }
 

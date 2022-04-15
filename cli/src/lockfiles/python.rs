@@ -23,9 +23,7 @@ impl Parseable for PyRequirements {
 
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let (_, entries) =
-            pypi::parse(&self.0).map_err(|_e| "Failed to parse requirements file")?;
-        Ok(entries)
+        pypi::parse(&self.0)
     }
 }
 
@@ -158,14 +156,30 @@ mod tests {
 
         let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 131);
-        assert_eq!(pkgs[0].name, "pyyaml");
-        assert_eq!(pkgs[0].version, "5.4.1");
-        assert_eq!(pkgs[0].package_type, PackageType::PyPi);
 
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "zope.interface");
-        assert_eq!(last.version, "5.4.0");
-        assert_eq!(last.package_type, PackageType::PyPi);
+        assert_eq!(
+            pkgs.first(),
+            Some(&PackageDescriptor {
+                name: "pyyaml".into(),
+                version: "5.4.1".into(),
+                package_type: PackageType::PyPi,
+            })
+        );
+
+        assert_eq!(
+            pkgs.last(),
+            Some(&PackageDescriptor {
+                name: "zope.interface".into(),
+                version: "5.4.0".into(),
+                package_type: PackageType::PyPi,
+            })
+        );
+
+        assert!(pkgs.contains(&PackageDescriptor {
+            name: "celery".into(),
+            version: "5.0.5".into(),
+            package_type: PackageType::PyPi
+        }));
     }
 
     #[test]
