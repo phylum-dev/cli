@@ -27,3 +27,16 @@ phylum analyze [options] <lockfile>
 &emsp; Increase verbosity of API response
 
 ### Examples
+```sh
+# Analyze an npm lock file
+$ phylum analyze package-lock.json
+
+# Analyze a Maven lock file with a verbose json response
+$ phylum analyze --json --verbose pom.xml
+
+# Analyze a PyPI lock file and apply a label
+$ phylum analyze -l test_branch requirements.txt
+
+# Analyze a RubyGems lock file and return a verbose response with only critical malware
+$ phylum analyze --verbose --filter=crit,mal Gemfile.lock
+```
