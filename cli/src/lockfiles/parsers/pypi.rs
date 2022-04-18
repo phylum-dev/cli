@@ -1,6 +1,14 @@
-use nom::character::complete::char;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take_until},
+    character::complete::{alphanumeric1, char, not_line_ending},
+    combinator::{opt, recognize, rest, verify},
+    multi::{many0, many1},
+    sequence::{delimited, pair, terminated},
+};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 
-use super::*;
+use super::{ws, Result};
 
 pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
     let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
@@ -8,10 +16,18 @@ pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
 }
 
 fn filter_package_name(input: &str) -> Result<&str, &str> {
+    terminated(ws(identifier), opt(ws(package_extras)))(input)
+}
+
+fn identifier(input: &str) -> Result<&str, &str> {
     recognize(pair(
         alphanumeric1,
         many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag(".")))))),
     ))(input)
+}
+
+fn package_extras(input: &str) -> Result<&str, &str> {
+    delimited(char('['), ws(identifier), char(']'))(input)
 }
 
 fn filter_git_repo(input: &str) -> Result<&str, &str> {
@@ -93,4 +109,21 @@ fn package(input: &str) -> Option<PackageDescriptor> {
         version: version.trim().to_string(),
         package_type: PackageType::PyPi,
     })
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn package_with_extras() {
+        assert_eq!(
+            package("celery [ redis ] == 5.0.5"),
+            Some(PackageDescriptor {
+                name: "celery".into(),
+                version: "5.0.5".into(),
+                package_type: PackageType::PyPi,
+            })
+        );
+    }
 }
