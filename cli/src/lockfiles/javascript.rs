@@ -23,7 +23,7 @@ impl Parseable for PackageLock {
     fn parse(&self) -> ParseResult {
         let parsed: JsonValue = serde_json::from_str(&self.0)?;
 
-        let into_descriptor = |(name, v): (String, &Value)| {
+        let into_descriptor = |(name, v): (String, &JsonValue)| {
             let pkg = PackageDescriptor {
                 name,
                 version: v
