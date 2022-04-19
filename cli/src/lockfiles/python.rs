@@ -114,7 +114,12 @@ impl Parseable for Poetry {
         Ok(lock
             .packages
             .drain(..)
-            .filter(|package| package.source.is_none())
+            .filter(|package| {
+                package
+                    .source
+                    .as_ref()
+                    .map_or(true, |source| source.source_type == "git")
+            })
             .map(PackageDescriptor::from)
             .collect())
     }
@@ -131,17 +136,33 @@ struct PoetryLock {
 struct Package {
     name: String,
     version: String,
-    source: Option<Value>,
+    source: Option<PackageSource>,
 }
 
 impl From<Package> for PackageDescriptor {
     fn from(package: Package) -> Self {
+        let version = package
+            .source
+            .and_then(|source| {
+                let reference = source.resolved_reference.as_ref();
+                reference.map(|reference| format!("{}#{}", source.url, reference))
+            })
+            .unwrap_or(package.version);
+
         Self {
             name: package.name,
-            version: package.version,
             package_type: PackageType::PyPi,
+            version,
         }
     }
+}
+
+#[derive(Deserialize, Debug)]
+struct PackageSource {
+    #[serde(rename = "type")]
+    source_type: String,
+    url: String,
+    resolved_reference: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -255,7 +276,7 @@ mod tests {
         let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 43);
+        assert_eq!(pkgs.len(), 44);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -269,8 +290,8 @@ mod tests {
                 package_type: PackageType::PyPi,
             },
             PackageDescriptor {
-                name: "html5lib".into(),
-                version: "1.1".into(),
+                name: "poetry".into(),
+                version: "https://github.com/python-poetry/poetry.git#4bc181b06ff9780791bc9e3d5b11bb807ca29d70".into(),
                 package_type: PackageType::PyPi,
             },
         ];
@@ -287,7 +308,7 @@ mod tests {
 
         let pkgs = parser.parse().unwrap();
 
-        let invalid_package_names = ["toml", "directory-test", "requests", "poetry"];
+        let invalid_package_names = ["toml", "directory-test", "requests"];
         for pkg in pkgs {
             assert!(!invalid_package_names.contains(&pkg.name.as_str()));
         }
