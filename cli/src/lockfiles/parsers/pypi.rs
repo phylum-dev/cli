@@ -83,7 +83,8 @@ fn package(input: &str) -> Option<PackageDescriptor> {
                 v.trim_start_matches("-e").to_string(),
             ),
             None => {
-                let (version, name) = filter_pip_name(s).ok()?;
+                let (version, pkg) = filter_pip_name(s).ok()?;
+                let (_, name) = filter_package_name(pkg).ok()?;
                 (
                     name.to_string(),
                     version.trim_start_matches('@').to_string(),
@@ -135,6 +136,15 @@ mod test {
             Some(PackageDescriptor {
                 name: "requests".into(),
                 version: "2.27.1".into(),
+                package_type: PackageType::PyPi,
+            })
+        );
+
+        assert_eq!(
+            package("git-for-pip-example[PDF] @ git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0"),
+            Some(PackageDescriptor {
+                name: "git-for-pip-example".into(),
+                version: "git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0".into(),
                 package_type: PackageType::PyPi,
             })
         );
