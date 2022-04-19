@@ -70,14 +70,21 @@ pub fn print_response<T>(
 }
 
 /// Prints a verbose message informing the user that an update is available.
-pub fn print_update_message() {
+pub fn print_update_message(prerelease: bool) {
+    // Indicate update granularity.
+    let version_text = if prerelease {
+        "version"
+    } else {
+        "stable version"
+    };
+
     eprintln!(
         "---------------- {} ----------------\n",
         Cyan.paint("Update Available")
     );
-    eprintln!("A new version of the Phylum CLI is available. Run");
+    eprintln!("A new {version_text} of the Phylum CLI is available. Run");
     eprintln!(
-        "\n\t{}\n\nto update to the latest version!\n",
+        "\n\t{}\n\nto update to the latest {version_text}!\n",
         Blue.paint("phylum update")
     );
     eprintln!("{:-^50}\n\n", "");

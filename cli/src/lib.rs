@@ -20,3 +20,6 @@ pub mod update;
 use test::logging;
 
 pub use reqwest::Error;
+
+/// Cargo crate version.
+pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");

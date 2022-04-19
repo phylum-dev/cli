@@ -17,19 +17,20 @@ use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
 use phylum_cli::update;
+use phylum_cli::CURRENT_VERSION;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
 
 /// Print a warning message to the user before exiting with exit code 0.
-pub fn exit_warn(message: impl AsRef<str>) -> ! {
+fn exit_warn(message: impl AsRef<str>) -> ! {
     warn!("{}", message.as_ref());
     print_user_warning!("Warning: {}", message.as_ref());
     process::exit(0)
 }
 
 /// Print an error to the user before exiting with exit code 1.
-pub fn exit_fail(message: impl AsRef<str>) -> ! {
+fn exit_fail(message: impl AsRef<str>) -> ! {
     error!("{}", message.as_ref());
     print_user_failure!("Error: {}", message.as_ref());
     process::exit(1)
@@ -37,7 +38,7 @@ pub fn exit_fail(message: impl AsRef<str>) -> ! {
 
 /// Exit with status code 1, and optionally print a message to the user and
 /// print error information.
-pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -> ! {
+fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -> ! {
     error!("{}: {:?}", message.as_ref(), error);
     print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
     process::exit(1)
@@ -99,8 +100,9 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if check_for_updates && update::needs_update(false).await {
-        print_update_message();
+    let prerelease = CURRENT_VERSION.contains('-');
+    if check_for_updates && update::needs_update(prerelease).await {
+        print_update_message(prerelease);
     }
 
     // For these commands, we want to just provide verbose help and exit if no
