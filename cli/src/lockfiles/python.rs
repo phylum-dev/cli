@@ -157,7 +157,7 @@ mod tests {
         let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 130);
+        assert_eq!(pkgs.len(), 131);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
         assert_eq!(pkgs[0].package_type, PackageType::PyPi);
