@@ -1,8 +1,9 @@
-use serde_json::Value;
 use std::io;
 use std::path::Path;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
+use serde_json::Value as JsonValue;
+use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
 use crate::lockfiles::{ParseResult, Parseable};
@@ -20,7 +21,7 @@ impl Parseable for PackageLock {
 
     /// Parses `package-lock.json` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let parsed: Value = serde_json::from_str(&self.0)?;
+        let parsed: JsonValue = serde_json::from_str(&self.0)?;
 
         let into_descriptor = |(name, v): (String, &Value)| {
             let pkg = PackageDescriptor {
@@ -67,7 +68,7 @@ impl Parseable for YarnLock {
 
     /// Parses `yarn.lock` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let yaml_v2: serde_yaml::Value = match serde_yaml::from_str(&self.0) {
+        let yaml_v2: YamlValue = match serde_yaml::from_str(&self.0) {
             Ok(yaml) => yaml,
             Err(_) => {
                 let (_, entries) =
@@ -77,28 +78,41 @@ impl Parseable for YarnLock {
         };
 
         let mapping = yaml_v2.as_mapping().ok_or("Invalid yarn v2 lock file")?;
-        Ok(mapping
+
+        let mut packages = Vec::new();
+        for package in mapping
             .iter()
+            // Filter lockfile data fields like "__metadata".
+            .filter(|(k, _v)| k.as_str().map_or(false, |k| !k.starts_with('_')))
             .flat_map(|(_k, v)| v.as_mapping())
-            .flat_map(|package| {
-                let name = package
-                    .get(&"resolution".into())
-                    .and_then(|package| package.as_str())
-                    .and_then(|package| package.rsplit_once("@npm:"))
-                    .map(|(name, _version)| name);
+        {
+            let resolution = package
+                .get(&"resolution".into())
+                .and_then(YamlValue::as_str)
+                .ok_or_else(|| "Failed to parse resolution field in yarn lock file".to_owned())?;
 
-                let version = package
-                    .get(&"version".into())
-                    .and_then(|version| version.as_str());
+            // Ignore workspace-local dependencies like project itself ("project@workspace:.").
+            if resolution.contains("@workspace:") {
+                continue;
+            }
 
-                name.zip(version)
-            })
-            .map(|(name, version)| PackageDescriptor {
+            let (name, _version) = resolution
+                .rsplit_once("@npm:")
+                .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?;
+
+            let version = package
+                .get(&"version".into())
+                .and_then(YamlValue::as_str)
+                .ok_or_else(|| "Failed to parse version in yarn lock file".to_owned())?;
+
+            packages.push(PackageDescriptor {
                 name: name.to_owned(),
                 version: version.to_owned(),
                 package_type: PackageType::Npm,
-            })
-            .collect())
+            });
+        }
+
+        Ok(packages)
     }
 }
 
