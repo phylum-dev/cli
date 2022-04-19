@@ -114,6 +114,7 @@ impl Parseable for Poetry {
         Ok(lock
             .packages
             .drain(..)
+            .filter(|package| package.source.is_none())
             .map(PackageDescriptor::from)
             .collect())
     }
@@ -130,6 +131,7 @@ struct PoetryLock {
 struct Package {
     name: String,
     version: String,
+    source: Option<Value>,
 }
 
 impl From<Package> for PackageDescriptor {
@@ -253,17 +255,17 @@ mod tests {
         let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 62);
+        assert_eq!(pkgs.len(), 43);
 
         let expected_pkgs = [
             PackageDescriptor {
-                name: "toml".into(),
-                version: "0.10.2".into(),
+                name: "cachecontrol".into(),
+                version: "0.12.10".into(),
                 package_type: PackageType::PyPi,
             },
             PackageDescriptor {
-                name: "certifi".into(),
-                version: "2021.10.8".into(),
+                name: "flask".into(),
+                version: "2.1.1".into(),
                 package_type: PackageType::PyPi,
             },
             PackageDescriptor {
@@ -275,6 +277,19 @@ mod tests {
 
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
+        }
+    }
+
+    /// Ensure sources other than PyPi are ignored.
+    #[test]
+    fn poetry_ignore_other_sources() {
+        let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
+
+        let pkgs = parser.parse().unwrap();
+
+        let invalid_package_names = ["toml", "directory-test", "requests", "poetry"];
+        for pkg in pkgs {
+            assert!(!invalid_package_names.contains(&pkg.name.as_str()));
         }
     }
 }
