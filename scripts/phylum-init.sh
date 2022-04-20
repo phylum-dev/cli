@@ -136,8 +136,21 @@ URL="${BASE_URL}/phylum-${TARGET}.zip"
 echo "Release archive URL: ${URL}"
 
 if [ -z "${SKIP_CONFIRM:-}" ]; then
+    # We need stdout to be a terminal or the user won't see our prompt
+    if ! [ -t 1 ]; then
+        echo "ERROR: Cannot prompt for confirmation and --yes was not provided. Aborting install" >&2
+        exit 1
+    fi
+
     printf "Continue install? [y/N] "
-    read -r yn
+
+    # Read from /dev/tty if stdin isn't a terminal (e.g., because this script is being piped to sh on stdin)
+    if ! [ -t 0 ]; then
+        read -r yn < /dev/tty
+    else
+        read -r yn
+    fi
+
     yn="$(echo "${yn}" | tr "[:upper:]" "[:lower:]")"
     if [ "${yn}" != "y" ] && [ "${yn}" != "yes" ]; then
         echo "Aborting install"
