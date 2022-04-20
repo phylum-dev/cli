@@ -60,7 +60,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("create")
                         .about("Create a new project")
-                        .arg(arg!(<name>))
+                        .arg(arg!(<name> "Name of the project"))
                 )
                 .subcommand(
                     Command::new("list")
@@ -70,12 +70,12 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("link")
                         .about("Link a repository to a project")
-                        .arg(arg!(<name>))
+                        .arg(arg!(<name> "Name of the project"))
                 )
                 .subcommand(
                     Command::new("set-thresholds")
-                        .about("Set risk domain thresholds for a projects")
-                        .arg(arg!(<name>))
+                        .about("Interactively set risk domain thresholds for a project")
+                        .arg(arg!(<name> "Name of the project"))
                 )
         )
         .subcommand(
