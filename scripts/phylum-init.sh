@@ -143,7 +143,14 @@ if [ -z "${SKIP_CONFIRM:-}" ]; then
     fi
 
     printf "Continue install? [y/N] "
-    read -r yn < /dev/tty
+
+    # Read from /dev/tty if stdin isn't a terminal (e.g., because this script is being piped to sh on stdin)
+    if ! [ -t 0 ]; then
+        read -r yn < /dev/tty
+    else
+        read -r yn
+    fi
+
     yn="$(echo "${yn}" | tr "[:upper:]" "[:lower:]")"
     if [ "${yn}" != "y" ] && [ "${yn}" != "yes" ]; then
         echo "Aborting install"
