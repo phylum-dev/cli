@@ -190,7 +190,7 @@ async fn handle_commands() -> CommandResult {
     // let should_cancel = matches.subcommand_matches("cancel").is_some();
 
     // TODO: switch from if/else to non-exhaustive pattern match
-    if let Some(matches) = matches.subcommand_matches("projects") {
+    if let Some(matches) = matches.subcommand_matches("project") {
         handle_projects(&mut api, matches).await?;
     } else if let Some(matches) = matches.subcommand_matches("package") {
         return handle_get_package(&mut api, &config.request_type, matches).await;
