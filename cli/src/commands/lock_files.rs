@@ -138,7 +138,7 @@ mod tests {
     fn it_can_identify_lock_file_types() {
         let test_cases = [
             ("tests/fixtures/Gemfile.lock", PackageType::RubyGems),
-            ("tests/fixtures/yarn.lock", PackageType::Npm),
+            ("tests/fixtures/yarn-v1.lock", PackageType::Npm),
             ("tests/fixtures/yarn.lock", PackageType::Npm),
             ("tests/fixtures/package-lock.json", PackageType::Npm),
             ("tests/fixtures/sample.csproj", PackageType::Nuget),

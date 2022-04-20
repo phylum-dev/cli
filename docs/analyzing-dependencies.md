@@ -6,6 +6,7 @@ category: 61e72e3a50a88e001a92ee5d
 The Phylum CLI natively supports processing the lock/requirements files for several ecosystems, namely:
 * npm
     * `package-lock.json`
+    * `yarn.lock` (Version 1 + 2)
 * RubyGems
     * `Gemfile.lock`
 * PyPI
