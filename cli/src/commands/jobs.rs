@@ -255,10 +255,10 @@ async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result
     // Retrieve the project from the `.phylum_project` file.
     get_current_project()
         .map(|p: ProjectConfig| p.id)
-        .ok_or_else( ||
+        .ok_or_else(|| {
             anyhow!(
                 "Failed to find a valid project configuration. Specify an existing project using \
                 the `--project` flag, or create a new one with `phylum projects create <name>`"
             )
-        )
+        })
 }
