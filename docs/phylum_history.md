@@ -11,6 +11,9 @@ phylum history [OPTIONS] [JOB_ID]
 `<JOB_ID>`
 &emsp; The job id to query, or `current` for the most recent job
 
+### Commands
+* [phylum history project](https://docs.phylum.io/docs/phylum_history_project)
+
 ### Options
 `--filter <filter>`
 &emsp; Provide a filter used to limit the issues displayed
