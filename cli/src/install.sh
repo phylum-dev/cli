@@ -53,52 +53,47 @@ get_rc_file() {
     esac
 }
 
-add_to_path_and_alias() {
-    rc_path=${1}
-    shell=${2}
-
-    if ! echo "${PATH}" | grep "${bin_dir}" > /dev/null \
-        && ! grep -q "${bin_dir}:\$PATH" "${rc_path}";
-    then
-        echo "export PATH=\"${bin_dir}:\$PATH\"" >> "${rc_path}"
-        success "Updated ${shell}'s \$PATH to include ${bin_dir}."
-    fi
-
-    if ! grep -q 'alias ph=' "${rc_path}"; then
-        echo "alias ph='phylum'" >> "${rc_path}"
-        success "Created ph alias for phylum in ${shell}."
-    fi
-}
-
 patch_zshrc() {
+    phylum_rc="${data_dir}/zshrc"
     rc_path="${HOME}/.zshrc"
 
     if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
-    if ! grep -q "${completions_dir}" "${rc_path}"; then
-        echo "fpath+=(\"${completions_dir}\")" >> "${rc_path}"
-        echo "autoload -U compinit && compinit" >> "${rc_path}"
-    fi
-    success "Completions are enabled for zsh."
+    echo "\
+export PATH=\"${bin_dir}:\$PATH\"
+alias ph='phylum'
+fpath+=(\"${completions_dir}\")
+autoload -U compinit && compinit" \
+    > "${phylum_rc}"
 
-    add_to_path_and_alias "${rc_path}" "zsh"
+    if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
+        echo "source ${phylum_rc}" >> "${rc_path}"
+    fi
+
+    success "Completions are enabled for zsh."
 }
 
 patch_bashrc() {
+    phylum_rc="${data_dir}/bashrc"
     rc_path="${HOME}/.bashrc"
 
     if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
-    if ! grep -q "${completions_dir}/phylum.bash" "${rc_path}"; then
-        echo "source ${completions_dir}/phylum.bash" >> "${rc_path}"
-    fi
-    success "Completions are enabled for bash."
+    echo "\
+export PATH=\"${bin_dir}:\$PATH\"
+alias ph='phylum'
+source ${completions_dir}/phylum.bash" \
+    > "${phylum_rc}"
 
-    add_to_path_and_alias "${rc_path}" "bash"
+    if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
+        echo "source ${phylum_rc}" >> "${rc_path}"
+    fi
+
+    success "Completions are enabled for bash."
 }
 
 copy_files() {
@@ -130,14 +125,14 @@ copy_files() {
 # Remove old files and entries added before XDG directories conformity.
 cleanup_pre_xdg() {
     # Remove old entries from bashrc.
-    sed "/^source \$HOME/.phylum\/completions\/phylum.bash$/d"
-    sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d"
-    sed "/^alias ph='phylum'$/d"
+    sed -i'' "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
+    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
+    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
 
     # Remove old entries from bashrc.
-    sed "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d"
-    sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d"
-    sed "/^alias ph='phylum'$/d"
+    sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
+    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
+    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
 
     # Remove old phylum executable.
     rm -f "${HOME}/.phylum/phylum"
