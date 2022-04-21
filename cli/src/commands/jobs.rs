@@ -258,7 +258,7 @@ async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result
         .ok_or_else(|| {
             anyhow!(
                 "Failed to find a valid project configuration. Specify an existing project using \
-                the `--project` flag, or create a new one with `phylum projects create <name>`"
+                the `--project` flag, or create a new one with `phylum project create <name>`"
             )
         })
 }
