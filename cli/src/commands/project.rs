@@ -31,7 +31,7 @@ pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool) {
 /// Handle the project subcommand. Provides facilities for creating a new project,
 /// linking a current repository to an existing project, listing projects and
 /// setting project thresholds for risk domains.
-pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.is_present("json");
 
     if let Some(matches) = matches.subcommand_matches("create") {
@@ -48,7 +48,7 @@ pub async fn handle_projects(api: &mut PhylumApi, matches: &clap::ArgMatches) ->
         };
 
         save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
-            print_user_failure!("Failed to save user projects file: {}", err);
+            print_user_failure!("Failed to save project file: {}", err);
         });
 
         print_user_success!("Successfully created new project, {}", project_name);

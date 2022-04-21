@@ -54,9 +54,10 @@ pub fn app<'a>() -> clap::Command<'a> {
                 )
         )
         .subcommand(
-            Command::new("projects")
+            Command::new("project")
                 .about("Create, list, link and set thresholds for projects")
                 .arg(arg!(-j --json "Produce output in json format (default: false)"))
+                .aliases(&["projects"])
                 .subcommand(
                     Command::new("create")
                         .about("Create a new project")

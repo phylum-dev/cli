@@ -4,7 +4,7 @@ pub mod auth;
 pub mod jobs;
 pub mod lock_files;
 pub mod packages;
-pub mod projects;
+pub mod project;
 
 /// The possible result values of commands
 pub enum CommandValue {

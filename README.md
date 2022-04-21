@@ -60,7 +60,7 @@ The command line interface (CLI) allows users to submit their project package de
 1. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
 
    ```
-   phylum projects create <project-name>
+   phylum project create <project-name>
    ```
 
 1. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)

@@ -12,7 +12,7 @@ use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
-use phylum_cli::commands::projects::handle_projects;
+use phylum_cli::commands::project::handle_project;
 use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
@@ -190,8 +190,8 @@ async fn handle_commands() -> CommandResult {
     // let should_cancel = matches.subcommand_matches("cancel").is_some();
 
     // TODO: switch from if/else to non-exhaustive pattern match
-    if let Some(matches) = matches.subcommand_matches("projects") {
-        handle_projects(&mut api, matches).await?;
+    if let Some(matches) = matches.subcommand_matches("project") {
+        handle_project(&mut api, matches).await?;
     } else if let Some(matches) = matches.subcommand_matches("package") {
         return handle_get_package(&mut api, &config.request_type, matches).await;
     } else if should_submit {
