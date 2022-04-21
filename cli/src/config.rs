@@ -1,7 +1,8 @@
 use std::env;
-use std::fs;
 use std::io;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
+use std::fs::{self, Permissions};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
@@ -172,6 +173,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
     // Migrate the config from the old location.
     if !config_path.exists() && old_config_path.exists() {
+        fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
         fs::create_dir_all(config_path.parent().unwrap())?;
         fs::rename(old_config_path, &config_path).unwrap();
     }

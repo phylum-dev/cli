@@ -111,11 +111,6 @@ copy_files() {
         xattr -c "${bin_dir}/${bin_name}"
     fi
 
-    # Correct inaccurate settings.yaml permissions set by previous installers.
-    if [ -f "${config_dir}/settings.yaml" ]; then
-        chmod 600 "${config_dir}/settings.yaml"
-    fi
-
     # Copy completions over
     mkdir -p "${data_dir}"
     cp -a "completions" "${data_dir}/"
