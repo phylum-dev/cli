@@ -1,5 +1,7 @@
 use std::env;
-use std::fs::{self, Permissions};
+use std::fs;
+#[cfg(unix)]
+use std::fs::Permissions;
 use std::io;
 #[cfg(unix)]
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
