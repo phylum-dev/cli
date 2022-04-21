@@ -2,7 +2,7 @@ use std::io;
 use std::str::FromStr;
 
 use ansi_term::Color::Blue;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use reqwest::StatusCode;
 use serde::Serialize;
 use uuid::Uuid;
@@ -142,19 +142,14 @@ pub async fn handle_submission(
     let mut verbose = false;
     let mut pretty_print = false;
     let mut display_filter = None;
-    let mut label = None;
-    let mut is_user = true; // is a user (non-batch) request
     let mut action = Action::None;
-
-    let project = get_current_project()
-        .map(|p: ProjectConfig| p.id)
-        .ok_or_else( ||
-            anyhow!(
-                "Failed to find a valid project configuration. Did you run `phylum project create <project-name>`?"
-            )
-        )?;
+    let is_user; // is a user (non-batch) request
+    let project;
+    let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
+        project = project_uuid(api, matches).await?;
+
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches
             .value_of("LOCKFILE")
@@ -174,6 +169,8 @@ pub async fn handle_submission(
         is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
+        project = project_uuid(api, matches).await?;
+
         let mut eof = false;
         let mut line = String::new();
         let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.value_of("file") {
@@ -219,6 +216,8 @@ pub async fn handle_submission(
                 }
             }
         }
+    } else {
+        unreachable!();
     }
 
     log::debug!("Submitting request...");
@@ -240,4 +239,26 @@ pub async fn handle_submission(
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     }
     Ok(CommandValue::Action(action))
+}
+
+/// Get the current project's UUID.
+///
+/// Assumes that the clap `matches` has a `project` arguments option.
+async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<Uuid> {
+    // Prefer `--project` if it was specified.
+    if let Some(project_name) = matches.value_of("project") {
+        let response = api.get_project_details(project_name).await;
+        let project_id = response.context("Project details request failure")?.id;
+        return Uuid::parse_str(&project_id).context("Invalid project UUID");
+    }
+
+    // Retrieve the project from the `.phylum_project` file.
+    get_current_project()
+        .map(|p: ProjectConfig| p.id)
+        .ok_or_else(|| {
+            anyhow!(
+                "Failed to find a valid project configuration. Specify an existing project using \
+                the `--project` flag, or create a new one with `phylum project create <name>`"
+            )
+        })
 }
