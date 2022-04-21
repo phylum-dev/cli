@@ -1,6 +1,10 @@
 use std::env;
 use std::fs;
+#[cfg(unix)]
+use std::fs::Permissions;
 use std::io;
+#[cfg(unix)]
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -73,7 +77,6 @@ fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
     opts.write(true).create(true).truncate(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::OpenOptionsExt;
         opts.mode(0o600);
     }
 
@@ -160,7 +163,27 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
     let home_path =
         home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
 
-    Ok(home_path.join(".phylum").join("settings.yaml"))
+    // Resolve XDG config directory.
+    let config_dir = env::var("XDG_CONFIG_DIR")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home_path.join(".config"));
+
+    let config_path = config_dir.join("phylum").join("settings.yaml");
+    let old_config_path = home_path.join(".phylum").join("settings.yaml");
+
+    // Migrate the config from the old location.
+    if !config_path.exists() && old_config_path.exists() {
+        #[cfg(unix)]
+        {
+            fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
+        }
+        fs::create_dir_all(config_path.parent().unwrap())?;
+        fs::rename(old_config_path, &config_path).unwrap();
+    }
+
+    Ok(config_path)
 }
 
 #[cfg(test)]
