@@ -169,7 +169,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
         home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
 
     // Resolve XDG config directory.
-    let config_dir = env::var("XDG_CONFIG_DIR")
+    let config_dir = env::var("XDG_CONFIG_HOME")
         .ok()
         .filter(|s| !s.is_empty())
         .map(PathBuf::from)
