@@ -21,7 +21,7 @@ use crate::print_user_success;
 use crate::print_user_warning;
 use crate::summarize::Summarize;
 
-use super::projects::get_project_list;
+use super::project::get_project_list;
 
 fn handle_status<T>(
     resp: Result<JobStatusResponse<T>, PhylumApiError>,
@@ -150,7 +150,7 @@ pub async fn handle_submission(
         .map(|p: ProjectConfig| p.id)
         .ok_or_else( ||
             anyhow!(
-                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
+                "Failed to find a valid project configuration. Did you run `phylum project create <project-name>`?"
             )
         )?;
 
