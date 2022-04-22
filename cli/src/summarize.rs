@@ -4,8 +4,9 @@ use std::str::FromStr;
 use ansi_term::Color::*;
 use chrono::NaiveDateTime;
 use color::Color;
-use phylum_types::types::job::JobStatusResponse;
-use phylum_types::types::job::{AllJobsStatusResponse, CancelJobResponse};
+use phylum_types::types::job::{
+    AllJobsStatusResponse, CancelJobResponse, JobDescriptor, JobStatusResponse,
+};
 use phylum_types::types::package::*;
 use phylum_types::types::project::*;
 use prettytable::*;
@@ -331,6 +332,12 @@ impl Summarize for PackageStatusExtended {
             println!("\n Issues:");
             issues_table.printstd();
         }
+    }
+}
+
+impl Summarize for Vec<JobDescriptor> {
+    fn summarize(&self, _filter: Option<Filter>) {
+        println!("Last {} runs\n\n{}", self.len(), self.render());
     }
 }
 

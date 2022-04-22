@@ -43,6 +43,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     arg!(-v --verbose "Increase verbosity of api response."),
                     arg!(--filter <filter>).required(false).help(FILTER_ABOUT),
                     arg!(-j --json "Produce output in json format (default: false)"),
+                    arg!(-p --project <project_name> "Project name used to filter jobs").required(false),
                 ])
                 .subcommand(
                     Command::new("project")
@@ -51,6 +52,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                             arg!(<project_name>).required(false),
                             arg!(<job_id>).required(false),
                         ])
+                        .hide(true)
                 )
         )
         .subcommand(
