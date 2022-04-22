@@ -179,7 +179,9 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
         {
             fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
         }
-        fs::create_dir_all(config_path.parent().unwrap())?;
+        let config_dir = config_path.parent().unwrap();
+        fs::create_dir_all(&config_dir)?;
+        fs::set_permissions(&config_dir, Permissions::from_mode(0o700))?;
         fs::rename(old_config_path, &config_path).unwrap();
     }
 
