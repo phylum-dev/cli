@@ -49,7 +49,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .about("Show jobs for a specific project")
                         .args(&[
                             arg!(<project_name> "Name of the project").required(false),
-                            arg!(<job_id> "The job id to show (deprecated)").required(false),
+                            arg!(<job_id> "The job id to show (deprecated)").required(false).hide(true),
                         ])
                 )
         )
