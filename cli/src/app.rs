@@ -37,7 +37,7 @@ pub fn app<'a>() -> clap::Command<'a> {
         )
         .subcommand(
             Command::new("history")
-                .about("Return information about historical scans")
+                .about("Return information about historical jobs")
                 .args(&[
                     arg!([JOB_ID] "The job id to query (or `current` for the most recent job)"),
                     arg!(-v --verbose "Increase verbosity of api response."),
@@ -46,10 +46,10 @@ pub fn app<'a>() -> clap::Command<'a> {
                 ])
                 .subcommand(
                     Command::new("project")
-                        .about("Shows a list of projects associated with the user")
+                        .about("Show jobs for a specific project")
                         .args(&[
-                            arg!(<project_name>).required(false),
-                            arg!(<job_id>).required(false),
+                            arg!(<project_name> "Name of the project").required(false),
+                            arg!(<job_id> "The job id to show (deprecated)").required(false),
                         ])
                 )
         )

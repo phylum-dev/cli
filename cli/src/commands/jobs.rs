@@ -102,12 +102,14 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 let resp = api.get_project_details(project_name).await;
                 print_response(&resp, pretty_print, None);
             } else {
+                log::warn!("WARNING: Showing job details with `phylum history project <project_name> <job_id>` is deprecated. Use `phylum history <job_id>` instead.");
                 // TODO The original code had unwrap in it above. This needs to
                 // be refactored in general for better flow
                 let job_id = resolve_job_id(project_job_id.expect("No job id found"))?;
                 action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
+            log::warn!("WARNING: Listing projects with `phylum history project` is deprecated. Use `phylum project` instead.");
             get_project_list(api, pretty_print).await;
         }
     } else if matches.is_present("JOB_ID") {
