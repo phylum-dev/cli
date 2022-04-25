@@ -166,7 +166,7 @@ impl Renderable for AllJobsStatusResponse {
 
         for (i, job) in self.jobs.iter().enumerate() {
             let mut state = Green.paint("PASS").to_string();
-            let score = format!("{}", (job.score * 100.0) as u32);
+            let score = format!("{:>3}", (job.score * 100.0) as u32);
             let mut colored_score = Green.paint(&score).to_string();
             let project_name = print::truncate(&job.project, 39);
             let colored_project_name = White.bold().paint(project_name).to_string();
@@ -182,7 +182,7 @@ impl Renderable for AllJobsStatusResponse {
             let first_line = format!(
                 "{}",
                 format_args!(
-                    "{:<3} {:<5} {} {:<50} {:<30} {:<40} {:>32}\n",
+                    "{:<3} {} {} {:<50} {:<30} {:<40} {:>32}\n",
                     (i + 1),
                     colored_score,
                     state,
