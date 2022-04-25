@@ -5,7 +5,6 @@ use std::fs::{DirBuilder, Permissions};
 use std::io::{self, Write};
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
-#[cfg(unix)]
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -181,15 +180,20 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
     // Migrate the config from the old location.
     if !config_path.exists() && old_config_path.exists() {
+        let config_dir = config_path.parent().unwrap();
+
         #[cfg(unix)]
         {
             fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
+            DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(&config_dir)?;
         }
-        let config_dir = config_path.parent().unwrap();
-        DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(&config_dir)?;
+
+        #[cfg(not(unix))]
+        fs::create_dir_all(&config_dir)?;
+
         fs::rename(old_config_path, &config_path).unwrap();
     }
 
