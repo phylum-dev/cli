@@ -7,7 +7,6 @@ NC='\033[0m'
 # Don't continue after failure:
 set -eu
 
-config_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/phylum"
 data_dir="${XDG_DATA_HOME:-${HOME}/.local/share}/phylum"
 completions_dir="${data_dir}/completions"
 bin_dir="${HOME}/.local/bin"
@@ -124,7 +123,7 @@ cleanup_pre_xdg() {
     sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
     sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
 
-    # Remove old entries from bashrc.
+    # Remove old entries from zshrc.
     sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
     sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
     sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
