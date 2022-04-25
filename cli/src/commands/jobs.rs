@@ -139,7 +139,10 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 Blue.paint("phylum analyze <lock_file>")
             );
         } else {
-            println!("Projects and most recent runs\n",);
+            if pretty_print {
+                println!("Projects and most recent runs\n",);
+            }
+
             print_response(&resp, pretty_print, None);
         }
     }
