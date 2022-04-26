@@ -33,7 +33,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
                 .arg(arg!(
                     -p --prerelease "Update to the latest prerelease (vs. stable, default: false)"
-                ))
+                ).hide(true))
         )
         .subcommand(
             Command::new("history")
