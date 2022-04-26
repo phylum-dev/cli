@@ -1,4 +1,4 @@
-use clap::{arg, Command};
+use clap::{arg, Command, ValueHint};
 use git_version::git_version;
 
 const VERSION: &str = git_version!(
@@ -24,7 +24,7 @@ pub fn app<'a>() -> clap::Command<'a> {
         .author("Phylum, Inc.")
         .about("Client interface to the Phylum system")
         .args(&[
-            arg!(-c --config <FILE> "Sets a custom config file").required(false),
+            arg!(-c --config <FILE> "Sets a custom config file").required(false).value_hint(ValueHint::FilePath),
             arg!(-t --timeout <TIMEOUT> "Set the timeout (in seconds) for requests to the Phylum api").required(false),
             arg!(--"no-check-certificate" "Don't validate the server certificate when performing api requests"),
         ])
@@ -43,6 +43,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     arg!(-v --verbose "Increase verbosity of api response."),
                     arg!(--filter <filter>).required(false).help(FILTER_ABOUT),
                     arg!(-j --json "Produce output in json format (default: false)"),
+                    arg!(-p --project <project_name> "Project name used to filter jobs").required(false),
                 ])
                 .subcommand(
                     Command::new("project")
@@ -51,6 +52,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                             arg!(<project_name> "Name of the project").required(false),
                             arg!(<job_id> "The job id to show (deprecated)").required(false).hide(true),
                         ])
+                        .hide(true)
                 )
         )
         .subcommand(
@@ -104,7 +106,7 @@ pub fn app<'a>() -> clap::Command<'a> {
             Command::new("analyze")
                 .about("Submit a request for analysis to the processing system")
                 .args(&[
-                    arg!([LOCKFILE] "The package lock file to submit."),
+                    arg!([LOCKFILE] "The package lock file to submit.").value_hint(ValueHint::FilePath),
                     arg!(-F --force "Force re-processing of packages (even if they already exist in the system)"),
                     arg!(-l <label>).required(false),
                     arg!(-v --verbose "Increase verbosity of api response."),
@@ -118,7 +120,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .hide(true)
                 .about("Submits a batch of requests to the processing system")
                 .args(&[
-                    arg!(-f --file <file> "File (or piped stdin) containing the list of packages (format `<name>:<version>`)").required(false),
+                    arg!(-f --file <file> "File (or piped stdin) containing the list of packages (format `<name>:<version>`)").required(false).value_hint(ValueHint::FilePath),
                     arg!(-t --type <type> "Package type (`npm`, `rubygems`, `pypi`, etc)").required(false),
                     arg!(-F --force "Force re-processing of packages (even if they already exist in the system)"),
                     arg!(-L --"low-priority"),

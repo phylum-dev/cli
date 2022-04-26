@@ -1,10 +1,10 @@
 use std::env;
 use std::fs;
 #[cfg(unix)]
-use std::fs::Permissions;
-use std::io;
+use std::fs::{DirBuilder, Permissions};
+use std::io::{self, Write};
 #[cfg(unix)]
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -94,10 +94,15 @@ pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
-    use std::io::Write;
-
     if let Some(config_dir) = path.parent() {
-        fs::create_dir_all(config_dir)?
+        #[cfg(not(unix))]
+        fs::create_dir_all(config_dir)?;
+
+        #[cfg(unix)]
+        DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(config_dir)?;
     }
     let yaml = serde_yaml::to_string(config)?;
 
@@ -175,11 +180,20 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
     // Migrate the config from the old location.
     if !config_path.exists() && old_config_path.exists() {
+        let config_dir = config_path.parent().unwrap();
+
         #[cfg(unix)]
         {
             fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
+            DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(&config_dir)?;
         }
-        fs::create_dir_all(config_path.parent().unwrap())?;
+
+        #[cfg(not(unix))]
+        fs::create_dir_all(&config_dir)?;
+
         fs::rename(old_config_path, &config_path).unwrap();
     }
 

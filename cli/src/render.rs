@@ -159,14 +159,21 @@ impl Renderable for ProjectDetailsResponse {
 
 impl Renderable for AllJobsStatusResponse {
     fn render(&self) -> String {
-        let mut runs = format!(
-            "Last {} runs of {} submitted\n\n",
-            self.count, self.total_jobs
-        );
+        format!(
+            "Last {} runs of {} submitted\n\n{}",
+            self.count,
+            self.total_jobs,
+            self.jobs.render()
+        )
+    }
+}
 
-        for (i, job) in self.jobs.iter().enumerate() {
+impl Renderable for Vec<JobDescriptor> {
+    fn render(&self) -> String {
+        let mut jobs = String::new();
+        for (i, job) in self.iter().enumerate() {
             let mut state = Green.paint("PASS").to_string();
-            let score = format!("{}", (job.score * 100.0) as u32);
+            let score = format!("{:>3}", (job.score * 100.0) as u32);
             let mut colored_score = Green.paint(&score).to_string();
             let project_name = print::truncate(&job.project, 39);
             let colored_project_name = White.bold().paint(project_name).to_string();
@@ -182,7 +189,7 @@ impl Renderable for AllJobsStatusResponse {
             let first_line = format!(
                 "{}",
                 format_args!(
-                    "{:<3} {:<5} {} {:<50} {:<30} {:<40} {:>32}\n",
+                    "{:<3} {} {} {:<50} {:<30} {:<40} {:>32}\n",
                     (i + 1),
                     colored_score,
                     state,
@@ -197,27 +204,12 @@ impl Renderable for AllJobsStatusResponse {
                 "             {}{:>62}{:>29} dependencies",
                 job.ecosystem, "Crit:-/High:-/Med:-/Low:-", job.num_dependencies
             );
-            runs.push_str(first_line.as_str());
-            runs.push_str(second_line.as_str());
-            runs.push_str(third_line.as_str());
-            runs.push_str("\n\n");
+            jobs.push_str(first_line.as_str());
+            jobs.push_str(second_line.as_str());
+            jobs.push_str(third_line.as_str());
+            jobs.push_str("\n\n");
         }
-
-        runs
-    }
-}
-
-impl Renderable for JobDescriptor {
-    fn render(&self) -> String {
-        let mut res = format!(
-            "Job id: {}\n====================================\n",
-            self.job_id
-        );
-
-        for p in &self.packages {
-            res.push_str(&p.render());
-        }
-        res
+        jobs.trim_end().into()
     }
 }
 

@@ -99,31 +99,50 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         if let Some(project_name) = project_name {
             if project_job_id.is_none() {
+                print_user_warning!(
+                    "`phylum history project <PROJECT>` is deprecated, \
+                    use `phylum history --project <PROJECT>` instead"
+                );
+
                 let resp = api.get_project_details(project_name).await;
                 print_response(&resp, pretty_print, None);
             } else {
-                print_user_warning!("Showing job details with `phylum history project <project_name> <job_id>` is deprecated. Use `phylum history <job_id>` instead.");
+                print_user_warning!(
+                    "`phylum history project <PROJECT> <JOB_ID>` is deprecated, \
+                    use `phylum history <JOB_ID>` instead"
+                );
+
                 // TODO The original code had unwrap in it above. This needs to
                 // be refactored in general for better flow
                 let job_id = resolve_job_id(project_job_id.expect("No job id found"))?;
                 action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
-            print_user_warning!("Listing projects with `phylum history project` is deprecated. Use `phylum project` instead.");
+            print_user_warning!(
+                "`phylum history project` is deprecated, use `phylum project` instead"
+            );
+
             get_project_list(api, pretty_print).await;
         }
     } else if matches.is_present("JOB_ID") {
         let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
+    } else if let Some(project) = matches.value_of("project") {
+        let resp = api.get_project_details(project).await.map(|r| r.jobs);
+        print_response(&resp, pretty_print, None);
     } else {
         let resp = api.get_status().await;
+
         if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
                 Blue.paint("phylum analyze <lock_file>")
             );
         } else {
-            println!("Projects and most recent runs\n",);
+            if pretty_print {
+                println!("Projects and most recent runs\n",);
+            }
+
             print_response(&resp, pretty_print, None);
         }
     }
