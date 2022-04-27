@@ -221,7 +221,9 @@ impl ApplicationUpdater {
             Err(_) => return false,
         };
 
-        self.pubkey.verify(bin, &signature).is_ok()
+        // TODO: Change the `allow_legacy` argument to `false` after we stop using legacy signatures
+        // https://github.com/phylum-dev/cli/issues/266
+        self.pubkey.verify(bin, &signature, true).is_ok()
     }
 }
 
