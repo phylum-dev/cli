@@ -101,7 +101,7 @@ copy_files() {
     bin_name="phylum"
 
     # Ensure binary directory exists.
-    mkdir -pm 700 "${bin_dir}"
+    (umask 077; mkdir -p "${bin_dir}")
 
     install -m 0755 "${bin_name}" "${bin_dir}/${bin_name}"
     if [ "${platform}" = "macos" ]; then
@@ -111,7 +111,7 @@ copy_files() {
     fi
 
     # Copy completions over
-    mkdir -pm 700 "${data_dir}"
+    (umask 077; mkdir -p "${data_dir}")
     cp -a "completions" "${data_dir}/"
     success "Copied completions to ${completions_dir}"
 }
