@@ -130,13 +130,12 @@ async fn handle_commands() -> CommandResult {
     }
 
     if let Some(matches) = matches.subcommand_matches("update") {
-        let spinner = Spinner::new(
+        let mut spinner = Spinner::new(
             Spinners::Dots12,
             "Downloading update and verifying binary signatures...".into(),
         );
         let res = update::do_update(matches.is_present("prerelease")).await;
-        spinner.stop();
-        println!();
+        spinner.stop_with_newline();
         let message = res?;
         print_user_success!("{}", message);
         return Ok(ExitCode::Ok.into());
@@ -220,7 +219,7 @@ async fn handle_commands() -> CommandResult {
 
 #[tokio::main]
 async fn main() {
-    env_logger::from_env(Env::default().default_filter_or("warn")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 
     match handle_commands().await {
         Ok(CommandValue::Action(action)) => match action {
