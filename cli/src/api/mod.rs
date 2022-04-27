@@ -193,6 +193,7 @@ impl PhylumApi {
                 project::put_create_project(&self.api_uri),
                 CreateProjectRequest {
                     name: name.to_string(),
+                    group_name: None,
                 },
             )
             .await?
