@@ -5,11 +5,10 @@ use std::process::Command;
 use anyhow::{Error, Result};
 use clap_complete::{generate_to, shells::*};
 use log::*;
-use simplelog::ColorChoice;
-use simplelog::TerminalMode;
+use simplelog::{ColorChoice, TermLogger, TerminalMode};
 
 fn main() -> Result<()> {
-    simplelog::TermLogger::init(
+    TermLogger::init(
         LevelFilter::Info,
         Default::default(),
         TerminalMode::Mixed,

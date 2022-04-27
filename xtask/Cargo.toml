@@ -11,6 +11,6 @@ clap = { version = "3.0.13", features = ["yaml"] }
 clap_complete = "3.0.5"
 home = "0.5.3"
 log = "0.4.14"
-simplelog = "0.11.2"
+simplelog = "0.12.0"
 phylum-cli = { path = "../cli" }
 fs_extra = "1.2.0"
