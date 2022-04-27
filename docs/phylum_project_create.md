@@ -7,6 +7,7 @@ hidden: false
 phylum project create <name>
 ```
 Create a new project.
+This command will create the appropriate `.phylum_project` file in the current working directory.
 
 ### Examples
 ```sh
