@@ -136,5 +136,5 @@ impl Shell {
 
 /// Get the user's home directory.
 fn home_dir() -> Result<PathBuf> {
-    home::home_dir().ok_or(anyhow!("Unable to find home directory"))
+    home::home_dir().ok_or_else(|| anyhow!("Unable to find home directory"))
 }
