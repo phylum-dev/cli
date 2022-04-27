@@ -118,15 +118,19 @@ copy_files() {
 
 # Remove old files and entries added before XDG directories conformity.
 cleanup_pre_xdg() {
-    # Remove old entries from bashrc.
-    sed -i'' "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
-    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
-    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
+    if [ -f "${HOME}/.bashrc" ]; then
+        # Remove old entries from bashrc.
+        sed -i'' "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
+        sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
+        sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
+    fi
 
-    # Remove old entries from zshrc.
-    sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
-    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
-    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
+    if [ -f "${HOME}/.zshrc" ]; then
+        # Remove old entries from zshrc.
+        sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
+        sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
+        sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
+    fi
 
     # Remove old phylum executable.
     rm -f "${HOME}/.phylum/phylum"
