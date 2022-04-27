@@ -147,7 +147,7 @@ jobs:
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v1
         with:
           # This check is already filtered down to only 'refs/tags/' and shouldn't "overmatch"
           prerelease: ${{ contains(github.ref, 'rc') }}
