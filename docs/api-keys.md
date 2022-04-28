@@ -9,3 +9,5 @@ The `offline_access` parameter in the `settings.yaml` file contains the API toke
 ```sh
 phylum auth token
 ```
+
+The API token can also be set via the environment variable `PHYLUM_API_KEY`. This environment variable will take precedence over the `offline_access` parameter in the `settings.yaml` file.
