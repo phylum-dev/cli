@@ -24,8 +24,8 @@ banner() {
 }
 
 cross_sed() {
-    sed -i.bak "$1" "$2"
-    rm "${2}.bak"
+    sed -i'.bak' "$1" "$2"
+    rm -f "${2}.bak"
 }
 
 # Get the platform name.
