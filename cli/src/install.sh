@@ -73,7 +73,7 @@ autoload -U compinit && compinit" \
     > "${phylum_rc}"
 
     if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
-        echo "\nsource ${phylum_rc}" >> "${rc_path}"
+        printf "\nsource %s\n" "${phylum_rc}" >> "${rc_path}"
     fi
 
     success "Completions are enabled for zsh."
@@ -94,7 +94,7 @@ source ${completions_dir}/phylum.bash" \
     > "${phylum_rc}"
 
     if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
-        echo "\nsource ${phylum_rc}" >> "${rc_path}"
+        printf "\nsource %s\n" "${phylum_rc}" >> "${rc_path}"
     fi
 
     success "Completions are enabled for bash."
