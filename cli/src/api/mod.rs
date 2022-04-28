@@ -127,8 +127,7 @@ impl PhylumApi {
         // here and be done.
         headers.insert(
             "Authorization",
-            HeaderValue::from_str(&format!("Bearer {}", String::from(&tokens.access_token)))
-                .unwrap(),
+            HeaderValue::from_str(&format!("Bearer {}", tokens.access_token)).unwrap(),
         );
         headers.insert("version", HeaderValue::from_str(version).unwrap());
 

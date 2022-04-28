@@ -79,7 +79,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
 
     if matches.is_present("bearer") {
         let tokens = auth::handle_refresh_tokens(&config.auth_info, refresh_token).await?;
-        println!("{}", String::from(&tokens.access_token));
+        println!("{}", tokens.access_token);
         Ok(ExitCode::Ok.into())
     } else {
         println!("{}", refresh_token);
