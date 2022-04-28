@@ -274,8 +274,8 @@ mod tests {
         let config: Config = read_configuration(&test_config_file).unwrap();
 
         assert_eq!(
-            String::from(&config.auth_info.offline_access.unwrap()),
-            String::from("ENV VARIABLE TOKEN")
+            config.auth_info.offline_access,
+            Some(RefreshToken::new("ENV VARIABLE TOKEN"))
         );
     }
 }
