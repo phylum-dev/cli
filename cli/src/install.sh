@@ -23,6 +23,11 @@ banner() {
     printf "\n    %bphylum-cli%b installer\n\n" "${GREEN}" "${NC}"
 }
 
+cross_sed() {
+    sed -i.bak "$1" "$2"
+    rm "${2}.bak"
+}
+
 # Get the platform name.
 get_platform() {
     platform_str=$(uname)
@@ -119,14 +124,14 @@ copy_files() {
 # Remove old files and entries added before XDG directories conformity.
 cleanup_pre_xdg() {
     # Remove old entries from bashrc.
-    sed -i'' "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
-    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
-    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
+    cross_sed "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
+    cross_sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
+    cross_sed "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
 
     # Remove old entries from zshrc.
-    sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
-    sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
-    sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
+    cross_sed "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
+    cross_sed "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
+    cross_sed "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
 
     # Remove old phylum executable.
     rm -f "${HOME}/.phylum/phylum"
