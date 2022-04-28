@@ -22,6 +22,7 @@ pub fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
                 Err("Threshold must be a number between 0-100")
             }
         })
+        .report(true)
         .interact_text()?;
 
     if threshold == "0" {
@@ -47,6 +48,7 @@ pub fn prompt_threshold(name: &str) -> Result<(i32, &str), std::io::Error> {
     let selection = Select::with_theme(&ColorfulTheme::default())
         .items(&items)
         .default(0)
+        .report(true)
         .interact()
         .unwrap();
     let action = items[selection];

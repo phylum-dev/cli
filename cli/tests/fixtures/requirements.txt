@@ -1,4 +1,5 @@
 PyYAML== 5.4.1
+Django[bcrypt]==4.0.4
 aihems == 0.0
 aiohttp == 3.7.4.post0
 airflow == 0.6

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use base64;
 use maplit::hashmap;
 use phylum_types::types::auth::*;
@@ -96,6 +96,7 @@ pub struct OidcServerSettings {
     pub issuer: Url,
     pub authorization_endpoint: Url,
     pub token_endpoint: Url,
+    pub userinfo_endpoint: Url,
 }
 
 /// Using config information, build the url for the keycloak login page.
@@ -231,10 +232,14 @@ pub async fn refresh_tokens(
         .timeout(Duration::from_secs(5))
         .form(&body)
         .send()
-        .await?
-        .json::<TokenResponse>()
         .await?;
-    Ok(response)
+
+    if let Err(error) = response.error_for_status_ref() {
+        // Print authentication error reason for the user.
+        Err(anyhow!(response.text().await?)).context(error)
+    } else {
+        Ok(response.json::<TokenResponse>().await?)
+    }
 }
 
 pub async fn handle_refresh_tokens(
@@ -243,4 +248,16 @@ pub async fn handle_refresh_tokens(
 ) -> Result<TokenResponse> {
     let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
     refresh_tokens(&oidc_settings, refresh_token).await
+}
+
+/// Represents the userdata stored for an authentication token.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UserInfo {
+    pub email: String,
+    pub sub: Option<String>,
+    pub name: Option<String>,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
+    pub preferred_username: Option<String>,
+    pub email_verified: Option<bool>,
 }

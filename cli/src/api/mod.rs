@@ -19,9 +19,10 @@ mod job;
 mod project;
 mod user_settings;
 
+use crate::auth::fetch_oidc_server_settings;
 use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
-use crate::auth::AuthAction;
+use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
 use crate::types::AuthStatusResponse;
 use crate::types::PingResponse;
@@ -179,6 +180,12 @@ impl PhylumApi {
             .authenticated)
     }
 
+    /// Get information about the authenticated user
+    pub async fn user_info(&self, auth_info: &AuthInfo) -> Result<UserInfo> {
+        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+        self.get(oidc_settings.userinfo_endpoint.into()).await
+    }
+
     /// Create a new project
     pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
         Ok(self
@@ -186,6 +193,7 @@ impl PhylumApi {
                 project::put_create_project(&self.api_uri),
                 CreateProjectRequest {
                     name: name.to_string(),
+                    group_name: None,
                 },
             )
             .await?
@@ -660,6 +668,36 @@ mod tests {
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.cancel(&job).await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn user_info() -> Result<()> {
+        let body = r#"
+        {
+            "sub": "sub",
+            "name": "John",
+            "given_name": "John Doe",
+            "family_name": "Doe",
+            "preferred_username": "johnny",
+            "email": "john-doe@example.org",
+            "email_verified": true
+        }"#;
+
+        let mock_server = build_mock_server().await;
+        Mock::given(method("GET"))
+            .and(path(USER_URI))
+            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
+            .mount(&mock_server)
+            .await;
+
+        let client = build_phylum_api(&mock_server).await?;
+        let auth_info = build_authenticated_auth_info(&mock_server);
+
+        let user = client.user_info(&auth_info).await?;
+
+        assert_eq!(user.email, "john-doe@example.org");
 
         Ok(())
     }

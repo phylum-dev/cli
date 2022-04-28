@@ -4,35 +4,32 @@ pub mod auth;
 pub mod jobs;
 pub mod lock_files;
 pub mod packages;
-pub mod projects;
+pub mod project;
+#[cfg(feature = "selfmanage")]
+pub mod uninstall;
 
 /// The possible result values of commands
 pub enum CommandValue {
-    /// Do nothing
-    Void,
-    /// A response to print to the user
-    String(String),
+    /// Exit with a specific code.
+    Code(ExitCode),
     /// An action to be undertaken wrt the build
     Action(Action),
 }
 
-impl From<Action> for CommandValue {
-    fn from(action: Action) -> Self {
-        Self::Action(action)
-    }
-}
-
-impl From<&'static str> for CommandValue {
-    fn from(str: &'static str) -> Self {
-        Self::String(str.to_owned())
+impl From<ExitCode> for CommandValue {
+    fn from(code: ExitCode) -> Self {
+        Self::Code(code)
     }
 }
 
 /// Shorthand type for Result whose ok value is CommandValue
 pub type CommandResult = anyhow::Result<CommandValue>;
 
-impl From<CommandValue> for CommandResult {
-    fn from(value: CommandValue) -> Self {
-        Ok(value)
-    }
+/// Unique exit code values.
+pub enum ExitCode {
+    Ok = 0,
+    NotAuthenticated = 10,
+    AuthenticationFailure = 11,
+    PackageNotFound = 12,
+    SetThresholdsFailure = 13,
 }

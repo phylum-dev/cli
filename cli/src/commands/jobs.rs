@@ -2,7 +2,7 @@ use std::io;
 use std::str::FromStr;
 
 use ansi_term::Color::Blue;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use reqwest::StatusCode;
 use serde::Serialize;
 use uuid::Uuid;
@@ -21,7 +21,7 @@ use crate::print_user_success;
 use crate::print_user_warning;
 use crate::summarize::Summarize;
 
-use super::projects::get_project_list;
+use super::project::get_project_list;
 
 fn handle_status<T>(
     resp: Result<JobStatusResponse<T>, PhylumApiError>,
@@ -99,34 +99,55 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         if let Some(project_name) = project_name {
             if project_job_id.is_none() {
+                print_user_warning!(
+                    "`phylum history project <PROJECT>` is deprecated, \
+                    use `phylum history --project <PROJECT>` instead"
+                );
+
                 let resp = api.get_project_details(project_name).await;
                 print_response(&resp, pretty_print, None);
             } else {
+                print_user_warning!(
+                    "`phylum history project <PROJECT> <JOB_ID>` is deprecated, \
+                    use `phylum history <JOB_ID>` instead"
+                );
+
                 // TODO The original code had unwrap in it above. This needs to
                 // be refactored in general for better flow
                 let job_id = resolve_job_id(project_job_id.expect("No job id found"))?;
                 action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
+            print_user_warning!(
+                "`phylum history project` is deprecated, use `phylum project` instead"
+            );
+
             get_project_list(api, pretty_print).await;
         }
     } else if matches.is_present("JOB_ID") {
         let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
+    } else if let Some(project) = matches.value_of("project") {
+        let resp = api.get_project_details(project).await.map(|r| r.jobs);
+        print_response(&resp, pretty_print, None);
     } else {
         let resp = api.get_status().await;
+
         if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
                 Blue.paint("phylum analyze <lock_file>")
             );
         } else {
-            println!("Projects and most recent runs\n",);
+            if pretty_print {
+                println!("Projects and most recent runs\n",);
+            }
+
             print_response(&resp, pretty_print, None);
         }
     }
 
-    CommandValue::Action(action).into()
+    Ok(CommandValue::Action(action))
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -142,19 +163,14 @@ pub async fn handle_submission(
     let mut verbose = false;
     let mut pretty_print = false;
     let mut display_filter = None;
-    let mut label = None;
-    let mut is_user = true; // is a user (non-batch) request
     let mut action = Action::None;
-
-    let project = get_current_project()
-        .map(|p: ProjectConfig| p.id)
-        .ok_or_else( ||
-            anyhow!(
-                "Failed to find a valid project configuration. Did you run `phylum projects create <project-name>`?"
-            )
-        )?;
+    let is_user; // is a user (non-batch) request
+    let project;
+    let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
+        project = project_uuid(api, matches).await?;
+
         // Should never get here if `LOCKFILE` was not specified
         let lockfile = matches
             .value_of("LOCKFILE")
@@ -174,6 +190,8 @@ pub async fn handle_submission(
         is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
+        project = project_uuid(api, matches).await?;
+
         let mut eof = false;
         let mut line = String::new();
         let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.value_of("file") {
@@ -219,6 +237,8 @@ pub async fn handle_submission(
                 }
             }
         }
+    } else {
+        unreachable!();
     }
 
     log::debug!("Submitting request...");
@@ -239,5 +259,27 @@ pub async fn handle_submission(
         log::debug!("Requesting status...");
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     }
-    CommandValue::Action(action).into()
+    Ok(CommandValue::Action(action))
+}
+
+/// Get the current project's UUID.
+///
+/// Assumes that the clap `matches` has a `project` arguments option.
+async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<Uuid> {
+    // Prefer `--project` if it was specified.
+    if let Some(project_name) = matches.value_of("project") {
+        let response = api.get_project_details(project_name).await;
+        let project_id = response.context("Project details request failure")?.id;
+        return Uuid::parse_str(&project_id).context("Invalid project UUID");
+    }
+
+    // Retrieve the project from the `.phylum_project` file.
+    get_current_project()
+        .map(|p: ProjectConfig| p.id)
+        .ok_or_else(|| {
+            anyhow!(
+                "Failed to find a valid project configuration. Specify an existing project using \
+                the `--project` flag, or create a new one with `phylum project create <name>`"
+            )
+        })
 }

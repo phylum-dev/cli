@@ -40,6 +40,12 @@ pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageT
         return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
     }
 
+    let packages = Poetry::new(path).ok()?.parse();
+    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+        log::debug!("Submitting file as type poetry lock");
+        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+    }
+
     let packages = Pom::new(path).ok()?.parse();
     if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
         log::debug!("Submitting file as type pom xml");
@@ -98,6 +104,10 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
             let parser = PipFile::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
         }
+        "poetry.lock" => {
+            let parser = Poetry::new(path).ok()?;
+            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+        }
         "effective-pom.xml" => {
             let parser = Pom::new(path).ok()?;
             parser.parse().ok().map(|pkgs| (pkgs, PackageType::Maven))
@@ -128,7 +138,7 @@ mod tests {
     fn it_can_identify_lock_file_types() {
         let test_cases = [
             ("tests/fixtures/Gemfile.lock", PackageType::RubyGems),
-            ("tests/fixtures/yarn.lock", PackageType::Npm),
+            ("tests/fixtures/yarn-v1.lock", PackageType::Npm),
             ("tests/fixtures/yarn.lock", PackageType::Npm),
             ("tests/fixtures/package-lock.json", PackageType::Npm),
             ("tests/fixtures/sample.csproj", PackageType::Nuget),
@@ -137,6 +147,7 @@ mod tests {
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),
             ("tests/fixtures/Pipfile.lock", PackageType::PyPi),
+            ("tests/fixtures/poetry.lock", PackageType::PyPi),
         ];
 
         for (file, expected_type) in &test_cases {

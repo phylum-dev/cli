@@ -9,8 +9,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
-      - development
+      - main
     tags:
       - '*'
 
@@ -57,7 +56,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -146,7 +147,7 @@ jobs:
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v1
         with:
           # This check is already filtered down to only 'refs/tags/' and shouldn't "overmatch"
           prerelease: ${{ contains(github.ref, 'rc') }}

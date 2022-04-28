@@ -7,7 +7,7 @@ use phylum_types::types::package::*;
 use reqwest::StatusCode;
 
 use crate::api::PhylumApi;
-use crate::commands::{CommandResult, CommandValue};
+use crate::commands::{CommandResult, ExitCode};
 use crate::print::print_response;
 use crate::print_user_warning;
 
@@ -53,8 +53,9 @@ pub async fn handle_get_package(
             "No matching packages found. Submit a lockfile for processing:\n\n\t{}\n",
             Blue.paint("phylum analyze <lock_file>")
         );
+        Ok(ExitCode::PackageNotFound.into())
     } else {
         print_response(&resp, pretty_print, None);
+        Ok(ExitCode::Ok.into())
     }
-    CommandValue::Void.into()
 }

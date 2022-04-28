@@ -1,3 +1,7 @@
+* 2.2.0 - Yarn v2 lockfile support and Python package extras support
+* 2.1.0 - Support npm v7 package-lock.json files
+* 2.0.1 - Poetry lock support
+* 2.0.0 - Support for maven / nuget. Numerous bugfixes and error message cleanup.
 * 1.2.0 - Add support for new authentication backend and ARM architectures
 * 1.1.5 - Option to ignore cert check; various bugfixes
 * 1.1.3 - Add issues filtering; display / error codes cleanup

@@ -1,6 +1,10 @@
 use std::env;
 use std::fs;
-use std::io;
+#[cfg(unix)]
+use std::fs::{DirBuilder, Permissions};
+use std::io::{self, Write};
+#[cfg(unix)]
+use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -73,7 +77,6 @@ fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
     opts.write(true).create(true).truncate(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::OpenOptionsExt;
         opts.mode(0o600);
     }
 
@@ -91,10 +94,15 @@ pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
-    use std::io::Write;
-
     if let Some(config_dir) = path.parent() {
-        fs::create_dir_all(config_dir)?
+        #[cfg(not(unix))]
+        fs::create_dir_all(config_dir)?;
+
+        #[cfg(unix)]
+        DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(config_dir)?;
     }
     let yaml = serde_yaml::to_string(config)?;
 
@@ -161,7 +169,39 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
     let home_path =
         home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
 
-    Ok(home_path.join(".phylum").join("settings.yaml"))
+    let config_dir = config_dir(&home_path);
+    let config_path = config_dir.join("phylum").join("settings.yaml");
+    let old_config_path = home_path.join(".phylum").join("settings.yaml");
+
+    // Migrate the config from the old location.
+    if !config_path.exists() && old_config_path.exists() {
+        let config_dir = config_path.parent().unwrap();
+
+        #[cfg(unix)]
+        {
+            fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
+            DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(&config_dir)?;
+        }
+
+        #[cfg(not(unix))]
+        fs::create_dir_all(&config_dir)?;
+
+        fs::rename(old_config_path, &config_path).unwrap();
+    }
+
+    Ok(config_path)
+}
+
+/// Resolve XDG config directory.
+pub fn config_dir(home_path: &Path) -> PathBuf {
+    env::var("XDG_CONFIG_HOME")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home_path.join(".config"))
 }
 
 #[cfg(test)]

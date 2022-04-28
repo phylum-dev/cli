@@ -5,11 +5,10 @@ use std::process::Command;
 use anyhow::{Error, Result};
 use clap_complete::{generate_to, shells::*};
 use log::*;
-use simplelog::ColorChoice;
-use simplelog::TerminalMode;
+use simplelog::{ColorChoice, TermLogger, TerminalMode};
 
 fn main() -> Result<()> {
-    simplelog::TermLogger::init(
+    TermLogger::init(
         LevelFilter::Info,
         Default::default(),
         TerminalMode::Mixed,
@@ -95,12 +94,12 @@ mod cli_args_test {
             vec!["history"],
             vec!["package", "react", "16.13.0"],
             vec!["ping"],
-            vec!["projects"],
-            vec!["projects", "create", "test-project"],
-            vec!["projects", "link", "test-project"],
-            vec!["projects", "--json"],
-            vec!["projects", "--json", "list"],
-            vec!["projects", "list", "--json"],
+            vec!["project"],
+            vec!["project", "create", "test-project"],
+            vec!["project", "link", "test-project"],
+            vec!["project", "--json"],
+            vec!["project", "--json", "list"],
+            vec!["project", "list", "--json"],
             vec!["analyze", "yarn.lock"],
             vec!["analyze", "yarn.lock", "--json"],
             vec!["version"],

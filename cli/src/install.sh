@@ -1,31 +1,34 @@
-#!/bin/bash
+#!/bin/sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
 # Don't continue after failure:
-set -euo pipefail
+set -eu
+
+data_dir="${XDG_DATA_HOME:-${HOME}/.local/share}/phylum"
+completions_dir="${data_dir}/completions"
+bin_dir="${HOME}/.local/bin"
 
 error() {
-    echo -e "${RED}    ERROR${NC} ${1}"
+    printf "%b    ERROR%b %s\n" "${RED}" "${NC}" "${1}"
 }
 
 success() {
-    echo -e "${GREEN}    OK${NC} ${1}"
+    printf "%b    OK%b %s\n" "${GREEN}" "${NC}" "${1}"
 }
 
 banner() {
-    echo -e "\n    ${GREEN}phylum-cli${NC} installer\n"
+    printf "\n    %bphylum-cli%b installer\n\n" "${GREEN}" "${NC}"
 }
 
 # Get the platform name.
 get_platform() {
-    local platform_str
     platform_str=$(uname)
-    if [[ "${platform_str}" == "Linux" ]]; then
+    if [ "${platform_str}" = "Linux" ]; then
         echo "linux"
-    elif [[ "${platform_str}" == "Darwin" ]]; then
+    elif [ "${platform_str}" = "Darwin" ]; then
         echo "macos"
     else
         echo "unknown"
@@ -49,59 +52,47 @@ get_rc_file() {
     esac
 }
 
-add_to_path_and_alias() {
-    rc_path=${1}
-    shell=${2}
-
-    # shellcheck disable=SC2016 # we don't want to expand $PATH here
-    if ! grep -q '.phylum:\$PATH' "${rc_path}"; then
-        export PATH="${HOME}/.phylum:${PATH}"
-        echo 'export PATH="$HOME/.phylum:$PATH"' >> "${rc_path}"
-        success "Updated ${shell}'s \$PATH to include ${HOME}/.phylum/."
-    fi
-
-    if ! grep -q 'alias ph=' "${rc_path}"; then
-        echo "alias ph='phylum'" >> "${rc_path}"
-        success "Created ph alias for phylum in ${shell}."
-    fi
-}
-
 patch_zshrc() {
+    phylum_rc="${data_dir}/zshrc"
     rc_path="${HOME}/.zshrc"
 
-    if [[ ! -f "${rc_path}" ]]; then
+    if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
-    if ! grep -q '.phylum/completions' "${rc_path}"; then
-        echo "fpath+=(\"\$HOME/.phylum/completions\")" >> "${rc_path}"
-    fi
-    if ! grep -q 'autoload -U compinit && compinit' "${rc_path}"; then
-        echo "autoload -U compinit && compinit" >> "${rc_path}"
-    fi
-    success "Completions are enabled for zsh."
+    echo "\
+export PATH=\"${bin_dir}:\$PATH\"
+alias ph='phylum'
+fpath+=(\"${completions_dir}\")
+autoload -U compinit && compinit" \
+    > "${phylum_rc}"
 
-    add_to_path_and_alias "${rc_path}" "zsh"
+    if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
+        printf "\nsource %s\n" "${phylum_rc}" >> "${rc_path}"
+    fi
+
+    success "Completions are enabled for zsh."
 }
 
 patch_bashrc() {
+    phylum_rc="${data_dir}/bashrc"
     rc_path="${HOME}/.bashrc"
 
-    if [[ ! -f "${rc_path}" ]]; then
+    if [ ! -f "${rc_path}" ]; then
         touch "${rc_path}"
     fi
 
-    if ! grep -q '.phylum/completions/phylum.bash' "${rc_path}"; then
-        echo "source \$HOME/.phylum/completions/phylum.bash" >> "${rc_path}"
+    echo "\
+export PATH=\"${bin_dir}:\$PATH\"
+alias ph='phylum'
+source ${completions_dir}/phylum.bash" \
+    > "${phylum_rc}"
+
+    if ! grep -q "source ${phylum_rc}" "${rc_path}"; then
+        printf "\nsource %s\n" "${phylum_rc}" >> "${rc_path}"
     fi
+
     success "Completions are enabled for bash."
-
-    add_to_path_and_alias "${rc_path}" "bash"
-}
-
-create_directory() {
-    # Create the config directory if one does not already exist.
-    install -d "${HOME}/.phylum"
 }
 
 copy_files() {
@@ -109,36 +100,57 @@ copy_files() {
     platform=$(set -e; get_platform)
     bin_name="phylum"
 
-    install -m 0755 "${bin_name}" "${HOME}/.phylum/phylum"
-    if [[ "${platform}" == "macos" ]]; then
-        # Don't be suspicious. Don't be suspicious
-        xattr -d com.apple.quarantine "${HOME}/.phylum/phylum"
-    fi
+    # Ensure binary directory exists.
+    (umask 077; mkdir -p "${bin_dir}")
 
-    # Ensure correct permissions on settings.yaml (if it exists).
-    if [[ -f "${HOME}/.phylum/settings.yaml" ]]; then
-        chmod 600 "${HOME}/.phylum/settings.yaml"
+    install -m 0755 "${bin_name}" "${bin_dir}/${bin_name}"
+    if [ "${platform}" = "macos" ]; then
+        # Clear all extended attributes. The important one to remove here is 'com.apple.quarantine'
+        # but there might be others or there might be none. `xattr -c` works in all of those cases.
+        xattr -c "${bin_dir}/${bin_name}"
     fi
 
     # Copy completions over
-    mkdir -p "${HOME}/.phylum/completions"
-    cp -a "completions" "${HOME}/.phylum/"
-    success "Copied completions to ${HOME}/.phylum/completions"
+    (umask 077; mkdir -p "${data_dir}")
+    cp -a "completions" "${data_dir}/"
+    success "Copied completions to ${completions_dir}"
 }
 
-pushd "$(dirname "$0")" >/dev/null
+# Remove old files and entries added before XDG directories conformity.
+cleanup_pre_xdg() {
+    if [ -f "${HOME}/.bashrc" ]; then
+        # Remove old entries from bashrc.
+        perl -i -n -e 'print unless /^source \$HOME\/.phylum\/completions\/phylum.bash$/' "${HOME}/.bashrc"
+        perl -i -n -e 'print unless /^export PATH="\$HOME\/.phylum:\$PATH"$/' "${HOME}/.bashrc"
+        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.bashrc"
+    fi
+
+    if [ -f "${HOME}/.zshrc" ]; then
+        # Remove old entries from zshrc.
+        perl -i -n -e 'print unless /^fpath\+=\("\$HOME\/.phylum\/completions"\)$/' "${HOME}/.zshrc"
+        perl -i -n -e 'print unless /^export PATH="\$HOME\/\.phylum:\$PATH"$/' "${HOME}/.zshrc"
+        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.zshrc"
+    fi
+
+    # Remove old phylum executable.
+    rm -f "${HOME}/.phylum/phylum"
+
+    # Remove old completions directory.
+    rm -rf "${HOME}/.phylum/completions"
+}
+
+cd "$(dirname "$0")"
 banner
-create_directory
+cleanup_pre_xdg
 copy_files
 patch_bashrc
 patch_zshrc
-popd >/dev/null
 
 success "Successfully installed phylum."
-rc_file=$(set -e; get_rc_file)
+rc_file=$(get_rc_file)
 cat << __instructions__
 
-    Source your ${rc_file} file, add ${HOME}/.phylum to your \$PATH variable, or
+    Source your ${rc_file} file, add ${bin_dir} to your \$PATH variable, or
     log in to a new terminal in order to make \`phylum\` available.
 
 __instructions__

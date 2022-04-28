@@ -15,7 +15,7 @@ mod ruby;
 pub use csharp::CSProj;
 pub use java::{GradleDeps, Pom};
 pub use javascript::{PackageLock, YarnLock};
-pub use python::{PipFile, PyRequirements};
+pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 
 pub type ParseResult = Result<Vec<PackageDescriptor>, Box<dyn Error>>;

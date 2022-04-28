@@ -7,8 +7,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
-      - development
+      - main
   # Run weekly on the default branch to make sure it always builds with the latest rust release
   schedule:
     - cron: '30 5 * * 1'
@@ -38,7 +37,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --manifest-path Cargo.toml --all-features --all --tests --examples -- -D clippy::all -D warnings
+          args: --locked --all-features -- -D warnings
 
   test-matrix:
     strategy:

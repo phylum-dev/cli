@@ -4,15 +4,16 @@ use std::str::FromStr;
 use ansi_term::Color::*;
 use chrono::NaiveDateTime;
 use color::Color;
-use phylum_types::types::job::JobStatusResponse;
-use phylum_types::types::job::{AllJobsStatusResponse, CancelJobResponse};
+use phylum_types::types::job::{
+    AllJobsStatusResponse, CancelJobResponse, JobDescriptor, JobStatusResponse,
+};
 use phylum_types::types::package::*;
 use phylum_types::types::project::*;
 use prettytable::*;
 
 use crate::filter::Filter;
+use crate::print::{self, table_format};
 use crate::render::Renderable;
-use crate::utils::table_format;
 
 #[derive(Debug)]
 pub struct Histogram {
@@ -138,7 +139,7 @@ where
     let details = [
         (
             "Project",
-            resp.project_name.to_string(),
+            print::truncate(&resp.project_name, 36).to_string(),
             "Label",
             resp.label.as_ref().unwrap_or(&"".to_string()).to_owned(),
         ),
@@ -155,25 +156,16 @@ where
             resp.job_id.to_string(),
         ),
         (
-            "Type",
-            ecosystem.render(),
-            "Language",
-            ecosystem.language().to_string(),
-        ),
-        (
             "User ID",
             resp.user_email.to_string(),
             "View in Phylum UI",
             format!("https://app.phylum.io/projects/{}", resp.project),
         ),
     ];
-    let summary = details.iter().fold("".to_string(), |acc, x| {
-        vec![
-            acc,
-            format!("{:>16}: {:<36} {:>24}: {:<36}", x.0, x.1, x.2, x.3),
-        ]
-        .join("\n")
+    let mut summary = details.iter().fold("".to_string(), |acc, x| {
+        format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
     });
+    summary = format!("{}\n       Ecosystem: {}", summary, ecosystem.render());
 
     let status = if resp.num_incomplete > 0 {
         format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
@@ -201,8 +193,8 @@ where
 
     if resp.num_incomplete > 0 {
         let notice = format!(
-            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.", 
-            Purple.paint("PROCESSING"), 
+            "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.",
+            Purple.paint("PROCESSING"),
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
         table.add_row(row![notice]);
@@ -340,6 +332,12 @@ impl Summarize for PackageStatusExtended {
             println!("\n Issues:");
             issues_table.printstd();
         }
+    }
+}
+
+impl Summarize for Vec<JobDescriptor> {
+    fn summarize(&self, _filter: Option<Filter>) {
+        println!("Last {} runs\n\n{}", self.len(), self.render());
     }
 }
 

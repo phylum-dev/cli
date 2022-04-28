@@ -7,7 +7,7 @@ API keys provide you with the ability to authenticate with the Phylum API withou
 
 The `offline_access` parameter in the `settings.yaml` file contains the API token. The following command can be used to retrieve your token value:  
 ```sh
-grep "offline_access" $HOME/.phylum/settings.yaml | sed 's/  offline_access: //'
+phylum auth token
 ```
 
 The API token can also be set via the environment variable `PHYLUM_API_KEY`. This environment variable will take precedence over the `offline_access` parameter in the `settings.yaml` file.
