@@ -120,16 +120,16 @@ copy_files() {
 cleanup_pre_xdg() {
     if [ -f "${HOME}/.bashrc" ]; then
         # Remove old entries from bashrc.
-        sed -i'' "/^source \$HOME\/.phylum\/completions\/phylum.bash$/d" "${HOME}/.bashrc"
-        sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.bashrc"
-        sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.bashrc"
+        perl -i -n -e 'print unless /^source \$HOME\/.phylum\/completions\/phylum.bash$/' "${HOME}/.bashrc"
+        perl -i -n -e 'print unless /^export PATH="\$HOME\/.phylum:\$PATH"$/' "${HOME}/.bashrc"
+        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.bashrc"
     fi
 
     if [ -f "${HOME}/.zshrc" ]; then
         # Remove old entries from zshrc.
-        sed -i'' "/^fpath+=(\"\$HOME\/.phylum\/completions\")$/d" "${HOME}/.zshrc"
-        sed -i'' "/^export PATH=\"\$HOME\/.phylum:\$PATH\"$/d" "${HOME}/.zshrc"
-        sed -i'' "/^alias ph='phylum'$/d" "${HOME}/.zshrc"
+        perl -i -n -e 'print unless /^fpath\+=\("\$HOME\/.phylum\/completions"\)$/' "${HOME}/.zshrc"
+        perl -i -n -e 'print unless /^export PATH="\$HOME\/\.phylum:\$PATH"$/' "${HOME}/.zshrc"
+        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.zshrc"
     fi
 
     # Remove old phylum executable.
