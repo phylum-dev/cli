@@ -4,6 +4,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::Command;
 
 use crate::api::PhylumApi;
+use crate::auth;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::print::print_sc_help;
@@ -65,18 +66,24 @@ pub async fn handle_auth_status(
 }
 
 /// Display the current authentication token to the user, if one exists.
-pub fn handle_auth_token(config: &Config) -> CommandResult {
-    match config.auth_info.offline_access.clone() {
-        Some(token) => {
-            println!("{}", token);
-            Ok(ExitCode::Ok.into())
-        }
+pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> CommandResult {
+    let refresh_token = match &config.auth_info.offline_access {
+        Some(refresh_token) => refresh_token,
         None => {
             print_user_warning!(
                 "User is not currently authenticated, please login with `phylum auth login`"
             );
-            Ok(ExitCode::NotAuthenticated.into())
+            return Ok(ExitCode::NotAuthenticated.into());
         }
+    };
+
+    if matches.is_present("bearer") {
+        let tokens = auth::handle_refresh_tokens(&config.auth_info, refresh_token).await?;
+        println!("{}", String::from(&tokens.access_token));
+        Ok(ExitCode::Ok.into())
+    } else {
+        println!("{}", refresh_token);
+        Ok(ExitCode::Ok.into())
     }
 }
 
@@ -113,8 +120,8 @@ pub async fn handle_auth(
         }
     } else if matches.subcommand_matches("status").is_some() {
         handle_auth_status(config, timeout, ignore_certs).await
-    } else if matches.subcommand_matches("token").is_some() {
-        handle_auth_token(&config)
+    } else if let Some(matches) = matches.subcommand_matches("token") {
+        handle_auth_token(&config, matches).await
     } else {
         print_sc_help(app_helper, "auth");
         Ok(ExitCode::Ok.into())
