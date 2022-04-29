@@ -5,8 +5,6 @@ use anyhow::anyhow;
 use chrono::Local;
 use uuid::Uuid;
 
-use phylum_types::types::user_settings::Threshold;
-
 use super::{CommandResult, ExitCode};
 use crate::api::PhylumApi;
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
@@ -123,7 +121,10 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         );
         println!();
 
-        println!("Specify the thresholds and actions for {}. A threshold of zero will disable the threshold.", format_args!("{}", White.paint(project_name)));
+        println!(
+            "Specify the thresholds and actions for {}. Accepted values are 0-100 or 'Disabled'.",
+            format_args!("{}", White.paint(project_name))
+        );
         println!();
 
         let project_details = match api.get_project_details(project_name).await {
@@ -142,29 +143,27 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             }
         };
 
-        for threshold_name in vec![
+        for threshold_name in &[
             "total project",
             "author",
             "engineering",
             "license",
             "malicious code",
             "vulnerability",
-        ]
-        .iter()
-        {
-            let (threshold, action) = prompt_threshold(threshold_name).unwrap_or((0, "none"));
+        ] {
+            let threshold = match prompt_threshold(threshold_name) {
+                Ok(threshold) => threshold,
+                Err(_) => {
+                    print_user_failure!("Failed to read user input");
+                    continue;
+                }
+            };
 
             // API expects slight key change for specific fields.
             let name = match *threshold_name {
                 "total project" => String::from("total"),
                 "malicious code" => String::from("maliciousCode"),
                 x => x.to_string(),
-            };
-
-            let threshold = Threshold {
-                threshold: threshold as f32 / 100.,
-                active: threshold != 0,
-                action: action.into(),
             };
 
             user_settings.set_threshold(project_details.id.clone(), name, threshold);
