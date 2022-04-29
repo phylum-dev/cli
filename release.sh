@@ -1,29 +1,48 @@
 #!/bin/sh
 
-LATEST=$(git describe --tags --abbrev=0)
+# Releasing a new version of the CLI is initiated with a tag and completed with
+# the Release workflow in CI. Run this script from the `main` branch and follow
+# the prompts to initiate a new release. There are a few manual steps that are
+# provided at the end. This is to ensure a chance to review the automated work
+# and not accidentally release a new version.
 
-printf "Latest release: %s\n\nGit log:\n" "${LATEST}"
+LATEST=$(git describe --tags --abbrev=0 --exclude="*-rc*")
+printf "Latest release: %s\n\n" "${LATEST}"
+printf "Git log since latest release:\n"
 git log --oneline HEAD "^${LATEST}"
 printf "\n"
 
-printf "version: "
+printf "version (w/o a leading 'v'): "
 read -r version
+TAG=v${version}
 
-printf "changelog: "
+printf "changelog (one line summary): "
 read -r changelog
 
-sed -E -i.bak "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
-sed -E -i.bak "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
+printf "\nUpdating CHANGELOG, bumping version, running 'cargo check', and adding files for commit ...\n\n"
+sed -E -i'.bak' "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
+rm -f CHANGELOG.bak
+sed -E -i'.bak' "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
+rm -f cli/Cargo.toml.bak
 cargo check
 git add Cargo.lock
 git add CHANGELOG
 git add cli/Cargo.toml
-git commit -m "v${version} - ${changelog}"
 
-TAG=v${version}
+commit_message="Bump to ${TAG} - ${changelog}"
+printf "\nFiles to be added and committed with message: \"%s\"\n" "${commit_message}"
+git status
 
-echo Tagging / pushing "${TAG}", press any key to proceed...
+printf "Press enter to proceed with the commit ..."
 read -r
-git push
-git tag --sign -m "${TAG} - ${changelog}" "${TAG}"
-git push "${TAG}"
+git commit -m "${commit_message}"
+
+cat << __instructions__
+
+The automation is done. Run the following commands manually,
+in sequence, to tag the release and push the changes:
+
+    git tag --sign -m "${TAG} - ${changelog}" ${TAG}
+    git push origin main ${TAG}
+
+__instructions__
