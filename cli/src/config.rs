@@ -132,6 +132,7 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
     if let Ok(key) = env::var("PHYLUM_API_KEY") {
         config.auth_info.offline_access = Some(RefreshToken::new(key));
     }
+
     Ok(config)
 }
 
@@ -261,5 +262,22 @@ mod tests {
         let test_config_file = temp_dir.as_path().join("test_config");
         let config: Config = parse_config(&test_config_file).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
+    }
+
+    #[test]
+    fn test_pass_api_key_through_env() {
+        const ENV_TOKEN: &str = "ENV VARIABLE TOKEN";
+
+        write_test_config();
+        let temp_dir = temp_dir();
+        let test_config_file = temp_dir.as_path().join("test_config");
+        env::set_var("PHYLUM_API_KEY", ENV_TOKEN);
+
+        let config: Config = read_configuration(&test_config_file).unwrap();
+
+        assert_eq!(
+            config.auth_info.offline_access,
+            Some(RefreshToken::new(ENV_TOKEN))
+        );
     }
 }
