@@ -1,10 +1,11 @@
 #!/bin/sh
 
-# Releasing a new version of the CLI is initiated with a tag and completed with
-# the Release workflow in CI. Run this script from the `main` branch and follow
-# the prompts to initiate a new release. There are a few manual steps that are
-# provided at the end. This is to ensure a chance to review the automated work
-# and not accidentally release a new version.
+# Releasing a new version of the CLI is initiated with a tag and completed with the
+# Release workflow in CI. Run this script from the `main` branch and follow the prompts
+# to initiate a new release. There is a manual step required at the end. This is to
+# ensure a chance to review the automated work and not accidentally release a new version.
+
+set -eu
 
 LATEST=$(git describe --tags --abbrev=0 --exclude="*-rc*")
 printf "Latest release: %s\n\n" "${LATEST}"
@@ -30,19 +31,22 @@ git add CHANGELOG
 git add cli/Cargo.toml
 
 commit_message="Bump to ${TAG} - ${changelog}"
-printf "\nFiles to be added and committed with message: \"%s\"\n" "${commit_message}"
+printf "\nFiles to be added and committed with message: \"%s\"\n\n" "${commit_message}"
 git status
 
-printf "Press enter to proceed with the commit ..."
+printf "Press enter to proceed with the commit and tag ..."
 read -r
 git commit -m "${commit_message}"
+git tag --sign -m "${TAG} - ${changelog}" "${TAG}"
+
+printf "\nOutput of the command: git show %s\n" "${TAG}"
+git show "${TAG}"
 
 cat << __instructions__
 
-The automation is done. Run the following commands manually,
-in sequence, to tag the release and push the changes:
+The automation is done.
+Run the following command manually to push the changes:
 
-    git tag --sign -m "${TAG} - ${changelog}" ${TAG}
     git push origin main ${TAG}
 
 __instructions__
