@@ -5,6 +5,8 @@ use anyhow::anyhow;
 use chrono::Local;
 use uuid::Uuid;
 
+use phylum_types::types::user_settings::Threshold;
+
 use super::{CommandResult, ExitCode};
 use crate::api::PhylumApi;
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
@@ -159,12 +161,13 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 x => x.to_string(),
             };
 
-            user_settings.set_threshold(
-                project_details.id.clone(),
-                name,
-                threshold,
-                action.to_string(),
-            );
+            let threshold = Threshold {
+                threshold: threshold as f32 / 100.,
+                active: threshold != 0,
+                action: action.into(),
+            };
+
+            user_settings.set_threshold(project_details.id.clone(), name, threshold);
         }
 
         let resp = api.put_user_settings(&user_settings).await;

@@ -1,3 +1,4 @@
+* 3.1.0 - Resolve project create error and add `--bearer` option to `phylum auth token`
 * 3.0.0 - Follow XDG spec and add uninstall command
 * 2.2.0 - Yarn v2 lockfile support and Python package extras support
 * 2.1.0 - Support npm v7 package-lock.json files
