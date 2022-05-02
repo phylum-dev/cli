@@ -1,0 +1,27 @@
+---
+name: Update Deps
+
+on:
+  workflow_dispatch:
+  # Run every Monday
+  schedule:
+    - cron: '30 5 * * 1'
+
+jobs:
+  cargo-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+
+      - name: Cargo update
+        run: cargo update
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "build: Bump dependencies"
+          body: |
+            Bump dependencies in Cargo.lock for all SemVer-compatible updates.
+          branch: auto-cargo-update
