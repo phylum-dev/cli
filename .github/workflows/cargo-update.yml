@@ -1,5 +1,5 @@
 ---
-name: Test
+name: Update Deps
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: Bump dependencies"
+          commit-message: "build: Bump dependencies"
           body: |
             Bump dependencies in Cargo.lock for all SemVer-compatible updates.
           branch: auto-cargo-update
