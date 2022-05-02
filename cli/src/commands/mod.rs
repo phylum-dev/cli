@@ -5,6 +5,8 @@ pub mod jobs;
 pub mod lock_files;
 pub mod packages;
 pub mod project;
+#[cfg(feature = "extensions")]
+pub mod extensions;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
 

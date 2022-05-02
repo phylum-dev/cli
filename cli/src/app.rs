@@ -138,6 +138,11 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .about("Display application version")
         );
 
+    #[cfg(feature = "extensions")]
+    {
+        app = app.subcommand(crate::commands::extensions::command());
+    }
+
     #[cfg(feature = "selfmanage")]
     {
         app = app.subcommand(

@@ -10,6 +10,8 @@ use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
+#[cfg(feature = "extensions")]
+use phylum_cli::commands::extensions::*;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
 use phylum_cli::commands::project::handle_project;
@@ -204,6 +206,9 @@ async fn handle_commands() -> CommandResult {
         return handle_submission(&mut api, config, &matches).await;
     } else if let Some(matches) = matches.subcommand_matches("history") {
         return handle_history(&mut api, matches).await;
+    } else if let Some(matches) = matches.subcommand_matches("extensions") {
+        #[cfg(feature = "extensions")]
+        return handle_extensions(matches).await;
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
