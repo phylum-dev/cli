@@ -24,19 +24,21 @@ impl Parseable for PackageLock {
         let parsed: JsonValue = serde_json::from_str(&self.0)?;
 
         let into_descriptor = |(name, v): (String, &JsonValue)| {
+            let version = v
+                .as_object()
+                .and_then(|x| x.get("version"))
+                .and_then(|v| v.as_str())
+                .map(|x| x.to_string())
+                .ok_or_else(|| format!("Failed to parse version for '{}' dependency", name))?;
             let pkg = PackageDescriptor {
                 name,
-                version: v
-                    .as_object()
-                    .and_then(|x| x["version"].as_str())
-                    .map(|x| x.to_string())
-                    .ok_or("Failed to parse version")?,
+                version,
                 package_type: PackageType::Npm,
             };
             Ok(pkg)
         };
 
-        if let Some(deps) = parsed["packages"].as_object() {
+        if let Some(deps) = parsed.get("packages").and_then(|v| v.as_object()) {
             deps.into_iter()
                 // Ignore empty reference to package itself.
                 .filter(|(k, _v)| !k.is_empty())
@@ -47,7 +49,7 @@ impl Parseable for PackageLock {
                 })
                 .map(into_descriptor)
                 .collect()
-        } else if let Some(deps) = parsed["dependencies"].as_object() {
+        } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
             deps.into_iter()
                 .map(|(k, v)| (k.to_string(), v))
                 .map(into_descriptor)
