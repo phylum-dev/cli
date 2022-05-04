@@ -1,6 +1,7 @@
 use std::io;
 use std::path::Path;
 
+use anyhow::anyhow;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
@@ -29,7 +30,7 @@ impl Parseable for PackageLock {
                 .and_then(|x| x.get("version"))
                 .and_then(|v| v.as_str())
                 .map(|x| x.to_string())
-                .ok_or_else(|| format!("Failed to parse version for '{}' dependency", name))?;
+                .ok_or_else(|| anyhow!("Failed to parse version for '{}' dependency", name))?;
             let pkg = PackageDescriptor {
                 name,
                 version,
@@ -55,7 +56,7 @@ impl Parseable for PackageLock {
                 .map(into_descriptor)
                 .collect()
         } else {
-            Err("Failed to find dependencies".into())
+            Err(anyhow!("Failed to find dependencies"))
         }
     }
 }
@@ -74,12 +75,14 @@ impl Parseable for YarnLock {
             Ok(yaml) => yaml,
             Err(_) => {
                 let (_, entries) =
-                    yarn::parse(&self.0).map_err(|_e| "Failed to parse yarn lock file")?;
+                    yarn::parse(&self.0).map_err(|_e| anyhow!("Failed to parse yarn lock file"))?;
                 return Ok(entries);
             }
         };
 
-        let mapping = yaml_v2.as_mapping().ok_or("Invalid yarn v2 lock file")?;
+        let mapping = yaml_v2
+            .as_mapping()
+            .ok_or_else(|| anyhow!("Invalid yarn v2 lock file"))?;
 
         let mut packages = Vec::new();
         for package in mapping
@@ -92,7 +95,7 @@ impl Parseable for YarnLock {
                 .get(&"resolution".into())
                 .and_then(YamlValue::as_str)
                 .filter(|s| !s.is_empty())
-                .ok_or_else(|| "Failed to parse resolution field in yarn lock file".to_owned())?;
+                .ok_or_else(|| anyhow!("Failed to parse resolution field in yarn lock file"))?;
 
             // Ignore workspace-local dependencies like project itself ("project@workspace:.").
             if resolution[1..].contains("@workspace:") {
@@ -103,16 +106,16 @@ impl Parseable for YarnLock {
                 // Extract npm version from patched dependencies.
                 Some((_, patch)) => patch
                     .rsplit_once("@npm")
-                    .ok_or_else(|| "Failed to parse patch in yarn lock file".to_owned())?,
+                    .ok_or_else(|| anyhow!("Failed to parse patch in yarn lock file"))?,
                 None => resolution
                     .rsplit_once("@npm")
-                    .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?,
+                    .ok_or_else(|| anyhow!("Failed to parse name in yarn lock file"))?,
             };
 
             let version = package
                 .get(&"version".into())
                 .and_then(YamlValue::as_str)
-                .ok_or_else(|| "Failed to parse version in yarn lock file".to_owned())?;
+                .ok_or_else(|| anyhow!("Failed to parse version in yarn lock file"))?;
 
             packages.push(PackageDescriptor {
                 name: name.to_owned(),

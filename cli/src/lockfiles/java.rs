@@ -1,6 +1,7 @@
 use std::io;
 use std::path::Path;
 
+use anyhow::anyhow;
 use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
@@ -20,8 +21,8 @@ impl Parseable for GradleDeps {
 
     /// Parses `gradle-dependencies.txt` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let (_, entries) =
-            gradle_dep::parse(&self.0).map_err(|_e| "Failed to parse requirements file")?;
+        let (_, entries) = gradle_dep::parse(&self.0)
+            .map_err(|_e| anyhow!("Failed to parse requirements file"))?;
         Ok(entries)
     }
 }

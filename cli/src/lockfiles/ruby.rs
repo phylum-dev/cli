@@ -1,6 +1,8 @@
 use std::io;
 use std::path::Path;
 
+use anyhow::anyhow;
+
 use super::parsers::gem;
 use crate::lockfiles::{ParseResult, Parseable};
 
@@ -16,7 +18,8 @@ impl Parseable for GemLock {
 
     /// Parses `Gemfile.lock` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let (_, entries) = gem::parse(&self.0).map_err(|_e| "Failed to parse gem lock file")?;
+        let (_, entries) =
+            gem::parse(&self.0).map_err(|_e| anyhow!("Failed to parse gem lock file"))?;
         Ok(entries)
     }
 }

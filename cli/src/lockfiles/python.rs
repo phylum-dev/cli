@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::{fs, io};
 
+use anyhow::anyhow;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 use serde_json::Value;
@@ -24,7 +25,7 @@ impl Parseable for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self) -> ParseResult {
         let (_, entries) =
-            pypi::parse(&self.0).map_err(|_e| "Failed to parse requirements file")?;
+            pypi::parse(&self.0).map_err(|_e| anyhow!("Failed to parse requirements file"))?;
         Ok(entries)
     }
 }
