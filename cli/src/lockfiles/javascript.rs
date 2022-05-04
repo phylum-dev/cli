@@ -99,15 +99,14 @@ impl Parseable for YarnLock {
                 continue;
             }
 
-            let (name, _version) = if let Some(index) = resolution[1..].find("@patch:") {
+            let (name, _version) = match resolution[1..].split_once("@patch:") {
                 // Extract npm version from patched dependencies.
-                resolution[index + "@patch:".len() + 1..]
+                Some((_, patch)) => patch
                     .rsplit_once("@npm")
-                    .ok_or_else(|| "Failed to parse patch in yarn lock file".to_owned())?
-            } else {
-                resolution
+                    .ok_or_else(|| "Failed to parse patch in yarn lock file".to_owned())?,
+                None => resolution
                     .rsplit_once("@npm")
-                    .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?
+                    .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?,
             };
 
             let version = package
