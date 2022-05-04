@@ -102,8 +102,8 @@ impl Parseable for YarnLock {
                 .filter(|s| !s.is_empty())
                 .ok_or_else(|| anyhow!("Failed to parse resolution field in yarn lock file"))?;
 
-            // Ignore workspace-local dependencies like project itself ("project@workspace:.").
-            if resolution[1..].contains("@workspace:") {
+            // Ignore workspace-local, or remote dependencies like "project@workspace:.".
+            if !resolution[1..].contains("@npm") {
                 continue;
             }
 
