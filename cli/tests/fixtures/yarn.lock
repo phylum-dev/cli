@@ -463,3 +463,10 @@ __metadata:
   checksum: ae0123222c6df65b437669d63dfa8c36cee20a504101b2fcd97b8bf76f91259c17f9f2b4d70a1e3c6bbcee7f51b28392833adb6b2770b23b01abec84e369660b
   languageName: node
   linkType: hard
+
+"@fake/package@patch:@fake/package@npm:1.2.3#.yarn/patches/@fake-package-npm-1.2.3-0deadbeef0::locator=root%40workspace%3A.":
+  version: 1.2.3
+  resolution: "@fake/package@patch:@fake/package@npm%3A1.2.3#.yarn/patches/@fake-package-npm-1.2.3-0deadbeef0::version=1.2.3&hash=ff00ff&locator=root%40workspace%3A."
+  checksum: ae0123222c6df65b437669d63dfa8c36cee20a504101b2fcd97b8bf76f91259c17f9f2b4d70a1e3c6bbcee7f51b28392833adb6b2770b23b01abec84e369660b
+  languageName: node
+  linkType: hard

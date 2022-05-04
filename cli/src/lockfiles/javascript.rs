@@ -91,16 +91,24 @@ impl Parseable for YarnLock {
             let resolution = package
                 .get(&"resolution".into())
                 .and_then(YamlValue::as_str)
+                .filter(|s| !s.is_empty())
                 .ok_or_else(|| "Failed to parse resolution field in yarn lock file".to_owned())?;
 
             // Ignore workspace-local dependencies like project itself ("project@workspace:.").
-            if resolution.contains("@workspace:") {
+            if resolution[1..].contains("@workspace:") {
                 continue;
             }
 
-            let (name, _version) = resolution
-                .rsplit_once("@npm:")
-                .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?;
+            let (name, _version) = if let Some(index) = resolution[1..].find("@patch:") {
+                // Extract npm version from patched dependencies.
+                resolution[index + "@patch:".len() + 1..]
+                    .rsplit_once("@npm")
+                    .ok_or_else(|| "Failed to parse patch in yarn lock file".to_owned())?
+            } else {
+                resolution
+                    .rsplit_once("@npm")
+                    .ok_or_else(|| "Failed to parse name in yarn lock file".to_owned())?
+            };
 
             let version = package
                 .get(&"version".into())
@@ -198,7 +206,7 @@ mod tests {
 
         let pkgs = parser.parse().unwrap();
 
-        assert_eq!(pkgs.len(), 50);
+        assert_eq!(pkgs.len(), 51);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -214,6 +222,11 @@ mod tests {
             PackageDescriptor {
                 name: "statuses".into(),
                 version: "1.5.0".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "@fake/package".into(),
+                version: "1.2.3".into(),
                 package_type: PackageType::Npm,
             },
         ];
