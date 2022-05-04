@@ -57,6 +57,7 @@ yaml-rust = "*"
 zeroize = "1.4.0"
 zip = "0.6.2"
 unicode-width = "0.1.9"
+walkdir = "2.3.2"
 
 [dev-dependencies]
 assert_cmd = "2.0.4"

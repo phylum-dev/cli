@@ -1,71 +1,12 @@
-use std::{convert::TryFrom, fs::File, io::Read, path::PathBuf};
+pub mod extension;
 
+use std::{convert::TryFrom, path::PathBuf};
+
+pub use extension::*;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{arg, ArgMatches, Command, ValueHint};
-use serde::Deserialize;
-
-const MANIFEST_NAME: &str = "PhylumExt.toml";
-
-#[derive(Debug)]
-pub struct Extension {
-    path: PathBuf,
-    manifest: ExtensionManifest,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ExtensionManifest {
-    name: String,
-    description: Option<String>,
-    entry_point: String,
-}
-
-// Load the extension from the specified path.
-impl TryFrom<PathBuf> for Extension {
-    type Error = anyhow::Error;
-
-    fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
-        if !path.is_dir() {
-            return Err(anyhow!("{}: not a directory", path.to_string_lossy()));
-        }
-
-        let manifest_path = path.join(MANIFEST_NAME);
-        if !manifest_path.exists() {
-            return Err(anyhow!(
-                "{}: missing {}",
-                path.to_string_lossy(),
-                MANIFEST_NAME
-            ));
-        }
-
-        let mut buf = Vec::new();
-        File::open(manifest_path)?.read_to_end(&mut buf)?;
-
-        let manifest: ExtensionManifest = toml::from_slice(&buf)?;
-        let entry_point_path = path.join(&manifest.entry_point);
-
-        if !entry_point_path.exists() {
-            return Err(anyhow!(
-                "{}: entry point does not exist",
-                entry_point_path.to_string_lossy()
-            ));
-        }
-
-        if !entry_point_path.is_file() {
-            return Err(anyhow!(
-                "{}: entry point is not a file",
-                entry_point_path.to_string_lossy()
-            ));
-        }
-
-        // TODO add further validation if necessary:
-        // - Check that the name matches /^[a-z0-9-_]+$/
-        // - Check that the entry point is a supported format (.wasm?)
-        // - Check that the entry point is appropriately signed
-        Ok(Extension { path, manifest })
-    }
-}
 
 pub fn command<'a>() -> Command<'a> {
     Command::new("extension")
@@ -90,12 +31,12 @@ pub fn extensions_subcommands<'a>(command: Command<'a>) -> Result<Command<'a>> {
         .filter(|ext| {
             command
                 .get_subcommands()
-                .all(|p| p.get_name() != ext.manifest.name)
+                .all(|p| p.get_name() != ext.name())
         })
         .collect::<Vec<_>>();
 
     Ok(extensions.into_iter().fold(command, |command, ext| {
-        command.subcommand(Command::new(&ext.manifest.name))
+        command.subcommand(Command::new(ext.name()))
     }))
 }
 
@@ -133,15 +74,7 @@ pub async fn subcmd_list_extensions() -> CommandResult {
     let extensions = list_extensions()?;
 
     extensions.into_iter().for_each(|ext| {
-        println!(
-            "{:20}   {}",
-            ext.manifest.name,
-            ext.manifest
-                .description
-                .as_ref()
-                .map(String::as_str)
-                .unwrap_or("")
-        );
+        println!("{:20}   {}", ext.name(), ext.description().unwrap_or(""));
     });
 
     Ok(CommandValue::Code(ExitCode::Ok))
@@ -152,9 +85,4 @@ fn list_extensions() -> Result<Vec<Extension>> {
     Ok(std::fs::read_dir(extensions_path()?)?
         .filter_map(|d| Extension::try_from(d.map(|d| d.path()).ok()?).ok())
         .collect::<Vec<_>>())
-}
-
-// Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
-fn extensions_path() -> Result<PathBuf, anyhow::Error> {
-    Ok(crate::config::data_dir()?.join("phylum").join("extensions"))
 }
