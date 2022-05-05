@@ -3,10 +3,10 @@ title: phylum project link
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
+Link a repository to a project
 ```sh
 phylum project link <name>
 ```
-Link a repository to a project.
 This command will create the appropriate `.phylum_project` file in the current working directory.
 
 ### Examples
