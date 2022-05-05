@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Interact with the Phylum API.
+Interact with the Phylum API
 
 ### Core Commands
 * [phylum analyze](https://docs.phylum.io/docs/phylum_analyze)
