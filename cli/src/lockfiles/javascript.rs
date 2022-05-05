@@ -100,11 +100,16 @@ impl Parseable for YarnLock {
                 .get(&"resolution".into())
                 .and_then(YamlValue::as_str)
                 .filter(|s| !s.is_empty())
-                .ok_or_else(|| anyhow!("Failed to parse resolution field in yarn lock file"))?;
+                .ok_or_else(|| anyhow!("Failed to parse yarn resolution field"))?;
 
             let (name, mut resolver) = match resolution[1..].split_once('@') {
                 Some((name, resolver)) => (&resolution[..name.len() + 1], resolver.to_owned()),
-                None => return Err(anyhow!("Failed to parse yarn depenency resolution")),
+                None => {
+                    return Err(anyhow!(
+                        "Failed to parse yarn resolution field for '{}'",
+                        resolution
+                    ))
+                }
             };
 
             // Extract original resolver from patch.
@@ -114,7 +119,12 @@ impl Parseable for YarnLock {
                 let subresolver = patch.and_then(|(_, resolver)| resolver.split_once('#'));
                 resolver = match subresolver {
                     Some((resolver, _)) => resolver.to_owned(),
-                    None => return Err(anyhow!("Failed to parse yarn patch dependency")),
+                    None => {
+                        return Err(anyhow!(
+                            "Failed to parse yarn patch dependency for '{}'",
+                            resolution
+                        ))
+                    }
                 };
 
                 // Revert character replacements.
@@ -130,7 +140,7 @@ impl Parseable for YarnLock {
                 let version = package
                     .get(&"version".into())
                     .and_then(YamlValue::as_str)
-                    .ok_or_else(|| anyhow!("Failed to parse version in yarn lock file"))?;
+                    .ok_or_else(|| anyhow!("Failed to parse yarn version for '{}'", resolution))?;
 
                 (name, version.to_owned())
             } else if resolver.starts_with("http:")
@@ -140,8 +150,8 @@ impl Parseable for YarnLock {
                 (name, resolver)
             } else {
                 return Err(anyhow!(
-                    "Failed to parse yarn dependency resolver: {}",
-                    resolver
+                    "Failed to parse yarn dependency resolver for '{}'",
+                    resolution
                 ));
             };
 
