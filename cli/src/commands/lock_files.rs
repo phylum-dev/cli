@@ -12,11 +12,23 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
         path.to_string_lossy()
     );
 
-    let packages = YarnLock::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type yarn lock");
-        return Ok((packages, PackageType::Npm));
+    fn xxx<T: Parseable>(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
+        let packages = T::new(path).ok()?.parse();
+        packages
+            .ok()
+            .filter(|pkgs| !pkgs.is_empty())
+            .map(|pkgs| (pkgs, PackageType::Npm))
     }
+
+    if let Some(packages) = xxx::<YarnLock>(path) {
+        log::debug!("Submitting file as type yarn lock");
+        return Ok(packages);
+    }
+    // let packages = YarnLock::new(path)?.parse();
+    // if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
+    //     log::debug!("Submitting file as type yarn lock");
+    //     return Ok((packages, PackageType::Npm));
+    // }
 
     let packages = PackageLock::new(path)?.parse();
     if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
