@@ -21,7 +21,7 @@ Interact with the Phylum API.
 
 ### Options
   `-c`, `--config <FILE>`
-  &emsp; Sets a custom configutation file
+  &emsp; Use a specific configuration file
   
   `-h`, `--help`
   &emsp; Print help information
