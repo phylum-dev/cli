@@ -2,9 +2,9 @@ pub mod extension;
 
 use std::{convert::TryFrom, path::PathBuf};
 
-pub use extension::*;
-use log::info;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
+pub use extension::*;
+use log::{error, info};
 
 use anyhow::Result;
 use clap::{arg, ArgMatches, Command, ValueHint};
@@ -26,8 +26,16 @@ pub fn command<'a>() -> Command<'a> {
 }
 
 /// Generate the subcommands for each extension.
-pub fn extensions_subcommands<'a>(command: Command<'a>) -> Result<Command<'a>> {
-    let extensions = list_extensions()?
+pub fn extensions_subcommands<'a>(command: Command<'a>) -> Command<'a> {
+    let extensions = match list_extensions() {
+        Ok(extensions) => extensions,
+        Err(e) => {
+            error!("Couldn't list extensions: {}", e);
+            return command;
+        }
+    };
+
+    let extensions = extensions
         .into_iter()
         .filter(|ext| {
             command
@@ -36,9 +44,9 @@ pub fn extensions_subcommands<'a>(command: Command<'a>) -> Result<Command<'a>> {
         })
         .collect::<Vec<_>>();
 
-    Ok(extensions.into_iter().fold(command, |command, ext| {
+    extensions.into_iter().fold(command, |command, ext| {
         command.subcommand(Command::new(ext.name()))
-    }))
+    })
 }
 
 /// Entry point for the `extensions` subcommand.

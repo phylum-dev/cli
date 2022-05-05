@@ -22,12 +22,12 @@ fn extension_is_installed_correctly() {
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
-        .assert();
+        .assert()
+        .success();
 
     std::env::set_var("XDG_DATA_HOME", &tmp_dir);
 
     let installed_ext = Extension::load("sample-extension").unwrap();
-
     assert_eq!(installed_ext.name(), "sample-extension");
 
     let not_installed_ext = Extension::load("sample-other-extension");
@@ -46,15 +46,25 @@ fn can_run_installed_extension() {
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
-        .assert();
+        .assert()
+        .success();
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)
         .arg("sample-extension")
-        .assert();
+        .assert()
+        .success();
 
-    cmd.success();
+    // TODO match the output of the sample extension to ensure it executed properly.
+    // TODO build a proper fixture which prints some output.
+    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+    println!("{}", output);
+    todo!(r#"
+        We need to settle on an extension format
+        and build a test fixture before we can
+        allow this test to pass.
+    "#);
 }
 
 // When a user installs a valid extension it should print a message indicating
@@ -62,14 +72,75 @@ fn can_run_installed_extension() {
 // some context on how the given extension works.
 #[test]
 fn successful_installation_prints_message() {
-    todo!();
+    let tmp_dir = TmpDir::new();
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("extension")
+        .arg("add")
+        .arg(fixtures_path().join("sample-extension"))
+        .assert()
+        .success();
+
+    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+    let re = Regex::new(r#"^Extension sample-extension installed correctly"#).unwrap();
+
+    assert!(output.lines().find(|m| re.is_match(m)).is_some());
 }
 
 // When a user attempts to install an invalid extension, it should fail and
 // inform the user as to why.
 #[test]
 fn unsuccessful_installation_prints_failure_message() {
-    todo!();
+    let tmp_dir = TmpDir::new();
+
+    fn stderr_match_regex(cmd: assert_cmd::assert::Assert, pattern: &str) -> bool {
+        let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+        let re = Regex::new(pattern).unwrap();
+
+        output.lines().find(|m| re.is_match(m)).is_some()
+    }
+
+    // Install the extension. Should succeed.
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("extension")
+        .arg("add")
+        .arg(fixtures_path().join("sample-extension"))
+        .assert()
+        .success();
+
+    // Reinstall the same extension. Should fail with an error.
+    assert!(stderr_match_regex(
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", &tmp_dir)
+            .arg("extension")
+            .arg("add")
+            .arg(fixtures_path().join("sample-extension"))
+            .assert()
+            .failure(),
+        r#": already exists"#,
+    ));
+
+    // Try to install the extension from the installed path. Should fail with an error.
+    assert!(stderr_match_regex(
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", &tmp_dir)
+            .arg("extension")
+            .arg("add")
+            .arg(
+                PathBuf::from(&tmp_dir)
+                    .join("phylum")
+                    .join("extensions")
+                    .join("sample-extension"),
+            )
+            .assert()
+            .failure(),
+        "skipping",
+    ));
 }
 
 // When a user runs `phylum extension remove <extensionName>` the extension
@@ -77,17 +148,23 @@ fn unsuccessful_installation_prints_failure_message() {
 #[test]
 fn extension_is_uninstalled_correctly() {
     let tmp_dir = TmpDir::new();
+
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
-        .assert();
+        .assert()
+        .success();
+
+    let extension_path = PathBuf::from(&tmp_dir)
+        .join("phylum")
+        .join("extensions")
+        .join("sample-extension");
 
     assert!(
-        std::fs::read_dir(&tmp_dir)
-            .unwrap()
+        walkdir::WalkDir::new(&extension_path)
             .into_iter()
             .collect::<Vec<_>>()
             .len()
@@ -99,19 +176,11 @@ fn extension_is_uninstalled_correctly() {
         .env("XDG_DATA_HOME", &tmp_dir)
         .arg("extension")
         .arg("remove")
-        .arg(fixtures_path().join("sample-extension"))
-        .assert();
-    for i in std::fs::read_dir(&tmp_dir).unwrap() {
-        println!("{:?}", i);
-    }
-    assert!(
-        std::fs::read_dir(&tmp_dir)
-            .unwrap()
-            .into_iter()
-            .collect::<Vec<_>>()
-            .len()
-            == 1
-    );
+        .arg("sample-extension")
+        .assert()
+        .success();
+
+    assert!(!extension_path.exists());
 }
 
 // When a user runs phylum extension or phylum extension list a list of

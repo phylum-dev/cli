@@ -29,6 +29,7 @@ impl Extension {
 
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
+        println!("Installing extension {}...", self.name());
         let target_prefix = extensions_path()?.join(self.name());
 
         if target_prefix == self.path {
@@ -50,24 +51,31 @@ impl Extension {
             }
         }
 
+        println!("Extension {} installed correctly", self.name());
+
         Ok(())
     }
 
     pub fn uninstall(self) -> Result<()> {
+        println!("Uninstalling extension {}...", self.name());
         let target_prefix = extensions_path()?.join(self.name());
 
         if target_prefix != self.path {
-            return Err(anyhow!("extension is not installed, skipping"));
+            println!("{:?} {:?}", target_prefix, self.path);
+            return Err(anyhow!("extension {} is not installed, skipping", self.name()));
         }
 
         for entry in walkdir::WalkDir::new(&self.path).contents_first(true) {
             let entry = entry?.into_path();
+            println!("removing {}...", entry.to_string_lossy());
             if entry.is_dir() {
                 std::fs::remove_dir(entry)?;
             } else if entry.is_file() {
                 std::fs::remove_file(entry)?;
             }
         }
+
+        println!("Extension {} uninstalled correctly", self.name());
 
         Ok(())
     }

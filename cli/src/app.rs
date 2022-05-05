@@ -141,6 +141,7 @@ pub fn app<'a>() -> clap::Command<'a> {
     #[cfg(feature = "extensions")]
     {
         app = app.subcommand(crate::commands::extensions::command());
+        app = crate::commands::extensions::extensions_subcommands(app);
     }
 
     #[cfg(feature = "selfmanage")]
