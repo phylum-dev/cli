@@ -53,6 +53,25 @@ impl Extension {
         Ok(())
     }
 
+    pub fn uninstall(self) -> Result<()> {
+        let target_prefix = extensions_path()?.join(self.name());
+
+        if target_prefix != self.path {
+            return Err(anyhow!("extension is not installed, skipping"));
+        }
+
+        for entry in walkdir::WalkDir::new(&self.path).contents_first(true) {
+            let entry = entry?.into_path();
+            if entry.is_dir() {
+                std::fs::remove_dir(entry)?;
+            } else if entry.is_file() {
+                std::fs::remove_file(entry)?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// Load an extension from the default path.
     pub fn load(name: &str) -> Result<Extension, anyhow::Error> {
         Extension::try_from(extensions_path()?.join(name))

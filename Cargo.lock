@@ -1239,6 +1239,7 @@ dependencies = [
  "phylum_types",
  "prettytable-rs",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "routerify",
  "serde",

@@ -206,9 +206,6 @@ async fn handle_commands() -> CommandResult {
         return handle_submission(&mut api, config, &matches).await;
     } else if let Some(matches) = matches.subcommand_matches("history") {
         return handle_history(&mut api, matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("extensions") {
-        #[cfg(feature = "extensions")]
-        return handle_extensions(matches).await;
     } else if should_cancel {
         if let Some(matches) = matches.subcommand_matches("cancel") {
             let request_id = matches.value_of("request_id").unwrap().to_string();
@@ -217,6 +214,9 @@ async fn handle_commands() -> CommandResult {
             let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
         }
+    } else if let Some(matches) = matches.subcommand_matches("extension") {
+        #[cfg(feature = "extensions")]
+        return handle_extensions(matches).await;
     }
 
     Ok(ExitCode::Ok.into())

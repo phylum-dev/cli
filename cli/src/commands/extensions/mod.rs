@@ -3,6 +3,7 @@ pub mod extension;
 use std::{convert::TryFrom, path::PathBuf};
 
 pub use extension::*;
+use log::info;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 
 use anyhow::Result;
@@ -56,6 +57,9 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
 /// Add the extension from the specified path.
 pub async fn subcmd_add_extension(path: PathBuf) -> CommandResult {
     let extension = Extension::try_from(path)?;
+    info!("Installing extension {}...", extension.name());
+
+    extension.install()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
@@ -63,7 +67,10 @@ pub async fn subcmd_add_extension(path: PathBuf) -> CommandResult {
 /// Handle the `extension remove` subcommand path.
 /// Remove the extension named as specified.
 pub async fn subcmd_remove_extension(name: &str) -> CommandResult {
-    let extension = Extension::try_from(extensions_path()?.join(name))?;
+    // let extension = Extension::try_from(extensions_path()?.join(name))?;
+    let extension = Extension::load(name)?;
+
+    extension.uninstall()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
