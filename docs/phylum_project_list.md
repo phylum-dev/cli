@@ -3,10 +3,10 @@ title: phylum project list
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
+List all existing projects
 ```sh
 phylum project list [OPTIONS]
 ```
-List all existing projects.
 
 ### Options
 `-j`, `--json`
