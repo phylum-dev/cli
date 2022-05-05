@@ -14,7 +14,7 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@v3
        
-      - name: Update v1-latest using rdme
+      - name: Update v2-latest using rdme
         uses: readmeio/rdme@7.2.0
         with:
-          rdme: docs ./docs --key=${{ secrets.README_API }} --version=1-latest
+          rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
