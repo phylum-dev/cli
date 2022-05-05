@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Create, list, link and set thresholds for projects.
+Create, list, link and set thresholds for projects
 
 ```sh
 phylum project [OPTIONS] [SUBCOMMAND]
