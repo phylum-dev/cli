@@ -477,3 +477,10 @@ __metadata:
   checksum: ae074be0bb012857ab5d3ae644d1163b908a48dd724b7d2567cfde309dc72222d460438f2411936a70dc949dc604ce1ef7118f7273bd525815579143c907e336
   languageName: node
   linkType: hard
+
+"@me/remote-patch@patch:@me/remote-patch@ssh://git@github.com:phylum/remote-patch#commit=d854c43ea177d1faeea56189249fff8c24a764bd#.yarn/patches/@me-remote-patch-0deadbeef0::locator=root%40workspace%3A.":
+  version: 1.2.3
+  resolution: "@me/remote-patch@patch:@me/remote-patch@ssh%3A//git@github.com%3Aphylum/remote-patch%23commit=d854c43ea177d1faeea56189249fff8c24a764bd#.yarn/patches/@me-remote-patch-0deadbeef0::version=1.2.3&hash=ff00ff&locator=root%40workspace%3A."
+  checksum: ae0123222c6df65b437669d63dfa8c36cee20a504101b2fcd97b8bf76f91259c17f9f2b4d70a1e3c6bbcee7f51b28392833adb6b2770b23b01abec84e369660b
+  languageName: node
+  linkType: hard
