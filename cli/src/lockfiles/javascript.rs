@@ -1,7 +1,9 @@
 use std::io;
 use std::path::Path;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
+use nom::error::convert_error;
+use nom::Finish;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
@@ -74,8 +76,11 @@ impl Parseable for YarnLock {
         let yaml_v2: YamlValue = match serde_yaml::from_str(&self.0) {
             Ok(yaml) => yaml,
             Err(_) => {
-                let (_, entries) =
-                    yarn::parse(&self.0).map_err(|_e| anyhow!("Failed to parse yarn lock file"))?;
+                let data = self.0.as_str();
+                let (_, entries) = yarn::parse(data)
+                    .finish()
+                    .map_err(|e| anyhow!(convert_error(data, e)))
+                    .context("Failed to parse yarn lock file")?;
                 return Ok(entries);
             }
         };
