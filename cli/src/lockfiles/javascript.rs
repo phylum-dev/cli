@@ -146,9 +146,9 @@ impl Parseable for YarnLock {
             };
 
             packages.push(PackageDescriptor {
-                name: name.to_owned(),
-                version: version,
                 package_type: PackageType::Npm,
+                name: name.to_owned(),
+                version,
             });
         }
 
