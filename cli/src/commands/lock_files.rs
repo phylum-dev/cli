@@ -1,78 +1,82 @@
-use phylum_types::types::package::*;
 use std::path::Path;
+
+use anyhow::{anyhow, Result};
+use phylum_types::types::package::*;
 
 use crate::lockfiles::*;
 
 /// Attempt to get packages from an unknown lockfile type
-pub fn try_get_packages(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
+pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     log::warn!(
         "Attempting to obtain packages from unrecognized lockfile type: {}",
         path.to_string_lossy()
     );
 
-    let packages = YarnLock::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = YarnLock::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type yarn lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
+        return Ok((packages, PackageType::Npm));
     }
 
-    let packages = PackageLock::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = PackageLock::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type package lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Npm));
+        return Ok((packages, PackageType::Npm));
     }
 
-    let packages = GemLock::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = GemLock::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type gem lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::RubyGems));
+        return Ok((packages, PackageType::RubyGems));
     }
 
-    let packages = PyRequirements::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = PyRequirements::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type pip requirements.txt");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+        return Ok((packages, PackageType::PyPi));
     }
 
-    let packages = PipFile::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = PipFile::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+        return Ok((packages, PackageType::PyPi));
     }
 
-    let packages = Poetry::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = Poetry::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type poetry lock");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::PyPi));
+        return Ok((packages, PackageType::PyPi));
     }
 
-    let packages = Pom::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = Pom::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type pom xml");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Maven));
+        return Ok((packages, PackageType::Maven));
     }
 
-    let packages = GradleDeps::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = GradleDeps::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type gradle dependencies");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Maven));
+        return Ok((packages, PackageType::Maven));
     }
 
-    let packages = CSProj::new(path).ok()?.parse();
-    if packages.is_ok() && !packages.as_ref().unwrap().is_empty() {
+    let packages = CSProj::new(path)?.parse();
+    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
         log::debug!("Submitting file as type csproj");
-        return packages.ok().map(|pkgs| (pkgs, PackageType::Nuget));
+        return Ok((packages, PackageType::Nuget));
     }
 
-    log::error!("Failed to identify lock file type");
-    None
+    Err(anyhow!("Failed to identify lockfile type"))
 }
 
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
-pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>, PackageType)> {
+pub fn get_packages_from_lockfile(path: &str) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     let path = Path::new(path);
-    let file = path.file_name()?.to_str()?;
+    let file = path
+        .file_name()
+        .and_then(|file| file.to_str())
+        .ok_or_else(|| anyhow!("Lockfile path has no file name"))?;
     let ext = path.extension().and_then(|ext| ext.to_str());
 
     let pattern = match ext {
@@ -82,52 +86,47 @@ pub fn get_packages_from_lockfile(path: &str) -> Option<(Vec<PackageDescriptor>,
 
     let res = match pattern {
         "Gemfile.lock" => {
-            let parser = GemLock::new(path).ok()?;
-            parser
-                .parse()
-                .ok()
-                .map(|pkgs| (pkgs, PackageType::RubyGems))
+            let parser = GemLock::new(path)?;
+            (parser.parse()?, PackageType::RubyGems)
         }
         "package-lock.json" => {
-            let parser = PackageLock::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
+            let parser = PackageLock::new(path)?;
+            (parser.parse()?, PackageType::Npm)
         }
         "yarn.lock" => {
-            let parser = YarnLock::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Npm))
+            let parser = YarnLock::new(path)?;
+            (parser.parse()?, PackageType::Npm)
         }
         "requirements.txt" => {
-            let parser = PyRequirements::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+            let parser = PyRequirements::new(path)?;
+            (parser.parse()?, PackageType::PyPi)
         }
         "Pipfile.txt" | "Pipfile.lock" => {
-            let parser = PipFile::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+            let parser = PipFile::new(path)?;
+            (parser.parse()?, PackageType::PyPi)
         }
         "poetry.lock" => {
-            let parser = Poetry::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::PyPi))
+            let parser = Poetry::new(path)?;
+            (parser.parse()?, PackageType::PyPi)
         }
         "effective-pom.xml" => {
-            let parser = Pom::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Maven))
+            let parser = Pom::new(path)?;
+            (parser.parse()?, PackageType::Maven)
         }
         "gradle-dependencies.txt" => {
-            let parser = GradleDeps::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Maven))
+            let parser = GradleDeps::new(path)?;
+            (parser.parse()?, PackageType::Maven)
         }
         ".csproj" => {
-            let parser = CSProj::new(path).ok()?;
-            parser.parse().ok().map(|pkgs| (pkgs, PackageType::Nuget))
+            let parser = CSProj::new(path)?;
+            (parser.parse()?, PackageType::Nuget)
         }
-        _ => try_get_packages(path),
+        _ => try_get_packages(path)?,
     };
 
-    let pkg_count = res.as_ref().map(|p| p.0.len()).unwrap_or_default();
+    log::debug!("Read {} packages from file `{}`", res.0.len(), file);
 
-    log::debug!("Read {} packages from file `{}`", pkg_count, file);
-
-    res
+    Ok(res)
 }
 
 #[cfg(test)]
