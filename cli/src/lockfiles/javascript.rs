@@ -100,32 +100,65 @@ impl Parseable for YarnLock {
                 .get(&"resolution".into())
                 .and_then(YamlValue::as_str)
                 .filter(|s| !s.is_empty())
-                .ok_or_else(|| anyhow!("Failed to parse resolution field in yarn lock file"))?;
+                .ok_or_else(|| anyhow!("Failed to parse yarn resolution field"))?;
 
-            // Ignore workspace-local dependencies like project itself ("project@workspace:.").
-            if resolution[1..].contains("@workspace:") {
-                continue;
-            }
-
-            let (name, _version) = match resolution[1..].split_once("@patch:") {
-                // Extract npm version from patched dependencies.
-                Some((_, patch)) => patch
-                    .rsplit_once("@npm")
-                    .ok_or_else(|| anyhow!("Failed to parse patch in yarn lock file"))?,
-                None => resolution
-                    .rsplit_once("@npm")
-                    .ok_or_else(|| anyhow!("Failed to parse name in yarn lock file"))?,
+            let (name, mut resolver) = match resolution[1..].split_once('@') {
+                Some((name, resolver)) => (&resolution[..name.len() + 1], resolver.to_owned()),
+                None => {
+                    return Err(anyhow!(
+                        "Failed to parse yarn resolution field for '{}'",
+                        resolution
+                    ))
+                }
             };
 
-            let version = package
-                .get(&"version".into())
-                .and_then(YamlValue::as_str)
-                .ok_or_else(|| anyhow!("Failed to parse version in yarn lock file"))?;
+            // Extract original resolver from patch.
+            if let Some((_, patch)) = resolver.split_once("patch:") {
+                // Exctract resolver from `@scope/package@RESOLVER#patch`.
+                let patch = patch[1..].split_once('@');
+                let subresolver = patch.and_then(|(_, resolver)| resolver.split_once('#'));
+                resolver = match subresolver {
+                    Some((resolver, _)) => resolver.to_owned(),
+                    None => {
+                        return Err(anyhow!(
+                            "Failed to parse yarn patch dependency for '{}'",
+                            resolution
+                        ))
+                    }
+                };
+
+                // Revert character replacements.
+                resolver = resolver.replace("%3A", ":");
+                resolver = resolver.replace("%23", "#");
+                resolver = resolver.replace("%25", "%");
+            }
+
+            let (name, version) = if resolver.starts_with("workspace:") {
+                // Ignore filesystem dependencies like the project ("project@workspace:.").
+                continue;
+            } else if resolver.starts_with("npm:") {
+                let version = package
+                    .get(&"version".into())
+                    .and_then(YamlValue::as_str)
+                    .ok_or_else(|| anyhow!("Failed to parse yarn version for '{}'", resolution))?;
+
+                (name, version.to_owned())
+            } else if resolver.starts_with("http:")
+                || resolver.starts_with("https:")
+                || resolver.starts_with("ssh:")
+            {
+                (name, resolver)
+            } else {
+                return Err(anyhow!(
+                    "Failed to parse yarn dependency resolver for '{}'",
+                    resolution
+                ));
+            };
 
             packages.push(PackageDescriptor {
-                name: name.to_owned(),
-                version: version.to_owned(),
                 package_type: PackageType::Npm,
+                name: name.to_owned(),
+                version,
             });
         }
 
@@ -213,7 +246,7 @@ mod tests {
 
         let pkgs = parser.parse().unwrap();
 
-        assert_eq!(pkgs.len(), 51);
+        assert_eq!(pkgs.len(), 53);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -234,6 +267,20 @@ mod tests {
             PackageDescriptor {
                 name: "@fake/package".into(),
                 version: "1.2.3".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "ethereumjs-abi".into(),
+                version: "https://github.com/ethereumjs/ethereumjs-abi.git\
+                    #commit=ee3994657fa7a427238e6ba92a84d0b529bbcde0"
+                    .into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "@me/remote-patch".into(),
+                version: "ssh://git@github.com:phylum/remote-patch\
+                    #commit=d854c43ea177d1faeea56189249fff8c24a764bd"
+                    .into(),
                 package_type: PackageType::Npm,
             },
         ];
