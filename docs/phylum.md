@@ -9,7 +9,7 @@ Interact with the Phylum API.
 ### Core Commands
 * [phylum analyze](https://docs.phylum.io/docs/phylum_analyze)
 * [phylum auth](https://docs.phylum.io/docs/phylum_auth)
-* [phylum projects](https://docs.phylum.io/docs/phylum_projects)
+* [phylum project](https://docs.phylum.io/docs/phylum_project)
 
 ### Additional Commands
 * [phylum help](https://docs.phylum.io/docs/phylum_help)
