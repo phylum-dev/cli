@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::io;
 use std::marker::Sized;
 use std::path::Path;
@@ -18,7 +17,7 @@ pub use javascript::{PackageLock, YarnLock};
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 
-pub type ParseResult = Result<Vec<PackageDescriptor>, Box<dyn Error>>;
+pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
 pub trait Parseable {
     fn new(filename: &Path) -> Result<Self, io::Error>
