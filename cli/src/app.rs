@@ -1,6 +1,8 @@
 use clap::{arg, Command, ValueHint};
 use git_version::git_version;
 
+use crate::commands::parse;
+
 const VERSION: &str = git_version!(
     args = ["--dirty=-modified", "--tags"],
     cargo_prefix = "cargo:"
@@ -106,6 +108,14 @@ pub fn app<'a>() -> clap::Command<'a> {
         )
         .subcommand(
             Command::new("ping").about("Ping the remote system to verify it is available")
+        )
+        .subcommand(
+            Command::new("parse")
+                .about("Parse a lockfile")
+                .args(&[
+                    arg!(<LOCKFILE> "The package lock file to submit.").value_hint(ValueHint::FilePath),
+                    arg!(-t --"lockfile-type" <type> "The type of the lock file (default: auto)").required(false).possible_values(parse::lockfile_types()),
+                ])
         )
         .subcommand(
             Command::new("analyze")
