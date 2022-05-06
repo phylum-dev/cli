@@ -1,3 +1,5 @@
+#![cfg(feature = "extensions")]
+
 use std::convert::TryFrom;
 use std::env;
 use std::fs;

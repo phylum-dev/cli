@@ -196,14 +196,17 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
 /// Resolve XDG data directory.
 pub fn data_dir() -> Result<PathBuf> {
-    let home_path =
-        home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
-
-    Ok(env::var("XDG_DATA_HOME")
+    if let Some(data_dir) = env::var("XDG_DATA_HOME")
         .ok()
         .filter(|s| !s.is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|| home_path.join(".local").join("share")))
+    {
+        Ok(data_dir)
+    } else {
+        home::home_dir()
+            .ok_or_else(|| anyhow!("Couldn't find the user's home directory"))
+            .map(|home_path| home_path.join(".local").join("share"))
+    }
 }
 
 /// Resolve XDG config directory.
