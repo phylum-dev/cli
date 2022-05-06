@@ -1,7 +1,8 @@
 ---
 title: Quickstart
 excerpt: This page will help you get started with Phylum CLI tool. You'll be up and running in a jiffy!
-category: 61e72e3a50a88e001a92ee5d
+category: 6255e67693d5200013b1fa3e
+hidden: false
 ---
 
 <p align="center">
@@ -46,25 +47,25 @@ The command line interface (CLI) allows users to submit their project package de
    ./install.sh
    ```
 
-1. [Register](https://docs.phylum.io/docs/registration) for an account (if you don't already have one)
+1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
 
    ```
    phylum auth register
    ```
 
-1. [Authenticate](https://docs.phylum.io/docs/authentication) with Phylum
+1. [Authenticate](https://docs.phylum.io/docs/phylum_auth_login) with Phylum
 
    ```
    phylum auth login
    ```
 
-1. [Create a new Phylum project](https://docs.phylum.io/docs/projects#creating-a-new-project) in your project directory
+1. [Create a new Phylum project](https://docs.phylum.io/docs/phylum_project_create) in your project directory
 
    ```
    phylum project create <project-name>
    ```
 
-1. [Submit your package lock file](https://docs.phylum.io/docs/analyzing-dependencies)
+1. [Submit your package lock file](https://docs.phylum.io/docs/phylum_analyze)
 
    ```
    phylum analyze <package-lock-file.ext>

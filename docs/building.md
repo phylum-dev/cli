@@ -1,6 +1,7 @@
 ---
 title: Building
-category: 61e72e3a50a88e001a92ee5d
+category: 6255e67693d5200013b1fa41
+hidden: false
 ---
 
 Phylum is written in Rust, so you'll need a recent Rust installation to build it (we tested with v1.58.0). [Install Rust](https://www.rust-lang.org/tools/install)
