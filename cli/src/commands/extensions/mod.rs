@@ -15,7 +15,7 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("add")
                 .about("Install extension")
-                .arg(arg!([PATH]).required(true).value_hint(ValueHint::FilePath)),
+                .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
             Command::new("remove")
