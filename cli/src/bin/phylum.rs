@@ -64,6 +64,11 @@ async fn handle_commands() -> CommandResult {
         return handle_uninstall(matches);
     }
 
+    #[cfg(feature = "extensions")]
+    if let Some(matches) = matches.subcommand_matches("extension") {
+        return handle_extensions(matches).await;
+    }
+
     let settings_path = get_home_settings_path()?;
 
     let config_path = matches
@@ -213,11 +218,6 @@ async fn handle_commands() -> CommandResult {
                 .context("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")?;
             let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
-        }
-    } else if cfg!(feature = "extensions") {
-        #[cfg(feature = "extensions")]
-        if let Some(matches) = matches.subcommand_matches("extension") {
-            return handle_extensions(matches).await;
         }
     }
 

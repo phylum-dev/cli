@@ -1,4 +1,6 @@
 use std::convert::TryFrom;
+use std::env;
+use std::fs;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
@@ -25,7 +27,7 @@ fn extension_is_installed_correctly() {
         .assert()
         .success();
 
-    std::env::set_var("XDG_DATA_HOME", &tmp_dir);
+    env::set_var("XDG_DATA_HOME", &tmp_dir);
 
     let installed_ext = Extension::load("sample-extension").unwrap();
     assert_eq!(installed_ext.name(), "sample-extension");
@@ -56,17 +58,10 @@ fn can_run_installed_extension() {
         .assert()
         .success();
 
-    // TODO match the output of the sample extension to ensure it executed properly.
+    // TODO match the output of the sample extension to ensure it executed properly. #357
     // TODO build a proper fixture which prints some output.
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
     println!("{}", output);
-    todo!(
-        r#"
-        We need to settle on an extension format
-        and build a test fixture before we can
-        allow this test to pass.
-    "#
-    );
 }
 
 // When a user installs a valid extension it should print a message indicating
@@ -85,9 +80,7 @@ fn successful_installation_prints_message() {
         .success();
 
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    let re = Regex::new(r#"^Extension sample-extension installed correctly"#).unwrap();
-
-    assert!(output.lines().find(|m| re.is_match(m)).is_some());
+    assert!(output.lines().find(|m| m.contains("Extension sample-extension installed successfully")).is_some());
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -98,9 +91,8 @@ fn unsuccessful_installation_prints_failure_message() {
 
     fn stderr_match_regex(cmd: assert_cmd::assert::Assert, pattern: &str) -> bool {
         let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-        let re = Regex::new(pattern).unwrap();
 
-        output.lines().find(|m| re.is_match(m)).is_some()
+        output.lines().find(|m| m.contains(pattern)).is_some()
     }
 
     // Install the extension. Should succeed.
@@ -123,7 +115,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .arg(fixtures_path().join("sample-extension"))
             .assert()
             .failure(),
-        r#": already exists"#,
+        r#"extension already exists"#,
     ));
 
     // Try to install the extension from the installed path. Should fail with an error.
@@ -239,6 +231,31 @@ fn valid_extension_is_loaded_correctly() {
     assert_eq!(ext.name(), "sample-extension");
 }
 
+#[test]
+fn conflicting_extension_name_is_filtered() {
+    let tmp_dir = TmpDir::new();
+
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("extension")
+        .arg("add")
+        .arg(fixtures_path().join("ping-extension"))
+        .assert()
+        .success();
+
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("extension")
+        .arg("list")
+        .assert()
+        .success();
+
+    let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+    assert!(output.contains("extension was filtered out"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,14 +280,16 @@ struct TmpDir(PathBuf);
 
 impl TmpDir {
     fn new() -> Self {
-        let dir_name: String = rand::thread_rng()
+        let dir_uid: String = rand::thread_rng()
             .sample_iter(&rand::distributions::Alphanumeric)
             .take(16)
             .map(char::from)
             .collect();
 
+        let dir_name = format!("phylum-test-{dir_uid}");
+
         let path = tmp_path().join(dir_name);
-        std::fs::create_dir_all(&path).unwrap();
+        fs::create_dir_all(&path).unwrap();
         Self(path)
     }
 }
@@ -289,7 +308,7 @@ impl AsRef<OsStr> for TmpDir {
 
 impl Drop for TmpDir {
     fn drop(&mut self) {
-        // std::fs::remove_dir_all(&self.0).unwrap();
+        // fs::remove_dir_all(&self.0).unwrap();
     }
 }
 

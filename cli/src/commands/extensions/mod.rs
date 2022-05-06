@@ -4,10 +4,10 @@ use std::{collections::HashSet, convert::TryFrom, path::PathBuf};
 
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 pub use extension::*;
-use log::{error, info};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
+use log::{error, warn};
 
 pub fn command<'a>() -> Command<'a> {
     Command::new("extension")
@@ -28,7 +28,7 @@ pub fn command<'a>() -> Command<'a> {
 /// Generate the subcommands for each extension.
 /// TODO add tests.
 pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
-    let extensions = match list_extensions() {
+    let extensions = match installed_extensions() {
         Ok(extensions) => extensions,
         Err(e) => {
             error!("Couldn't list extensions: {}", e);
@@ -43,7 +43,17 @@ pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
 
     extensions
         .into_iter()
-        .filter(|ext| !names.contains(ext.name()))
+        .filter(|ext| {
+            if names.contains(ext.name()) {
+                warn!(
+                    "{}: extension was filtered out due to name conflict",
+                    ext.name()
+                );
+                false
+            } else {
+                true
+            }
+        })
         .fold(command, |command, ext| {
             command.subcommand(Command::new(ext.name()))
         })
@@ -52,20 +62,19 @@ pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("add") {
-        subcmd_add_extension(matches.value_of_t("PATH")?).await
+        handle_add_extension(matches.value_of_t("PATH")?).await
     } else if let Some(matches) = matches.subcommand_matches("remove") {
-        subcmd_remove_extension(matches.value_of("NAME").unwrap()).await
+        handle_remove_extension(matches.value_of("NAME").unwrap()).await
     } else {
         // also covers the `list` case
-        subcmd_list_extensions().await
+        handle_list_extensions().await
     }
 }
 
 /// Handle the `extension add` subcommand path.
 /// Add the extension from the specified path.
-pub async fn subcmd_add_extension(path: PathBuf) -> CommandResult {
+async fn handle_add_extension(path: PathBuf) -> CommandResult {
     let extension = Extension::try_from(path)?;
-    info!("Installing extension {}...", extension.name());
 
     extension.install()?;
 
@@ -74,8 +83,7 @@ pub async fn subcmd_add_extension(path: PathBuf) -> CommandResult {
 
 /// Handle the `extension remove` subcommand path.
 /// Remove the extension named as specified.
-pub async fn subcmd_remove_extension(name: &str) -> CommandResult {
-    // let extension = Extension::try_from(extensions_path()?.join(name))?;
+async fn handle_remove_extension(name: &str) -> CommandResult {
     let extension = Extension::load(name)?;
 
     extension.uninstall()?;
@@ -85,8 +93,8 @@ pub async fn subcmd_remove_extension(name: &str) -> CommandResult {
 
 /// Handle the `extension` / `extension list` subcommand path.
 /// List installed extensions.
-pub async fn subcmd_list_extensions() -> CommandResult {
-    let extensions = list_extensions()?;
+async fn handle_list_extensions() -> CommandResult {
+    let extensions = installed_extensions()?;
 
     if extensions.is_empty() {
         println!("No extensions are currently installed.");
@@ -100,14 +108,25 @@ pub async fn subcmd_list_extensions() -> CommandResult {
 }
 
 // Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
-fn list_extensions() -> Result<Vec<Extension>> {
-    let extension_path = extensions_path()?;
+fn installed_extensions() -> Result<Vec<Extension>> {
+    let extensions_path = extensions_path()?;
 
-    if !extension_path.exists() {
+    if !extensions_path.exists() {
         return Ok(Vec::new());
     }
 
-    Ok(std::fs::read_dir(extension_path)?
-        .filter_map(|d| Extension::try_from(d.map(|d| d.path()).ok()?).ok())
+    Ok(std::fs::read_dir(extensions_path)?
+        .filter_map(|dir_entry| {
+            match dir_entry
+                .map_err(|e| anyhow!("{}", e))
+                .and_then(|dir_entry| Extension::try_from(dir_entry.path()))
+            {
+                Ok(ext) => Some(ext),
+                Err(e) => {
+                    error!("{e}");
+                    None
+                }
+            }
+        })
         .collect::<Vec<_>>())
 }

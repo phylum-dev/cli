@@ -1,9 +1,21 @@
-use std::{convert::TryFrom, fs::File, io::Read, path::PathBuf};
+use std::convert::TryFrom;
+use std::fs::{self, File, Permissions};
+use std::io::Read;
+use std::path::PathBuf;
+#[cfg(unix)]
+use std::os::unix::prelude::PermissionsExt;
 
 use anyhow::{anyhow, Result};
+use lazy_static::lazy_static;
+use regex::Regex;
 use serde::Deserialize;
+use walkdir::WalkDir;
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
+
+lazy_static! {
+    static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z0-9_-]+$"#).unwrap();
+}
 
 #[derive(Debug)]
 pub struct Extension {
@@ -30,7 +42,14 @@ impl Extension {
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
         println!("Installing extension {}...", self.name());
-        let target_prefix = extensions_path()?.join(self.name());
+
+        let target_prefix = extension_path(self.name())?;
+
+        // TODO we may want to implement `upgrade` in the future, which would
+        // allow writing to the path of an already installed extension.
+        if target_prefix.exists() {
+            return Err(anyhow!("extension already exists, skipping"));
+        }
 
         if target_prefix == self.path {
             return Err(anyhow!(
@@ -38,56 +57,49 @@ impl Extension {
             ));
         }
 
-        for entry in walkdir::WalkDir::new(&self.path) {
+        for entry in WalkDir::new(&self.path) {
             let source_path = entry?.into_path();
             let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
-                std::fs::create_dir_all(dest_path)?;
+                fs::create_dir_all(&dest_path)?;
+                #[cfg(unix)]
+                fs::set_permissions(&dest_path, Permissions::from_mode(0o700))?;
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
                 } else {
-                    std::fs::copy(source_path, dest_path)?;
+                    fs::copy(source_path, dest_path)?;
                 }
             }
         }
 
-        println!("Extension {} installed correctly", self.name());
+        println!("Extension {} installed successfully", self.name());
 
         Ok(())
     }
 
     pub fn uninstall(self) -> Result<()> {
         println!("Uninstalling extension {}...", self.name());
-        let target_prefix = extensions_path()?.join(self.name());
+        let target_prefix = extension_path(self.name())?;
 
         if target_prefix != self.path {
-            println!("{:?} {:?}", target_prefix, self.path);
             return Err(anyhow!(
                 "extension {} is not installed, skipping",
                 self.name()
             ));
         }
 
-        for entry in walkdir::WalkDir::new(&self.path).contents_first(true) {
-            let entry = entry?.into_path();
-            println!("removing {}...", entry.to_string_lossy());
-            if entry.is_dir() {
-                std::fs::remove_dir(entry)?;
-            } else if entry.is_file() {
-                std::fs::remove_file(entry)?;
-            }
-        }
+        fs::remove_dir_all(&self.path)?;
 
-        println!("Extension {} uninstalled correctly", self.name());
+        println!("Extension {} uninstalled successfully", self.name());
 
         Ok(())
     }
 
     /// Load an extension from the default path.
     pub fn load(name: &str) -> Result<Extension, anyhow::Error> {
-        Extension::try_from(extensions_path()?.join(name))
+        Extension::try_from(extension_path(name)?)
     }
 }
 
@@ -129,8 +141,14 @@ impl TryFrom<PathBuf> for Extension {
             ));
         }
 
+        if !EXTENSION_NAME_RE.is_match(&manifest.name) {
+            return Err(anyhow!(
+                "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore (_)",
+                manifest.name
+            ));
+        }
+
         // TODO add further validation if necessary:
-        // - Check that the name matches /^[a-z0-9-_]+$/
         // - Check that the entry point is a supported format (.wasm?)
         // - Check that the entry point is appropriately signed
         Ok(Extension { path, manifest })
@@ -140,4 +158,12 @@ impl TryFrom<PathBuf> for Extension {
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
 pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
     Ok(crate::config::data_dir()?.join("phylum").join("extensions"))
+}
+
+pub fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
+    if !EXTENSION_NAME_RE.is_match(name) {
+        return Err(anyhow!("{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore (_) ", name));
+    }
+
+    Ok(extensions_path()?.join(name))
 }
