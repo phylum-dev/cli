@@ -5,7 +5,7 @@ authors = ["Eric Freitag <eric@phylum.io>"]
 edition = "2018"
 
 [features]
-default = ["selfmanage", "extensions"]
+default = ["selfmanage"]
 phylum-online = []
 selfmanage = []
 extensions = []
