@@ -30,6 +30,10 @@ impl Parseable for GradleDeps {
             .context("Failed to parse requirements file")?;
         Ok(entries)
     }
+
+    fn package_type() -> PackageType {
+        PackageType::Maven
+    }
 }
 
 impl Parseable for Pom {
@@ -136,11 +140,15 @@ impl Parseable for Pom {
                             &dep.artifact_id.clone().unwrap_or_default()
                         ),
                         version: s.into(),
-                        package_type: PackageType::Maven,
+                        package_type: Self::package_type(),
                     })
                 })
             })
             .collect::<Result<Vec<_>, _>>()
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::Maven
     }
 }
 

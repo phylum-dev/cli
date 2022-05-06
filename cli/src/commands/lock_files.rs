@@ -12,71 +12,26 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
         path.to_string_lossy()
     );
 
-    fn xxx<T: Parseable>(path: &Path) -> Option<(Vec<PackageDescriptor>, PackageType)> {
-        let packages = T::new(path).ok()?.parse();
-        packages
-            .ok()
-            .filter(|pkgs| !pkgs.is_empty())
-            .map(|pkgs| (pkgs, PackageType::Npm))
+    // Try a package lock format and return the packages if there are some.
+    macro_rules! try_format {
+        ($lock:ident, $ty:literal) => {{
+            let packages = parse::<$lock>(path).ok();
+            if let Some(packages) = packages.filter(|(packages, _)| !packages.is_empty()) {
+                log::debug!("Submitting file as type {}", $ty);
+                return Ok(packages);
+            }
+        }};
     }
 
-    if let Some(packages) = xxx::<YarnLock>(path) {
-        log::debug!("Submitting file as type yarn lock");
-        return Ok(packages);
-    }
-    // let packages = YarnLock::new(path)?.parse();
-    // if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-    //     log::debug!("Submitting file as type yarn lock");
-    //     return Ok((packages, PackageType::Npm));
-    // }
-
-    let packages = PackageLock::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type package lock");
-        return Ok((packages, PackageType::Npm));
-    }
-
-    let packages = GemLock::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type gem lock");
-        return Ok((packages, PackageType::RubyGems));
-    }
-
-    let packages = PyRequirements::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type pip requirements.txt");
-        return Ok((packages, PackageType::PyPi));
-    }
-
-    let packages = PipFile::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type pip Pipfile or Pipfile.lock");
-        return Ok((packages, PackageType::PyPi));
-    }
-
-    let packages = Poetry::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type poetry lock");
-        return Ok((packages, PackageType::PyPi));
-    }
-
-    let packages = Pom::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type pom xml");
-        return Ok((packages, PackageType::Maven));
-    }
-
-    let packages = GradleDeps::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type gradle dependencies");
-        return Ok((packages, PackageType::Maven));
-    }
-
-    let packages = CSProj::new(path)?.parse();
-    if let Some(packages) = packages.ok().filter(|pkgs| !pkgs.is_empty()) {
-        log::debug!("Submitting file as type csproj");
-        return Ok((packages, PackageType::Nuget));
-    }
+    try_format!(YarnLock, "yarn lock");
+    try_format!(PackageLock, "package lock");
+    try_format!(GemLock, "gem lock");
+    try_format!(PyRequirements, "pip requirements.txt");
+    try_format!(PipFile, "pip Pipfile or Pipfile.lock");
+    try_format!(Poetry, "poetry lock");
+    try_format!(Pom, "pom xml");
+    try_format!(GradleDeps, "gradle dependencies");
+    try_format!(CSProj, "csproj");
 
     Err(anyhow!("Failed to identify lockfile type"))
 }
@@ -97,48 +52,26 @@ pub fn get_packages_from_lockfile(path: &str) -> Result<(Vec<PackageDescriptor>,
     };
 
     let res = match pattern {
-        "Gemfile.lock" => {
-            let parser = GemLock::new(path)?;
-            (parser.parse()?, PackageType::RubyGems)
-        }
-        "package-lock.json" => {
-            let parser = PackageLock::new(path)?;
-            (parser.parse()?, PackageType::Npm)
-        }
-        "yarn.lock" => {
-            let parser = YarnLock::new(path)?;
-            (parser.parse()?, PackageType::Npm)
-        }
-        "requirements.txt" => {
-            let parser = PyRequirements::new(path)?;
-            (parser.parse()?, PackageType::PyPi)
-        }
-        "Pipfile.txt" | "Pipfile.lock" => {
-            let parser = PipFile::new(path)?;
-            (parser.parse()?, PackageType::PyPi)
-        }
-        "poetry.lock" => {
-            let parser = Poetry::new(path)?;
-            (parser.parse()?, PackageType::PyPi)
-        }
-        "effective-pom.xml" => {
-            let parser = Pom::new(path)?;
-            (parser.parse()?, PackageType::Maven)
-        }
-        "gradle-dependencies.txt" => {
-            let parser = GradleDeps::new(path)?;
-            (parser.parse()?, PackageType::Maven)
-        }
-        ".csproj" => {
-            let parser = CSProj::new(path)?;
-            (parser.parse()?, PackageType::Nuget)
-        }
+        "Gemfile.lock" => parse::<GemLock>(path)?,
+        "package-lock.json" => parse::<PackageLock>(path)?,
+        "yarn.lock" => parse::<YarnLock>(path)?,
+        "requirements.txt" => parse::<PyRequirements>(path)?,
+        "Pipfile.txt" | "Pipfile.lock" => parse::<PipFile>(path)?,
+        "poetry.lock" => parse::<Poetry>(path)?,
+        "effective-pom.xml" => parse::<Pom>(path)?,
+        "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
+        ".csproj" => parse::<CSProj>(path)?,
         _ => try_get_packages(path)?,
     };
 
     log::debug!("Read {} packages from file `{}`", res.0.len(), file);
 
     Ok(res)
+}
+
+/// Get all packages for a specific lockfile type.
+fn parse<P: Parseable>(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+    Ok((P::new(path)?.parse()?, P::package_type()))
 }
 
 #[cfg(test)]

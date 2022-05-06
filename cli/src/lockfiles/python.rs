@@ -33,6 +33,10 @@ impl Parseable for PyRequirements {
             .context("Failed to parse requirements file")?;
         Ok(entries)
     }
+
+    fn package_type() -> PackageType {
+        PackageType::PyPi
+    }
 }
 
 impl Parseable for PipFile {
@@ -83,7 +87,7 @@ impl Parseable for PipFile {
                         Ok(PackageDescriptor {
                             name: k.as_str().to_string().to_lowercase(),
                             version: v.replace("==", "").trim().to_string(),
-                            package_type: PackageType::PyPi,
+                            package_type: Self::package_type(),
                         })
                     }),
                     None => {
@@ -93,6 +97,10 @@ impl Parseable for PipFile {
                 }
             })
             .collect::<Result<Vec<_>, _>>()
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::PyPi
     }
 }
 
@@ -128,6 +136,10 @@ impl Parseable for Poetry {
             })
             .map(PackageDescriptor::from)
             .collect())
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::PyPi
     }
 }
 

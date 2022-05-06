@@ -4,6 +4,7 @@ use std::path::Path;
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
+use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
 use crate::lockfiles::{ParseResult, Parseable};
@@ -26,6 +27,10 @@ impl Parseable for GemLock {
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse gem lock file")?;
         Ok(entries)
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::RubyGems
     }
 }
 
