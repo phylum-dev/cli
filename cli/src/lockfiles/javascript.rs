@@ -36,7 +36,7 @@ impl Parseable for PackageLock {
             let pkg = PackageDescriptor {
                 name,
                 version,
-                package_type: PackageType::Npm,
+                package_type: Self::package_type(),
             };
             Ok(pkg)
         };
@@ -60,6 +60,10 @@ impl Parseable for PackageLock {
         } else {
             Err(anyhow!("Failed to find dependencies"))
         }
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::Npm
     }
 }
 
@@ -156,13 +160,17 @@ impl Parseable for YarnLock {
             };
 
             packages.push(PackageDescriptor {
-                package_type: PackageType::Npm,
+                package_type: Self::package_type(),
                 name: name.to_owned(),
                 version,
             });
         }
 
         Ok(packages)
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::Npm
     }
 }
 

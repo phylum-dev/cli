@@ -80,6 +80,10 @@ impl Parseable for CSProj {
         let parsed = Project::deserialize(&mut de)?;
         Ok(parsed.into())
     }
+
+    fn package_type() -> PackageType {
+        PackageType::Nuget
+    }
 }
 
 #[cfg(test)]
