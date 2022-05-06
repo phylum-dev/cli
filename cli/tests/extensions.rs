@@ -189,6 +189,21 @@ fn extension_is_uninstalled_correctly() {
 #[test]
 fn extension_list_should_emit_output() {
     let tmp_dir = TmpDir::new();
+
+    // Output that no extension is installed when that is the case.
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("extension")
+        .arg("list")
+        .assert();
+
+    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+    let re = Regex::new(r#"No extension"#).unwrap();
+
+    assert!(output.lines().find(|m| re.is_match(m)).is_some());
+
+    // Install one extension
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)
@@ -197,6 +212,7 @@ fn extension_list_should_emit_output() {
         .arg(fixtures_path().join("sample-extension"))
         .assert();
 
+    // Output name and description of the extension when one is installed
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)

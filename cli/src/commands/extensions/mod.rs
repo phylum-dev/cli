@@ -88,16 +88,26 @@ pub async fn subcmd_remove_extension(name: &str) -> CommandResult {
 pub async fn subcmd_list_extensions() -> CommandResult {
     let extensions = list_extensions()?;
 
-    extensions.into_iter().for_each(|ext| {
-        println!("{:20}   {}", ext.name(), ext.description().unwrap_or(""));
-    });
+    if extensions.is_empty() {
+        println!("No extensions are currently installed.");
+    } else {
+        extensions.into_iter().for_each(|ext| {
+            println!("{:20}   {}", ext.name(), ext.description().unwrap_or(""));
+        });
+    }
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
 // Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
 fn list_extensions() -> Result<Vec<Extension>> {
-    Ok(std::fs::read_dir(extensions_path()?)?
+    let extension_path = extensions_path()?;
+
+    if !extension_path.exists() {
+        return Ok(Vec::new());
+    }
+
+    Ok(std::fs::read_dir(extension_path)?
         .filter_map(|d| Extension::try_from(d.map(|d| d.path()).ok()?).ok())
         .collect::<Vec<_>>())
 }
