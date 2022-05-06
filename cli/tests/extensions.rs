@@ -60,11 +60,13 @@ fn can_run_installed_extension() {
     // TODO build a proper fixture which prints some output.
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
     println!("{}", output);
-    todo!(r#"
+    todo!(
+        r#"
         We need to settle on an extension format
         and build a test fixture before we can
         allow this test to pass.
-    "#);
+    "#
+    );
 }
 
 // When a user installs a valid extension it should print a message indicating

@@ -33,7 +33,9 @@ impl Extension {
         let target_prefix = extensions_path()?.join(self.name());
 
         if target_prefix == self.path {
-            return Err(anyhow!("extension path and installation path are identical, skipping"));
+            return Err(anyhow!(
+                "extension path and installation path are identical, skipping"
+            ));
         }
 
         for entry in walkdir::WalkDir::new(&self.path) {
@@ -62,7 +64,10 @@ impl Extension {
 
         if target_prefix != self.path {
             println!("{:?} {:?}", target_prefix, self.path);
-            return Err(anyhow!("extension {} is not installed, skipping", self.name()));
+            return Err(anyhow!(
+                "extension {} is not installed, skipping",
+                self.name()
+            ));
         }
 
         for entry in walkdir::WalkDir::new(&self.path).contents_first(true) {
@@ -131,7 +136,6 @@ impl TryFrom<PathBuf> for Extension {
         Ok(Extension { path, manifest })
     }
 }
-
 
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
 pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {

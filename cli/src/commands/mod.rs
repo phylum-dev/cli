@@ -1,12 +1,12 @@
 use phylum_types::types::job::Action;
 
 pub mod auth;
+#[cfg(feature = "extensions")]
+pub mod extensions;
 pub mod jobs;
 pub mod lock_files;
 pub mod packages;
 pub mod project;
-#[cfg(feature = "extensions")]
-pub mod extensions;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
 
