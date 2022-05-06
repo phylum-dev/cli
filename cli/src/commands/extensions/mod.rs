@@ -1,6 +1,6 @@
 pub mod extension;
 
-use std::{convert::TryFrom, path::PathBuf};
+use std::{collections::HashSet, convert::TryFrom, path::PathBuf};
 
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 pub use extension::*;
@@ -26,7 +26,8 @@ pub fn command<'a>() -> Command<'a> {
 }
 
 /// Generate the subcommands for each extension.
-pub fn extensions_subcommands<'a>(command: Command<'a>) -> Command<'a> {
+/// TODO add tests.
+pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
     let extensions = match list_extensions() {
         Ok(extensions) => extensions,
         Err(e) => {
@@ -35,18 +36,17 @@ pub fn extensions_subcommands<'a>(command: Command<'a>) -> Command<'a> {
         }
     };
 
-    let extensions = extensions
-        .into_iter()
-        .filter(|ext| {
-            command
-                .get_subcommands()
-                .all(|p| p.get_name() != ext.name())
-        })
-        .collect::<Vec<_>>();
+    let names = command
+        .get_subcommands()
+        .map(|n| n.get_name().to_string())
+        .collect::<HashSet<_>>();
 
-    extensions.into_iter().fold(command, |command, ext| {
-        command.subcommand(Command::new(ext.name()))
-    })
+    extensions
+        .into_iter()
+        .filter(|ext| !names.contains(ext.name()))
+        .fold(command, |command, ext| {
+            command.subcommand(Command::new(ext.name()))
+        })
 }
 
 /// Entry point for the `extensions` subcommand.

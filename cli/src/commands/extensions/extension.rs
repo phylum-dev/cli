@@ -24,7 +24,7 @@ impl Extension {
     }
 
     pub fn description(&self) -> Option<&str> {
-        self.manifest.description.as_ref().map(String::as_str)
+        self.manifest.description.as_deref()
     }
 
     /// Install the extension in the default path.

@@ -214,9 +214,11 @@ async fn handle_commands() -> CommandResult {
             let resp = api.cancel(&request_id).await;
             print_response(&resp, true, None);
         }
-    } else if let Some(matches) = matches.subcommand_matches("extension") {
+    } else if cfg!(feature = "extensions") {
         #[cfg(feature = "extensions")]
-        return handle_extensions(matches).await;
+        if let Some(matches) = matches.subcommand_matches("extension") {
+            return handle_extensions(matches).await;
+        }
     }
 
     Ok(ExitCode::Ok.into())
