@@ -23,6 +23,9 @@ phylum analyze [options] <lockfile>
 `-l <label>`
 &emsp; Specify a label for a given analysis submission
 
+`-p`, `--project <project_name>`
+&emsp; Project to use for analysis (must already exist)
+
 `-v`, `--verbose`
 &emsp; Increase verbosity of API response
 
@@ -36,6 +39,9 @@ $ phylum analyze --json --verbose pom.xml
 
 # Analyze a PyPI lock file and apply a label
 $ phylum analyze -l test_branch requirements.txt
+
+# Analyze a Poetry lock file and return the results to the 'sample' project
+$ phylum analyze -p sample poetry.lock
 
 # Analyze a RubyGems lock file and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock
