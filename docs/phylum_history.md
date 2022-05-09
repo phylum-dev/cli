@@ -29,10 +29,10 @@ phylum history [OPTIONS] [JOB_ID]
 # List the last 30 analysis runs
 $ phylum history
 
-#View the analysis results of a historical job
+# View the analysis results of a historical job
 $ phylum history 338ea79f-0e82-4422-9769-4e583a84599f
 
-#View the analysis results of the most recent job
+# View the analysis results of the most recent job
 $ phylum history current
 
 # View a list of analysis runs for the 'sample' project
