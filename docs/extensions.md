@@ -1,36 +1,9 @@
 ---
-title: Extensions
-category: 61e72e3a50a88e001a92ee5d
+title: Extension format
+category: 6255e67693d5200013b1fa41
+hidden: true
 ---
-
-It is possible to extend the Phylum CLI with external sub-commands.
-
-To install an extension, run the following command:
-
-```sh
-phylum extension add path/to/extension
 ```
-
-The extension will be installed under `$XDG_DATA_HOME/phylum/extensions/<ext_name>`.
-
-Once installed, the extension will be accessible via the Phylum CLI:
-
-```sh
-phylum <ext_name> [arguments...]
-```
-
-To list the currently installed extension, run the following command:
-
-```sh
-phylum extension list
-```
-
-To uninstall a previously installed extension, run the following command:
-
-```sh
-phylum extension remove <ext_name>
-```
-
 ## Extension format
 
 **TODO**: Rectify this section once the final decisions on the format have been taken.
