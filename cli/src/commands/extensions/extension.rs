@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 use std::fs::{self, File, Permissions};
 use std::io::Read;
-use std::path::PathBuf;
 #[cfg(unix)]
 use std::os::unix::prelude::PermissionsExt;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;

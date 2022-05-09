@@ -2,8 +2,8 @@
 
 use std::convert::TryFrom;
 use std::env;
-use std::fs;
 use std::ffi::OsStr;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use assert_cmd::Command;
@@ -82,7 +82,10 @@ fn successful_installation_prints_message() {
         .success();
 
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    assert!(output.lines().find(|m| m.contains("Extension sample-extension installed successfully")).is_some());
+    assert!(output
+        .lines()
+        .find(|m| m.contains("Extension sample-extension installed successfully"))
+        .is_some());
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -310,7 +313,9 @@ impl AsRef<OsStr> for TmpDir {
 
 impl Drop for TmpDir {
     fn drop(&mut self) {
-        // fs::remove_dir_all(&self.0).unwrap();
+        if env::var_os("PHYLUM_TEST_SKIP_CLEANUP").is_none() {
+            fs::remove_dir_all(&self.0).unwrap();
+        }
     }
 }
 
