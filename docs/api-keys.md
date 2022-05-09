@@ -1,6 +1,7 @@
 ---
 title: API Keys
-category: 61e72e3a50a88e001a92ee5d
+category: 6255e67693d5200013b1fa41
+hidden: false
 ---
 
 API keys provide you with the ability to authenticate with the Phylum API without requiring user credentials. API keys are well suited for CI/CD environments where you may not want to disclose your account information.

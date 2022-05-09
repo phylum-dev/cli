@@ -1,6 +1,11 @@
 use std::io;
 use std::path::Path;
 
+use anyhow::{anyhow, Context};
+use nom::error::convert_error;
+use nom::Finish;
+use phylum_types::types::package::PackageType;
+
 use super::parsers::gem;
 use crate::lockfiles::{ParseResult, Parseable};
 
@@ -16,8 +21,16 @@ impl Parseable for GemLock {
 
     /// Parses `Gemfile.lock` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let (_, entries) = gem::parse(&self.0).map_err(|_e| "Failed to parse gem lock file")?;
+        let data = self.0.as_str();
+        let (_, entries) = gem::parse(data)
+            .finish()
+            .map_err(|e| anyhow!(convert_error(data, e)))
+            .context("Failed to parse gem lock file")?;
         Ok(entries)
+    }
+
+    fn package_type() -> PackageType {
+        PackageType::RubyGems
     }
 }
 

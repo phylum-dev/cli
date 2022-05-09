@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use anyhow::anyhow;
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
 use phylum_types::types::job::*;
@@ -10,8 +11,9 @@ use phylum_types::types::project::ProjectDetailsResponse;
 use phylum_types::types::project::ProjectSummaryResponse;
 use phylum_types::types::user_settings::*;
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{Client, StatusCode};
-use serde::Deserialize;
+use reqwest::{Client, Method, StatusCode};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
 mod common;
@@ -63,34 +65,36 @@ enum APIResult<T> {
 }
 
 impl PhylumApi {
-    async fn get<T: serde::de::DeserializeOwned>(&self, path: String) -> Result<T> {
-        let body = self.client.get(path).send().await?.text().await?;
-
-        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
-            .map_err(|e| PhylumApiError::Other(e.into()))?;
-        match api_obj {
-            APIResult::Ok(api_obj) => Ok(api_obj),
-            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
-        }
+    async fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
+        self.send_request::<_, ()>(Method::GET, path, None).await
     }
 
-    async fn put<T: serde::de::DeserializeOwned, S: serde::Serialize>(
+    async fn put<T: DeserializeOwned, S: serde::Serialize>(&self, path: String, s: S) -> Result<T> {
+        self.send_request(Method::PUT, path, Some(s)).await
+    }
+
+    async fn delete<T: DeserializeOwned>(&self, path: String) -> Result<T> {
+        self.send_request::<_, ()>(Method::DELETE, path, None).await
+    }
+
+    async fn send_request<T: DeserializeOwned, B: Serialize>(
         &self,
+        method: Method,
         path: String,
-        s: S,
+        body: Option<B>,
     ) -> Result<T> {
-        let body = self.client.put(path).json(&s).send().await?.text().await?;
-
-        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
-            .map_err(|e| PhylumApiError::Other(e.into()))?;
-        match api_obj {
-            APIResult::Ok(api_obj) => Ok(api_obj),
-            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
+        let mut request = self.client.request(method, path);
+        if let Some(body) = body {
+            request = request.json(&body);
         }
-    }
 
-    async fn delete<T: serde::de::DeserializeOwned>(&self, path: String) -> Result<T> {
-        let body = self.client.delete(path).send().await?.text().await?;
+        let response = request.send().await?;
+        let success = response.status().is_success();
+        let body = response.text().await?;
+
+        if !success {
+            return Err(anyhow!(body).into());
+        }
 
         let api_obj = serde_json::from_str::<APIResult<T>>(&body)
             .map_err(|e| PhylumApiError::Other(e.into()))?;
@@ -129,6 +133,7 @@ impl PhylumApi {
             "Authorization",
             HeaderValue::from_str(&format!("Bearer {}", tokens.access_token)).unwrap(),
         );
+        headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
         headers.insert("version", HeaderValue::from_str(version).unwrap());
 
         let client = Client::builder()

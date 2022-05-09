@@ -176,7 +176,7 @@ pub async fn handle_submission(
             .value_of("LOCKFILE")
             .ok_or_else(|| anyhow!("Lockfile not found"))?;
         let res = get_packages_from_lockfile(lockfile)
-            .ok_or_else(|| anyhow!("Unable to locate any valid package in package lockfile"))?;
+            .context("Unable to locate any valid package in package lockfile")?;
 
         packages = res.0;
         request_type = res.1;
