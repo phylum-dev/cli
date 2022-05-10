@@ -7,6 +7,7 @@ use anyhow::Result;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::lock_files;
+use super::{CommandResult, ExitCode};
 use crate::lockfiles::*;
 
 type ParserResult = Result<(Vec<PackageDescriptor>, PackageType)>;
@@ -28,20 +29,14 @@ pub fn lockfile_types() -> Vec<&'static str> {
     LOCKFILE_PARSERS.iter().map(|(name, _)| *name).collect()
 }
 
-pub fn handle_parse(matches: &clap::ArgMatches) -> Result<()> {
+pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let lockfile_type = matches.value_of("lockfile-type").unwrap_or("auto");
     // LOCKFILE is a required parameter, so .unwrap() should be safe.
     let lockfile = matches.value_of("LOCKFILE").unwrap();
 
     let parser = LOCKFILE_PARSERS
         .iter()
-        .filter_map(|(name, parser)| {
-            if *name == lockfile_type {
-                Some(parser)
-            } else {
-                None
-            }
-        })
+        .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
         .next()
         .unwrap();
 
@@ -49,5 +44,5 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> Result<()> {
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
-    Ok(())
+    Ok(ExitCode::Ok.into())
 }

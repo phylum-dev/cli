@@ -39,7 +39,6 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
 pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    let path = Path::new(path);
     let file = path
         .file_name()
         .and_then(|file| file.to_str())
@@ -70,7 +69,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
 }
 
 /// Get all packages for a specific lockfile type.
-pub(super) fn parse<P: Parseable>(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+pub fn parse<P: Parseable>(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     Ok((P::new(path)?.parse()?, P::package_type()))
 }
 

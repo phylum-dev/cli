@@ -143,8 +143,7 @@ async fn handle_commands() -> CommandResult {
     }
 
     if let Some(matches) = matches.subcommand_matches("parse") {
-        handle_parse(matches)?;
-        return Ok(ExitCode::Ok.into());
+        return handle_parse(matches);
     }
 
     let timeout = matches
