@@ -102,10 +102,7 @@ pub async fn handle_auth(
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok.into())
             }
-            Err(error) => Err(anyhow!(
-                "User registration failed: {}",
-                error.root_cause().to_string()
-            )),
+            Err(error) => Err(error).context("User registration failed"),
         }
     } else if matches.subcommand_matches("login").is_some() {
         match handle_auth_login(config, config_path).await {
@@ -113,10 +110,7 @@ pub async fn handle_auth(
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok.into())
             }
-            Err(error) => Err(anyhow!(
-                "User login failed: {}",
-                error.root_cause().to_string()
-            )),
+            Err(error) => Err(error).context("User login failed"),
         }
     } else if matches.subcommand_matches("status").is_some() {
         handle_auth_status(config, timeout, ignore_certs).await
