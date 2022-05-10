@@ -23,7 +23,6 @@ use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
-use crate::types::AuthStatusResponse;
 use crate::types::PingResponse;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
@@ -68,10 +67,6 @@ impl PhylumApi {
 
     async fn put<T: DeserializeOwned, S: serde::Serialize>(&self, path: String, s: S) -> Result<T> {
         self.send_request(Method::PUT, path, Some(s)).await
-    }
-
-    async fn delete<T: DeserializeOwned>(&self, path: String) -> Result<T> {
-        self.send_request::<_, ()>(Method::DELETE, path, None).await
     }
 
     async fn send_request<T: DeserializeOwned, B: Serialize>(
@@ -171,14 +166,6 @@ impl PhylumApi {
             .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
             .await?
             .msg)
-    }
-
-    /// Check auth status of the current user
-    pub async fn auth_status(&mut self) -> Result<bool> {
-        Ok(self
-            .get::<AuthStatusResponse>(endpoints::get_auth_status(&self.api_uri))
-            .await?
-            .authenticated)
     }
 
     /// Get information about the authenticated user
@@ -286,12 +273,6 @@ impl PhylumApi {
         pkg: &PackageDescriptor,
     ) -> Result<PackageStatusExtended> {
         self.get(endpoints::get_package_status(&self.api_uri, pkg))
-            .await
-    }
-
-    /// Cancel a job currently in progress
-    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse> {
-        self.delete(endpoints::delete_job(&self.api_uri, job_id))
             .await
     }
 }
@@ -651,27 +632,6 @@ mod tests {
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status_ext(&job).await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn cancel() -> Result<()> {
-        let body = r#"{"msg": "Job deleted"}"#;
-
-        let mock_server = build_mock_server().await;
-        Mock::given(method("DELETE"))
-            .and(path_regex(
-                r"^/api/v0/job/[-\dabcdef]+$".to_string().to_string(),
-            ))
-            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
-            .mount(&mock_server)
-            .await;
-
-        let mut client = build_phylum_api(&mock_server).await?;
-
-        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        client.cancel(&job).await?;
 
         Ok(())
     }

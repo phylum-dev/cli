@@ -8,11 +8,6 @@ pub fn put_submit_package(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/job")
 }
 
-/// GET /job/auth_status
-pub fn get_auth_status(api_uri: &str) -> String {
-    format!("{api_uri}/{API_PATH}/job/auth_status")
-}
-
 /// GET /job/heartbeat
 pub fn get_ping(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/job/heartbeat")
@@ -30,11 +25,6 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> String {
     } else {
         format!("{api_uri}/{API_PATH}/job/{job_id}")
     }
-}
-
-/// DELETE /job/<job_id>
-pub fn delete_job(api_uri: &str, job_id: &JobId) -> String {
-    format!("{api_uri}/{API_PATH}/job/{job_id}")
 }
 
 /// GET /job/packages/<type>/<name>/<version>

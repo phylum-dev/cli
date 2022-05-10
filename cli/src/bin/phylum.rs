@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::process;
-use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, Context};
@@ -21,7 +20,6 @@ use phylum_cli::config::*;
 use phylum_cli::print::*;
 use phylum_cli::update;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
-use phylum_types::types::common::JobId;
 use phylum_types::types::job::Action;
 
 /// Print a warning message to the user before exiting with exit code 0.
@@ -194,12 +192,6 @@ async fn handle_commands() -> CommandResult {
     let should_submit = matches.subcommand_matches("analyze").is_some()
         || matches.subcommand_matches("batch").is_some();
 
-    // TODO this panicks with the type-checked `App` since the "cancel"
-    // subcommand is undefined. Is the backend feature implemented, or
-    // should we just keep this short circuited for now?
-    let should_cancel = false;
-    // let should_cancel = matches.subcommand_matches("cancel").is_some();
-
     // TODO: switch from if/else to non-exhaustive pattern match
     if let Some(matches) = matches.subcommand_matches("project") {
         handle_project(&mut api, matches).await?;
@@ -209,14 +201,6 @@ async fn handle_commands() -> CommandResult {
         return handle_submission(&mut api, config, &matches).await;
     } else if let Some(matches) = matches.subcommand_matches("history") {
         return handle_history(&mut api, matches).await;
-    } else if should_cancel {
-        if let Some(matches) = matches.subcommand_matches("cancel") {
-            let request_id = matches.value_of("request_id").unwrap().to_string();
-            let request_id = JobId::from_str(&request_id)
-                .context("Received invalid request id. Request id's should be of the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")?;
-            let resp = api.cancel(&request_id).await;
-            print_response(&resp, true, None);
-        }
     }
 
     Ok(ExitCode::Ok.into())
