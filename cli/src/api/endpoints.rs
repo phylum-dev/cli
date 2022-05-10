@@ -48,7 +48,7 @@ pub fn get_project_summary(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/job/projects/overview")
 }
 
-/// GET /job/projects
+/// PUT /job/projects
 pub fn put_create_project(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/job/projects")
 }
