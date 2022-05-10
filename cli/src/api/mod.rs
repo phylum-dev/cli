@@ -16,10 +16,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
-mod common;
-mod job;
-mod project;
-mod user_settings;
+mod endpoints;
 
 use crate::auth::fetch_oidc_server_settings;
 use crate::auth::handle_auth_flow;
@@ -171,7 +168,7 @@ impl PhylumApi {
     /// Ping the system and verify it's up
     pub async fn ping(&mut self) -> Result<String> {
         Ok(self
-            .get::<PingResponse>(job::get_ping(&self.api_uri))
+            .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
             .await?
             .msg)
     }
@@ -179,7 +176,7 @@ impl PhylumApi {
     /// Check auth status of the current user
     pub async fn auth_status(&mut self) -> Result<bool> {
         Ok(self
-            .get::<AuthStatusResponse>(job::get_auth_status(&self.api_uri))
+            .get::<AuthStatusResponse>(endpoints::get_auth_status(&self.api_uri))
             .await?
             .authenticated)
     }
@@ -194,7 +191,7 @@ impl PhylumApi {
     pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
         Ok(self
             .put::<CreateProjectResponse, _>(
-                project::put_create_project(&self.api_uri),
+                endpoints::put_create_project(&self.api_uri),
                 CreateProjectRequest {
                     name: name.to_string(),
                     group_name: None,
@@ -206,19 +203,19 @@ impl PhylumApi {
 
     /// Get a list of projects
     pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>> {
-        self.get(project::get_project_summary(&self.api_uri)).await
+        self.get(endpoints::get_project_summary(&self.api_uri))
+            .await
     }
 
     /// Get user settings
     pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
-        self.get(user_settings::get_user_settings(&self.api_uri))
-            .await
+        self.get(endpoints::get_user_settings(&self.api_uri)).await
     }
 
     /// Put updated user settings
     pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
         self.client
-            .put(user_settings::put_user_settings(&self.api_uri))
+            .put(endpoints::put_user_settings(&self.api_uri))
             .json(&settings)
             .send()
             .await?
@@ -245,7 +242,7 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
-            .put(job::put_submit_package(&self.api_uri), req)
+            .put(endpoints::put_submit_package(&self.api_uri), req)
             .await?;
         Ok(resp.job_id)
     }
@@ -255,7 +252,7 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, false))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, false))
             .await
     }
 
@@ -264,13 +261,14 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, true))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, true))
             .await
     }
 
     /// Get the status of all jobs
     pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
-        self.get(job::get_all_jobs_status(&self.api_uri, 30)).await
+        self.get(endpoints::get_all_jobs_status(&self.api_uri, 30))
+            .await
     }
 
     /// Get the details of a specific project
@@ -278,7 +276,7 @@ impl PhylumApi {
         &mut self,
         project_name: &str,
     ) -> Result<ProjectDetailsResponse> {
-        self.get(job::get_project_details(&self.api_uri, project_name))
+        self.get(endpoints::get_project_details(&self.api_uri, project_name))
             .await
     }
 
@@ -287,12 +285,14 @@ impl PhylumApi {
         &mut self,
         pkg: &PackageDescriptor,
     ) -> Result<PackageStatusExtended> {
-        self.get(job::get_package_status(&self.api_uri, pkg)).await
+        self.get(endpoints::get_package_status(&self.api_uri, pkg))
+            .await
     }
 
     /// Cancel a job currently in progress
     pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse> {
-        self.delete(job::delete_job(&self.api_uri, job_id)).await
+        self.delete(endpoints::delete_job(&self.api_uri, job_id))
+            .await
     }
 }
 
