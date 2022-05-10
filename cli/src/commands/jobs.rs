@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::{anyhow, Context, Result};
+use phylum_types::types::common::Status;
 use reqwest::StatusCode;
 use serde::Serialize;
 use uuid::Uuid;
@@ -42,7 +43,7 @@ where
         );
     } else {
         if let Ok(ref resp) = resp {
-            if !resp.pass {
+            if resp.status == Status::Complete && !resp.pass {
                 action = resp.action.to_owned();
             }
         }
