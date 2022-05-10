@@ -17,6 +17,7 @@ Interact with the Phylum API
 * [phylum package](https://docs.phylum.io/docs/phylum_package)
 * [phylum parse](https://docs.phylum.io/docs/phylum_parse)
 * [phylum ping](https://docs.phylum.io/docs/phylum_ping)
+* [phylum uninstall](https://docs.phylum.io/docs/phylum_uninstall)
 * [phylum update](https://docs.phylum.io/docs/phylum_update)
 * [phylum version](https://docs.phylum.io/docs/phylum_version)
 
