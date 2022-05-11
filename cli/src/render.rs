@@ -6,7 +6,6 @@ use phylum_types::types::project::*;
 use prettytable::*;
 
 use crate::print::{self, table_format};
-use crate::types::PingResponse;
 
 pub trait Renderable {
     fn render(&self) -> String;
@@ -283,12 +282,6 @@ impl Renderable for PackageStatusExtended {
 impl Renderable for CancelJobResponse {
     fn render(&self) -> String {
         format!("Request canceled: {}", self.msg)
-    }
-}
-
-impl Renderable for PingResponse {
-    fn render(&self) -> String {
-        format!("Ping response: {}", self.msg)
     }
 }
 
