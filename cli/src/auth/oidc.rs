@@ -285,5 +285,4 @@ pub struct UserInfo {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseError {
     error: String,
-    error_description: String,
 }

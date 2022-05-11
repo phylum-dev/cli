@@ -77,7 +77,7 @@ async fn http_get_json<T: DeserializeOwned>(url: &str) -> anyhow::Result<T> {
     if let Err(error) = response.error_for_status_ref() {
         Err(anyhow!(response.text().await?)).context(error)
     } else {
-        Ok(response.json::<T>().await?)
+        Ok(response.json().await?)
     }
 }
 
