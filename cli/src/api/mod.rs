@@ -283,7 +283,6 @@ mod tests {
 
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
-    use uuid::Uuid;
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -344,7 +343,7 @@ mod tests {
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
-        let project_id = Uuid::new_v4();
+        let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
             .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
@@ -376,7 +375,7 @@ mod tests {
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
-        let project_id = Uuid::new_v4();
+        let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
             .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
