@@ -165,7 +165,7 @@ impl PhylumApi {
         Ok(self
             .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
             .await?
-            .msg)
+            .response)
     }
 
     /// Get information about the authenticated user

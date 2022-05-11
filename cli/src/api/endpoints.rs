@@ -8,9 +8,9 @@ pub fn put_submit_package(api_uri: &str) -> String {
     format!("{api_uri}/{API_PATH}/job")
 }
 
-/// GET /job/heartbeat
+/// GET /health
 pub fn get_ping(api_uri: &str) -> String {
-    format!("{api_uri}/{API_PATH}/job/heartbeat")
+    format!("{api_uri}/{API_PATH}/health")
 }
 
 /// GET /job/
