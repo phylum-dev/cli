@@ -3,7 +3,7 @@ use std::path::Path;
 use ansi_term::Color::{Blue, White};
 use anyhow::anyhow;
 use chrono::Local;
-use uuid::Uuid;
+use phylum_types::types::common::ProjectId;
 
 use super::{CommandResult, ExitCode};
 use crate::api::PhylumApi;
@@ -61,7 +61,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         match resp {
             Ok(proj) => {
-                let proj_uuid = Uuid::parse_str(proj.id.as_str()).unwrap(); // TODO: Handle this.
+                let proj_uuid = ProjectId::parse_str(proj.id.as_str()).unwrap(); // TODO: Handle this.
                 let proj_conf = ProjectConfig {
                     id: proj_uuid,
                     name: proj.name,

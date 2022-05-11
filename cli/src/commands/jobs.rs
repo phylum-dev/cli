@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::{anyhow, Context, Result};
+use phylum_types::types::common::ProjectId;
 use reqwest::StatusCode;
 use serde::Serialize;
-use uuid::Uuid;
 
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::*;
@@ -71,7 +71,7 @@ pub async fn get_job_status(
 
 /// Resolve a potential job_id, which could be a UUID string or the value
 /// 'current' which means the UUID of the current running job.
-fn resolve_job_id(job_id: &str) -> Result<Uuid> {
+fn resolve_job_id(job_id: &str) -> Result<JobId> {
     let maybe_job_id = if job_id == "current" {
         get_current_project().map(|p: ProjectConfig| p.id)
     } else {
@@ -266,12 +266,12 @@ pub async fn handle_submission(
 /// Get the current project's UUID.
 ///
 /// Assumes that the clap `matches` has a `project` arguments option.
-async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<Uuid> {
+async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<ProjectId> {
     // Prefer `--project` if it was specified.
     if let Some(project_name) = matches.value_of("project") {
         let response = api.get_project_details(project_name).await;
         let project_id = response.context("Project details request failure")?.id;
-        return Uuid::parse_str(&project_id).context("Invalid project UUID");
+        return ProjectId::parse_str(&project_id).context("Invalid project UUID");
     }
 
     // Retrieve the project from the `.phylum_project` file.

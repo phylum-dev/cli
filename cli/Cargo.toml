@@ -51,7 +51,6 @@ thiserror = "1.0.29"
 tokio = { version = "^1.0", features = ["full"] }
 toml = "0.5.8"
 url = { version = "2", features = ["serde"] }
-uuid = { version = "0.8", features = ["serde", "v4"] }
 yaml-rust = "*"
 zeroize = "1.4.0"
 zip = "0.6.2"

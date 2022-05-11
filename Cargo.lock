@@ -1236,7 +1236,6 @@ dependencies = [
  "toml",
  "unicode-width",
  "url",
- "uuid",
  "wiremock",
  "yaml-rust",
  "zeroize",
