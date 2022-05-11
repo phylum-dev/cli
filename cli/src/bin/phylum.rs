@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Context};
 use env_logger::Env;
 use log::*;
+use phylum_cli::commands::parse::handle_parse;
 use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
@@ -139,6 +140,10 @@ async fn handle_commands() -> CommandResult {
         let message = res?;
         print_user_success!("{}", message);
         return Ok(ExitCode::Ok.into());
+    }
+
+    if let Some(matches) = matches.subcommand_matches("parse") {
+        return handle_parse(matches);
     }
 
     let timeout = matches

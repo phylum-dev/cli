@@ -4,6 +4,7 @@ pub mod auth;
 pub mod jobs;
 pub mod lock_files;
 pub mod packages;
+pub mod parse;
 pub mod project;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
