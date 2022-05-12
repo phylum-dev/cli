@@ -201,12 +201,7 @@ impl PhylumApi {
 
     /// Put updated user settings
     pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
-        self.client
-            .put(endpoints::put_user_settings(&self.api_uri))
-            .json(&settings)
-            .send()
-            .await?
-            .json::<UserSettings>()
+        self.put::<UserSettings, _>(endpoints::put_user_settings(&self.api_uri), &settings)
             .await?;
         Ok(true)
     }
