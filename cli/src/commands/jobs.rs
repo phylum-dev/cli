@@ -13,7 +13,7 @@ use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 
 use crate::api::{PhylumApi, PhylumApiError};
-use crate::commands::lock_files::get_packages_from_lockfile;
+use crate::commands::parse::get_packages_from_lockfile;
 use crate::commands::{CommandResult, CommandValue};
 use crate::config::{get_current_project, Config, ProjectConfig};
 use crate::filter::Filter;

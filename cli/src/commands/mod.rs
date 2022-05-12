@@ -2,7 +2,6 @@ use phylum_types::types::job::Action;
 
 pub mod auth;
 pub mod jobs;
-pub mod lock_files;
 pub mod packages;
 pub mod parse;
 pub mod project;
