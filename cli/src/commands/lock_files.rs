@@ -55,7 +55,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
         "package-lock.json" => parse::<PackageLock>(path)?,
         "yarn.lock" => parse::<YarnLock>(path)?,
         "requirements.txt" => parse::<PyRequirements>(path)?,
-        "Pipfile.txt" | "Pipfile.lock" => parse::<PipFile>(path)?,
+        "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
         "poetry.lock" => parse::<Poetry>(path)?,
         "effective-pom.xml" => parse::<Pom>(path)?,
         "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
