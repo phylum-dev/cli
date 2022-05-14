@@ -269,9 +269,7 @@ pub async fn handle_submission(
 async fn project_uuid(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<ProjectId> {
     // Prefer `--project` if it was specified.
     if let Some(project_name) = matches.value_of("project") {
-        let response = api.get_project_details(project_name).await;
-        let project_id = response.context("Project details request failure")?.id;
-        return ProjectId::parse_str(&project_id).context("Invalid project UUID");
+        return Ok(api.get_project_id(project_name).await?);
     }
 
     // Retrieve the project from the `.phylum_project` file.

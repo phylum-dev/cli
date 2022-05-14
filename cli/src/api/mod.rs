@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
+use anyhow::Context;
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
 use phylum_types::types::job::*;
@@ -260,6 +261,15 @@ impl PhylumApi {
     ) -> Result<ProjectDetailsResponse> {
         self.get(endpoints::get_project_details(&self.api_uri, project_name))
             .await
+    }
+
+    /// Resolve a Project Name to a Project ID
+    pub async fn get_project_id(&mut self, project_name: &str) -> Result<ProjectId> {
+        self.get(endpoints::get_project_details(&self.api_uri, project_name))
+            .await
+            .context("Project details request failure")
+            .and_then(|p: ProjectDetailsResponse| p.id.parse().context("Invalid Project ID"))
+            .map_err(PhylumApiError::Other)
     }
 
     /// Get package details
