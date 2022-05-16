@@ -71,7 +71,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .about("Create a new project")
                         .args(&[
                             arg!(<name> "Name of the project"),
-                            arg!(-g --group <group_name> "Group which will be the owner of the project"),
+                            arg!(-g --group <group_name> "Group which will be the owner of the project").required(false),
                         ])
                 )
                 .subcommand(
@@ -87,7 +87,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .about("Link a repository to a project")
                         .args(&[
                             arg!(<name> "Name of the project"),
-                            arg!(-g --group <group_name> "Group owning the project"),
+                            arg!(-g --group <group_name> "Group owning the project").required(false),
                         ])
                 )
                 .subcommand(
