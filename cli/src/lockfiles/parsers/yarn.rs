@@ -56,11 +56,9 @@ fn entry_name(input: &str) -> Result<&str, &str> {
 }
 
 fn entry_version(input: &str) -> Result<&str, &str> {
-    let (i, _) = take_until(r#"version ""#)(input)?;
-    context(
-        "version",
-        delimited(tag(r#"version ""#), is_version, tag(r#"""#)),
-    )(i)
+    let (i, _) = take_until(r#"version"#)(input)?;
+    let version_key = tuple((tag(r#"version"#), opt(tag(r#"""#)), tag(r#" ""#)));
+    context("version", delimited(version_key, is_version, tag(r#"""#)))(i)
 }
 
 fn is_version<T, E: nom::error::ParseError<T>>(input: T) -> IResult<T, T, E>

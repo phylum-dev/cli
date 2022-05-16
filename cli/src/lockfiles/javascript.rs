@@ -229,9 +229,14 @@ mod tests {
 
             let pkgs = parser.parse().unwrap();
             assert_eq!(pkgs.len(), 17);
+
             assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
             assert_eq!(pkgs[0].version, "1.1.0");
             assert_eq!(pkgs[0].package_type, PackageType::Npm);
+
+            assert_eq!(pkgs[3].name, "cliui");
+            assert_eq!(pkgs[3].version, "7.0.4");
+            assert_eq!(pkgs[3].package_type, PackageType::Npm);
 
             let last = pkgs.last().unwrap();
             assert_eq!(last.name, "yargs");
