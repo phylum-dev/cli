@@ -221,6 +221,7 @@ impl PhylumApi {
             packages: package_list.to_vec(),
             is_user,
             project,
+            group_name: None,
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
         };
         log::debug!("==> Sending package submission: {:?}", req);
