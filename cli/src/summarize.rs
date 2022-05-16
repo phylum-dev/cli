@@ -134,7 +134,7 @@ where
 {
     let ecosystem = PackageType::from_str(&resp.ecosystem).unwrap_or(PackageType::Npm);
 
-    let date_time = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
+    let date_time = NaiveDateTime::from_timestamp(resp.created_at, 0);
 
     let details = [
         (
