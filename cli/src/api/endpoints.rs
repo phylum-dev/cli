@@ -75,5 +75,5 @@ pub(crate) fn group_create(api_uri: &str) -> String {
 
 /// GET /groups/<groupName>/projects
 pub fn group_project_summary(api_uri: &str, group: &str) -> String {
-    format!("{api_uri}/{API_PATH}/groups/{}/projects", group)
+    format!("{api_uri}/{API_PATH}/groups/{group}/projects")
 }

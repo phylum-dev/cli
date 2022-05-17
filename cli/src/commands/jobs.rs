@@ -275,7 +275,7 @@ async fn cli_project(
     // Prefer `--project` and `--group` if they were specified.
     if let Some(project_name) = matches.value_of("project") {
         let group = matches.value_of("group").map(String::from);
-        let project = api.get_project_id(project_name).await?;
+        let project = api.get_project_id(project_name, &group).await?;
         return Ok((project, group));
     }
 

@@ -201,10 +201,10 @@ impl PhylumApi {
     /// Get a list of projects
     pub async fn get_projects(
         &mut self,
-        group: Option<String>,
+        group: &Option<String>,
     ) -> Result<Vec<ProjectSummaryResponse>> {
         let uri = match group {
-            Some(group) => endpoints::group_project_summary(&self.api_uri, &group),
+            Some(group) => endpoints::group_project_summary(&self.api_uri, group),
             None => endpoints::get_project_summary(&self.api_uri),
         };
 
@@ -282,12 +282,24 @@ impl PhylumApi {
     }
 
     /// Resolve a Project Name to a Project ID
-    pub async fn get_project_id(&mut self, project_name: &str) -> Result<ProjectId> {
-        self.get(endpoints::get_project_details(&self.api_uri, project_name))
-            .await
-            .context("Project details request failure")
-            .and_then(|p: ProjectDetailsResponse| p.id.parse().context("Invalid Project ID"))
-            .map_err(PhylumApiError::Other)
+    pub async fn get_project_id(
+        &mut self,
+        project_name: &str,
+        group_name: &Option<String>,
+    ) -> Result<ProjectId> {
+        let projects = self.get_projects(group_name).await?;
+
+        projects
+            .iter()
+            .find(|project| project.name == project_name)
+            .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
+            .and_then(|project| {
+                project
+                    .id
+                    .parse()
+                    .context("Invalid Project ID")
+                    .map_err(PhylumApiError::from)
+            })
     }
 
     /// Get package details

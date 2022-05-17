@@ -14,7 +14,7 @@ use crate::prompt::prompt_threshold;
 
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Option<String>) {
-    let resp = api.get_projects(group).await;
+    let resp = api.get_projects(&group).await;
 
     // Print table header when we're not outputting in JSON format.
     if pretty_print {
@@ -59,10 +59,10 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         get_project_list(api, pretty_print, group).await;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.value_of("name").unwrap();
-        let group_name = matches.value_of("group");
+        let group_name = matches.value_of("group").map(String::from);
 
         let proj_uuid = api
-            .get_project_id(project_name)
+            .get_project_id(project_name, &group_name)
             .await
             .context("A project with that name does not exist")?;
 
@@ -70,7 +70,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             id: proj_uuid,
             name: project_name.into(),
             created_at: Local::now(),
-            group_name: group_name.map(String::from),
+            group_name,
         };
         save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
@@ -82,6 +82,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         );
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
         let mut project_name = matches.value_of("name").unwrap_or("current");
+        let group_name = matches.value_of("group").map(String::from);
 
         let proj = if project_name == "current" {
             get_current_project().map(|p| p.name)
@@ -128,7 +129,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         println!();
 
         let project_id = api
-            .get_project_id(project_name)
+            .get_project_id(project_name, &group_name)
             .await
             .context("Could not get project ID")?;
 

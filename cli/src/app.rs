@@ -93,7 +93,10 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("set-thresholds")
                         .about("Interactively set risk domain thresholds for a project")
-                        .arg(arg!(<name> "Name of the project"))
+                        .args(&[
+                            arg!(<name> "Name of the project"),
+                            arg!(-g --group <group_name> "Group owning the project").required(false),
+                        ])
                 )
         )
         .subcommand(
