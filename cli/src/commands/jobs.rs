@@ -274,9 +274,9 @@ async fn cli_project(
 ) -> Result<(ProjectId, Option<String>)> {
     // Prefer `--project` and `--group` if they were specified.
     if let Some(project_name) = matches.value_of("project") {
-        let group = matches.value_of("group").map(String::from);
-        let project = api.get_project_id(project_name, &group).await?;
-        return Ok((project, group));
+        let group = matches.value_of("group");
+        let project = api.get_project_id(project_name, group).await?;
+        return Ok((project, group.map(String::from)));
     }
 
     // Retrieve the project from the `.phylum_project` file.

@@ -201,7 +201,7 @@ impl PhylumApi {
     /// Get a list of projects
     pub async fn get_projects(
         &mut self,
-        group: &Option<String>,
+        group: Option<&str>,
     ) -> Result<Vec<ProjectSummaryResponse>> {
         let uri = match group {
             Some(group) => endpoints::group_project_summary(&self.api_uri, group),
@@ -285,7 +285,7 @@ impl PhylumApi {
     pub async fn get_project_id(
         &mut self,
         project_name: &str,
-        group_name: &Option<String>,
+        group_name: Option<&str>,
     ) -> Result<ProjectId> {
         let projects = self.get_projects(group_name).await?;
 
