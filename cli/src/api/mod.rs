@@ -4,6 +4,7 @@ use anyhow::anyhow;
 use anyhow::Context;
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
+use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 use phylum_types::types::project::CreateProjectRequest;
@@ -68,6 +69,14 @@ impl PhylumApi {
 
     async fn put<T: DeserializeOwned, S: serde::Serialize>(&self, path: String, s: S) -> Result<T> {
         self.send_request(Method::PUT, path, Some(s)).await
+    }
+
+    async fn post<T: serde::de::DeserializeOwned, S: serde::Serialize>(
+        &self,
+        path: String,
+        s: S,
+    ) -> Result<T> {
+        self.send_request(Method::POST, path, Some(s)).await
     }
 
     async fn send_request<T: DeserializeOwned, B: Serialize>(
@@ -176,13 +185,13 @@ impl PhylumApi {
     }
 
     /// Create a new project
-    pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
+    pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         Ok(self
             .put::<CreateProjectResponse, _>(
                 endpoints::put_create_project(&self.api_uri),
                 CreateProjectRequest {
-                    name: name.to_string(),
-                    group_name: None,
+                    name: name.to_owned(),
+                    group_name: group.map(String::from),
                 },
             )
             .await?
@@ -190,9 +199,16 @@ impl PhylumApi {
     }
 
     /// Get a list of projects
-    pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>> {
-        self.get(endpoints::get_project_summary(&self.api_uri))
-            .await
+    pub async fn get_projects(
+        &mut self,
+        group: Option<&str>,
+    ) -> Result<Vec<ProjectSummaryResponse>> {
+        let uri = match group {
+            Some(group) => endpoints::group_project_summary(&self.api_uri, group),
+            None => endpoints::get_project_summary(&self.api_uri),
+        };
+
+        self.get(uri).await
     }
 
     /// Get user settings
@@ -215,14 +231,15 @@ impl PhylumApi {
         is_user: bool,
         project: ProjectId,
         label: Option<String>,
+        group_name: Option<String>,
     ) -> Result<JobId> {
         let req = SubmitPackageRequest {
             package_type: req_type.to_owned(),
             packages: package_list.to_vec(),
             is_user,
             project,
-            group_name: None,
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
+            group_name,
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
@@ -265,12 +282,24 @@ impl PhylumApi {
     }
 
     /// Resolve a Project Name to a Project ID
-    pub async fn get_project_id(&mut self, project_name: &str) -> Result<ProjectId> {
-        self.get(endpoints::get_project_details(&self.api_uri, project_name))
-            .await
-            .context("Project details request failure")
-            .and_then(|p: ProjectDetailsResponse| p.id.parse().context("Invalid Project ID"))
-            .map_err(PhylumApiError::Other)
+    pub async fn get_project_id(
+        &mut self,
+        project_name: &str,
+        group_name: Option<&str>,
+    ) -> Result<ProjectId> {
+        let projects = self.get_projects(group_name).await?;
+
+        projects
+            .iter()
+            .find(|project| project.name == project_name)
+            .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
+            .and_then(|project| {
+                project
+                    .id
+                    .parse()
+                    .context("Invalid Project ID")
+                    .map_err(PhylumApiError::from)
+            })
     }
 
     /// Get package details
@@ -279,6 +308,20 @@ impl PhylumApi {
         pkg: &PackageDescriptor,
     ) -> Result<PackageStatusExtended> {
         self.get(endpoints::get_package_status(&self.api_uri, pkg))
+            .await
+    }
+
+    /// Get all groups the user is part of.
+    pub async fn get_groups_list(&mut self) -> Result<ListUserGroupsResponse> {
+        self.get(endpoints::group_list(&self.api_uri)).await
+    }
+
+    /// Get all groups the user is part of.
+    pub async fn create_group(&mut self, group_name: &str) -> Result<CreateGroupResponse> {
+        let group = CreateGroupRequest {
+            group_name: group_name.into(),
+        };
+        self.post(endpoints::group_create(&self.api_uri), group)
             .await
     }
 }
@@ -352,7 +395,7 @@ mod tests {
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
+            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
             .await?;
 
         // Request should have been submitted with a bearer token
@@ -384,7 +427,7 @@ mod tests {
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
+            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
             .await?;
         Ok(())
     }

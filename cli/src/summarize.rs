@@ -4,6 +4,7 @@ use std::str::FromStr;
 use ansi_term::Color::*;
 use chrono::NaiveDateTime;
 use color::Color;
+use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::{
     AllJobsStatusResponse, CancelJobResponse, JobDescriptor, JobStatusResponse,
 };
@@ -348,6 +349,7 @@ impl Summarize for PackageStatus {}
 impl Summarize for ProjectDetailsResponse {}
 impl Summarize for AllJobsStatusResponse {}
 impl Summarize for CancelJobResponse {}
+impl Summarize for ListUserGroupsResponse {}
 
 #[cfg(test)]
 mod tests {

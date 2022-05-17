@@ -104,6 +104,8 @@ pub fn truncate(text: &str, max_length: usize) -> Cow<str> {
                 len < max_length
             })
             .collect::<String>()
+            .trim_end()
+            .to_owned()
             + "…";
         Cow::Owned(truncated)
     } else {
