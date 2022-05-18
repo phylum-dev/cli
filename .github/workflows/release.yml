@@ -156,3 +156,16 @@ jobs:
           files: |
             phylum-*.zip
             phylum-*.zip.minisig
+
+  Update-Documentation:
+    name: Update the documentation
+    needs: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+
+      - name: Update v2-latest using rdme
+        uses: readmeio/rdme@7.2.0
+        with:
+          rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
