@@ -13,16 +13,24 @@ use crate::print_user_warning;
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<()> {
-    config.auth_info = PhylumApi::register(config.auth_info).await?;
+async fn handle_auth_register(
+    mut config: Config,
+    config_path: &Path,
+    ignore_certs: bool,
+) -> Result<()> {
+    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-async fn handle_auth_login(mut config: Config, config_path: &Path) -> Result<()> {
-    config.auth_info = PhylumApi::login(config.auth_info).await?;
+async fn handle_auth_login(
+    mut config: Config,
+    config_path: &Path,
+    ignore_certs: bool,
+) -> Result<()> {
+    config.auth_info = PhylumApi::login(config.auth_info, ignore_certs).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -66,7 +74,11 @@ pub async fn handle_auth_status(
 }
 
 /// Display the current authentication token to the user, if one exists.
-pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_auth_token(
+    config: &Config,
+    matches: &clap::ArgMatches,
+    ignore_certs: bool,
+) -> CommandResult {
     let refresh_token = match &config.auth_info.offline_access {
         Some(refresh_token) => refresh_token,
         None => {
@@ -78,7 +90,8 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     };
 
     if matches.is_present("bearer") {
-        let tokens = auth::handle_refresh_tokens(&config.auth_info, refresh_token).await?;
+        let tokens =
+            auth::handle_refresh_tokens(&config.auth_info, refresh_token, ignore_certs).await?;
         println!("{}", tokens.access_token);
         Ok(ExitCode::Ok.into())
     } else {
@@ -97,7 +110,7 @@ pub async fn handle_auth(
     ignore_certs: bool,
 ) -> CommandResult {
     if matches.subcommand_matches("register").is_some() {
-        match handle_auth_register(config, config_path).await {
+        match handle_auth_register(config, config_path, ignore_certs).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok.into())
@@ -105,7 +118,7 @@ pub async fn handle_auth(
             Err(error) => Err(error).context("User registration failed"),
         }
     } else if matches.subcommand_matches("login").is_some() {
-        match handle_auth_login(config, config_path).await {
+        match handle_auth_login(config, config_path, ignore_certs).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok.into())
@@ -115,7 +128,7 @@ pub async fn handle_auth(
     } else if matches.subcommand_matches("status").is_some() {
         handle_auth_status(config, timeout, ignore_certs).await
     } else if let Some(matches) = matches.subcommand_matches("token") {
-        handle_auth_token(&config, matches).await
+        handle_auth_token(&config, matches, ignore_certs).await
     } else {
         print_sc_help(app_helper, "auth");
         Ok(ExitCode::Ok.into())
