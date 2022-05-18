@@ -542,7 +542,7 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path("/api/v0/job/packages/npm/@schematics~angular/9.1.9"))
+            .and(path("/api/v0/data/packages/npm/@schematics~angular/9.1.9"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;
