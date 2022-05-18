@@ -5,7 +5,7 @@ hidden: false
 ---
 Link a repository to a project
 ```sh
-phylum project link <name> [OPTIONS]
+phylum project link [OPTIONS] <name>
 ```
 This command will create the appropriate `.phylum_project` file in the current working directory.
 
@@ -19,5 +19,5 @@ This command will create the appropriate `.phylum_project` file in the current w
 $ phylum project link sample
 
 # Link current folder to an existing project named 'sample' owned by the group 'sGroup'
-$ phylum project link sample -g sGroup
+$ phylum project link -g sGroup sample
 ```

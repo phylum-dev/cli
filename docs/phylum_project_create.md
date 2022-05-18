@@ -5,7 +5,7 @@ hidden: false
 ---
 Create a new project
 ```sh
-phylum project create <name> [OPTIONS]
+phylum project create [OPTIONS] <name>
 ```
 This command will create the appropriate `.phylum_project` file in the current working directory.
 
@@ -19,5 +19,5 @@ This command will create the appropriate `.phylum_project` file in the current w
 $ phylum project create sample
 
 # Create a new project named 'sample' owned by the group 'sGroup'
-$ phylum project create sample -g sGroup
+$ phylum project create -g sGroup sample
 ```

@@ -5,7 +5,7 @@ hidden: false
 ---
 Interactively set risk domain thresholds for a project
 ```sh
-phylum project set-thresholds <name> [OPTIONS]
+phylum project set-thresholds [OPTIONS] <name>
 ```
 Resulting scores at or below the defined threshold will fail.
 
@@ -19,5 +19,5 @@ Resulting scores at or below the defined threshold will fail.
 $ phylum project set-thresholds sample
 
 # Interactively set risk domain thresholds for the 'sample' project owned by the 'sGroup' group
-$ phylum project set-thresholds sample -g sGroup
+$ phylum project set-thresholds -g sGroup sample
 ```

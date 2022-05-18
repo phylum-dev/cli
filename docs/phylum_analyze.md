@@ -18,7 +18,7 @@ phylum analyze [OPTIONS] <lockfile>
 &emsp; Provide a filter used to limit the issues displayed
 
 `-g`, `--group <group_name>`
-&emsp; Group to use for analysis
+&emsp; Specify a group to use for analysis
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
@@ -27,7 +27,7 @@ phylum analyze [OPTIONS] <lockfile>
 &emsp; Specify a label for a given analysis submission
 
 `-p`, `--project <project_name>`
-&emsp; Project to use for analysis (must already exist)
+&emsp; Specify a project to use for analysis (must already exist)
 
 `-v`, `--verbose`
 &emsp; Increase verbosity of API response
