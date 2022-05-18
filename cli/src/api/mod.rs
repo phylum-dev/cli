@@ -303,10 +303,7 @@ impl PhylumApi {
     }
 
     /// Get package details
-    pub async fn get_package_details(
-        &mut self,
-        pkg: &PackageDescriptor,
-    ) -> Result<PackageStatusExtended> {
+    pub async fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<Package> {
         self.get(endpoints::get_package_status(&self.api_uri, pkg))
             .await
     }
@@ -501,38 +498,46 @@ mod tests {
     async fn get_package_details() -> Result<()> {
         let body = r#"
         {
-            "name": "@schematics/angular",
-            "version": "9.1.9",
-            "type": "npm",
-            "last_updated": 1611962723183,
-            "license": "MIT",
-            "package_score": 1.0,
-            "num_dependencies": 2,
-            "num_vulnerabilities": 4,
-            "msg": "Project met threshold requirements",
-            "pass": true,
-            "action": "warn",
-            "status": "complete",
-            "riskVectors": {
-                "author": 0.90,
-                "engineering": 0.42,
-                "license": 1.0,
-                "malicious_code": 1.0,
-                "vulnerability": 1.0
-            },
-            "issues": [
-                {
-                "title": "Commercial license risk in xmlrpc@0.3.0",
-                "description": "license is medium risk",
-                "risk_level": "medium",
-                "risk_domain": "license",
-                "pkg_name": "xmlrpc",
-                "pkg_version": "0.3.0",
-                "score": 0.7
-                }
-            ],
-            "dependencies": {}
-          }
+          "id": "npm:@schematics~angular:9.1.9",
+          "name": "@schematics~angular",
+          "version": "9.1.9",
+          "registry": "npm",
+          "publishedDate": "1970-01-01T00:00:00+00:00",
+          "latestVersion": null,
+          "versions": [],
+          "description": null,
+          "license": null,
+          "depSpecs": [],
+          "dependencies": [],
+          "downloadCount": 0,
+          "riskScores": {
+            "total": 1,
+            "vulnerability": 1,
+            "malicious_code": 1,
+            "author": 1,
+            "engineering": 1,
+            "license": 1
+          },
+          "totalRiskScoreDynamics": null,
+          "issuesDetails": [],
+          "issues": [],
+          "authors": [],
+          "developerResponsiveness": {
+            "open_issue_count": 167,
+            "total_issue_count": 393,
+            "open_issue_avg_duration": 980,
+            "open_pull_request_count": 50,
+            "total_pull_request_count": 476,
+            "open_pull_request_avg_duration": 474
+          },
+          "issueImpacts": {
+            "low": 0,
+            "medium": 0,
+            "high": 0,
+            "critical": 0
+          },
+          "complete": false
+        }
         "#;
 
         let mock_server = build_mock_server().await;

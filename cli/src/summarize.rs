@@ -217,12 +217,12 @@ impl Summarize for JobStatusResponse<PackageStatus> {
 fn check_filter_issue(filter: &Filter, issue: &Issue) -> bool {
     let mut include = true;
     if let Some(ref level) = filter.level {
-        if issue.risk_level < *level {
+        if issue.severity < *level {
             include = false;
         }
     }
     if let Some(ref domains) = filter.domains {
-        if !domains.contains(&issue.risk_domain) {
+        if !domains.contains(&issue.domain.into()) {
             include = false;
         }
     }
@@ -250,7 +250,7 @@ impl Summarize for JobStatusResponse<PackageStatusExtended> {
             }
         }
 
-        issues.sort_by(|a, b| a.risk_level.partial_cmp(&b.risk_level).unwrap());
+        issues.sort_by(|a, b| a.severity.partial_cmp(&b.severity).unwrap());
         issues.reverse();
 
         for issue in issues {
@@ -278,13 +278,13 @@ impl Summarize for PackageStatusExtended {
                     let mut include = true;
 
                     if let Some(ref level) = filter.level {
-                        if i.risk_level < *level {
+                        if i.severity < *level {
                             include = false;
                         }
                     }
 
                     if let Some(domains) = &filter.domains {
-                        if !domains.contains(&i.risk_domain) {
+                        if !domains.contains(&i.domain.into()) {
                             include = false;
                         }
                     }
@@ -336,6 +336,72 @@ impl Summarize for PackageStatusExtended {
     }
 }
 
+impl Summarize for Package {
+    fn summarize(&self, filter: Option<Filter>) {
+        let mut issues_table = Table::new();
+        issues_table.set_format(table_format(3, 0));
+
+        let issues = if let Some(ref filter) = filter {
+            self.issues
+                .iter()
+                .filter_map(|i| {
+                    let mut include = true;
+
+                    if let Some(ref level) = filter.level {
+                        if i.impact < *level {
+                            include = false;
+                        }
+                    }
+
+                    if let Some(domains) = &filter.domains {
+                        if !domains.contains(&i.risk_type) {
+                            include = false;
+                        }
+                    }
+                    if include {
+                        Some(i.to_owned())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<IssuesListItem>>()
+        } else {
+            self.issues.to_owned()
+        };
+
+        for issue in &issues {
+            let rows: Vec<Row> = issueslistitem_to_row(issue);
+            for mut row in rows {
+                row.remove_cell(2);
+                issues_table.add_row(row);
+            }
+            issues_table.add_empty_row();
+        }
+
+        let risk_to_string = |risk: f32| format!("{}", (100. * risk).round());
+
+        let mut risks_table = table![
+            ["Total Risk:", r -> risk_to_string(self.risk_scores.total)],
+            ["Author Risk:", r -> risk_to_string(self.risk_scores.author)],
+            ["Engineering Risk:", r -> risk_to_string(self.risk_scores.engineering)],
+            ["License Risk:", r -> risk_to_string(self.risk_scores.license)],
+            ["Malicious Code Risk:", r -> risk_to_string(self.risk_scores.malicious_code)],
+            ["Vulnerability Risk:", r -> risk_to_string(self.risk_scores.vulnerability)]
+        ];
+        risks_table.set_format(table_format(3, 1));
+
+        println!("{}", self.render());
+
+        println!(" Risk Vectors:");
+        risks_table.printstd();
+
+        if !issues_table.is_empty() {
+            println!("\n Issues:");
+            issues_table.printstd();
+        }
+    }
+}
+
 impl Summarize for Vec<JobDescriptor> {
     fn summarize(&self, _filter: Option<Filter>) {
         println!("Last {} runs\n\n{}", self.len(), self.render());
@@ -363,7 +429,7 @@ mod tests {
         let issue = r#"{
                     "title": "Commercial license risk in xmlrpc@0.3.0",
                     "description": "license is medium risk",
-                    "risk_level": "medium",
+                    "severity": "medium",
                     "domain": "license"
                     }"#;
         let issue: Issue = serde_json::from_str(issue).unwrap();
@@ -390,11 +456,30 @@ fn risk_level_to_color(level: &RiskLevel) -> Color {
 
 fn issue_to_row(issue: &Issue) -> Vec<Row> {
     let row_1 = Row::new(vec![
-        Cell::new_align(&issue.risk_level.to_string(), format::Alignment::LEFT).with_style(
-            Attr::ForegroundColor(risk_level_to_color(&issue.risk_level)),
-        ),
+        Cell::new_align(&issue.severity.to_string(), format::Alignment::LEFT)
+            .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.severity))),
         Cell::new_align(
-            &format!("{} [{}]", &issue.title, issue.risk_domain),
+            &format!("{} [{}]", &issue.title, issue.domain),
+            format::Alignment::LEFT,
+        )
+        .with_style(Attr::Bold),
+    ]);
+
+    let row_2 = Row::new(vec![
+        Cell::new(""),
+        Cell::new(&textwrap::fill(&issue.description, 80)),
+        Cell::new(""),
+    ]);
+
+    vec![row_1, row![], row_2]
+}
+
+fn issueslistitem_to_row(issue: &IssuesListItem) -> Vec<Row> {
+    let row_1 = Row::new(vec![
+        Cell::new_align(&issue.impact.to_string(), format::Alignment::LEFT)
+            .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.impact))),
+        Cell::new_align(
+            &format!("{} [{}]", &issue.title, issue.risk_type),
             format::Alignment::LEFT,
         )
         .with_style(Attr::Bold),
