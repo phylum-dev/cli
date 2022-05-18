@@ -14,6 +14,9 @@ phylum project [OPTIONS] [SUBCOMMAND]
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
+`-g`, `--group <group_name>`
+&emsp; Group to list projects for
+
 ### Commands
 * [phylum project create](https://docs.phylum.io/docs/phylum_project_create)
 * [phylum project link](https://docs.phylum.io/docs/phylum_project_link)
@@ -24,6 +27,9 @@ phylum project [OPTIONS] [SUBCOMMAND]
 ```sh
 # List all projects for the current account
 $ phylum project
+
+# List all projects for the 'sample' group
+$ phylum project -g sample
 
 # Return json response of all projects for the current account
 $ phylum project --json
