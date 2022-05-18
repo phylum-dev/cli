@@ -7,7 +7,7 @@ hidden: false
 Submit a request for analysis to the processing system
 
 ```sh
-phylum analyze [options] <lockfile>
+phylum analyze [OPTIONS] <lockfile>
 ```
 
 ### Options
@@ -17,6 +17,9 @@ phylum analyze [options] <lockfile>
 `--filter <filter>`
 &emsp; Provide a filter used to limit the issues displayed
 
+`-g`, `--group <group_name>`
+&emsp; Specify a group to use for analysis
+
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
@@ -24,7 +27,7 @@ phylum analyze [options] <lockfile>
 &emsp; Specify a label for a given analysis submission
 
 `-p`, `--project <project_name>`
-&emsp; Project to use for analysis (must already exist)
+&emsp; Specify a project to use for analysis (must already exist)
 
 `-v`, `--verbose`
 &emsp; Increase verbosity of API response
@@ -42,6 +45,9 @@ $ phylum analyze -l test_branch requirements.txt
 
 # Analyze a Poetry lock file and return the results to the 'sample' project
 $ phylum analyze -p sample poetry.lock
+
+# Analyze a NuGet lock file using the 'sample' project and 'sGroup' group
+$ phylum analyze -p sample -g sGroup app.csproj
 
 # Analyze a RubyGems lock file and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock

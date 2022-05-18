@@ -142,8 +142,8 @@ pub fn app<'a>() -> clap::Command<'a> {
                     arg!(-v --verbose "Increase verbosity of api response."),
                     arg!(--filter <filter>).required(false).help(FILTER_ABOUT),
                     arg!(-j --json "Produce output in json format (default: false)"),
-                    arg!(-p --project <project_name> "Project to use for analysis").required(false),
-                    arg!(-g --group <group_name> "Group to use for analysis").required(false).requires("project"),
+                    arg!(-p --project <project_name> "Specify a project to use for analysis").required(false),
+                    arg!(-g --group <group_name> "Specify a group to use for analysis").required(false).requires("project"),
                 ])
         )
         .subcommand(
@@ -170,7 +170,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .arg(arg!(-j --json "Produce group list in json format (default: false)"))
                 .subcommand(
                     Command::new("list")
-                        .about("List all groups the user is part of")
+                        .about("List all groups the user is a member of")
                         .arg(arg!(-j --json "Produce output in json format (default: false)"))
                 )
                 .subcommand(
