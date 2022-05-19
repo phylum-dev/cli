@@ -755,12 +755,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "histogram"
-version = "0.6.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12cb882ccb290b8646e554b157ab0b71e64e8d5bef775cd66b6531e52d302669"
-
-[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1207,7 +1201,6 @@ dependencies = [
  "env_logger",
  "futures",
  "git-version",
- "histogram",
  "home",
  "hyper",
  "lazy_static",
@@ -1223,7 +1216,6 @@ dependencies = [
  "routerify",
  "serde",
  "serde-xml-rs",
- "serde_derive",
  "serde_json",
  "serde_yaml",
  "sha2",
@@ -1237,8 +1229,6 @@ dependencies = [
  "unicode-width",
  "url",
  "wiremock",
- "yaml-rust",
- "zeroize",
  "zip",
 ]
 
