@@ -70,6 +70,9 @@ The command line interface (CLI) allows users to submit their project package de
    ```
    phylum analyze <package-lock-file.ext>
    ```
+   
+ 1. (Optional) View the analysis results in the [Phylum UI](https://app.phylum.io/auth/login)
+ 
 
 ---
 
