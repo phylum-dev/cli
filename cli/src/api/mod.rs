@@ -15,7 +15,7 @@ use phylum_types::types::user_settings::*;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Method, StatusCode};
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use thiserror::Error as ThisError;
 
 mod endpoints;
@@ -56,13 +56,6 @@ impl PhylumApiError {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum APIResult<T> {
-    Ok(T),
-    Err { msg: String },
-}
-
 impl PhylumApi {
     async fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
         self.send_request::<_, ()>(Method::GET, path, None).await
@@ -99,12 +92,7 @@ impl PhylumApi {
             return Err(anyhow!(body).into());
         }
 
-        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
-            .map_err(|e| PhylumApiError::Other(e.into()))?;
-        match api_obj {
-            APIResult::Ok(api_obj) => Ok(api_obj),
-            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
-        }
+        serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
     }
 }
 
