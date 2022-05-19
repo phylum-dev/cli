@@ -5,7 +5,7 @@ use std::{collections::HashSet, convert::TryFrom, path::PathBuf};
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 pub use extension::*;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{arg, ArgMatches, Command, ValueHint};
 use log::{error, warn};
 

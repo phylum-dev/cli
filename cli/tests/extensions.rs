@@ -84,8 +84,7 @@ fn successful_installation_prints_message() {
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
     assert!(output
         .lines()
-        .find(|m| m.contains("Extension sample-extension installed successfully"))
-        .is_some());
+        .any(|m| m.contains("Extension sample-extension installed successfully")));
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -97,7 +96,7 @@ fn unsuccessful_installation_prints_failure_message() {
     fn stderr_match_regex(cmd: assert_cmd::assert::Assert, pattern: &str) -> bool {
         let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
 
-        output.lines().find(|m| m.contains(pattern)).is_some()
+        output.lines().any(|m| m.contains(pattern))
     }
 
     // Install the extension. Should succeed.
@@ -165,8 +164,7 @@ fn extension_is_uninstalled_correctly() {
     assert!(
         walkdir::WalkDir::new(&extension_path)
             .into_iter()
-            .collect::<Vec<_>>()
-            .len()
+            .count()
             > 1
     );
 
@@ -200,7 +198,7 @@ fn extension_list_should_emit_output() {
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
     let re = Regex::new(r#"No extension"#).unwrap();
 
-    assert!(output.lines().find(|m| re.is_match(m)).is_some());
+    assert!(output.lines().any(|m| re.is_match(m)));
 
     // Install one extension
     Command::cargo_bin("phylum")
@@ -222,7 +220,7 @@ fn extension_list_should_emit_output() {
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
     let re = Regex::new(r#"^sample-extension\s+This extension does a thing"#).unwrap();
 
-    assert!(output.lines().find(|m| re.is_match(m)).is_some());
+    assert!(output.lines().any(|m| re.is_match(m)));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -307,7 +305,7 @@ impl AsRef<Path> for TmpDir {
 
 impl AsRef<OsStr> for TmpDir {
     fn as_ref(&self) -> &OsStr {
-        &self.0.as_os_str()
+        self.0.as_os_str()
     }
 }
 
