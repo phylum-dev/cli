@@ -118,7 +118,7 @@ fn installed_extensions() -> Result<Vec<Extension>> {
     Ok(std::fs::read_dir(extensions_path)?
         .filter_map(|dir_entry| {
             match dir_entry
-                .map_err(|e| anyhow!("{}", e))
+                .map_err(|e| e.into())
                 .and_then(|dir_entry| Extension::try_from(dir_entry.path()))
             {
                 Ok(ext) => Some(ext),
