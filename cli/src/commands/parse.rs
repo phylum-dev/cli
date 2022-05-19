@@ -1,10 +1,50 @@
+//! `phylum parse` command for lockfile parsing
+
+use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use phylum_types::types::package::*;
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 
+use super::{CommandResult, ExitCode};
 use crate::lockfiles::*;
 
+type ParserResult = Result<(Vec<PackageDescriptor>, PackageType)>;
+
+const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
+    ("yarn", &parse::<YarnLock>),
+    ("npm", &parse::<PackageLock>),
+    ("gem", &parse::<GemLock>),
+    ("pip", &parse::<PyRequirements>),
+    ("pipenv", &parse::<PipFile>),
+    ("poetry", &parse::<Poetry>),
+    ("mvn", &parse::<Pom>),
+    ("gradle", &parse::<GradleDeps>),
+    ("nuget", &parse::<CSProj>),
+    ("auto", &get_packages_from_lockfile),
+];
+
+pub fn lockfile_types() -> Vec<&'static str> {
+    LOCKFILE_PARSERS.iter().map(|(name, _)| *name).collect()
+}
+
+pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
+    let lockfile_type = matches.value_of("lockfile-type").unwrap_or("auto");
+    // LOCKFILE is a required parameter, so .unwrap() should be safe.
+    let lockfile = matches.value_of("LOCKFILE").unwrap();
+
+    let parser = LOCKFILE_PARSERS
+        .iter()
+        .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
+        .next()
+        .unwrap();
+
+    let (pkgs, _) = parser(Path::new(lockfile))?;
+
+    serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
+
+    Ok(ExitCode::Ok.into())
+}
 /// Attempt to get packages from an unknown lockfile type
 pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     log::warn!(
@@ -38,8 +78,7 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
-pub fn get_packages_from_lockfile(path: &str) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    let path = Path::new(path);
+pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     let file = path
         .file_name()
         .and_then(|file| file.to_str())
@@ -56,7 +95,7 @@ pub fn get_packages_from_lockfile(path: &str) -> Result<(Vec<PackageDescriptor>,
         "package-lock.json" => parse::<PackageLock>(path)?,
         "yarn.lock" => parse::<YarnLock>(path)?,
         "requirements.txt" => parse::<PyRequirements>(path)?,
-        "Pipfile.txt" | "Pipfile.lock" => parse::<PipFile>(path)?,
+        "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
         "poetry.lock" => parse::<Poetry>(path)?,
         "effective-pom.xml" => parse::<Pom>(path)?,
         "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,

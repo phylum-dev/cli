@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PingResponse {
-    pub msg: String,
+    pub response: String,
 }
 
 // TODO Deprecate

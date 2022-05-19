@@ -46,6 +46,7 @@ pub struct ProjectConfig {
     pub id: ProjectId,
     pub name: String,
     pub created_at: DateTime<Local>,
+    pub group_name: Option<String>,
 }
 
 impl Default for Config {

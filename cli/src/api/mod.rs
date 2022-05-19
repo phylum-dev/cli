@@ -1,8 +1,10 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
+use anyhow::Context;
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
+use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
 use phylum_types::types::job::*;
 use phylum_types::types::package::*;
 use phylum_types::types::project::CreateProjectRequest;
@@ -16,17 +18,13 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
-mod common;
-mod job;
-mod project;
-mod user_settings;
+mod endpoints;
 
 use crate::auth::fetch_oidc_server_settings;
 use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
-use crate::types::AuthStatusResponse;
 use crate::types::PingResponse;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
@@ -73,8 +71,12 @@ impl PhylumApi {
         self.send_request(Method::PUT, path, Some(s)).await
     }
 
-    async fn delete<T: DeserializeOwned>(&self, path: String) -> Result<T> {
-        self.send_request::<_, ()>(Method::DELETE, path, None).await
+    async fn post<T: serde::de::DeserializeOwned, S: serde::Serialize>(
+        &self,
+        path: String,
+        s: S,
+    ) -> Result<T> {
+        self.send_request(Method::POST, path, Some(s)).await
     }
 
     async fn send_request<T: DeserializeOwned, B: Serialize>(
@@ -171,17 +173,9 @@ impl PhylumApi {
     /// Ping the system and verify it's up
     pub async fn ping(&mut self) -> Result<String> {
         Ok(self
-            .get::<PingResponse>(job::get_ping(&self.api_uri))
+            .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
             .await?
-            .msg)
-    }
-
-    /// Check auth status of the current user
-    pub async fn auth_status(&mut self) -> Result<bool> {
-        Ok(self
-            .get::<AuthStatusResponse>(job::get_auth_status(&self.api_uri))
-            .await?
-            .authenticated)
+            .response)
     }
 
     /// Get information about the authenticated user
@@ -191,13 +185,13 @@ impl PhylumApi {
     }
 
     /// Create a new project
-    pub async fn create_project(&mut self, name: &str) -> Result<ProjectId> {
+    pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         Ok(self
             .put::<CreateProjectResponse, _>(
-                project::put_create_project(&self.api_uri),
+                endpoints::put_create_project(&self.api_uri),
                 CreateProjectRequest {
-                    name: name.to_string(),
-                    group_name: None,
+                    name: name.to_owned(),
+                    group_name: group.map(String::from),
                 },
             )
             .await?
@@ -205,24 +199,26 @@ impl PhylumApi {
     }
 
     /// Get a list of projects
-    pub async fn get_projects(&mut self) -> Result<Vec<ProjectSummaryResponse>> {
-        self.get(project::get_project_summary(&self.api_uri)).await
+    pub async fn get_projects(
+        &mut self,
+        group: Option<&str>,
+    ) -> Result<Vec<ProjectSummaryResponse>> {
+        let uri = match group {
+            Some(group) => endpoints::group_project_summary(&self.api_uri, group),
+            None => endpoints::get_project_summary(&self.api_uri),
+        };
+
+        self.get(uri).await
     }
 
     /// Get user settings
     pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
-        self.get(user_settings::get_user_settings(&self.api_uri))
-            .await
+        self.get(endpoints::get_user_settings(&self.api_uri)).await
     }
 
     /// Put updated user settings
     pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
-        self.client
-            .put(user_settings::put_user_settings(&self.api_uri))
-            .json(&settings)
-            .send()
-            .await?
-            .json::<UserSettings>()
+        self.put::<UserSettings, _>(endpoints::put_user_settings(&self.api_uri), &settings)
             .await?;
         Ok(true)
     }
@@ -235,6 +231,7 @@ impl PhylumApi {
         is_user: bool,
         project: ProjectId,
         label: Option<String>,
+        group_name: Option<String>,
     ) -> Result<JobId> {
         let req = SubmitPackageRequest {
             package_type: req_type.to_owned(),
@@ -242,10 +239,11 @@ impl PhylumApi {
             is_user,
             project,
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
+            group_name,
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
-            .put(job::put_submit_package(&self.api_uri), req)
+            .put(endpoints::put_submit_package(&self.api_uri), req)
             .await?;
         Ok(resp.job_id)
     }
@@ -255,7 +253,7 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, false))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, false))
             .await
     }
 
@@ -264,13 +262,14 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(job::get_job_status(&self.api_uri, job_id, true))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, true))
             .await
     }
 
     /// Get the status of all jobs
     pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
-        self.get(job::get_all_jobs_status(&self.api_uri, 30)).await
+        self.get(endpoints::get_all_jobs_status(&self.api_uri, 30))
+            .await
     }
 
     /// Get the details of a specific project
@@ -278,21 +277,49 @@ impl PhylumApi {
         &mut self,
         project_name: &str,
     ) -> Result<ProjectDetailsResponse> {
-        self.get(job::get_project_details(&self.api_uri, project_name))
+        self.get(endpoints::get_project_details(&self.api_uri, project_name))
             .await
     }
 
-    /// Get package details
-    pub async fn get_package_details(
+    /// Resolve a Project Name to a Project ID
+    pub async fn get_project_id(
         &mut self,
-        pkg: &PackageDescriptor,
-    ) -> Result<PackageStatusExtended> {
-        self.get(job::get_package_status(&self.api_uri, pkg)).await
+        project_name: &str,
+        group_name: Option<&str>,
+    ) -> Result<ProjectId> {
+        let projects = self.get_projects(group_name).await?;
+
+        projects
+            .iter()
+            .find(|project| project.name == project_name)
+            .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
+            .and_then(|project| {
+                project
+                    .id
+                    .parse()
+                    .context("Invalid Project ID")
+                    .map_err(PhylumApiError::from)
+            })
     }
 
-    /// Cancel a job currently in progress
-    pub async fn cancel(&mut self, job_id: &JobId) -> Result<CancelJobResponse> {
-        self.delete(job::delete_job(&self.api_uri, job_id)).await
+    /// Get package details
+    pub async fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<Package> {
+        self.get(endpoints::get_package_status(&self.api_uri, pkg))
+            .await
+    }
+
+    /// Get all groups the user is part of.
+    pub async fn get_groups_list(&mut self) -> Result<ListUserGroupsResponse> {
+        self.get(endpoints::group_list(&self.api_uri)).await
+    }
+
+    /// Get all groups the user is part of.
+    pub async fn create_group(&mut self, group_name: &str) -> Result<CreateGroupResponse> {
+        let group = CreateGroupRequest {
+            group_name: group_name.into(),
+        };
+        self.post(endpoints::group_create(&self.api_uri), group)
+            .await
     }
 }
 
@@ -302,7 +329,6 @@ mod tests {
 
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
-    use uuid::Uuid;
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -363,10 +389,10 @@ mod tests {
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
-        let project_id = Uuid::new_v4();
+        let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
+            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
             .await?;
 
         // Request should have been submitted with a bearer token
@@ -395,10 +421,10 @@ mod tests {
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
-        let project_id = Uuid::new_v4();
+        let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label)
+            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
             .await?;
         Ok(())
     }
@@ -472,43 +498,51 @@ mod tests {
     async fn get_package_details() -> Result<()> {
         let body = r#"
         {
-            "name": "@schematics/angular",
-            "version": "9.1.9",
-            "type": "npm",
-            "last_updated": 1611962723183,
-            "license": "MIT",
-            "package_score": 1.0,
-            "num_dependencies": 2,
-            "num_vulnerabilities": 4,
-            "msg": "Project met threshold requirements",
-            "pass": true,
-            "action": "warn",
-            "status": "complete",
-            "riskVectors": {
-                "author": 0.90,
-                "engineering": 0.42,
-                "license": 1.0,
-                "malicious_code": 1.0,
-                "vulnerability": 1.0
-            },
-            "issues": [
-                {
-                "title": "Commercial license risk in xmlrpc@0.3.0",
-                "description": "license is medium risk",
-                "risk_level": "medium",
-                "risk_domain": "license",
-                "pkg_name": "xmlrpc",
-                "pkg_version": "0.3.0",
-                "score": 0.7
-                }
-            ],
-            "dependencies": {}
-          }
+          "id": "npm:@schematics~angular:9.1.9",
+          "name": "@schematics~angular",
+          "version": "9.1.9",
+          "registry": "npm",
+          "publishedDate": "1970-01-01T00:00:00+00:00",
+          "latestVersion": null,
+          "versions": [],
+          "description": null,
+          "license": null,
+          "depSpecs": [],
+          "dependencies": [],
+          "downloadCount": 0,
+          "riskScores": {
+            "total": 1,
+            "vulnerability": 1,
+            "malicious_code": 1,
+            "author": 1,
+            "engineering": 1,
+            "license": 1
+          },
+          "totalRiskScoreDynamics": null,
+          "issuesDetails": [],
+          "issues": [],
+          "authors": [],
+          "developerResponsiveness": {
+            "open_issue_count": 167,
+            "total_issue_count": 393,
+            "open_issue_avg_duration": 980,
+            "open_pull_request_count": 50,
+            "total_pull_request_count": 476,
+            "open_pull_request_avg_duration": 474
+          },
+          "issueImpacts": {
+            "low": 0,
+            "medium": 0,
+            "high": 0,
+            "critical": 0
+          },
+          "complete": false
+        }
         "#;
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path("/api/v0/job/packages/npm/@schematics~angular/9.1.9"))
+            .and(path("/api/v0/data/packages/npm/@schematics~angular/9.1.9"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;
@@ -651,27 +685,6 @@ mod tests {
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status_ext(&job).await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn cancel() -> Result<()> {
-        let body = r#"{"msg": "Job deleted"}"#;
-
-        let mock_server = build_mock_server().await;
-        Mock::given(method("DELETE"))
-            .and(path_regex(
-                r"^/api/v0/job/[-\dabcdef]+$".to_string().to_string(),
-            ))
-            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
-            .mount(&mock_server)
-            .await;
-
-        let mut client = build_phylum_api(&mock_server).await?;
-
-        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        client.cancel(&job).await?;
 
         Ok(())
     }

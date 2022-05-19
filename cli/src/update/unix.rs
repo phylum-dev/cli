@@ -2,10 +2,11 @@ use std::io::{self, Cursor};
 use std::process::Command;
 use std::str;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::Client;
+use serde::de::DeserializeOwned;
 use zip::ZipArchive;
 
 #[cfg(test)]
@@ -69,6 +70,17 @@ async fn http_get(url: &str) -> anyhow::Result<reqwest::Response> {
     Ok(response)
 }
 
+/// Generic function for fetching JSON structs via HTTP GET.
+async fn http_get_json<T: DeserializeOwned>(url: &str) -> anyhow::Result<T> {
+    let response = http_get(url).await?;
+
+    if let Err(error) = response.error_for_status_ref() {
+        Err(anyhow!(response.text().await?)).context(error)
+    } else {
+        Ok(response.json().await?)
+    }
+}
+
 /// Download the specified Github asset. Returns a bytes object containing the contents of the asset.
 async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<bytes::Bytes> {
     let r = http_get(&latest.browser_download_url).await?;
@@ -126,8 +138,7 @@ impl ApplicationUpdater {
     async fn get_latest_version(&self, prerelease: bool) -> anyhow::Result<GithubRelease> {
         let ver = if prerelease {
             let url = format!("{}/repos/phylum-dev/cli/releases", self.github_uri);
-            let r = http_get(&url).await?;
-            let releases = r.json::<Vec<GithubRelease>>().await?;
+            let releases = http_get_json::<Vec<GithubRelease>>(&url).await?;
             // Use the first one in the list, which should be the most recent
             releases
                 .first()
@@ -135,8 +146,7 @@ impl ApplicationUpdater {
                 .ok_or_else(|| anyhow::anyhow!("no releases found"))?
         } else {
             let url = format!("{}/repos/phylum-dev/cli/releases/latest", self.github_uri);
-            let r = http_get(&url).await?;
-            r.json::<GithubRelease>().await?
+            http_get_json::<GithubRelease>(&url).await?
         };
 
         log::debug!("Found latest version: {:?}", ver);

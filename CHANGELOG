@@ -1,3 +1,4 @@
+* 3.3.0 - Introduce parse command
 * 3.2.0 - Support yarn patched dependencies
 * 3.1.0 - Resolve project create error and add `--bearer` option to `phylum auth token`
 * 3.0.0 - Follow XDG spec and add uninstall command

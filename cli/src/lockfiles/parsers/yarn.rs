@@ -2,32 +2,17 @@ use super::*;
 
 pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
     let (i, _) = yarn_lock_header(input)?;
-    let (i, mut entries) = many1(entry)(i)?;
-
-    // Attempt to parse one final entry not followed by a newline
-    let res = entry_final(i);
-    if let Ok((i, final_entry)) = res {
-        entries.push(final_entry);
-        return Ok((i, entries));
-    }
-
-    Ok((i, entries))
+    many1(entry)(i)
 }
 
 fn yarn_lock_header(input: &str) -> Result<&str, &str> {
     recognize(tuple((count(take_till_line_end, 2), multispace0)))(input)
 }
 
-fn entry_final(input: &str) -> Result<&str, PackageDescriptor> {
-    let (i, capture) = recognize(many_till(take_till_line_end, eof))(input)?;
-    let (_, my_entry) = parse_entry(capture)?;
-    Ok((i, my_entry))
-}
-
 fn entry(input: &str) -> Result<&str, PackageDescriptor> {
     let (i, capture) = recognize(many_till(
         take_till_line_end,
-        recognize(tuple((space0, line_ending))),
+        recognize(tuple((space0, alt((line_ending, eof))))),
     ))(input)?;
 
     let (_, my_entry) = parse_entry(capture)?;
@@ -56,11 +41,9 @@ fn entry_name(input: &str) -> Result<&str, &str> {
 }
 
 fn entry_version(input: &str) -> Result<&str, &str> {
-    let (i, _) = take_until(r#"version ""#)(input)?;
-    context(
-        "version",
-        delimited(tag(r#"version ""#), is_version, tag(r#"""#)),
-    )(i)
+    let (i, _) = take_until(r#"version"#)(input)?;
+    let version_key = tuple((tag(r#"version"#), opt(tag(r#"""#)), tag(r#" ""#)));
+    context("version", delimited(version_key, is_version, tag(r#"""#)))(i)
 }
 
 fn is_version<T, E: nom::error::ParseError<T>>(input: T) -> IResult<T, T, E>

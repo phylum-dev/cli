@@ -155,10 +155,13 @@ pub async fn fetch_oidc_server_settings(auth_info: &AuthInfo) -> Result<OidcServ
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(5))
         .send()
-        .await?
-        .json::<OidcServerSettings>()
         .await?;
-    Ok(response)
+
+    if let Err(error) = response.error_for_status_ref() {
+        Err(anyhow!(response.text().await?)).context(error)
+    } else {
+        Ok(response.json::<OidcServerSettings>().await?)
+    }
 }
 
 fn build_grant_type_auth_code_post_body(
@@ -210,10 +213,26 @@ pub async fn acquire_tokens(
         .timeout(Duration::from_secs(5))
         .form(&body)
         .send()
-        .await?
-        .json::<TokenResponse>()
         .await?;
-    Ok(response)
+
+    if let Err(error) = response.error_for_status_ref() {
+        let body = response.text().await?;
+        let mut err = Err(anyhow!(body.clone())).context(error);
+
+        // Provide additional detail when user requires activation.
+        if serde_json::from_str::<ResponseError>(&body)
+            .map_or(false, |response| response.error == "not_allowed")
+        {
+            err = err.context(
+                "Your account is not authorized to perform this action. \
+                Please contact Phylum support.",
+            );
+        }
+
+        err
+    } else {
+        Ok(response.json::<TokenResponse>().await?)
+    }
 }
 
 pub async fn refresh_tokens(
@@ -260,4 +279,10 @@ pub struct UserInfo {
     pub family_name: Option<String>,
     pub preferred_username: Option<String>,
     pub email_verified: Option<bool>,
+}
+
+/// Keycloak error response.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ResponseError {
+    error: String,
 }

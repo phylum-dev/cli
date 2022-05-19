@@ -3,9 +3,10 @@ use phylum_types::types::job::Action;
 pub mod auth;
 #[cfg(feature = "extensions")]
 pub mod extensions;
+pub mod group;
 pub mod jobs;
-pub mod lock_files;
 pub mod packages;
+pub mod parse;
 pub mod project;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;

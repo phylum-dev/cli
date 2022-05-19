@@ -3,6 +3,7 @@ use git_version::git_version;
 
 #[cfg(feature = "extensions")]
 use crate::commands::extensions;
+use crate::commands::parse;
 
 const VERSION: &str = git_version!(
     args = ["--dirty=-modified", "--tags"],
@@ -62,27 +63,42 @@ pub fn app<'a>() -> clap::Command<'a> {
         .subcommand(
             Command::new("project")
                 .about("Create, list, link and set thresholds for projects")
-                .arg(arg!(-j --json "Produce output in json format (default: false)"))
+                .args(&[
+                    arg!(-j --json "Produce output in json format (default: false)"),
+                    arg!(-g --group <group_name> "Group to list projects for").required(false),
+                ])
                 .aliases(&["projects"])
                 .subcommand(
                     Command::new("create")
                         .about("Create a new project")
-                        .arg(arg!(<name> "Name of the project"))
+                        .args(&[
+                            arg!(<name> "Name of the project"),
+                            arg!(-g --group <group_name> "Group which will be the owner of the project").required(false),
+                        ])
                 )
                 .subcommand(
                     Command::new("list")
                         .about("List all existing projects")
-                        .arg(arg!(-j --json "Produce output in json format (default: false)"))
+                        .args(&[
+                            arg!(-j --json "Produce output in json format (default: false)"),
+                            arg!(-g --group <group_name> "Group to list projects for").required(false),
+                        ])
                 )
                 .subcommand(
                     Command::new("link")
                         .about("Link a repository to a project")
-                        .arg(arg!(<name> "Name of the project"))
+                        .args(&[
+                            arg!(<name> "Name of the project"),
+                            arg!(-g --group <group_name> "Group owning the project").required(false),
+                        ])
                 )
                 .subcommand(
                     Command::new("set-thresholds")
                         .about("Interactively set risk domain thresholds for a project")
-                        .arg(arg!(<name> "Name of the project"))
+                        .args(&[
+                            arg!(<name> "Name of the project"),
+                            arg!(-g --group <group_name> "Group owning the project").required(false),
+                        ])
                 )
         )
         .subcommand(
@@ -111,6 +127,14 @@ pub fn app<'a>() -> clap::Command<'a> {
             Command::new("ping").about("Ping the remote system to verify it is available")
         )
         .subcommand(
+            Command::new("parse")
+                .about("Parse a lockfile")
+                .args(&[
+                    arg!(<LOCKFILE> "The package lock file to submit.").value_hint(ValueHint::FilePath),
+                    arg!(-t --"lockfile-type" <type> "The type of the lock file (default: auto)").required(false).possible_values(parse::lockfile_types()),
+                ])
+        )
+        .subcommand(
             Command::new("analyze")
                 .about("Submit a request for analysis to the processing system")
                 .args(&[
@@ -120,7 +144,8 @@ pub fn app<'a>() -> clap::Command<'a> {
                     arg!(-v --verbose "Increase verbosity of api response."),
                     arg!(--filter <filter>).required(false).help(FILTER_ABOUT),
                     arg!(-j --json "Produce output in json format (default: false)"),
-                    arg!(-p --project <project_name> "Project to use for analysis").required(false),
+                    arg!(-p --project <project_name> "Specify a project to use for analysis").required(false),
+                    arg!(-g --group <group_name> "Specify a group to use for analysis").required(false).requires("project"),
                 ])
         )
         .subcommand(
@@ -134,11 +159,27 @@ pub fn app<'a>() -> clap::Command<'a> {
                     arg!(-L --"low-priority"),
                     arg!(-l --label),
                     arg!(-p --project <project_name> "Project to use for analysis").required(false),
+                    arg!(-g --group <group_name> "Group to use for analysis").required(false).requires("project"),
                 ])
         )
         .subcommand(
             Command::new("version")
                 .about("Display application version")
+        )
+        .subcommand(
+            Command::new("group")
+                .about("Interact with user groups")
+                .arg(arg!(-j --json "Produce group list in json format (default: false)"))
+                .subcommand(
+                    Command::new("list")
+                        .about("List all groups the user is a member of")
+                        .arg(arg!(-j --json "Produce output in json format (default: false)"))
+                )
+                .subcommand(
+                    Command::new("create")
+                        .about("Create a new group")
+                        .arg(arg!(<group_name> "Name for the new group"))
+                )
         );
 
     #[cfg(feature = "extensions")]

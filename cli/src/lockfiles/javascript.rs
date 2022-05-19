@@ -67,6 +67,15 @@ impl Parseable for PackageLock {
     }
 }
 
+/// Check if a YAML file is a valid v2 yarn lockfile.
+///
+/// Since some v1 yarn lockfiles can be parsed as valid yaml, this ensures that the __metadata
+/// field is present to identify v2 lockfiles.
+fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
+    yaml.iter()
+        .any(|(k, _v)| k.as_str().unwrap_or_default() == "__metadata")
+}
+
 impl Parseable for YarnLock {
     fn new(filename: &Path) -> Result<Self, io::Error>
     where
@@ -77,9 +86,13 @@ impl Parseable for YarnLock {
 
     /// Parses `yarn.lock` files into a vec of packages
     fn parse(&self) -> ParseResult {
-        let yaml_v2: YamlValue = match serde_yaml::from_str(&self.0) {
-            Ok(yaml) => yaml,
-            Err(_) => {
+        let yaml = serde_yaml::from_str::<YamlValue>(&self.0).ok();
+        let yaml_mapping = yaml.as_ref().and_then(|yaml| yaml.as_mapping());
+
+        // Check if we should use v1 or v2 yarn parser.
+        let yaml_v2 = match yaml_mapping.filter(is_yarn_v2) {
+            Some(yaml_v2) => yaml_v2,
+            _ => {
                 let data = self.0.as_str();
                 let (_, entries) = yarn::parse(data)
                     .finish()
@@ -89,12 +102,8 @@ impl Parseable for YarnLock {
             }
         };
 
-        let mapping = yaml_v2
-            .as_mapping()
-            .ok_or_else(|| anyhow!("Invalid yarn v2 lock file"))?;
-
         let mut packages = Vec::new();
-        for package in mapping
+        for package in yaml_v2
             .iter()
             // Filter lockfile data fields like "__metadata".
             .filter(|(k, _v)| k.as_str().map_or(false, |k| !k.starts_with('_')))
@@ -220,6 +229,25 @@ mod tests {
     }
 
     #[test]
+    fn lock_parse_yarn_v1_simple() {
+        // This file contains only one package and that package has no dependencies.
+        // This makes the file valid YAML according to serde_yaml.
+        //
+        // We need to make sure we don't take the v2 lockfile code path because this is not a v2
+        // lockfile and parsing it as one will produce incorrect results.
+        let parser = YarnLock::new(Path::new("tests/fixtures/yarn-v1.simple.lock")).unwrap();
+
+        assert_eq!(
+            parser.parse().unwrap(),
+            vec![PackageDescriptor {
+                name: "@yarnpkg/lockfile".to_string(),
+                version: "1.1.0".to_string(),
+                package_type: PackageType::Npm,
+            }]
+        );
+    }
+
+    #[test]
     fn lock_parse_yarn_v1() {
         for p in &[
             "tests/fixtures/yarn-v1.lock",
@@ -229,9 +257,14 @@ mod tests {
 
             let pkgs = parser.parse().unwrap();
             assert_eq!(pkgs.len(), 17);
+
             assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
             assert_eq!(pkgs[0].version, "1.1.0");
             assert_eq!(pkgs[0].package_type, PackageType::Npm);
+
+            assert_eq!(pkgs[3].name, "cliui");
+            assert_eq!(pkgs[3].version, "7.0.4");
+            assert_eq!(pkgs[3].package_type, PackageType::Npm);
 
             let last = pkgs.last().unwrap();
             assert_eq!(last.name, "yargs");
