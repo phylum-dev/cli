@@ -11,7 +11,7 @@ use crate::lockfiles::*;
 
 type ParserResult = Result<(Vec<PackageDescriptor>, PackageType)>;
 
-const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
+pub(crate) const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
     ("yarn", &parse::<YarnLock>),
     ("npm", &parse::<PackageLock>),
     ("gem", &parse::<GemLock>),
@@ -35,8 +35,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     let parser = LOCKFILE_PARSERS
         .iter()
-        .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
-        .next()
+        .find_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
         .unwrap();
 
     let (pkgs, _) = parser(Path::new(lockfile))?;
