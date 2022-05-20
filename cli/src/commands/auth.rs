@@ -18,7 +18,8 @@ async fn handle_auth_register(
     config_path: &Path,
     ignore_certs: bool,
 ) -> Result<()> {
-    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs).await?;
+    let api_uri = &config.connection.uri;
+    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs, api_uri).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -30,7 +31,8 @@ async fn handle_auth_login(
     config_path: &Path,
     ignore_certs: bool,
 ) -> Result<()> {
-    config.auth_info = PhylumApi::login(config.auth_info, ignore_certs).await?;
+    let api_uri = &config.connection.uri;
+    config.auth_info = PhylumApi::login(config.auth_info, ignore_certs, api_uri).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -56,7 +58,7 @@ pub async fn handle_auth_status(
     .await
     .context("Error creating client")?;
 
-    let user_info = api.user_info(&config.auth_info).await;
+    let user_info = api.user_info().await;
 
     match user_info {
         Ok(user) => {
@@ -90,8 +92,8 @@ pub async fn handle_auth_token(
     };
 
     if matches.is_present("bearer") {
-        let tokens =
-            auth::handle_refresh_tokens(&config.auth_info, refresh_token, ignore_certs).await?;
+        let api_uri = &config.connection.uri;
+        let tokens = auth::handle_refresh_tokens(refresh_token, ignore_certs, api_uri).await?;
         println!("{}", tokens.access_token);
         Ok(ExitCode::Ok.into())
     } else {

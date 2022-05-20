@@ -17,7 +17,6 @@ use routerify::{Router, RouterService};
 use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
-use crate::config::AuthInfo;
 #[cfg(test)]
 use crate::test::open;
 use phylum_types::types::auth::{AuthorizationCode, TokenResponse};
@@ -236,10 +235,10 @@ async fn spawn_server_and_get_auth_code(
 /// Handle the user login/registration flow.
 pub async fn handle_auth_flow(
     auth_action: &AuthAction,
-    auth_info: &AuthInfo,
     ignore_certs: bool,
+    api_uri: &str,
 ) -> Result<TokenResponse> {
-    let oidc_settings = fetch_oidc_server_settings(auth_info, ignore_certs).await?;
+    let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -293,13 +292,12 @@ mod test {
     async fn when_started_with_good_configuration_handle_auth_flow_for_login_is_successful(
     ) -> Result<()> {
         let mock_server = build_mock_server().await;
-
-        let auth_info = build_unauthenticated_auth_info(&mock_server);
+        let api_uri = mock_server.uri();
 
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Login, &auth_info, false).await?;
+        let result = handle_auth_flow(&AuthAction::Login, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
@@ -310,13 +308,12 @@ mod test {
     async fn when_started_with_good_configuration_handle_auth_flow_for_register_is_successful(
     ) -> Result<()> {
         let mock_server = build_mock_server().await;
-
-        let auth_info = build_unauthenticated_auth_info(&mock_server);
+        let api_uri = mock_server.uri();
 
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Register, &auth_info, false).await?;
+        let result = handle_auth_flow(&AuthAction::Register, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 

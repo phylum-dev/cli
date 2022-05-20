@@ -32,7 +32,7 @@ pub mod mockito {
     pub const DUMMY_ID_TOKEN: &str = "DUMMY_ID_TOKEN";
     pub const DUMMY_AUTH_CODE: &str = "DUMMY_AUTH_CODE";
 
-    pub const OIDC_URI: &str = "oidc";
+    pub const OIDC_URI: &str = "api/v0/.well-known/openid-configuration";
     pub const AUTH_URI: &str = "auth";
     pub const USER_URI: &str = "user";
     pub const TOKEN_URI: &str = "token";
@@ -126,25 +126,21 @@ pub mod mockito {
         mock_server
     }
 
-    pub fn build_authenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
+    pub fn build_authenticated_auth_info() -> AuthInfo {
         AuthInfo {
             offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)),
-            oidc_discovery_url: Url::from_str(&format!("{}/{}", mock_server.uri(), OIDC_URI))
-                .expect("Failed to parse test url"),
         }
     }
 
-    pub fn build_unauthenticated_auth_info(mock_server: &MockServer) -> AuthInfo {
+    pub fn build_unauthenticated_auth_info() -> AuthInfo {
         AuthInfo {
             offline_access: None,
-            oidc_discovery_url: Url::from_str(&format!("{}/{}", mock_server.uri(), OIDC_URI))
-                .expect("Failed to parse test url"),
         }
     }
 
     pub async fn build_phylum_api(mock_server: &MockServer) -> Result<PhylumApi, PhylumApiError> {
         let phylum = PhylumApi::new(
-            &mut build_authenticated_auth_info(mock_server),
+            &mut build_authenticated_auth_info(),
             mock_server.uri().as_str(),
             None,
             false,
