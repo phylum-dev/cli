@@ -148,8 +148,13 @@ pub fn check_if_routable(hostname: impl AsRef<str>) -> Result<bool> {
     Ok(is_routable)
 }
 
-pub async fn fetch_oidc_server_settings(auth_info: &AuthInfo) -> Result<OidcServerSettings> {
-    let client = reqwest::Client::new();
+pub async fn fetch_oidc_server_settings(
+    auth_info: &AuthInfo,
+    ignore_certs: bool,
+) -> Result<OidcServerSettings> {
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .get(auth_info.oidc_discovery_url.clone())
         .header("Accept", "application/json")
@@ -199,13 +204,16 @@ pub async fn acquire_tokens(
     redirect_url: &Url,
     authorization_code: &AuthorizationCode,
     code_verifier: &CodeVerifier,
+    ignore_certs: bool,
 ) -> Result<TokenResponse> {
     let token_url = oidc_settings.token_endpoint.clone();
 
     let body =
         build_grant_type_auth_code_post_body(redirect_url, authorization_code, code_verifier)?;
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")
@@ -238,12 +246,15 @@ pub async fn acquire_tokens(
 pub async fn refresh_tokens(
     oidc_settings: &OidcServerSettings,
     refresh_token: &RefreshToken,
+    ignore_certs: bool,
 ) -> Result<TokenResponse> {
     let token_url = oidc_settings.token_endpoint.clone();
 
     let body = build_grant_type_refresh_token_post_body(refresh_token)?;
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")
@@ -264,9 +275,10 @@ pub async fn refresh_tokens(
 pub async fn handle_refresh_tokens(
     auth_info: &AuthInfo,
     refresh_token: &RefreshToken,
+    ignore_certs: bool,
 ) -> Result<TokenResponse> {
-    let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
-    refresh_tokens(&oidc_settings, refresh_token).await
+    let oidc_settings = fetch_oidc_server_settings(auth_info, ignore_certs).await?;
+    refresh_tokens(&oidc_settings, refresh_token, ignore_certs).await
 }
 
 /// Represents the userdata stored for an authentication token.
