@@ -23,6 +23,13 @@ pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 pub trait Parseable {
     fn new(filename: &Path) -> Result<Self, io::Error>
     where
+        Self: Sized,
+    {
+        Ok(Self::from_string(std::fs::read_to_string(filename)?))
+    }
+
+    fn from_string(text: String) -> Self
+    where
         Self: Sized;
 
     fn parse(&self) -> ParseResult;

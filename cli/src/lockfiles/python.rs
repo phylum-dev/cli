@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::path::Path;
-use std::{fs, io};
 
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
@@ -17,11 +15,11 @@ pub struct PipFile(String);
 pub struct Poetry(String);
 
 impl Parseable for PyRequirements {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(PyRequirements(fs::read_to_string(filename)?))
+        PyRequirements(text)
     }
 
     /// Parses `requirements.txt` files into a vec of packages
@@ -40,11 +38,11 @@ impl Parseable for PyRequirements {
 }
 
 impl Parseable for PipFile {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(PipFile(fs::read_to_string(filename)?))
+        PipFile(text)
     }
 
     /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
@@ -105,11 +103,11 @@ impl Parseable for PipFile {
 }
 
 impl Parseable for Poetry {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(Poetry(fs::read_to_string(filename)?))
+        Poetry(text)
     }
 
     /// Parses `poetry.lock` files into a vec of packages
@@ -192,6 +190,8 @@ struct PoetryMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::path::Path;
 
     #[test]
     fn parse_requirements() {

@@ -1,7 +1,5 @@
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
-use std::io;
-use std::path::Path;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
@@ -62,15 +60,11 @@ impl From<Project> for Vec<PackageDescriptor> {
 }
 
 impl Parseable for CSProj {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(CSProj(
-            std::fs::read_to_string(filename)?
-                .trim_start_matches(INVALID_CHAR)
-                .to_string(),
-        ))
+        CSProj(text.trim_start_matches(INVALID_CHAR).to_string())
     }
 
     /// Parses `.csproj` files into a vec of packages
@@ -89,6 +83,8 @@ impl Parseable for CSProj {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::path::Path;
 
     #[test]
     fn lock_parse_csproj() {

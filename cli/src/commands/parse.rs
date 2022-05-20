@@ -1,9 +1,9 @@
 //! `phylum parse` command for lockfile parsing
 
-use std::io;
 use std::path::Path;
+use std::{fs, io};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
@@ -11,7 +11,7 @@ use crate::lockfiles::*;
 
 type ParserResult = Result<(Vec<PackageDescriptor>, PackageType)>;
 
-const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
+const LOCKFILE_PARSERS: &[(&str, &dyn Fn(String) -> ParserResult)] = &[
     ("yarn", &parse::<YarnLock>),
     ("npm", &parse::<PackageLock>),
     ("gem", &parse::<GemLock>),
@@ -21,7 +21,6 @@ const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
     ("mvn", &parse::<Pom>),
     ("gradle", &parse::<GradleDeps>),
     ("nuget", &parse::<CSProj>),
-    ("auto", &get_packages_from_lockfile),
 ];
 
 pub fn lockfile_types() -> Vec<&'static str> {
@@ -33,45 +32,32 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     // LOCKFILE is a required parameter, so .unwrap() should be safe.
     let lockfile = matches.value_of("LOCKFILE").unwrap();
 
-    let parser = LOCKFILE_PARSERS
-        .iter()
-        .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
-        .next()
-        .unwrap();
+    let (pkgs, _) = if lockfile_type == "auto" {
+        get_packages_from_lockfile(Path::new(lockfile))?
+    } else {
+        let parser = LOCKFILE_PARSERS
+            .iter()
+            .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
+            .next()
+            .unwrap();
 
-    let (pkgs, _) = parser(Path::new(lockfile))?;
+        let lockfile_content = fs::read_to_string(lockfile)?;
+        parser(lockfile_content)?
+    };
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
     Ok(ExitCode::Ok.into())
 }
 /// Attempt to get packages from an unknown lockfile type
-pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    log::warn!(
-        "Attempting to obtain packages from unrecognized lockfile type: {}",
-        path.to_string_lossy()
-    );
-
-    // Try a package lock format and return the packages if there are some.
-    macro_rules! try_format {
-        ($lock:ident, $ty:literal) => {{
-            let packages = parse::<$lock>(path).ok();
-            if let Some(packages) = packages.filter(|(packages, _)| !packages.is_empty()) {
-                log::debug!("Submitting file as type {}", $ty);
-                return Ok(packages);
-            }
-        }};
+pub fn try_get_packages(lockfile_content: String) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+    for (ty, parser) in LOCKFILE_PARSERS.iter().filter(|(ty, _)| ty != &"auto") {
+        let packages = parser(lockfile_content.clone()).ok();
+        if let Some(packages) = packages.filter(|(packages, _)| !packages.is_empty()) {
+            log::debug!("Submitting file as type {}", ty);
+            return Ok(packages);
+        }
     }
-
-    try_format!(YarnLock, "yarn lock");
-    try_format!(PackageLock, "package lock");
-    try_format!(GemLock, "gem lock");
-    try_format!(PyRequirements, "pip requirements.txt");
-    try_format!(PipFile, "pip Pipfile or Pipfile.lock");
-    try_format!(Poetry, "poetry lock");
-    try_format!(Pom, "pom xml");
-    try_format!(GradleDeps, "gradle dependencies");
-    try_format!(CSProj, "csproj");
 
     Err(anyhow!("Failed to identify lockfile type"))
 }
@@ -90,17 +76,27 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
         _ => file,
     };
 
+    let lockfile_content = fs::read_to_string(path)
+        .with_context(|| format!("Unable to read lockfile path {:?}", path))?;
+
     let res = match pattern {
-        "Gemfile.lock" => parse::<GemLock>(path)?,
-        "package-lock.json" => parse::<PackageLock>(path)?,
-        "yarn.lock" => parse::<YarnLock>(path)?,
-        "requirements.txt" => parse::<PyRequirements>(path)?,
-        "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
-        "poetry.lock" => parse::<Poetry>(path)?,
-        "effective-pom.xml" => parse::<Pom>(path)?,
-        "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
-        ".csproj" => parse::<CSProj>(path)?,
-        _ => try_get_packages(path)?,
+        "Gemfile.lock" => parse::<GemLock>(lockfile_content)?,
+        "package-lock.json" => parse::<PackageLock>(lockfile_content)?,
+        "yarn.lock" => parse::<YarnLock>(lockfile_content)?,
+        "requirements.txt" => parse::<PyRequirements>(lockfile_content)?,
+        "Pipfile" | "Pipfile.lock" => parse::<PipFile>(lockfile_content)?,
+        "poetry.lock" => parse::<Poetry>(lockfile_content)?,
+        "effective-pom.xml" => parse::<Pom>(lockfile_content)?,
+        "gradle-dependencies.txt" => parse::<GradleDeps>(lockfile_content)?,
+        ".csproj" => parse::<CSProj>(lockfile_content)?,
+        _ => {
+            log::warn!(
+                "Attempting to obtain packages from unrecognized lockfile type: {}",
+                path.to_string_lossy()
+            );
+
+            try_get_packages(lockfile_content)?
+        }
     };
 
     log::debug!("Read {} packages from file `{}`", res.0.len(), file);
@@ -108,9 +104,9 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
     Ok(res)
 }
 
-/// Get all packages for a specific lockfile type.
-fn parse<P: Parseable>(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    Ok((P::new(path)?.parse()?, P::package_type()))
+/// Get all packages in a lockfile.
+fn parse<P: Parseable>(text: String) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+    Ok((P::from_string(text).parse()?, P::package_type()))
 }
 
 #[cfg(test)]
@@ -134,7 +130,8 @@ mod tests {
         ];
 
         for (file, expected_type) in &test_cases {
-            let (_, pkg_type) = try_get_packages(Path::new(file)).unwrap();
+            let content = fs::read_to_string(file).unwrap();
+            let (_, pkg_type) = try_get_packages(content).unwrap();
             assert_eq!(pkg_type, *expected_type, "{}", file);
         }
     }

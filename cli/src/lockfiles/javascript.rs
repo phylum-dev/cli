@@ -1,6 +1,3 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -15,11 +12,11 @@ pub struct PackageLock(String);
 pub struct YarnLock(String);
 
 impl Parseable for PackageLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(PackageLock(std::fs::read_to_string(filename)?))
+        PackageLock(text)
     }
 
     /// Parses `package-lock.json` files into a vec of packages
@@ -77,11 +74,11 @@ fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
 }
 
 impl Parseable for YarnLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(YarnLock(std::fs::read_to_string(filename)?))
+        YarnLock(text)
     }
 
     /// Parses `yarn.lock` files into a vec of packages
@@ -186,6 +183,8 @@ impl Parseable for YarnLock {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::path::Path;
 
     #[test]
     fn lock_parse_package() {

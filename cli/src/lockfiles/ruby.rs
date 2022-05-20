@@ -1,6 +1,3 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -12,11 +9,11 @@ use crate::lockfiles::{ParseResult, Parseable};
 pub struct GemLock(String);
 
 impl Parseable for GemLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
+    fn from_string(text: String) -> Self
     where
         Self: Sized,
     {
-        Ok(GemLock(std::fs::read_to_string(filename)?))
+        GemLock(text)
     }
 
     /// Parses `Gemfile.lock` files into a vec of packages
@@ -37,6 +34,9 @@ impl Parseable for GemLock {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::path::Path;
+
     use phylum_types::types::package::PackageType;
 
     #[test]
