@@ -1,6 +1,6 @@
-pub mod extension;
+mod extension;
 
-use std::{collections::HashSet, convert::TryFrom, path::PathBuf};
+use std::{collections::HashSet, convert::TryFrom, fs, io::ErrorKind, path::PathBuf};
 
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 pub use extension::*;
@@ -63,7 +63,9 @@ pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
         Some(("add", matches)) => handle_add_extension(matches.value_of_t("PATH")?).await,
-        Some(("remove", matches)) => handle_remove_extension(matches.value_of("NAME").unwrap()).await,
+        Some(("remove", matches)) => {
+            handle_remove_extension(matches.value_of("NAME").unwrap()).await
+        }
         Some(("list", _)) | None => handle_list_extensions().await,
         _ => unreachable!(),
     }
@@ -111,12 +113,14 @@ fn installed_extensions() -> Result<Vec<Extension>> {
 
     let dir_entry = match fs::read_dir(extensions_path) {
         Ok(d) => d,
-        Err(e) => if e.kind() == ErrorKind::NotFound {
-            return Ok(Vec::new());
-        } else {
-            return Err(e.into());
+        Err(e) => {
+            if e.kind() == ErrorKind::NotFound {
+                return Ok(Vec::new());
+            } else {
+                return Err(e.into());
+            }
         }
-    }
+    };
 
     Ok(dir_entry
         .filter_map(|dir_entry| {

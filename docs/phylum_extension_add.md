@@ -10,6 +10,7 @@ phylum extension add path/to/extension
 ```
 
 The extension will be installed under `$XDG_DATA_HOME/phylum/extensions/<ext_name>`.
+If `$XDG_DATA_HOME` is not set, it will default to `$HOME/.local/share/phylum/extensions/<ext_name>`.
 Once installed, the extension will be accessible via the Phylum CLI:
 
 ```sh

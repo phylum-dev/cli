@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
-use std::fs::{self, File, Permissions};
-use std::io::Read;
+use std::fs::{self, Permissions};
 #[cfg(unix)]
 use std::os::unix::prelude::PermissionsExt;
 use std::path::PathBuf;
