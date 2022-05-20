@@ -61,13 +61,11 @@ pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
 
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
-    if let Some(matches) = matches.subcommand_matches("add") {
-        handle_add_extension(matches.value_of_t("PATH")?).await
-    } else if let Some(matches) = matches.subcommand_matches("remove") {
-        handle_remove_extension(matches.value_of("NAME").unwrap()).await
-    } else {
-        // also covers the `list` case
-        handle_list_extensions().await
+    match matches.subcommand() {
+        Some(("add", matches)) => handle_add_extension(matches.value_of_t("PATH")?).await,
+        Some(("remove", matches)) => handle_remove_extension(matches.value_of("NAME").unwrap()).await,
+        Some(("list", _)) | None => handle_list_extensions().await,
+        _ => unreachable!(),
     }
 }
 
@@ -111,11 +109,16 @@ async fn handle_list_extensions() -> CommandResult {
 fn installed_extensions() -> Result<Vec<Extension>> {
     let extensions_path = extensions_path()?;
 
-    if !extensions_path.exists() {
-        return Ok(Vec::new());
+    let dir_entry = match fs::read_dir(extensions_path) {
+        Ok(d) => d,
+        Err(e) => if e.kind() == ErrorKind::NotFound {
+            return Ok(Vec::new());
+        } else {
+            return Err(e.into());
+        }
     }
 
-    Ok(std::fs::read_dir(extensions_path)?
+    Ok(dir_entry
         .filter_map(|dir_entry| {
             match dir_entry
                 .map_err(|e| e.into())

@@ -121,8 +121,7 @@ impl TryFrom<PathBuf> for Extension {
             ));
         }
 
-        let mut buf = Vec::new();
-        File::open(manifest_path)?.read_to_end(&mut buf)?;
+        let buf = fs::read(manifest_path)?;
 
         let manifest: ExtensionManifest = toml::from_slice(&buf)?;
         let entry_point_path = path.join(&manifest.entry_point);
