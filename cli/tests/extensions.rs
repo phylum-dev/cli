@@ -161,12 +161,7 @@ fn extension_is_uninstalled_correctly() {
         .join("extensions")
         .join("sample-extension");
 
-    assert!(
-        walkdir::WalkDir::new(&extension_path)
-            .into_iter()
-            .count()
-            > 1
-    );
+    assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 
     Command::cargo_bin("phylum")
         .unwrap()
