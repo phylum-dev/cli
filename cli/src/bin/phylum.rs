@@ -10,7 +10,7 @@ use spinners::{Spinner, Spinners};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::*;
+use phylum_cli::commands::extensions;
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -65,7 +65,14 @@ async fn handle_commands() -> CommandResult {
 
     #[cfg(feature = "extensions")]
     if let Some(matches) = matches.subcommand_matches("extension") {
-        return handle_extensions(matches).await;
+        return extensions::handle_extensions(matches).await;
+    }
+
+    #[cfg(feature = "extensions")]
+    for extension in extensions::installed_extensions().unwrap_or_default() {
+        if matches.subcommand_name() == Some(extension.name()) {
+            return extension.run().await;
+        }
     }
 
     let settings_path = get_home_settings_path()?;

@@ -3,6 +3,7 @@ pub mod app;
 pub mod auth;
 pub mod commands;
 pub mod config;
+pub mod deno;
 pub mod filter;
 pub mod lockfiles;
 pub mod print;
