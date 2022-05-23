@@ -29,7 +29,7 @@ pub fn exit_warn(message: impl AsRef<str>) -> ! {
     ExitCode::Ok.exit()
 }
 
-/// Print an error to the user before exiting with exit code 1.
+/// Print an error to the user before exiting with the passed exit code.
 pub fn exit_fail(message: impl AsRef<str>, exit_code: ExitCode) -> ! {
     error!("{}", message.as_ref());
     print_user_failure!("Error: {}", message.as_ref());
