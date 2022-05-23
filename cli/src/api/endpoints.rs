@@ -35,7 +35,7 @@ pub fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> String {
         version,
         ..
     } = pkg;
-    format!("{api_uri}/{API_PATH}/data/packages/{package_type}/{name_escaped}/{version}")
+    format!("{api_uri}/{API_PATH}/job/packages/{package_type}/{name_escaped}/{version}")
 }
 
 /// GET /job/projects/name/<pkg_id>

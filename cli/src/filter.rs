@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::FromStr;
 
-use phylum_types::types::package::{RiskLevel, RiskType};
+use phylum_types::types::package::{RiskDomain, RiskLevel};
 
 pub struct Filter {
     pub level: Option<RiskLevel>,
-    pub domains: Option<Vec<RiskType>>,
+    pub domains: Option<Vec<RiskDomain>>,
 }
 
 impl FromStr for Filter {
@@ -37,27 +37,27 @@ impl FromStr for Filter {
         let domains = tokens
             .iter()
             .filter_map(|t| match *t {
-                "aut" => Some(RiskType::AuthorsRisk),
-                "AUT" => Some(RiskType::AuthorsRisk),
-                "auth" => Some(RiskType::AuthorsRisk),
-                "author" => Some(RiskType::AuthorsRisk),
-                "eng" => Some(RiskType::EngineeringRisk),
-                "ENG" => Some(RiskType::EngineeringRisk),
-                "engineering" => Some(RiskType::EngineeringRisk),
-                "code" => Some(RiskType::MaliciousCodeRisk),
-                "malicious_code" => Some(RiskType::MaliciousCodeRisk),
-                "mal" => Some(RiskType::MaliciousCodeRisk),
-                "MAL" => Some(RiskType::MaliciousCodeRisk),
-                "vuln" => Some(RiskType::Vulnerabilities),
-                "vulnerability" => Some(RiskType::Vulnerabilities),
-                "VLN" => Some(RiskType::Vulnerabilities),
-                "vln" => Some(RiskType::Vulnerabilities),
-                "license" => Some(RiskType::LicenseRisk),
-                "lic" => Some(RiskType::LicenseRisk),
-                "LIC" => Some(RiskType::LicenseRisk),
+                "aut" => Some(RiskDomain::AuthorRisk),
+                "AUT" => Some(RiskDomain::AuthorRisk),
+                "auth" => Some(RiskDomain::AuthorRisk),
+                "author" => Some(RiskDomain::AuthorRisk),
+                "eng" => Some(RiskDomain::EngineeringRisk),
+                "ENG" => Some(RiskDomain::EngineeringRisk),
+                "engineering" => Some(RiskDomain::EngineeringRisk),
+                "code" => Some(RiskDomain::MaliciousCode),
+                "malicious_code" => Some(RiskDomain::MaliciousCode),
+                "mal" => Some(RiskDomain::MaliciousCode),
+                "MAL" => Some(RiskDomain::MaliciousCode),
+                "vuln" => Some(RiskDomain::Vulnerabilities),
+                "vulnerability" => Some(RiskDomain::Vulnerabilities),
+                "VLN" => Some(RiskDomain::Vulnerabilities),
+                "vln" => Some(RiskDomain::Vulnerabilities),
+                "license" => Some(RiskDomain::LicenseRisk),
+                "lic" => Some(RiskDomain::LicenseRisk),
+                "LIC" => Some(RiskDomain::LicenseRisk),
                 _ => None,
             })
-            .collect::<HashSet<RiskType>>();
+            .collect::<HashSet<RiskDomain>>();
 
         let domains = if domains.is_empty() {
             None
@@ -103,8 +103,8 @@ mod tests {
             .expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 2);
-        assert!(domains.contains(&RiskType::AuthorsRisk));
-        assert!(domains.contains(&RiskType::EngineeringRisk));
+        assert!(domains.contains(&RiskDomain::AuthorRisk));
+        assert!(domains.contains(&RiskDomain::EngineeringRisk));
 
         let filter_string = "crit,author,AUT,med,ENG,foo,engineering,VLN";
 
@@ -115,8 +115,8 @@ mod tests {
             .expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 3);
-        assert!(domains.contains(&RiskType::AuthorsRisk));
-        assert!(domains.contains(&RiskType::EngineeringRisk));
-        assert!(domains.contains(&RiskType::Vulnerabilities));
+        assert!(domains.contains(&RiskDomain::AuthorRisk));
+        assert!(domains.contains(&RiskDomain::EngineeringRisk));
+        assert!(domains.contains(&RiskDomain::Vulnerabilities));
     }
 }

@@ -282,22 +282,6 @@ impl Renderable for PackageStatusExtended {
     }
 }
 
-impl Renderable for Package {
-    fn render(&self) -> String {
-        let unknown = String::from("Unknown"); // TODO
-        let time = self.published_date.as_ref().unwrap_or(&unknown);
-
-        let mut overview_table = table!(
-            ["Package Name:", rB -> self.name, "Package Version:", r -> self.version],
-            ["License:", r -> self.license.as_ref().unwrap_or(&"Unknown".to_string()), "Last updated:", r -> time],
-            ["Num Deps:", r -> self.dependencies.as_ref().map(Vec::len).unwrap_or(0), "Num Vulns:", r -> self.issues.len()],
-            ["Ecosystem:", r -> self.registry.render()]
-        );
-        overview_table.set_format(table_format(0, 3));
-        overview_table.to_string()
-    }
-}
-
 impl Renderable for CancelJobResponse {
     fn render(&self) -> String {
         format!("Request canceled: {}", self.msg)
