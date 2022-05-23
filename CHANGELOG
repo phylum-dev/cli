@@ -1,3 +1,4 @@
+* 3.5.0 - Automatically detect OIDC URL
 * 3.4.0 - Group account support
 * 3.3.0 - Introduce parse command
 * 3.2.0 - Support yarn patched dependencies
