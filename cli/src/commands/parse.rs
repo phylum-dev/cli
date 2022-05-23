@@ -98,7 +98,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
         "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
         "poetry.lock" => parse::<Poetry>(path)?,
         "effective-pom.xml" => parse::<Pom>(path)?,
-        "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
+        "gradle.lockfile" => parse::<GradleDeps>(path)?,
         ".csproj" => parse::<CSProj>(path)?,
         _ => try_get_packages(path)?,
     };
@@ -125,7 +125,7 @@ mod tests {
             ("tests/fixtures/yarn.lock", PackageType::Npm),
             ("tests/fixtures/package-lock.json", PackageType::Npm),
             ("tests/fixtures/sample.csproj", PackageType::Nuget),
-            ("tests/fixtures/gradle-dependencies.txt", PackageType::Maven),
+            ("tests/fixtures/gradle.lockfile", PackageType::Maven),
             ("tests/fixtures/effective-pom.xml", PackageType::Maven),
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),

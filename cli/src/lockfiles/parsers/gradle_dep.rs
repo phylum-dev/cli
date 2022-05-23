@@ -1,4 +1,4 @@
-use nom::sequence::preceded;
+use nom::combinator::{rest, verify};
 
 use super::*;
 
@@ -13,17 +13,14 @@ fn group_id(input: &str) -> Result<&str, &str> {
 
 fn artifact_id_version(input: &str) -> Result<&str, &str> {
     let (input, artifact_id) = delimited(tag(":"), take_until(":"), tag(":"))(input)?;
-    let (_, version) = recognize(alt((take_until(" ("), not_line_ending)))(input)?;
+    let (_, version) = take_until("=")(input)?;
     Ok((artifact_id, version))
 }
 
 fn filter_line(input: &str) -> Result<&str, &str> {
-    let (input, _) = recognize(alt((
-        take_until("+---"),
-        take_until("\\---"),
-        not_line_ending,
-    )))(input)?;
-    preceded(alt((tag("+--- "), tag("\\--- "))), not_line_ending)(input)
+    verify(rest, |s: &str| {
+        !s.starts_with('#') && !s.starts_with("empty=")
+    })(input)
 }
 
 fn package(input: &str) -> Option<PackageDescriptor> {

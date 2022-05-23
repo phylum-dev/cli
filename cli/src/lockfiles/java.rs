@@ -21,7 +21,7 @@ impl Parseable for GradleDeps {
         Ok(GradleDeps(std::fs::read_to_string(filename)?))
     }
 
-    /// Parses `gradle-dependencies.txt` files into a vec of packages
+    /// Parses `gradle.lockfile` files into a vec of packages
     fn parse(&self) -> ParseResult {
         let data = self.0.as_str();
         let (_, entries) = gradle_dep::parse(data)
@@ -158,18 +158,19 @@ mod tests {
 
     #[test]
     fn lock_parse_gradledeps() {
-        let parser = GradleDeps::new(Path::new("tests/fixtures/gradle-dependencies.txt")).unwrap();
+        let parser = GradleDeps::new(Path::new("tests/fixtures/gradle.lockfile")).unwrap();
 
         let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 43);
-        assert_eq!(pkgs[0].name, "com.google.guava:guava");
-        assert_eq!(pkgs[0].version, "23.3-jre");
+
+        assert_eq!(pkgs.len(), 5);
+
+        assert_eq!(pkgs[0].name, "com.google.code.findbugs:jsr305");
+        assert_eq!(pkgs[0].version, "1.3.9");
         assert_eq!(pkgs[0].package_type, PackageType::Maven);
 
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "commons-codec:commons-codec");
-        assert_eq!(last.version, "1.9");
-        assert_eq!(last.package_type, PackageType::Maven);
+        assert_eq!(pkgs[2].name, "com.google.guava:guava");
+        assert_eq!(pkgs[2].version, "23.3-jre");
+        assert_eq!(pkgs[2].package_type, PackageType::Maven);
     }
 
     #[test]
