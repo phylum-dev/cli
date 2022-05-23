@@ -12,6 +12,7 @@ Interact with the Phylum API
 * [phylum project](https://docs.phylum.io/docs/phylum_project)
 
 ### Additional Commands
+* [phylum group](https://docs.phylum.io/docs/phylum_group)
 * [phylum help](https://docs.phylum.io/docs/phylum_help)
 * [phylum history](https://docs.phylum.io/docs/phylum_history)
 * [phylum package](https://docs.phylum.io/docs/phylum_package)

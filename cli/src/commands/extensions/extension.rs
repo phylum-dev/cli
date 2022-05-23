@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
-use std::fs::{self, File, Permissions};
-use std::io::Read;
+use std::fs::{self, Permissions};
 #[cfg(unix)]
 use std::os::unix::prelude::PermissionsExt;
 use std::path::PathBuf;
@@ -121,8 +120,7 @@ impl TryFrom<PathBuf> for Extension {
             ));
         }
 
-        let mut buf = Vec::new();
-        File::open(manifest_path)?.read_to_end(&mut buf)?;
+        let buf = fs::read(manifest_path)?;
 
         let manifest: ExtensionManifest = toml::from_slice(&buf)?;
         let entry_point_path = path.join(&manifest.entry_point);

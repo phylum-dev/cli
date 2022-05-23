@@ -197,8 +197,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
 /// Resolve XDG data directory.
 pub fn data_dir() -> Result<PathBuf> {
-    if let Some(data_dir) = env::var("XDG_DATA_HOME")
-        .ok()
+    if let Some(data_dir) = env::var_os("XDG_DATA_HOME")
         .filter(|s| !s.is_empty())
         .map(PathBuf::from)
     {

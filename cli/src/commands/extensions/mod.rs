@@ -1,5 +1,5 @@
-pub mod extension;
 mod api;
+mod extension;
 
 use std::{collections::HashSet, convert::TryFrom, path::PathBuf};
 

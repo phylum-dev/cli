@@ -15,7 +15,7 @@ use phylum_types::types::user_settings::*;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Method, StatusCode};
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use thiserror::Error as ThisError;
 
 mod endpoints;
@@ -32,6 +32,7 @@ type Result<T> = std::result::Result<T, PhylumApiError>;
 pub struct PhylumApi {
     client: Client,
     api_uri: String,
+    ignore_certs: bool,
 }
 
 /// Phylum Api Error type
@@ -53,13 +54,6 @@ impl PhylumApiError {
             PhylumApiError::Other(_) => None,
         }
     }
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum APIResult<T> {
-    Ok(T),
-    Err { msg: String },
 }
 
 impl PhylumApi {
@@ -98,12 +92,7 @@ impl PhylumApi {
             return Err(anyhow!(body).into());
         }
 
-        let api_obj = serde_json::from_str::<APIResult<T>>(&body)
-            .map_err(|e| PhylumApiError::Other(e.into()))?;
-        match api_obj {
-            APIResult::Ok(api_obj) => Ok(api_obj),
-            APIResult::Err { msg } => Err(PhylumApiError::Other(anyhow::anyhow!(msg))),
-        }
+        serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
     }
 }
 
@@ -120,8 +109,10 @@ impl PhylumApi {
     ) -> Result<Self> {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &auth_info.offline_access {
-            Some(refresh_token) => handle_refresh_tokens(auth_info, refresh_token).await?,
-            None => handle_auth_flow(&AuthAction::Login, auth_info).await?,
+            Some(refresh_token) => {
+                handle_refresh_tokens(auth_info, refresh_token, ignore_certs).await?
+            }
+            None => handle_auth_flow(&AuthAction::Login, auth_info, ignore_certs).await?,
         };
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
@@ -149,14 +140,15 @@ impl PhylumApi {
         Ok(Self {
             client,
             api_uri: api_uri.to_string(),
+            ignore_certs,
         })
     }
 
     /// update auth info by forcing the login flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn login(mut auth_info: AuthInfo) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Login, &auth_info).await?;
+    pub async fn login(mut auth_info: AuthInfo, ignore_certs: bool) -> Result<AuthInfo> {
+        let tokens = handle_auth_flow(&AuthAction::Login, &auth_info, ignore_certs).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
     }
@@ -164,8 +156,8 @@ impl PhylumApi {
     /// update auth info by forcing the registration flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn register(mut auth_info: AuthInfo) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Register, &auth_info).await?;
+    pub async fn register(mut auth_info: AuthInfo, ignore_certs: bool) -> Result<AuthInfo> {
+        let tokens = handle_auth_flow(&AuthAction::Register, &auth_info, ignore_certs).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
     }
@@ -180,7 +172,7 @@ impl PhylumApi {
 
     /// Get information about the authenticated user
     pub async fn user_info(&self, auth_info: &AuthInfo) -> Result<UserInfo> {
-        let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+        let oidc_settings = fetch_oidc_server_settings(auth_info, self.ignore_certs).await?;
         self.get(oidc_settings.userinfo_endpoint.into()).await
     }
 

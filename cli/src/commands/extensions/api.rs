@@ -55,11 +55,15 @@ pub(super) async fn phylum_auth_status(api: &mut PhylumApi, config: &Config) -> 
 }
 
 #[allow(unused)]
-pub(super) async fn phylum_auth_token_bearer(config: &Config) -> Result<AccessToken> {
+pub(super) async fn phylum_auth_token_bearer(
+    config: &Config,
+    ignore_certs: bool,
+) -> Result<AccessToken> {
     let refresh_token = phylum_auth_token(config)?;
-    let access_token = crate::auth::handle_refresh_tokens(&config.auth_info, &refresh_token)
-        .await?
-        .access_token;
+    let access_token =
+        crate::auth::handle_refresh_tokens(&config.auth_info, &refresh_token, ignore_certs)
+            .await?
+            .access_token;
     Ok(access_token)
 }
 
