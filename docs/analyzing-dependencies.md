@@ -67,3 +67,5 @@ If you prefer JSON formatted output, you can leverage the `--json` flag.
 ```sh
 phylum analyze --verbose --json <package-lock-file.ext> > output.json
 ```
+
+If the analysis failed to meet the project's thresholds, the command's exit code will be set to `100`.
