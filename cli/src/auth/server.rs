@@ -237,8 +237,9 @@ async fn spawn_server_and_get_auth_code(
 pub async fn handle_auth_flow(
     auth_action: &AuthAction,
     auth_info: &AuthInfo,
+    ignore_certs: bool,
 ) -> Result<TokenResponse> {
-    let oidc_settings = fetch_oidc_server_settings(auth_info).await?;
+    let oidc_settings = fetch_oidc_server_settings(auth_info, ignore_certs).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -247,7 +248,14 @@ pub async fn handle_auth_flow(
         .collect();
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
-    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier).await
+    acquire_tokens(
+        &oidc_settings,
+        &callback_url,
+        &auth_code,
+        &code_verifier,
+        ignore_certs,
+    )
+    .await
 }
 
 #[cfg(test)]
@@ -291,7 +299,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Login, &auth_info).await?;
+        let result = handle_auth_flow(&AuthAction::Login, &auth_info, false).await?;
 
         log::debug!("{:?}", result);
 
@@ -308,7 +316,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Register, &auth_info).await?;
+        let result = handle_auth_flow(&AuthAction::Register, &auth_info, false).await?;
 
         log::debug!("{:?}", result);
 
