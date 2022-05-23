@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::process;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, Context};
@@ -27,14 +26,14 @@ use phylum_types::types::job::Action;
 pub fn exit_warn(message: impl AsRef<str>) -> ! {
     warn!("{}", message.as_ref());
     print_user_warning!("Warning: {}", message.as_ref());
-    process::exit(0)
+    ExitCode::Ok.exit()
 }
 
 /// Print an error to the user before exiting with exit code 1.
-pub fn exit_fail(message: impl AsRef<str>) -> ! {
+pub fn exit_fail(message: impl AsRef<str>, exit_code: ExitCode) -> ! {
     error!("{}", message.as_ref());
     print_user_failure!("Error: {}", message.as_ref());
-    process::exit(1)
+    exit_code.exit()
 }
 
 /// Exit with status code 1, and optionally print a message to the user and
@@ -42,7 +41,7 @@ pub fn exit_fail(message: impl AsRef<str>) -> ! {
 pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -> ! {
     error!("{}: {:?}", message.as_ref(), error);
     print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
-    process::exit(1)
+    ExitCode::Generic.exit()
 }
 
 async fn handle_commands() -> CommandResult {
@@ -215,11 +214,14 @@ async fn main() {
 
     match handle_commands().await {
         Ok(CommandValue::Action(action)) => match action {
-            Action::None => process::exit(0),
+            Action::None => ExitCode::Ok.exit(),
             Action::Warn => exit_warn("Project failed threshold requirements!"),
-            Action::Break => exit_fail("Project failed threshold requirements, failing the build!"),
+            Action::Break => exit_fail(
+                "Project failed threshold requirements, failing the build!",
+                ExitCode::FailedThresholds,
+            ),
         },
-        Ok(CommandValue::Code(code)) => process::exit(code as i32),
+        Ok(CommandValue::Code(code)) => code.exit(),
         Err(error) => exit_error(error.into(), "Execution failed"),
     }
 }
