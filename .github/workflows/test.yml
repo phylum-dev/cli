@@ -13,32 +13,6 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
-  lint:
-    # It is possible for lints to break after merge (e.g., new clippy checks), but it's not worth
-    # breaking the build if that happens. So we'll skip this job for scheduled runs.
-    if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repo
-        uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Format check
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --manifest-path cli/Cargo.toml -- --check
-
-      - name: Lint
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --locked --all-features -- -D warnings
-
   test-matrix:
     strategy:
       fail-fast: false
@@ -54,11 +28,35 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Format check
+        if: github.event_name != 'schedule'
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked
+
+      - name: Clippy
+        if: github.event_name != 'schedule'
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --locked -- -D warnings
 
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --locked
 
   # This job reports the results of the test matrix above
   test:
