@@ -107,8 +107,8 @@ async fn handle_list_extensions() -> CommandResult {
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
-// Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
-fn installed_extensions() -> Result<Vec<Extension>> {
+/// Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
+pub fn installed_extensions() -> Result<Vec<Extension>> {
     let extensions_path = extensions_path()?;
 
     let dir_entry = match fs::read_dir(extensions_path) {
