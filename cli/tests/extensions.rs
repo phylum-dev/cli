@@ -5,11 +5,21 @@ use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use assert_cmd::Command;
+use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::*;
 use rand::Rng;
 use regex::Regex;
+
+lazy_static! {
+    // Lock this mutex when setting an environment variable, for the lifetime of function calls
+    // depending on that specific environment variable value. Currently only used by the
+    // `extension_is_installed_correctly` test. This trades some contention for the possibility
+    // of running tests in parallel.
+    static ref ENV_MUTEX: Mutex<()> = Mutex::new(());
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Acceptance criteria tests
@@ -29,6 +39,7 @@ fn extension_is_installed_correctly() {
         .assert()
         .success();
 
+    let _guard = ENV_MUTEX.lock().unwrap();
     env::set_var("XDG_DATA_HOME", &tmp_dir);
 
     let installed_ext = Extension::load("sample-extension").unwrap();
