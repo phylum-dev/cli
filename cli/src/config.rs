@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 use phylum_types::types::auth::*;
@@ -25,7 +24,6 @@ pub struct ConnectionInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthInfo {
-    pub oidc_discovery_url: Url,
     pub offline_access: Option<RefreshToken>,
 }
 
@@ -56,10 +54,6 @@ impl Default for Config {
                 uri: "https://api.phylum.io".into(),
             },
             auth_info: AuthInfo {
-                oidc_discovery_url:
-                    "https://login.phylum.io/auth/realms/phylum/.well-known/openid-configuration"
-                        .parse()
-                        .unwrap(),
                 offline_access: None,
             },
             request_type: PackageType::Npm,
@@ -229,7 +223,6 @@ mod tests {
         };
 
         let auth = AuthInfo {
-            oidc_discovery_url: Url::parse("http://example.com").unwrap(),
             offline_access: Some(RefreshToken::new("FAKE TOKEN")),
         };
 

@@ -185,7 +185,7 @@ pub fn app<'a>() -> clap::Command<'a> {
     #[cfg(feature = "extensions")]
     {
         app = app.subcommand(extensions::command());
-        app = extensions::extensions_subcommands(app);
+        app = extensions::add_extensions_subcommands(app);
     }
 
     #[cfg(feature = "selfmanage")]

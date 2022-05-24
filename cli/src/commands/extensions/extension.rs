@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
-use std::fs::{self, Permissions};
+use std::fs::{self, DirBuilder};
 #[cfg(unix)]
-use std::os::unix::prelude::PermissionsExt;
+use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
@@ -61,9 +61,14 @@ impl Extension {
             let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
-                fs::create_dir_all(&dest_path)?;
-                #[cfg(unix)]
-                fs::set_permissions(&dest_path, Permissions::from_mode(0o700))?;
+                if cfg!(unix) {
+                    DirBuilder::new()
+                        .recursive(true)
+                        .mode(0o700)
+                        .create(&dest_path)?;
+                } else {
+                    fs::create_dir_all(&dest_path)?;
+                }
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
