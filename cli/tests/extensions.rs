@@ -64,17 +64,13 @@ fn can_run_installed_extension() {
         .assert()
         .success();
 
-    let cmd = Command::cargo_bin("phylum")
+    Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)
         .arg("sample-extension")
         .assert()
-        .success();
-
-    // TODO match the output of the sample extension to ensure it executed properly. #357
-    // TODO build a proper fixture which prints some output.
-    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    println!("{}", output);
+        .success()
+        .stdout("Hello, World!\n");
 }
 
 // When a user installs a valid extension it should print a message indicating
