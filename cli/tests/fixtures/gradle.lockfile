@@ -1,0 +1,9 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+com.google.code.findbugs:jsr305:1.3.9=classpath
+com.google.errorprone:error_prone_annotations:2.0.18=classpath
+com.google.guava:guava:23.3-jre=classpath
+com.google.j2objc:j2objc-annotations:1.1=classpath
+org.codehaus.mojo:animal-sniffer-annotations:1.14=classpath
+empty=runtimeClasspath
