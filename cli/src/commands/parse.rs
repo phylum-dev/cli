@@ -19,7 +19,7 @@ const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
     ("pipenv", &parse::<PipFile>),
     ("poetry", &parse::<Poetry>),
     ("mvn", &parse::<Pom>),
-    ("gradle", &parse::<GradleDeps>),
+    ("gradle", &parse::<GradleLock>),
     ("nuget", &parse::<CSProj>),
     ("auto", &get_packages_from_lockfile),
 ];
@@ -70,7 +70,7 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
     try_format!(PipFile, "pip Pipfile or Pipfile.lock");
     try_format!(Poetry, "poetry lock");
     try_format!(Pom, "pom xml");
-    try_format!(GradleDeps, "gradle dependencies");
+    try_format!(GradleLock, "gradle lockfile");
     try_format!(CSProj, "csproj");
 
     Err(anyhow!("Failed to identify lockfile type"))
@@ -98,7 +98,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
         "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
         "poetry.lock" => parse::<Poetry>(path)?,
         "effective-pom.xml" => parse::<Pom>(path)?,
-        "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
+        "gradle.lockfile" => parse::<GradleLock>(path)?,
         ".csproj" => parse::<CSProj>(path)?,
         _ => try_get_packages(path)?,
     };
@@ -125,7 +125,7 @@ mod tests {
             ("tests/fixtures/yarn.lock", PackageType::Npm),
             ("tests/fixtures/package-lock.json", PackageType::Npm),
             ("tests/fixtures/sample.csproj", PackageType::Nuget),
-            ("tests/fixtures/gradle-dependencies.txt", PackageType::Maven),
+            ("tests/fixtures/gradle.lockfile", PackageType::Maven),
             ("tests/fixtures/effective-pom.xml", PackageType::Maven),
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),
