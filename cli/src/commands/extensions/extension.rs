@@ -61,14 +61,12 @@ impl Extension {
             let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
-                if cfg!(unix) {
-                    DirBuilder::new()
-                        .recursive(true)
-                        .mode(0o700)
-                        .create(&dest_path)?;
-                } else {
-                    fs::create_dir_all(&dest_path)?;
-                }
+                let mut builder = DirBuilder::new().recursive(true);
+
+                #[cfg(unix)]
+                builder.mode(0o700);
+
+                builder.create(&dest_path)?;
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
