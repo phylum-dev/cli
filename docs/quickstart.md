@@ -6,7 +6,7 @@ hidden: false
 ---
 
 <p align="center">
-  <img height="100" src="https://phylum.io/logo/dark-bckg.svg">
+  <img height="100" src="https://raw.githubusercontent.com/phylum-dev/cli/main/assets/dark-bckg.svg">
 </p>
 
 ---
