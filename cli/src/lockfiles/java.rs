@@ -11,14 +11,14 @@ use super::parsers::gradle_dep;
 use crate::lockfiles::{ParseResult, Parseable};
 
 pub struct Pom(String);
-pub struct GradleDeps(String);
+pub struct GradleLock(String);
 
-impl Parseable for GradleDeps {
+impl Parseable for GradleLock {
     fn new(filename: &Path) -> Result<Self, io::Error>
     where
         Self: Sized,
     {
-        Ok(GradleDeps(std::fs::read_to_string(filename)?))
+        Ok(GradleLock(std::fs::read_to_string(filename)?))
     }
 
     /// Parses `gradle.lockfile` files into a vec of packages
@@ -157,8 +157,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn lock_parse_gradledeps() {
-        let parser = GradleDeps::new(Path::new("tests/fixtures/gradle.lockfile")).unwrap();
+    fn lock_parse_gradle() {
+        let parser = GradleLock::new(Path::new("tests/fixtures/gradle.lockfile")).unwrap();
 
         let pkgs = parser.parse().unwrap();
 
