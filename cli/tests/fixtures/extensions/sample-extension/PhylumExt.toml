@@ -1,0 +1,3 @@
+name = "sample-extension"
+description = "This extension does a thing"
+entry_point = "sample_extension.sh"

@@ -1,6 +1,8 @@
 use clap::{arg, Command, ValueHint};
 use git_version::git_version;
 
+#[cfg(feature = "extensions")]
+use crate::commands::extensions;
 use crate::commands::parse;
 
 const VERSION: &str = git_version!(
@@ -179,6 +181,12 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .arg(arg!(<group_name> "Name for the new group"))
                 )
         );
+
+    #[cfg(feature = "extensions")]
+    {
+        app = app.subcommand(extensions::command());
+        app = extensions::add_extensions_subcommands(app);
+    }
 
     #[cfg(feature = "selfmanage")]
     {

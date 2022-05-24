@@ -164,8 +164,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
     let home_path =
         home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
 
-    let config_dir = config_dir(&home_path);
-    let config_path = config_dir.join("phylum").join("settings.yaml");
+    let config_path = config_dir(&home_path).join("phylum").join("settings.yaml");
     let old_config_path = home_path.join(".phylum").join("settings.yaml");
 
     // Migrate the config from the old location.
@@ -188,6 +187,20 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
     }
 
     Ok(config_path)
+}
+
+/// Resolve XDG data directory.
+pub fn data_dir() -> Result<PathBuf> {
+    if let Some(data_dir) = env::var_os("XDG_DATA_HOME")
+        .filter(|s| !s.is_empty())
+        .map(PathBuf::from)
+    {
+        Ok(data_dir)
+    } else {
+        home::home_dir()
+            .ok_or_else(|| anyhow!("Couldn't find the user's home directory"))
+            .map(|home_path| home_path.join(".local").join("share"))
+    }
 }
 
 /// Resolve XDG config directory.

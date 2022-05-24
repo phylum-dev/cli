@@ -8,6 +8,7 @@ edition = "2018"
 default = ["selfmanage"]
 phylum-online = []
 selfmanage = []
+extensions = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -51,6 +52,8 @@ toml = "0.5.8"
 unicode-width = "0.1.9"
 url = { version = "2", features = ["serde"] }
 zip = "0.6.2"
+walkdir = "2.3.2"
+regex = "1.5.5"
 
 [dev-dependencies]
 assert_cmd = "2.0.4"

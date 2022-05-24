@@ -9,6 +9,8 @@ use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
+#[cfg(feature = "extensions")]
+use phylum_cli::commands::extensions::*;
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -59,6 +61,11 @@ async fn handle_commands() -> CommandResult {
     #[cfg(feature = "selfmanage")]
     if let Some(matches) = matches.subcommand_matches("uninstall") {
         return handle_uninstall(matches);
+    }
+
+    #[cfg(feature = "extensions")]
+    if let Some(matches) = matches.subcommand_matches("extension") {
+        return handle_extensions(matches).await;
     }
 
     let settings_path = get_home_settings_path()?;
