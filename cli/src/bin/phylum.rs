@@ -58,16 +58,6 @@ async fn handle_commands() -> CommandResult {
 
     let matches = app.get_matches();
 
-    #[cfg(feature = "selfmanage")]
-    if let Some(matches) = matches.subcommand_matches("uninstall") {
-        return handle_uninstall(matches);
-    }
-
-    #[cfg(feature = "extensions")]
-    if let Some(matches) = matches.subcommand_matches("extension") {
-        return handle_extensions(matches).await;
-    }
-
     let settings_path = get_home_settings_path()?;
 
     let config_path = matches
@@ -130,27 +120,6 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if matches.subcommand_matches("version").is_some() {
-        print_user_success!("{app_name} (Version {ver})");
-        return Ok(ExitCode::Ok.into());
-    }
-
-    if let Some(matches) = matches.subcommand_matches("update") {
-        let mut spinner = Spinner::new(
-            Spinners::Dots12,
-            "Downloading update and verifying binary signatures...".into(),
-        );
-        let res = update::do_update(matches.is_present("prerelease")).await;
-        spinner.stop_with_newline();
-        let message = res?;
-        print_user_success!("{}", message);
-        return Ok(ExitCode::Ok.into());
-    }
-
-    if let Some(matches) = matches.subcommand_matches("parse") {
-        return handle_parse(matches);
-    }
-
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
@@ -173,15 +142,6 @@ async fn handle_commands() -> CommandResult {
         .await;
     }
 
-    let mut api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
-        timeout,
-        ignore_certs,
-    )
-    .await
-    .context("Error creating client")?;
-
     // PhylumApi may have had to log in, updating the auth info so we should save the config
     save_config(&config_path, &config).with_context(|| {
         format!(
@@ -190,29 +150,58 @@ async fn handle_commands() -> CommandResult {
         )
     })?;
 
-    if matches.subcommand_matches("ping").is_some() {
-        let resp = api.ping().await;
-        print_response(&resp, true, None);
-        return Ok(ExitCode::Ok.into());
+    let api = async {
+        PhylumApi::new(
+            &mut config.auth_info,
+            &config.connection.uri,
+            timeout,
+            ignore_certs,
+        )
+        .await
+        .context("Error creating client")
+    };
+
+    match matches.subcommand() {
+        Some(("version", _)) => {
+            print_user_success!("{app_name} (Version {ver})");
+            Ok(ExitCode::Ok.into())
+        }
+        Some(("update", matches)) => {
+            let mut spinner = Spinner::new(
+                Spinners::Dots12,
+                "Downloading update and verifying binary signatures...".into(),
+            );
+            let res = update::do_update(matches.is_present("prerelease")).await;
+            spinner.stop_with_newline();
+            let message = res?;
+            print_user_success!("{}", message);
+            Ok(ExitCode::Ok.into())
+        }
+        Some(("parse", matches)) => handle_parse(matches),
+        Some(("ping", _)) => {
+            let resp = api.await?.ping().await;
+            print_response(&resp, true, None);
+            Ok(ExitCode::Ok.into())
+        }
+        Some(("project", matches)) => handle_project(&mut api.await?, matches).await,
+        Some(("package", matches)) => {
+            handle_get_package(&mut api.await?, &config.request_type, matches).await
+        }
+        Some(("history", matches)) => handle_submission(&mut api.await?, config, matches).await,
+        Some(("group", matches)) => handle_group(&mut api.await?, matches).await,
+        Some(("analyze", _)) | Some(("batch", _)) => {
+            handle_submission(&mut api.await?, config, &matches).await
+        }
+
+        #[cfg(feature = "selfmanage")]
+        Some(("uninstall", matches)) => handle_uninstall(matches),
+
+        #[cfg(feature = "extensions")]
+        Some(("extensions", matches)) => handle_extensions(matches).await,
+
+        Some((_, _)) => unreachable!(),
+        None => unreachable!(),
     }
-
-    let should_submit = matches.subcommand_matches("analyze").is_some()
-        || matches.subcommand_matches("batch").is_some();
-
-    // TODO: switch from if/else to non-exhaustive pattern match
-    if let Some(matches) = matches.subcommand_matches("project") {
-        handle_project(&mut api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        return handle_get_package(&mut api, &config.request_type, matches).await;
-    } else if should_submit {
-        return handle_submission(&mut api, config, &matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("history") {
-        return handle_history(&mut api, matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("group") {
-        return handle_group(&mut api, matches).await;
-    }
-
-    Ok(ExitCode::Ok.into())
 }
 
 #[tokio::main]
