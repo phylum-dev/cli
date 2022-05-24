@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
 lazy_static! {
-    static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z0-9_-]+$"#).unwrap();
+    static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z][a-z0-9-]+$"#).unwrap();
 }
 
 #[derive(Debug)]
