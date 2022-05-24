@@ -1,7 +1,7 @@
-//! Most functions in this module are marked `#[allow(unused)]` for the time being. This
-//! intentional, as there are no clients for those functions in the rest of the code, but
-//! those functions will have to be used by the Deno integration; at that point, we may
-//! remove the annotations.
+//! TODO remove the following annotation before merging. The functions in
+//! this module should have as unique client the Deno runtime; pending its
+//! implementation, having these functions unused would break CI.
+#![allow(unused)]
 
 use std::path::Path;
 use std::str::FromStr;
@@ -30,8 +30,7 @@ struct InjectedDependencies {
 }
 
 impl InjectedDependencies {
-    #[allow(unused)]
-    pub(super) fn from_factories(
+    pub(crate) fn from_factories(
         api_factory: fn() -> PhylumApi,
         config_factory: fn() -> Config,
     ) -> Self {
@@ -42,8 +41,9 @@ impl InjectedDependencies {
     }
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_analyze(
+/// Analyze a lockfile.
+/// Equivalent to `phylum analyze`.
+pub(crate) async fn analyze(
     state: &mut OpState,
     lockfile: &str,
     project: Option<&str>,
@@ -78,31 +78,31 @@ pub(super) async fn phylum_analyze(
     Ok(job_id)
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_auth_status(state: &mut OpState) -> Result<UserInfo> {
+/// Retrieve user info.
+/// Equivalent to `phylum auth status`.
+pub(crate) async fn get_user_info(state: &mut OpState) -> Result<UserInfo> {
     let deps = state.borrow_mut::<InjectedDependencies>();
-    deps.api
-        .user_info(&deps.config.auth_info)
-        .await
-        .map_err(Error::from)
+    deps.api.user_info().await.map_err(Error::from)
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_auth_token_bearer(
+/// Retrieve the access token.
+/// Equivalent to `phylum auth token --bearer`.
+pub(crate) async fn get_access_token(
     state: &mut OpState,
     ignore_certs: bool,
 ) -> Result<AccessToken> {
-    let refresh_token = phylum_auth_token(state)?;
+    let refresh_token = get_refresh_token(state)?;
     let config = &mut state.borrow_mut::<InjectedDependencies>().config;
     let access_token =
-        crate::auth::handle_refresh_tokens(&config.auth_info, &refresh_token, ignore_certs)
+        crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
             .await?
             .access_token;
     Ok(access_token)
 }
 
-#[allow(unused)]
-pub(super) fn phylum_auth_token(state: &mut OpState) -> Result<RefreshToken> {
+/// Retrieve the refresh token.
+/// Equivalent to `phylum auth token`.
+pub(crate) fn get_refresh_token(state: &mut OpState) -> Result<RefreshToken> {
     let config = &mut state.borrow_mut::<InjectedDependencies>().config;
     config
         .auth_info
@@ -111,8 +111,9 @@ pub(super) fn phylum_auth_token(state: &mut OpState) -> Result<RefreshToken> {
         .ok_or_else(|| anyhow!("User is not currently authenticated"))
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_history_job(
+/// Retrieve a job's status.
+/// Equivalent to `phylum history job`.
+pub(crate) async fn get_job_status(
     state: &mut OpState,
     job_id: Option<&str>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
@@ -124,8 +125,9 @@ pub(super) async fn phylum_history_job(
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_history_project(
+/// Retrieve a project's details.
+/// Equivalent to `phylum history project`.
+pub(crate) async fn get_project_details(
     state: &mut OpState,
     project_name: Option<&str>,
 ) -> Result<ProjectDetailsResponse> {
@@ -143,8 +145,9 @@ pub(super) async fn phylum_history_project(
         .map_err(Error::from)
 }
 
-#[allow(unused)]
-pub(super) async fn phylum_package(
+/// Analyze a single package.
+/// Equivalent to `phylum package`.
+pub(crate) async fn analyze_package(
     state: &mut OpState,
     name: &str,
     version: &str,
@@ -162,8 +165,12 @@ pub(super) async fn phylum_package(
     .map_err(Error::from)
 }
 
-#[allow(unused)]
-pub(super) fn phylum_parse(lockfile: &str, lockfile_type: &str) -> Result<Vec<PackageDescriptor>> {
+/// Parse a lockfile and return the package descriptors contained therein.
+/// Equivalent to `phylum parse`.
+pub(crate) fn parse_lockfile(
+    lockfile: &str,
+    lockfile_type: &str,
+) -> Result<Vec<PackageDescriptor>> {
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
