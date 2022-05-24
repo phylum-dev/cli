@@ -27,7 +27,7 @@ pub fn command<'a>() -> Command<'a> {
 
 /// Generate the subcommands for each extension.
 /// TODO add tests.
-pub fn extensions_subcommands(command: Command<'_>) -> Command<'_> {
+pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
     let extensions = match installed_extensions() {
         Ok(extensions) => extensions,
         Err(e) => {
