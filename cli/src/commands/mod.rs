@@ -1,3 +1,5 @@
+use std::process;
+
 use phylum_types::types::job::Action;
 
 pub mod auth;
@@ -29,10 +31,20 @@ impl From<ExitCode> for CommandValue {
 pub type CommandResult = anyhow::Result<CommandValue>;
 
 /// Unique exit code values.
+#[derive(Copy, Clone)]
 pub enum ExitCode {
     Ok = 0,
+    Generic = 1,
     NotAuthenticated = 10,
     AuthenticationFailure = 11,
     PackageNotFound = 12,
     SetThresholdsFailure = 13,
+    FailedThresholds = 100,
+}
+
+impl ExitCode {
+    /// Terminate the application with this exit code.
+    pub fn exit(&self) -> ! {
+        process::exit(*self as i32);
+    }
 }

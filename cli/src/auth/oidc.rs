@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::ip_addr_ext::IpAddrExt;
-use crate::config::AuthInfo;
+use crate::api::endpoints;
 
 pub const OIDC_SCOPES: [&str; 4] = ["openid", "offline_access", "profile", "email"];
 
@@ -149,14 +149,14 @@ pub fn check_if_routable(hostname: impl AsRef<str>) -> Result<bool> {
 }
 
 pub async fn fetch_oidc_server_settings(
-    auth_info: &AuthInfo,
     ignore_certs: bool,
+    api_uri: &str,
 ) -> Result<OidcServerSettings> {
     let client = reqwest::Client::builder()
         .danger_accept_invalid_certs(ignore_certs)
         .build()?;
     let response = client
-        .get(auth_info.oidc_discovery_url.clone())
+        .get(endpoints::oidc_discovery(api_uri))
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(5))
         .send()
@@ -273,11 +273,11 @@ pub async fn refresh_tokens(
 }
 
 pub async fn handle_refresh_tokens(
-    auth_info: &AuthInfo,
     refresh_token: &RefreshToken,
     ignore_certs: bool,
+    api_uri: &str,
 ) -> Result<TokenResponse> {
-    let oidc_settings = fetch_oidc_server_settings(auth_info, ignore_certs).await?;
+    let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
     refresh_tokens(&oidc_settings, refresh_token, ignore_certs).await
 }
 

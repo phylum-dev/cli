@@ -18,7 +18,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use thiserror::Error as ThisError;
 
-mod endpoints;
+pub mod endpoints;
 
 use crate::auth::fetch_oidc_server_settings;
 use crate::auth::handle_auth_flow;
@@ -110,9 +110,9 @@ impl PhylumApi {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &auth_info.offline_access {
             Some(refresh_token) => {
-                handle_refresh_tokens(auth_info, refresh_token, ignore_certs).await?
+                handle_refresh_tokens(refresh_token, ignore_certs, api_uri).await?
             }
-            None => handle_auth_flow(&AuthAction::Login, auth_info, ignore_certs).await?,
+            None => handle_auth_flow(&AuthAction::Login, ignore_certs, api_uri).await?,
         };
 
         auth_info.offline_access = Some(tokens.refresh_token.clone());
@@ -147,8 +147,12 @@ impl PhylumApi {
     /// update auth info by forcing the login flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn login(mut auth_info: AuthInfo, ignore_certs: bool) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Login, &auth_info, ignore_certs).await?;
+    pub async fn login(
+        mut auth_info: AuthInfo,
+        ignore_certs: bool,
+        api_uri: &str,
+    ) -> Result<AuthInfo> {
+        let tokens = handle_auth_flow(&AuthAction::Login, ignore_certs, api_uri).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
     }
@@ -156,8 +160,12 @@ impl PhylumApi {
     /// update auth info by forcing the registration flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
     /// credentials. It is the duty of the calling code to save any changes
-    pub async fn register(mut auth_info: AuthInfo, ignore_certs: bool) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Register, &auth_info, ignore_certs).await?;
+    pub async fn register(
+        mut auth_info: AuthInfo,
+        ignore_certs: bool,
+        api_uri: &str,
+    ) -> Result<AuthInfo> {
+        let tokens = handle_auth_flow(&AuthAction::Register, ignore_certs, api_uri).await?;
         auth_info.offline_access = Some(tokens.refresh_token);
         Ok(auth_info)
     }
@@ -171,8 +179,8 @@ impl PhylumApi {
     }
 
     /// Get information about the authenticated user
-    pub async fn user_info(&self, auth_info: &AuthInfo) -> Result<UserInfo> {
-        let oidc_settings = fetch_oidc_server_settings(auth_info, self.ignore_certs).await?;
+    pub async fn user_info(&self) -> Result<UserInfo> {
+        let oidc_settings = fetch_oidc_server_settings(self.ignore_certs, &self.api_uri).await?;
         self.get(oidc_settings.userinfo_endpoint.into()).await
     }
 
@@ -338,7 +346,7 @@ mod tests {
     #[tokio::test]
     async fn when_creating_unauthenticated_phylum_api_it_auths_itself() -> Result<()> {
         let mock_server = build_mock_server().await;
-        let mut auth_info = build_unauthenticated_auth_info(&mock_server);
+        let mut auth_info = build_unauthenticated_auth_info();
         PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None, false).await?;
         // After auth, auth_info should have a offline access token
         assert!(
@@ -702,9 +710,8 @@ mod tests {
             .await;
 
         let client = build_phylum_api(&mock_server).await?;
-        let auth_info = build_authenticated_auth_info(&mock_server);
 
-        let user = client.user_info(&auth_info).await?;
+        let user = client.user_info().await?;
 
         assert_eq!(user.email, "john-doe@example.org");
 

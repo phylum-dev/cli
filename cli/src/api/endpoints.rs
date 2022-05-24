@@ -77,3 +77,8 @@ pub(crate) fn group_create(api_uri: &str) -> String {
 pub fn group_project_summary(api_uri: &str, group: &str) -> String {
     format!("{api_uri}/{API_PATH}/groups/{group}/projects")
 }
+
+/// GET /.well-known/openid-configuration
+pub fn oidc_discovery(api_uri: &str) -> String {
+    format!("{api_uri}/{API_PATH}/.well-known/openid-configuration")
+}
