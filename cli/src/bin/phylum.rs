@@ -196,23 +196,40 @@ async fn handle_commands() -> CommandResult {
         return Ok(ExitCode::Ok.into());
     }
 
-    let should_submit = matches.subcommand_matches("analyze").is_some()
-        || matches.subcommand_matches("batch").is_some();
-
     // TODO: switch from if/else to non-exhaustive pattern match
-    if let Some(matches) = matches.subcommand_matches("project") {
-        handle_project(&mut api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        return handle_get_package(&mut api, &config.request_type, matches).await;
-    } else if should_submit {
-        return handle_submission(&mut api, config, &matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("history") {
-        return handle_history(&mut api, matches).await;
-    } else if let Some(matches) = matches.subcommand_matches("group") {
-        return handle_group(&mut api, matches).await;
+    match matches.subcommand() {
+        Some(("project", matches)) => handle_project(&mut api, matches).await,
+        Some(("package", matches)) => {
+            handle_get_package(&mut api, &config.request_type, matches).await
+        }
+        Some(("history", matches)) => handle_submission(&mut api, config, matches).await,
+        Some(("group", matches)) => handle_group(&mut api, matches).await,
+        Some(("analyze", _)) | Some(("batch", _)) => {
+            handle_submission(&mut api, config, &matches).await
+        }
+        Some((extension, matches)) => handle_run_extension(extension, matches).await,
+        None => unreachable!()
     }
 
-    Ok(ExitCode::Ok.into())
+    // Drop this code after we have validated that the above match statement fulfills
+    // everything from the following lines.
+
+    // let should_submit = matches.subcommand_matches("analyze").is_some()
+    //     || matches.subcommand_matches("batch").is_some();
+    //
+    // if let Some(matches) = matches.subcommand_matches("project") {
+    //     handle_project(&mut api, matches).await?;
+    // } else if let Some(matches) = matches.subcommand_matches("package") {
+    //     return handle_get_package(&mut api, &config.request_type, matches).await;
+    // } else if should_submit {
+    //     return handle_submission(&mut api, config, &matches).await;
+    // } else if let Some(matches) = matches.subcommand_matches("history") {
+    //     return handle_history(&mut api, matches).await;
+    // } else if let Some(matches) = matches.subcommand_matches("group") {
+    //     return handle_group(&mut api, matches).await;
+    // }
+
+    // Ok(ExitCode::Ok.into())
 }
 
 #[tokio::main]
