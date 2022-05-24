@@ -1,5 +1,5 @@
 <p align="center">
-  <img height="100" src="https://app.phylum.io/static/media/phylum-blue.d9e09fd4ac5774237f0c44f3173cb783.svg">
+  <img height="100" src="https://raw.githubusercontent.com/phylum-dev/cli/main/assets/dark-bckg.svg">
 </p>
 
 ---
