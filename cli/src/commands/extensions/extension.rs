@@ -61,11 +61,12 @@ impl Extension {
             let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
-                let mut builder = DirBuilder::new().recursive(true);
+                let mut builder = DirBuilder::new();
 
                 #[cfg(unix)]
                 builder.mode(0o700);
 
+                builder.recursive(true);
                 builder.create(&dest_path)?;
             } else if source_path.is_file() {
                 if dest_path.exists() {
