@@ -5,7 +5,7 @@ use std::{collections::HashSet, convert::TryFrom, fs, io::ErrorKind, path::PathB
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 pub use extension::*;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
 use log::{error, warn};
 
@@ -62,7 +62,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
-        Some(("add", matches)) => handle_add_extension(matches.value_of_t("PATH")?).await,
+        Some(("add", matches)) => handle_add_extension(matches.value_of("PATH").unwrap()).await,
         Some(("remove", matches)) => {
             handle_remove_extension(matches.value_of("NAME").unwrap()).await
         }
@@ -73,8 +73,17 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
 
 /// Handle the `extension add` subcommand path.
 /// Add the extension from the specified path.
-async fn handle_add_extension(path: PathBuf) -> CommandResult {
-    let extension = Extension::try_from(path)?;
+async fn handle_add_extension(path: &str) -> CommandResult {
+    // NOTE: Extension installation without slashes is reserved for the marketplace.
+    if !path.contains('/') && !path.contains('\\') {
+        return Err(anyhow!(
+            "Ambiguous extension URI '{}', use './{0}' instead",
+            path
+        ));
+    }
+
+    let extension_path = PathBuf::from(path);
+    let extension = Extension::try_from(extension_path)?;
 
     extension.install()?;
 
