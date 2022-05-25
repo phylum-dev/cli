@@ -77,11 +77,10 @@ impl Parse for CSProj {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lockfiles::parse_file;
 
     #[test]
     fn lock_parse_csproj() {
-        let pkgs = parse_file(CSProj, "tests/fixtures/sample.csproj").unwrap();
+        let pkgs = CSProj.parse_file("tests/fixtures/sample.csproj").unwrap();
 
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
@@ -96,7 +95,9 @@ mod tests {
 
     #[test]
     fn lock_parse_another_invalid_char() {
-        let pkgs = parse_file(CSProj, "tests/fixtures/Calculator.csproj").unwrap();
+        let pkgs = CSProj
+            .parse_file("tests/fixtures/Calculator.csproj")
+            .unwrap();
         assert!(!pkgs.is_empty());
     }
 }

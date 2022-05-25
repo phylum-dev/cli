@@ -28,11 +28,10 @@ mod tests {
     use phylum_types::types::package::PackageType;
 
     use super::*;
-    use crate::lockfiles::parse_file;
 
     #[test]
     fn lock_parse_gem() {
-        let pkgs = parse_file(GemLock, "tests/fixtures/Gemfile.lock").unwrap();
+        let pkgs = GemLock.parse_file("tests/fixtures/Gemfile.lock").unwrap();
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");

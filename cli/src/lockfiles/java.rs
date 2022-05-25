@@ -137,11 +137,12 @@ impl Parse for Pom {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lockfiles::parse_file;
 
     #[test]
     fn lock_parse_gradle() {
-        let pkgs = parse_file(GradleLock, "tests/fixtures/gradle.lockfile").unwrap();
+        let pkgs = GradleLock
+            .parse_file("tests/fixtures/gradle.lockfile")
+            .unwrap();
 
         assert_eq!(pkgs.len(), 5);
 
@@ -156,7 +157,7 @@ mod tests {
 
     #[test]
     fn lock_parse_effective_pom() {
-        let mut pkgs = parse_file(Pom, "tests/fixtures/effective-pom.xml").unwrap();
+        let mut pkgs = Pom.parse_file("tests/fixtures/effective-pom.xml").unwrap();
 
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);

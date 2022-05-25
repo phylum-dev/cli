@@ -168,11 +168,12 @@ struct PoetryMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lockfiles::parse_file;
 
     #[test]
     fn parse_requirements() {
-        let pkgs = parse_file(PyRequirements, "tests/fixtures/requirements.txt").unwrap();
+        let pkgs = PyRequirements
+            .parse_file("tests/fixtures/requirements.txt")
+            .unwrap();
         assert_eq!(pkgs.len(), 131);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
@@ -186,7 +187,9 @@ mod tests {
 
     #[test]
     fn parse_requirements_complex() {
-        let pkgs = parse_file(PyRequirements, "tests/fixtures/complex-requirements.txt").unwrap();
+        let pkgs = PyRequirements
+            .parse_file("tests/fixtures/complex-requirements.txt")
+            .unwrap();
         assert_eq!(pkgs.len(), 8);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
@@ -203,7 +206,7 @@ mod tests {
 
     #[test]
     fn parse_pipfile() {
-        let pkgs = parse_file(PipFile, "tests/fixtures/Pipfile").unwrap();
+        let pkgs = PipFile.parse_file("tests/fixtures/Pipfile").unwrap();
         assert_eq!(pkgs.len(), 4);
 
         let expected_pkgs = [
@@ -231,7 +234,7 @@ mod tests {
 
     #[test]
     fn lock_parse_pipfile() {
-        let pkgs = parse_file(PipFile, "tests/fixtures/Pipfile.lock").unwrap();
+        let pkgs = PipFile.parse_file("tests/fixtures/Pipfile.lock").unwrap();
         assert_eq!(pkgs.len(), 27);
 
         let expected_pkgs = [
@@ -259,7 +262,7 @@ mod tests {
 
     #[test]
     fn parse_poetry_lock() {
-        let pkgs = parse_file(Poetry, "tests/fixtures/poetry.lock").unwrap();
+        let pkgs = Poetry.parse_file("tests/fixtures/poetry.lock").unwrap();
         assert_eq!(pkgs.len(), 44);
 
         let expected_pkgs = [
@@ -288,7 +291,7 @@ mod tests {
     /// Ensure sources other than PyPi are ignored.
     #[test]
     fn poetry_ignore_other_sources() {
-        let pkgs = parse_file(Poetry, "tests/fixtures/poetry.lock").unwrap();
+        let pkgs = Poetry.parse_file("tests/fixtures/poetry.lock").unwrap();
 
         let invalid_package_names = ["toml", "directory-test", "requests"];
         for pkg in pkgs {

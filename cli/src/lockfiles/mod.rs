@@ -22,12 +22,16 @@ pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 pub trait Parse {
     /// Parse from a string
     fn parse(&self, data: &str) -> ParseResult;
+
+    /// Parse from a file
+    fn parse_file<P: AsRef<Path>>(&self, path: P) -> ParseResult
+    where
+        Self: Sized,
+    {
+        let data = read_to_string(path)?;
+        self.parse(&data)
+    }
+
     /// Indicate the type of packages parsed by this parser
     fn package_type(&self) -> PackageType;
-}
-
-/// Parse a file with the given parser.
-pub fn parse_file<T: Parse, P: AsRef<Path>>(parser: T, path: P) -> ParseResult {
-    let data = read_to_string(path)?;
-    parser.parse(&data)
 }
