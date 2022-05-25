@@ -208,7 +208,7 @@ async fn handle_commands() -> CommandResult {
         extension_subcmd => handle_extension_run(extension_subcmd).await,
 
         #[cfg(not(feature = "extensions"))]
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
