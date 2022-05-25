@@ -1,6 +1,3 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -8,22 +5,14 @@ use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::parsers::gradle_dep;
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{Parse, ParseResult};
 
-pub struct Pom(String);
-pub struct GradleLock(String);
+pub struct Pom;
+pub struct GradleLock;
 
-impl Parseable for GradleLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(GradleLock(std::fs::read_to_string(filename)?))
-    }
-
+impl Parse for GradleLock {
     /// Parses `gradle.lockfile` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let data = self.0.as_str();
+    fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = gradle_dep::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -31,21 +20,14 @@ impl Parseable for GradleLock {
         Ok(entries)
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Maven
     }
 }
 
-impl Parseable for Pom {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(Pom(std::fs::read_to_string(filename)?))
-    }
-
+impl Parse for Pom {
     /// Parses maven effecti-pom files into a vec of packages
-    fn parse(&self) -> ParseResult {
+    fn parse(&self, data: &str) -> ParseResult {
         // Get plugin dependencies
         fn get_plugin_deps(plugins: &[Plugin]) -> Vec<Dependency> {
             plugins
@@ -69,7 +51,7 @@ impl Parseable for Pom {
         }
 
         // Get project reference
-        let pom: Project = serde_xml_rs::from_str(&self.0)?;
+        let pom: Project = serde_xml_rs::from_str(data)?;
 
         // Get project dependencies
         let mut dependencies = pom.dependencies.unwrap_or_default().dependencies;
@@ -140,14 +122,14 @@ impl Parseable for Pom {
                             &dep.artifact_id.clone().unwrap_or_default()
                         ),
                         version: s.into(),
-                        package_type: Self::package_type(),
+                        package_type: self.package_type(),
                     })
                 })
             })
             .collect::<Result<Vec<_>, _>>()
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Maven
     }
 }
@@ -158,9 +140,9 @@ mod tests {
 
     #[test]
     fn lock_parse_gradle() {
-        let parser = GradleLock::new(Path::new("tests/fixtures/gradle.lockfile")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = GradleLock
+            .parse_file("tests/fixtures/gradle.lockfile")
+            .unwrap();
 
         assert_eq!(pkgs.len(), 5);
 
@@ -175,9 +157,8 @@ mod tests {
 
     #[test]
     fn lock_parse_effective_pom() {
-        let parser = Pom::new(Path::new("tests/fixtures/effective-pom.xml")).unwrap();
+        let mut pkgs = Pom.parse_file("tests/fixtures/effective-pom.xml").unwrap();
 
-        let mut pkgs = parser.parse().unwrap();
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);
         assert_eq!(pkgs[0].name, "com.bitalino:bitalino-java-sdk");
