@@ -1,13 +1,11 @@
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
-use std::io;
-use std::path::Path;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{ParseResult, Parser};
 
-pub struct CSProj(String);
+pub struct CSProj;
 
 const INVALID_CHAR: &str = "\u{feff}";
 
@@ -61,27 +59,17 @@ impl From<Project> for Vec<PackageDescriptor> {
     }
 }
 
-impl Parseable for CSProj {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(CSProj(
-            std::fs::read_to_string(filename)?
-                .trim_start_matches(INVALID_CHAR)
-                .to_string(),
-        ))
-    }
-
+impl Parser for CSProj {
     /// Parses `.csproj` files into a vec of packages
-    fn parse(&self) -> ParseResult {
+    fn parse(&self, data: &str) -> ParseResult {
+        let data = data.trim_start_matches(INVALID_CHAR);
         let mut de =
-            Deserializer::new_from_reader(self.0.as_bytes()).non_contiguous_seq_elements(true);
+            Deserializer::new_from_reader(data.as_bytes()).non_contiguous_seq_elements(true);
         let parsed = Project::deserialize(&mut de)?;
         Ok(parsed.into())
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Nuget
     }
 }
@@ -89,12 +77,12 @@ impl Parseable for CSProj {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lockfiles::parse_file;
 
     #[test]
     fn lock_parse_csproj() {
-        let parser = CSProj::new(Path::new("tests/fixtures/sample.csproj")).unwrap();
+        let pkgs = parse_file(CSProj, "tests/fixtures/sample.csproj").unwrap();
 
-        let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
         assert_eq!(pkgs[0].version, "1.0.0");
@@ -108,8 +96,7 @@ mod tests {
 
     #[test]
     fn lock_parse_another_invalid_char() {
-        let parser = CSProj::new(Path::new("tests/fixtures/Calculator.csproj")).unwrap();
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(CSProj, "tests/fixtures/Calculator.csproj").unwrap();
         assert!(!pkgs.is_empty());
     }
 }

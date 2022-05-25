@@ -1,27 +1,16 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{ParseResult, Parser};
 
-pub struct GemLock(String);
+pub struct GemLock;
 
-impl Parseable for GemLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(GemLock(std::fs::read_to_string(filename)?))
-    }
-
+impl Parser for GemLock {
     /// Parses `Gemfile.lock` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let data = self.0.as_str();
+    fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = gem::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -29,21 +18,21 @@ impl Parseable for GemLock {
         Ok(entries)
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::RubyGems
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use phylum_types::types::package::PackageType;
+
+    use super::*;
+    use crate::lockfiles::parse_file;
 
     #[test]
     fn lock_parse_gem() {
-        let parser = GemLock::new(Path::new("tests/fixtures/Gemfile.lock")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(GemLock, "tests/fixtures/Gemfile.lock").unwrap();
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");

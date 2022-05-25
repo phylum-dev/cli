@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::path::Path;
-use std::{fs, io};
 
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
@@ -10,23 +8,15 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::parsers::pypi;
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{ParseResult, Parser};
 
-pub struct PyRequirements(String);
-pub struct PipFile(String);
-pub struct Poetry(String);
+pub struct PyRequirements;
+pub struct PipFile;
+pub struct Poetry;
 
-impl Parseable for PyRequirements {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(PyRequirements(fs::read_to_string(filename)?))
-    }
-
+impl Parser for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let data = self.0.as_str();
+    fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = pypi::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -34,24 +24,17 @@ impl Parseable for PyRequirements {
         Ok(entries)
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::PyPi
     }
 }
 
-impl Parseable for PipFile {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(PipFile(fs::read_to_string(filename)?))
-    }
-
+impl Parser for PipFile {
     /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let mut input: HashMap<String, Value> = match toml::from_str::<toml::Value>(&self.0).ok() {
+    fn parse(&self, data: &str) -> ParseResult {
+        let mut input: HashMap<String, Value> = match toml::from_str::<toml::Value>(data).ok() {
             Some(s) => serde_json::from_value(serde_json::to_value(s)?)?,
-            None => serde_json::from_str(&self.0)?,
+            None => serde_json::from_str(data)?,
         };
 
         let mut packages: HashMap<String, Value> =
@@ -87,7 +70,7 @@ impl Parseable for PipFile {
                         Ok(PackageDescriptor {
                             name: k.as_str().to_string().to_lowercase(),
                             version: v.replace("==", "").trim().to_string(),
-                            package_type: Self::package_type(),
+                            package_type: self.package_type(),
                         })
                     }),
                     None => {
@@ -99,22 +82,15 @@ impl Parseable for PipFile {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::PyPi
     }
 }
 
-impl Parseable for Poetry {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(Poetry(fs::read_to_string(filename)?))
-    }
-
+impl Parser for Poetry {
     /// Parses `poetry.lock` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let mut lock: PoetryLock = toml::from_str(&self.0)?;
+    fn parse(&self, data: &str) -> ParseResult {
+        let mut lock: PoetryLock = toml::from_str(data)?;
 
         // Warn if the version of this lockfile might not be supported.
         if !lock.metadata.lock_version.starts_with("1.") {
@@ -138,7 +114,7 @@ impl Parseable for Poetry {
             .collect())
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::PyPi
     }
 }
@@ -192,12 +168,11 @@ struct PoetryMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lockfiles::parse_file;
 
     #[test]
     fn parse_requirements() {
-        let parser = PyRequirements::new(Path::new("tests/fixtures/requirements.txt")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(PyRequirements, "tests/fixtures/requirements.txt").unwrap();
         assert_eq!(pkgs.len(), 131);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
@@ -211,10 +186,7 @@ mod tests {
 
     #[test]
     fn parse_requirements_complex() {
-        let parser =
-            PyRequirements::new(Path::new("tests/fixtures/complex-requirements.txt")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(PyRequirements, "tests/fixtures/complex-requirements.txt").unwrap();
         assert_eq!(pkgs.len(), 8);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
@@ -231,9 +203,7 @@ mod tests {
 
     #[test]
     fn parse_pipfile() {
-        let parser = PipFile::new(Path::new("tests/fixtures/Pipfile")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(PipFile, "tests/fixtures/Pipfile").unwrap();
         assert_eq!(pkgs.len(), 4);
 
         let expected_pkgs = [
@@ -261,9 +231,7 @@ mod tests {
 
     #[test]
     fn lock_parse_pipfile() {
-        let parser = PipFile::new(Path::new("tests/fixtures/Pipfile.lock")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(PipFile, "tests/fixtures/Pipfile.lock").unwrap();
         assert_eq!(pkgs.len(), 27);
 
         let expected_pkgs = [
@@ -291,9 +259,7 @@ mod tests {
 
     #[test]
     fn parse_poetry_lock() {
-        let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(Poetry, "tests/fixtures/poetry.lock").unwrap();
         assert_eq!(pkgs.len(), 44);
 
         let expected_pkgs = [
@@ -322,9 +288,7 @@ mod tests {
     /// Ensure sources other than PyPi are ignored.
     #[test]
     fn poetry_ignore_other_sources() {
-        let parser = Poetry::new(Path::new("tests/fixtures/poetry.lock")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = parse_file(Poetry, "tests/fixtures/poetry.lock").unwrap();
 
         let invalid_package_names = ["toml", "directory-test", "requests"];
         for pkg in pkgs {

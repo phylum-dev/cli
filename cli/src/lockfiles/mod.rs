@@ -1,5 +1,4 @@
-use std::io;
-use std::marker::Sized;
+use std::fs::read_to_string;
 use std::path::Path;
 
 use phylum_types::types::package::PackageDescriptor;
@@ -20,12 +19,15 @@ pub use ruby::GemLock;
 
 pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
-pub trait Parseable {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized;
+pub trait Parser {
+    /// Parse from a string
+    fn parse(&self, data: &str) -> ParseResult;
+    /// Indicate the type of packages parsed by this parser
+    fn package_type(&self) -> PackageType;
+}
 
-    fn parse(&self) -> ParseResult;
-
-    fn package_type() -> PackageType;
+/// Parse a file with the given parser.
+pub fn parse_file<T: Parser, P: AsRef<Path>>(parser: T, path: P) -> ParseResult {
+    let data = read_to_string(path)?;
+    parser.parse(&data)
 }
