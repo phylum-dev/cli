@@ -9,11 +9,11 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
 use crate::lockfiles::{
-    parse_file, CSProj, GemLock, GradleLock, PackageLock, Parser, PipFile, Poetry, Pom,
+    parse_file, CSProj, GemLock, GradleLock, PackageLock, Parse, PipFile, Poetry, Pom,
     PyRequirements, YarnLock,
 };
 
-const LOCKFILE_PARSERS: &[(&str, &dyn Parser)] = &[
+const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
     ("yarn", &YarnLock),
     ("npm", &PackageLock),
     ("gem", &GemLock),
@@ -110,7 +110,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
 }
 
 /// Get all packages for a specific lockfile type.
-fn parse<P: Parser>(parser: P, path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+fn parse<P: Parse>(parser: P, path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
     let pkg_type = parser.package_type();
     parse_file(parser, path).map(|pkgs| (pkgs, pkg_type))
 }

@@ -6,12 +6,12 @@ use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
-use crate::lockfiles::{ParseResult, Parser};
+use crate::lockfiles::{Parse, ParseResult};
 
 pub struct PackageLock;
 pub struct YarnLock;
 
-impl Parser for PackageLock {
+impl Parse for PackageLock {
     /// Parses `package-lock.json` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let parsed: JsonValue = serde_json::from_str(data)?;
@@ -66,7 +66,7 @@ fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
         .any(|(k, _v)| k.as_str().unwrap_or_default() == "__metadata")
 }
 
-impl Parser for YarnLock {
+impl Parse for YarnLock {
     /// Parses `yarn.lock` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let yaml = serde_yaml::from_str::<YamlValue>(data).ok();

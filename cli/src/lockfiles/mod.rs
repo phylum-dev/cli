@@ -19,7 +19,7 @@ pub use ruby::GemLock;
 
 pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
-pub trait Parser {
+pub trait Parse {
     /// Parse from a string
     fn parse(&self, data: &str) -> ParseResult;
     /// Indicate the type of packages parsed by this parser
@@ -27,7 +27,7 @@ pub trait Parser {
 }
 
 /// Parse a file with the given parser.
-pub fn parse_file<T: Parser, P: AsRef<Path>>(parser: T, path: P) -> ParseResult {
+pub fn parse_file<T: Parse, P: AsRef<Path>>(parser: T, path: P) -> ParseResult {
     let data = read_to_string(path)?;
     parser.parse(&data)
 }

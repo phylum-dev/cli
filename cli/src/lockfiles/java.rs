@@ -5,12 +5,12 @@ use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::parsers::gradle_dep;
-use crate::lockfiles::{ParseResult, Parser};
+use crate::lockfiles::{Parse, ParseResult};
 
 pub struct Pom;
 pub struct GradleLock;
 
-impl Parser for GradleLock {
+impl Parse for GradleLock {
     /// Parses `gradle.lockfile` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = gradle_dep::parse(data)
@@ -25,7 +25,7 @@ impl Parser for GradleLock {
     }
 }
 
-impl Parser for Pom {
+impl Parse for Pom {
     /// Parses maven effecti-pom files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         // Get plugin dependencies

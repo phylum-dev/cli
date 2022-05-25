@@ -4,11 +4,11 @@ use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
-use crate::lockfiles::{ParseResult, Parser};
+use crate::lockfiles::{Parse, ParseResult};
 
 pub struct GemLock;
 
-impl Parser for GemLock {
+impl Parse for GemLock {
     /// Parses `Gemfile.lock` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = gem::parse(data)

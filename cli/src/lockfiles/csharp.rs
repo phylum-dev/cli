@@ -3,7 +3,7 @@ use serde_xml_rs::Deserializer;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
-use crate::lockfiles::{ParseResult, Parser};
+use crate::lockfiles::{Parse, ParseResult};
 
 pub struct CSProj;
 
@@ -59,7 +59,7 @@ impl From<Project> for Vec<PackageDescriptor> {
     }
 }
 
-impl Parser for CSProj {
+impl Parse for CSProj {
     /// Parses `.csproj` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let data = data.trim_start_matches(INVALID_CHAR);

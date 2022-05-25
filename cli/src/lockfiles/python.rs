@@ -8,13 +8,13 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::parsers::pypi;
-use crate::lockfiles::{ParseResult, Parser};
+use crate::lockfiles::{Parse, ParseResult};
 
 pub struct PyRequirements;
 pub struct PipFile;
 pub struct Poetry;
 
-impl Parser for PyRequirements {
+impl Parse for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = pypi::parse(data)
@@ -29,7 +29,7 @@ impl Parser for PyRequirements {
     }
 }
 
-impl Parser for PipFile {
+impl Parse for PipFile {
     /// Parses `Pipfile` or `Pipfile.lock` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let mut input: HashMap<String, Value> = match toml::from_str::<toml::Value>(data).ok() {
@@ -87,7 +87,7 @@ impl Parser for PipFile {
     }
 }
 
-impl Parser for Poetry {
+impl Parse for Poetry {
     /// Parses `poetry.lock` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         let mut lock: PoetryLock = toml::from_str(data)?;
