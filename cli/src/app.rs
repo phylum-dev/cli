@@ -30,7 +30,7 @@ pub fn app<'a>() -> clap::Command<'a> {
         .author("Phylum, Inc.")
         .about("Client interface to the Phylum system")
         .args(&[
-            Arg::new("config").short('c').long("config").value_name("FILE").value_hint(ValueHint::FilePath),
+            Arg::new("config").short('c').long("config").value_name("FILE").help("Sets a custom config file").value_hint(ValueHint::FilePath),
             Arg::new("timeout").short('t').long("timeout").value_name("TIMEOUT").help("Set the timeout (in seconds) for requests to the Phylum api"),
             Arg::new("no-check-certificate").long("no-check-certificate").help("Don't validate the server certificate when performing api requests"),
         ])
@@ -71,7 +71,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     Command::new("create")
                         .about("Create a new project")
                         .args(&[
-                            Arg::new("name").value_name("name").help("Name of the project"),
+                            Arg::new("name").value_name("name").help("Name of the project").required(true),
                             Arg::new("group").short('g').long("group").value_name("group_name").help("Group which will be the owner of the project"),
                         ])
                 )
