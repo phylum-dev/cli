@@ -10,6 +10,9 @@ use regex::Regex;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::commands::{CommandResult, ExitCode};
+use crate::deno::DenoRuntime;
+
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
 lazy_static! {
@@ -36,6 +39,10 @@ impl Extension {
 
     pub fn description(&self) -> Option<&str> {
         self.manifest.description.as_deref()
+    }
+
+    pub fn entry_point(&self) -> &String {
+        &self.manifest.entry_point
     }
 
     /// Install the extension in the default path.
@@ -103,6 +110,14 @@ impl Extension {
     /// Load an extension from the default path.
     pub fn load(name: &str) -> Result<Extension, anyhow::Error> {
         Extension::try_from(extension_path(name)?)
+    }
+
+    /// Execute an extension subcommand.
+    pub async fn run(&self) -> CommandResult {
+        let script_path = self.path.join(&self.manifest.entry_point);
+        let mut deno = DenoRuntime::new();
+        deno.run(&script_path.to_string_lossy()).await?;
+        Ok(ExitCode::Ok.into())
     }
 }
 

@@ -11,7 +11,7 @@ use spinners::{Spinner, Spinners};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::*;
+use phylum_cli::commands::extensions::{self, handle_extensions};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -204,8 +204,23 @@ async fn handle_commands() -> CommandResult {
         #[cfg(feature = "extensions")]
         "extensions" => handle_extensions(matches).await,
 
-        _ => unreachable!(),
+        #[cfg(feature = "extensions")]
+        extension_subcmd => handle_extension_run(extension_subcmd).await,
+
+        #[cfg(not(feature = "extensions"))]
+        _ => unreachable!()
     }
+}
+
+#[cfg(feature = "extensions")]
+async fn handle_extension_run(extension_subcmd: &str) -> CommandResult {
+    for extension in extensions::installed_extensions().unwrap_or_default() {
+        if extension_subcmd == extension.name() {
+            return extension.run().await;
+        }
+    }
+
+    Err(anyhow!("Extension {extension_subcmd} not found"))
 }
 
 async fn handle_ping(mut api: PhylumApi) -> CommandResult {
