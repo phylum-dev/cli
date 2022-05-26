@@ -1,14 +1,15 @@
 [package]
 name = "phylum-cli"
 version = "3.5.0"
-authors = ["Eric Freitag <eric@phylum.io>"]
-edition = "2018"
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
+edition = "2021"
+rust-version = "1.60"
 
 [features]
 default = ["selfmanage"]
 phylum-online = []
 selfmanage = []
-extensions = []
+extensions = ["dep:deno_ast", "dep:deno_core"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -54,8 +55,8 @@ url = { version = "2", features = ["serde"] }
 zip = "0.6.2"
 walkdir = "2.3.2"
 regex = "1.5.5"
-deno_core = "0.135.0"
-deno_ast = { version = "0.15.0", features = ["transpiling"] }
+deno_core = { version = "0.135.0", optional = true }
+deno_ast = { version = "0.15.0", features = ["transpiling"], optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
