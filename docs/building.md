@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa41
 hidden: false
 ---
 
-Phylum is written in Rust, so you'll need a recent Rust installation to build it (we tested with v1.58.0). [Install Rust](https://www.rust-lang.org/tools/install)
+Phylum is written in Rust, so you'll need a recent Rust installation to build it (we tested with v1.61.0). [Install Rust](https://www.rust-lang.org/tools/install)
 
 1. Clone repository
 
