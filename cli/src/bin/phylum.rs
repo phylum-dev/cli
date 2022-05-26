@@ -154,7 +154,7 @@ async fn handle_commands() -> CommandResult {
     //
 
     // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied
+    // arguments are supplied.
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
             print_sc_help(app_helper, "analyze");
@@ -167,26 +167,24 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    // `auth` consumes `config` which prevents the API factory future from borrowing it, so we
-    // return early in order to guarantee that it has not been consumed after this point.
-    if let Some(matches) = matches.subcommand_matches("auth") {
-        return handle_auth(
-            config,
-            &config_path,
-            matches,
-            app_helper,
-            timeout,
-            ignore_certs,
-        )
-        .await;
-    }
-
     // Get the future, but don't await. Commands that require access to the API will await on this,
     // so that the API is not instantiated ahead of time for subcommands that don't require it.
     let api = api_factory(&mut config, &config_path, timeout, ignore_certs);
 
     let (subcommand, matches) = matches.subcommand().unwrap();
     match subcommand {
+        "auth" => {
+            drop(api);
+            handle_auth(
+                config,
+                &config_path,
+                matches,
+                app_helper,
+                timeout,
+                ignore_certs,
+            )
+            .await
+        }
         "version" => handle_version(&app_name, ver),
         "update" => handle_update(matches).await,
         "parse" => handle_parse(matches),
