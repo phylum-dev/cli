@@ -11,7 +11,7 @@ use spinners::{Spinner, Spinners};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::{self, handle_extensions};
+use phylum_cli::commands::extensions::{handle_extensions, Extension};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -105,7 +105,7 @@ async fn handle_commands() -> CommandResult {
         )
     })?;
 
-    // `timeout` and `ignore_certs` are arguments to the API factory.
+    // We initialize these value here, for later use by the PhylumApi object.
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
@@ -205,22 +205,11 @@ async fn handle_commands() -> CommandResult {
         "extensions" => handle_extensions(matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => handle_extension_run(extension_subcmd).await,
+        extension_subcmd => Extension::load(extension_subcmd)?.run().await,
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),
     }
-}
-
-#[cfg(feature = "extensions")]
-async fn handle_extension_run(extension_subcmd: &str) -> CommandResult {
-    for extension in extensions::installed_extensions().unwrap_or_default() {
-        if extension_subcmd == extension.name() {
-            return extension.run().await;
-        }
-    }
-
-    Err(anyhow!("Extension {extension_subcmd} not found"))
 }
 
 async fn handle_ping(mut api: PhylumApi) -> CommandResult {
