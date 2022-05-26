@@ -181,9 +181,8 @@ async fn handle_commands() -> CommandResult {
         .await;
     }
 
-    // This is `Future<Output = PhylumApi>`. Commands that require access to the API
-    // will await on this, so that the API is not instantiated ahead of time for subcommands
-    // that don't require it.
+    // Get the future, but don't await. Commands that require access to the API will await on this,
+    // so that the API is not instantiated ahead of time for subcommands that don't require it.
     let api = api_factory(&mut config, &config_path, timeout, ignore_certs);
 
     let (subcommand, matches) = matches.subcommand().unwrap();
