@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
@@ -119,34 +119,26 @@ async fn handle_commands() -> CommandResult {
     // Check for updates, if we haven't explicitly invoked `update`.
     //
 
-    let mut check_for_updates = false;
-
     if matches.subcommand_matches("update").is_none() {
-        let start = SystemTime::now();
-        let now = start
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_secs() as usize;
+        let now = UNIX_EPOCH.elapsed().expect("Time went backwards").as_secs() as usize;
 
-        if let Some(last_update) = config.last_update {
+        let check_for_updates = config.last_update.map_or(true, |last_update| {
             const SECS_IN_DAY: usize = 24 * 60 * 60;
-            if now - last_update > SECS_IN_DAY {
-                log::debug!("Checking for updates...");
-                check_for_updates = true;
-            }
-        } else {
-            check_for_updates = true;
-        }
+            now - last_update > SECS_IN_DAY
+        });
 
         if check_for_updates {
+            log::debug!("Checking for updates...");
+
+            // Update last update check timestamp.
             config.last_update = Some(now);
             save_config(&config_path, &config)
                 .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
-        }
-    }
 
-    if check_for_updates && update::needs_update(false).await {
-        print_update_message();
+            if update::needs_update(false).await {
+                print_update_message();
+            }
+        }
     }
 
     //
