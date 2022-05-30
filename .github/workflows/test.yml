@@ -57,6 +57,13 @@ jobs:
         with:
           command: test
           args: --locked
+  shellcheck:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Script Style Check
+        if: github.event_name != 'schedule'
+        run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
       - name: All Features
         uses: actions-rs/cargo@v1
