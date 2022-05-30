@@ -199,7 +199,7 @@ async fn handle_commands() -> CommandResult {
         "uninstall" => handle_uninstall(matches),
 
         #[cfg(feature = "extensions")]
-        "extensions" => handle_extensions(matches).await,
+        "extension" => handle_extensions(matches).await,
 
         #[cfg(feature = "extensions")]
         extension_subcmd => Extension::load(extension_subcmd)?.run().await,
