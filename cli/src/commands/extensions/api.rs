@@ -8,6 +8,7 @@ use std::str::FromStr;
 
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::{get_current_project, Config};
+use crate::lockfiles::Parse;
 use crate::{api::PhylumApi, auth::UserInfo};
 
 use anyhow::{anyhow, Context, Error, Result};
@@ -165,18 +166,16 @@ pub(crate) async fn analyze_package(
     .map_err(Error::from)
 }
 
-/// Parse a lockfile and return the package descriptors contained therein.
-/// Equivalent to `phylum parse`.
-pub(crate) fn parse_lockfile(
-    lockfile: &str,
-    lockfile_type: &str,
-) -> Result<Vec<PackageDescriptor>> {
-    let parser = LOCKFILE_PARSERS
-        .iter()
-        .find_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
-        .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
-
-    let (pkgs, _) = parser(Path::new(lockfile))?;
-
-    Ok(pkgs)
-}
+// Parse a lockfile and return the package descriptors contained therein.
+// Equivalent to `phylum parse`.
+// pub(crate) fn parse_lockfile(
+//     lockfile: &str,
+//     lockfile_type: &str,
+// ) -> Result<Vec<PackageDescriptor>> {
+//     let parser = LOCKFILE_PARSERS
+//         .iter()
+//         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
+//         .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
+// 
+//     parser.parse_file(Path::new(lockfile))
+// }

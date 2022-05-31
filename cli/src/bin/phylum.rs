@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
+use clap::ArgMatches;
 use env_logger::Env;
 use log::*;
 use phylum_cli::commands::parse::handle_parse;
@@ -10,7 +11,7 @@ use spinners::{Spinner, Spinners};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::*;
+use phylum_cli::commands::extensions::{handle_extensions, Extension};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -46,30 +47,49 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -
     ExitCode::Generic.exit()
 }
 
+/// Construct an instance of `PhylumApi` given configuration, optional timeout, and whether we
+/// need API to ignore certificates.
+async fn api_factory(
+    config: &mut Config,
+    config_path: &Path,
+    timeout: Option<u64>,
+    ignore_certs: bool,
+) -> Result<PhylumApi> {
+    let api = PhylumApi::new(
+        &mut config.auth_info,
+        &config.connection.uri,
+        timeout,
+        ignore_certs,
+    )
+    .await
+    .context("Error creating client")?;
+
+    // PhylumApi may have had to log in, updating the auth info so we should save the config
+    save_config(config_path, &config).with_context(|| {
+        format!(
+            "Failed to save configuration to '{}'",
+            config_path.to_string_lossy()
+        )
+    })?;
+
+    Ok(api)
+}
+
 async fn handle_commands() -> CommandResult {
+    //
+    // Initialize clap app and read configuration.
+    //
+
     let app = phylum_cli::app::app()
         .arg_required_else_help(true)
         .subcommand_required(true);
     let app_name = app.get_name().to_string();
-    let ver = app.get_version().unwrap();
-
     // Required for printing help messages since `get_matches()` consumes `App`
     let app_helper = &mut app.clone();
-
+    let ver = app.get_version().unwrap();
     let matches = app.get_matches();
 
-    #[cfg(feature = "selfmanage")]
-    if let Some(matches) = matches.subcommand_matches("uninstall") {
-        return handle_uninstall(matches);
-    }
-
-    #[cfg(feature = "extensions")]
-    if let Some(matches) = matches.subcommand_matches("extension") {
-        return handle_extensions(matches).await;
-    }
-
     let settings_path = get_home_settings_path()?;
-
     let config_path = matches
         .value_of("config")
         .and_then(|config_path| shellexpand::env(config_path).ok())
@@ -77,7 +97,6 @@ async fn handle_commands() -> CommandResult {
         .unwrap_or(settings_path);
 
     log::debug!("Reading config from {}", config_path.to_string_lossy());
-
     let mut config: Config = read_configuration(&config_path).map_err(|err| {
         anyhow!(
             "Failed to read configuration at `{}`: {}",
@@ -85,6 +104,20 @@ async fn handle_commands() -> CommandResult {
             err
         )
     })?;
+
+    // We initialize these value here, for later use by the PhylumApi object.
+    let timeout = matches
+        .value_of("timeout")
+        .and_then(|t| t.parse::<u64>().ok());
+    let ignore_certs =
+        matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
+    if ignore_certs {
+        log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
+
+    //
+    // Check for updates, if we haven't explicitly invoked `update`.
+    //
 
     let mut check_for_updates = false;
 
@@ -116,8 +149,12 @@ async fn handle_commands() -> CommandResult {
         print_update_message();
     }
 
+    //
+    // Subcommands with precedence
+    //
+
     // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied
+    // arguments are supplied.
     if let Some(matches) = matches.subcommand_matches("analyze") {
         if !matches.is_present("LOCKFILE") {
             print_sc_help(app_helper, "analyze");
@@ -130,106 +167,68 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    if matches.subcommand_matches("version").is_some() {
-        print_user_success!("{app_name} (Version {ver})");
-        return Ok(ExitCode::Ok.into());
-    }
+    // Get the future, but don't await. Commands that require access to the API will await on this,
+    // so that the API is not instantiated ahead of time for subcommands that don't require it.
+    let api = api_factory(&mut config, &config_path, timeout, ignore_certs);
 
-    if let Some(matches) = matches.subcommand_matches("update") {
-        let mut spinner = Spinner::new(
-            Spinners::Dots12,
-            "Downloading update and verifying binary signatures...".into(),
-        );
-        let res = update::do_update(matches.is_present("prerelease")).await;
-        spinner.stop_with_newline();
-        let message = res?;
-        print_user_success!("{}", message);
-        return Ok(ExitCode::Ok.into());
-    }
-
-    if let Some(matches) = matches.subcommand_matches("parse") {
-        return handle_parse(matches);
-    }
-
-    let timeout = matches
-        .value_of("timeout")
-        .and_then(|t| t.parse::<u64>().ok());
-
-    let ignore_certs =
-        matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
-    if ignore_certs {
-        log::warn!("Ignoring TLS server certificate verification per user request.");
-    }
-
-    if let Some(matches) = matches.subcommand_matches("auth") {
-        return handle_auth(
-            config,
-            &config_path,
-            matches,
-            app_helper,
-            timeout,
-            ignore_certs,
-        )
-        .await;
-    }
-
-    let mut api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
-        timeout,
-        ignore_certs,
-    )
-    .await
-    .context("Error creating client")?;
-
-    // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(&config_path, &config).with_context(|| {
-        format!(
-            "Failed to save configuration to '{}'",
-            config_path.to_string_lossy()
-        )
-    })?;
-
-    if matches.subcommand_matches("ping").is_some() {
-        let resp = api.ping().await;
-        print_response(&resp, true, None);
-        return Ok(ExitCode::Ok.into());
-    }
-
-    // TODO: switch from if/else to non-exhaustive pattern match
-    match matches.subcommand() {
-        Some(("project", matches)) => handle_project(&mut api, matches).await,
-        Some(("package", matches)) => {
-            handle_get_package(&mut api, &config.request_type, matches).await
+    let (subcommand, matches) = matches.subcommand().unwrap();
+    match subcommand {
+        "auth" => {
+            drop(api);
+            handle_auth(
+                config,
+                &config_path,
+                matches,
+                app_helper,
+                timeout,
+                ignore_certs,
+            )
+            .await
         }
-        Some(("history", matches)) => handle_submission(&mut api, config, matches).await,
-        Some(("group", matches)) => handle_group(&mut api, matches).await,
-        Some(("analyze", _)) | Some(("batch", _)) => {
-            handle_submission(&mut api, config, &matches).await
-        }
-        Some((extension, matches)) => handle_run_extension(extension, matches).await,
-        None => unreachable!()
+        "version" => handle_version(&app_name, ver),
+        "update" => handle_update(matches).await,
+        "parse" => handle_parse(matches),
+        "ping" => handle_ping(api.await?).await,
+        "project" => handle_project(&mut api.await?, matches).await,
+        "package" => handle_get_package(&mut api.await?, &config.request_type, matches).await,
+        "history" => handle_submission(&mut api.await?, config, matches).await,
+        "group" => handle_group(&mut api.await?, matches).await,
+        "analyze" | "batch" => handle_submission(&mut api.await?, config, matches).await,
+
+        #[cfg(feature = "selfmanage")]
+        "uninstall" => handle_uninstall(matches),
+
+        #[cfg(feature = "extensions")]
+        "extensions" => handle_extensions(matches).await,
+
+        #[cfg(feature = "extensions")]
+        extension_subcmd => Extension::load(extension_subcmd)?.run().await,
+
+        #[cfg(not(feature = "extensions"))]
+        _ => unreachable!(),
     }
+}
 
-    // Drop this code after we have validated that the above match statement fulfills
-    // everything from the following lines.
+async fn handle_ping(mut api: PhylumApi) -> CommandResult {
+    let resp = api.ping().await;
+    print_response(&resp, true, None);
+    Ok(ExitCode::Ok.into())
+}
+async fn handle_update(matches: &ArgMatches) -> CommandResult {
+    let mut spinner = Spinner::new(
+        Spinners::Dots12,
+        "Downloading update and verifying binary signatures...".into(),
+    );
+    let res = update::do_update(matches.is_present("prerelease")).await;
+    spinner.stop_with_newline();
+    let message = res?;
+    print_user_success!("{}", message);
+    Ok(ExitCode::Ok.into())
+}
 
-    // let should_submit = matches.subcommand_matches("analyze").is_some()
-    //     || matches.subcommand_matches("batch").is_some();
-    //
-    // if let Some(matches) = matches.subcommand_matches("project") {
-    //     handle_project(&mut api, matches).await?;
-    // } else if let Some(matches) = matches.subcommand_matches("package") {
-    //     return handle_get_package(&mut api, &config.request_type, matches).await;
-    // } else if should_submit {
-    //     return handle_submission(&mut api, config, &matches).await;
-    // } else if let Some(matches) = matches.subcommand_matches("history") {
-    //     return handle_history(&mut api, matches).await;
-    // } else if let Some(matches) = matches.subcommand_matches("group") {
-    //     return handle_group(&mut api, matches).await;
-    // }
-
-    // Ok(ExitCode::Ok.into())
+fn handle_version(app_name: &str, ver: &str) -> CommandResult {
+    print_user_success!("{app_name} (Version {ver})");
+    Ok(ExitCode::Ok.into())
 }
 
 #[tokio::main]

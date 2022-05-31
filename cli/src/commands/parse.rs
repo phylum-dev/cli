@@ -1,5 +1,6 @@
 //! `phylum parse` command for lockfile parsing
 
+use std::fs::read_to_string;
 use std::io;
 use std::path::Path;
 
@@ -7,25 +8,28 @@ use anyhow::{anyhow, Result};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
-use crate::lockfiles::*;
+use crate::lockfiles::{
+    CSProj, GemLock, GradleLock, PackageLock, Parse, PipFile, Poetry, Pom, PyRequirements, YarnLock,
+};
 
-type ParserResult = Result<(Vec<PackageDescriptor>, PackageType)>;
-
-pub(crate) const LOCKFILE_PARSERS: &[(&str, &dyn Fn(&Path) -> ParserResult)] = &[
-    ("yarn", &parse::<YarnLock>),
-    ("npm", &parse::<PackageLock>),
-    ("gem", &parse::<GemLock>),
-    ("pip", &parse::<PyRequirements>),
-    ("pipenv", &parse::<PipFile>),
-    ("poetry", &parse::<Poetry>),
-    ("mvn", &parse::<Pom>),
-    ("gradle", &parse::<GradleDeps>),
-    ("nuget", &parse::<CSProj>),
-    ("auto", &get_packages_from_lockfile),
+pub const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
+    ("yarn", &YarnLock),
+    ("npm", &PackageLock),
+    ("gem", &GemLock),
+    ("pip", &PyRequirements),
+    ("pipenv", &PipFile),
+    ("poetry", &Poetry),
+    ("mvn", &Pom),
+    ("gradle", &GradleLock),
+    ("nuget", &CSProj),
 ];
 
 pub fn lockfile_types() -> Vec<&'static str> {
-    LOCKFILE_PARSERS.iter().map(|(name, _)| *name).collect()
+    LOCKFILE_PARSERS
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(["auto"])
+        .collect()
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
@@ -33,12 +37,19 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     // LOCKFILE is a required parameter, so .unwrap() should be safe.
     let lockfile = matches.value_of("LOCKFILE").unwrap();
 
-    let parser = LOCKFILE_PARSERS
-        .iter()
-        .find_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
-        .unwrap();
+    let pkgs = if lockfile_type == "auto" {
+        let (pkgs, _) = try_get_packages(Path::new(lockfile))?;
+        pkgs
+    } else {
+        let parser = LOCKFILE_PARSERS
+            .iter()
+            .filter_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
+            .next()
+            .unwrap();
 
-    let (pkgs, _) = parser(Path::new(lockfile))?;
+        let data = read_to_string(lockfile)?;
+        parser.parse(&data)?
+    };
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
@@ -51,26 +62,16 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
         path.to_string_lossy()
     );
 
-    // Try a package lock format and return the packages if there are some.
-    macro_rules! try_format {
-        ($lock:ident, $ty:literal) => {{
-            let packages = parse::<$lock>(path).ok();
-            if let Some(packages) = packages.filter(|(packages, _)| !packages.is_empty()) {
-                log::debug!("Submitting file as type {}", $ty);
-                return Ok(packages);
-            }
-        }};
-    }
+    let data = read_to_string(path)?;
 
-    try_format!(YarnLock, "yarn lock");
-    try_format!(PackageLock, "package lock");
-    try_format!(GemLock, "gem lock");
-    try_format!(PyRequirements, "pip requirements.txt");
-    try_format!(PipFile, "pip Pipfile or Pipfile.lock");
-    try_format!(Poetry, "poetry lock");
-    try_format!(Pom, "pom xml");
-    try_format!(GradleDeps, "gradle dependencies");
-    try_format!(CSProj, "csproj");
+    for (name, parser) in LOCKFILE_PARSERS.iter() {
+        if let Ok(pkgs) = parser.parse(data.as_str()) {
+            if !pkgs.is_empty() {
+                log::debug!("File detected as type: {}", name);
+                return Ok((pkgs, parser.package_type()));
+            }
+        }
+    }
 
     Err(anyhow!("Failed to identify lockfile type"))
 }
@@ -90,15 +91,15 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
     };
 
     let res = match pattern {
-        "Gemfile.lock" => parse::<GemLock>(path)?,
-        "package-lock.json" => parse::<PackageLock>(path)?,
-        "yarn.lock" => parse::<YarnLock>(path)?,
-        "requirements.txt" => parse::<PyRequirements>(path)?,
-        "Pipfile" | "Pipfile.lock" => parse::<PipFile>(path)?,
-        "poetry.lock" => parse::<Poetry>(path)?,
-        "effective-pom.xml" => parse::<Pom>(path)?,
-        "gradle-dependencies.txt" => parse::<GradleDeps>(path)?,
-        ".csproj" => parse::<CSProj>(path)?,
+        "Gemfile.lock" => parse(GemLock, path)?,
+        "package-lock.json" => parse(PackageLock, path)?,
+        "yarn.lock" => parse(YarnLock, path)?,
+        "requirements.txt" => parse(PyRequirements, path)?,
+        "Pipfile" | "Pipfile.lock" => parse(PipFile, path)?,
+        "poetry.lock" => parse(Poetry, path)?,
+        "effective-pom.xml" => parse(Pom, path)?,
+        "gradle.lockfile" => parse(GradleLock, path)?,
+        ".csproj" => parse(CSProj, path)?,
         _ => try_get_packages(path)?,
     };
 
@@ -108,8 +109,12 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
 }
 
 /// Get all packages for a specific lockfile type.
-fn parse<P: Parseable>(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    Ok((P::new(path)?.parse()?, P::package_type()))
+pub(crate) fn parse<P: Parse + Sized>(
+    parser: P,
+    path: &Path,
+) -> Result<(Vec<PackageDescriptor>, PackageType)> {
+    let pkg_type = parser.package_type();
+    parser.parse_file(path).map(|pkgs| (pkgs, pkg_type))
 }
 
 #[cfg(test)]
@@ -124,7 +129,7 @@ mod tests {
             ("tests/fixtures/yarn.lock", PackageType::Npm),
             ("tests/fixtures/package-lock.json", PackageType::Npm),
             ("tests/fixtures/sample.csproj", PackageType::Nuget),
-            ("tests/fixtures/gradle-dependencies.txt", PackageType::Maven),
+            ("tests/fixtures/gradle.lockfile", PackageType::Maven),
             ("tests/fixtures/effective-pom.xml", PackageType::Maven),
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),

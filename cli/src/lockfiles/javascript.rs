@@ -1,6 +1,3 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -9,22 +6,15 @@ use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{Parse, ParseResult};
 
-pub struct PackageLock(String);
-pub struct YarnLock(String);
+pub struct PackageLock;
+pub struct YarnLock;
 
-impl Parseable for PackageLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(PackageLock(std::fs::read_to_string(filename)?))
-    }
-
+impl Parse for PackageLock {
     /// Parses `package-lock.json` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let parsed: JsonValue = serde_json::from_str(&self.0)?;
+    fn parse(&self, data: &str) -> ParseResult {
+        let parsed: JsonValue = serde_json::from_str(data)?;
 
         let into_descriptor = |(name, v): (String, &JsonValue)| {
             let version = v
@@ -36,7 +26,7 @@ impl Parseable for PackageLock {
             let pkg = PackageDescriptor {
                 name,
                 version,
-                package_type: Self::package_type(),
+                package_type: self.package_type(),
             };
             Ok(pkg)
         };
@@ -62,7 +52,7 @@ impl Parseable for PackageLock {
         }
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Npm
     }
 }
@@ -76,24 +66,16 @@ fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
         .any(|(k, _v)| k.as_str().unwrap_or_default() == "__metadata")
 }
 
-impl Parseable for YarnLock {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(YarnLock(std::fs::read_to_string(filename)?))
-    }
-
+impl Parse for YarnLock {
     /// Parses `yarn.lock` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let yaml = serde_yaml::from_str::<YamlValue>(&self.0).ok();
+    fn parse(&self, data: &str) -> ParseResult {
+        let yaml = serde_yaml::from_str::<YamlValue>(data).ok();
         let yaml_mapping = yaml.as_ref().and_then(|yaml| yaml.as_mapping());
 
         // Check if we should use v1 or v2 yarn parser.
         let yaml_v2 = match yaml_mapping.filter(is_yarn_v2) {
             Some(yaml_v2) => yaml_v2,
             _ => {
-                let data = self.0.as_str();
                 let (_, entries) = yarn::parse(data)
                     .finish()
                     .map_err(|e| anyhow!(convert_error(data, e)))
@@ -169,7 +151,7 @@ impl Parseable for YarnLock {
             };
 
             packages.push(PackageDescriptor {
-                package_type: Self::package_type(),
+                package_type: self.package_type(),
                 name: name.to_owned(),
                 version,
             });
@@ -178,7 +160,7 @@ impl Parseable for YarnLock {
         Ok(packages)
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Npm
     }
 }
@@ -189,9 +171,10 @@ mod tests {
 
     #[test]
     fn lock_parse_package() {
-        let parser = PackageLock::new(Path::new("tests/fixtures/package-lock-v6.json")).unwrap();
+        let pkgs = PackageLock
+            .parse_file("tests/fixtures/package-lock-v6.json")
+            .unwrap();
 
-        let pkgs = parser.parse().unwrap();
         assert_eq!(pkgs.len(), 17);
         assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
         assert_eq!(pkgs[0].version, "1.1.0");
@@ -205,9 +188,9 @@ mod tests {
 
     #[test]
     fn lock_parse_package_v7() {
-        let parser = PackageLock::new(Path::new("tests/fixtures/package-lock.json")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = PackageLock
+            .parse_file("tests/fixtures/package-lock.json")
+            .unwrap();
 
         assert_eq!(pkgs.len(), 50);
 
@@ -235,10 +218,12 @@ mod tests {
         //
         // We need to make sure we don't take the v2 lockfile code path because this is not a v2
         // lockfile and parsing it as one will produce incorrect results.
-        let parser = YarnLock::new(Path::new("tests/fixtures/yarn-v1.simple.lock")).unwrap();
+        let pkgs = YarnLock
+            .parse_file("tests/fixtures/yarn-v1.simple.lock")
+            .unwrap();
 
         assert_eq!(
-            parser.parse().unwrap(),
+            pkgs,
             vec![PackageDescriptor {
                 name: "@yarnpkg/lockfile".to_string(),
                 version: "1.1.0".to_string(),
@@ -253,9 +238,8 @@ mod tests {
             "tests/fixtures/yarn-v1.lock",
             "tests/fixtures/yarn-v1.trailing_newlines.lock",
         ] {
-            let parser = YarnLock::new(Path::new(p)).unwrap();
+            let pkgs = YarnLock.parse_file(p).unwrap();
 
-            let pkgs = parser.parse().unwrap();
             assert_eq!(pkgs.len(), 17);
 
             assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
@@ -276,16 +260,14 @@ mod tests {
     #[should_panic]
     #[test]
     fn lock_parse_yarn_v1_malformed_fails() {
-        let parser = YarnLock::new(Path::new("tests/fixtures/yarn-v1.lock.bad")).unwrap();
-
-        parser.parse().unwrap();
+        YarnLock
+            .parse_file("tests/fixtures/yarn-v1.lock.bad")
+            .unwrap();
     }
 
     #[test]
     fn lock_parse_yarn() {
-        let parser = YarnLock::new(Path::new("tests/fixtures/yarn.lock")).unwrap();
-
-        let pkgs = parser.parse().unwrap();
+        let pkgs = YarnLock.parse_file("tests/fixtures/yarn.lock").unwrap();
 
         assert_eq!(pkgs.len(), 53);
 

@@ -10,6 +10,9 @@ use regex::Regex;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::commands::{CommandResult, ExitCode};
+use crate::deno::DenoRuntime;
+
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
 lazy_static! {
@@ -38,6 +41,10 @@ impl Extension {
         self.manifest.description.as_deref()
     }
 
+    pub fn entry_point(&self) -> &String {
+        &self.manifest.entry_point
+    }
+
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
         println!("Installing extension {}...", self.name());
@@ -61,14 +68,13 @@ impl Extension {
             let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
-                if cfg!(unix) {
-                    DirBuilder::new()
-                        .recursive(true)
-                        .mode(0o700)
-                        .create(&dest_path)?;
-                } else {
-                    fs::create_dir_all(&dest_path)?;
-                }
+                let mut builder = DirBuilder::new();
+
+                #[cfg(unix)]
+                builder.mode(0o700);
+
+                builder.recursive(true);
+                builder.create(&dest_path)?;
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
@@ -104,6 +110,14 @@ impl Extension {
     /// Load an extension from the default path.
     pub fn load(name: &str) -> Result<Extension, anyhow::Error> {
         Extension::try_from(extension_path(name)?)
+    }
+
+    /// Execute an extension subcommand.
+    pub async fn run(&self) -> CommandResult {
+        let script_path = self.path.join(&self.manifest.entry_point);
+        let mut deno = DenoRuntime::new();
+        deno.run(&script_path.to_string_lossy()).await?;
+        Ok(ExitCode::Ok.into())
     }
 }
 

@@ -1,6 +1,3 @@
-use std::io;
-use std::path::Path;
-
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -8,22 +5,14 @@ use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::parsers::gradle_dep;
-use crate::lockfiles::{ParseResult, Parseable};
+use crate::lockfiles::{Parse, ParseResult};
 
-pub struct Pom(String);
-pub struct GradleDeps(String);
+pub struct Pom;
+pub struct GradleLock;
 
-impl Parseable for GradleDeps {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(GradleDeps(std::fs::read_to_string(filename)?))
-    }
-
-    /// Parses `gradle-dependencies.txt` files into a vec of packages
-    fn parse(&self) -> ParseResult {
-        let data = self.0.as_str();
+impl Parse for GradleLock {
+    /// Parses `gradle.lockfile` files into a vec of packages
+    fn parse(&self, data: &str) -> ParseResult {
         let (_, entries) = gradle_dep::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -31,21 +20,14 @@ impl Parseable for GradleDeps {
         Ok(entries)
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Maven
     }
 }
 
-impl Parseable for Pom {
-    fn new(filename: &Path) -> Result<Self, io::Error>
-    where
-        Self: Sized,
-    {
-        Ok(Pom(std::fs::read_to_string(filename)?))
-    }
-
+impl Parse for Pom {
     /// Parses maven effecti-pom files into a vec of packages
-    fn parse(&self) -> ParseResult {
+    fn parse(&self, data: &str) -> ParseResult {
         // Get plugin dependencies
         fn get_plugin_deps(plugins: &[Plugin]) -> Vec<Dependency> {
             plugins
@@ -69,7 +51,7 @@ impl Parseable for Pom {
         }
 
         // Get project reference
-        let pom: Project = serde_xml_rs::from_str(&self.0)?;
+        let pom: Project = serde_xml_rs::from_str(data)?;
 
         // Get project dependencies
         let mut dependencies = pom.dependencies.unwrap_or_default().dependencies;
@@ -140,14 +122,14 @@ impl Parseable for Pom {
                             &dep.artifact_id.clone().unwrap_or_default()
                         ),
                         version: s.into(),
-                        package_type: Self::package_type(),
+                        package_type: self.package_type(),
                     })
                 })
             })
             .collect::<Result<Vec<_>, _>>()
     }
 
-    fn package_type() -> PackageType {
+    fn package_type(&self) -> PackageType {
         PackageType::Maven
     }
 }
@@ -157,26 +139,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn lock_parse_gradledeps() {
-        let parser = GradleDeps::new(Path::new("tests/fixtures/gradle-dependencies.txt")).unwrap();
+    fn lock_parse_gradle() {
+        let pkgs = GradleLock
+            .parse_file("tests/fixtures/gradle.lockfile")
+            .unwrap();
 
-        let pkgs = parser.parse().unwrap();
-        assert_eq!(pkgs.len(), 43);
-        assert_eq!(pkgs[0].name, "com.google.guava:guava");
-        assert_eq!(pkgs[0].version, "23.3-jre");
+        assert_eq!(pkgs.len(), 5);
+
+        assert_eq!(pkgs[0].name, "com.google.code.findbugs:jsr305");
+        assert_eq!(pkgs[0].version, "1.3.9");
         assert_eq!(pkgs[0].package_type, PackageType::Maven);
 
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "commons-codec:commons-codec");
-        assert_eq!(last.version, "1.9");
-        assert_eq!(last.package_type, PackageType::Maven);
+        assert_eq!(pkgs[2].name, "com.google.guava:guava");
+        assert_eq!(pkgs[2].version, "23.3-jre");
+        assert_eq!(pkgs[2].package_type, PackageType::Maven);
     }
 
     #[test]
     fn lock_parse_effective_pom() {
-        let parser = Pom::new(Path::new("tests/fixtures/effective-pom.xml")).unwrap();
+        let mut pkgs = Pom.parse_file("tests/fixtures/effective-pom.xml").unwrap();
 
-        let mut pkgs = parser.parse().unwrap();
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);
         assert_eq!(pkgs[0].name, "com.bitalino:bitalino-java-sdk");
