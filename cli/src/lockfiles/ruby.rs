@@ -25,13 +25,17 @@ impl Parse for GemLock {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use phylum_types::types::package::PackageType;
 
     use super::*;
 
     #[test]
     fn lock_parse_gem() {
-        let pkgs = GemLock.parse_file("tests/fixtures/Gemfile.lock").unwrap();
+        let pkgs = GemLock
+            .parse_file(Path::new("tests/fixtures/Gemfile.lock"))
+            .unwrap();
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");
