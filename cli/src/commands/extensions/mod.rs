@@ -108,17 +108,6 @@ async fn handle_list_extensions() -> CommandResult {
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
-/// Handle running an extension.
-pub async fn handle_run_extension(extension: &str, matches: &ArgMatches) -> CommandResult {
-    println!("{}", extension);
-    println!("{:?}", matches);
-
-    let ext = Extension::load(extension)?;
-    println!("{:?}", ext);
-
-    Ok(CommandValue::Code(ExitCode::Ok))
-}
-
 /// Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
 pub fn installed_extensions() -> Result<Vec<Extension>> {
     let extensions_path = extensions_path()?;

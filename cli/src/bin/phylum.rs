@@ -214,6 +214,7 @@ async fn handle_ping(mut api: PhylumApi) -> CommandResult {
     print_response(&resp, true, None);
     Ok(ExitCode::Ok.into())
 }
+
 async fn handle_update(matches: &ArgMatches) -> CommandResult {
     let mut spinner = Spinner::new(
         Spinners::Dots12,
