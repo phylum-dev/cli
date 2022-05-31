@@ -30,7 +30,7 @@ pub fn handle_uninstall(matches: &ArgMatches) -> CommandResult {
     Ok(ExitCode::Ok.into())
 }
 
-/// Remove the entire `~/.config/phylum` directory.
+/// Remove the entire phylum config directory.
 fn purge() -> Result<()> {
     let config_dir = dirs::config_dir()?.join("phylum");
 
