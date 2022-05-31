@@ -10,7 +10,7 @@ Table of Contents:
     1. [Testing](#testing)
     2. [Documentation](#documentation)
     3. [Style](#style)
-7. [Contact](#contact)
+4. [Contact](#contact)
 
 ## Bug Reports
 
@@ -52,14 +52,14 @@ documentation where appropriate.
 
 The CLI is tested using Rust's built in tools:
 
-```
+```sh
 cargo test
 ```
 
 To validate none of the pre-release features have been broken, you can pass the
 `--all-features` flag:
 
-```
+```sh
 cargo test --all-features
 ```
 
@@ -75,27 +75,27 @@ documentation available in the `docs/` directory.
 
 General code format is maintained using `rustfmt`:
 
-```
+```sh
 cargo fmt
 ```
 
 Some additional style lints are enforced with `clippy`:
 
-```
+```sh
 cargo clippy
 ```
 
 This should also pass for all pre-release features:
 
-```
+```sh
 cargo clippy --all-features
 ```
 
-Additionally, there are a couple of script files part of the Phylum CLI project.
-These are linted by using [shellcheck]. The following command performs a full
-analysis on all scripts in the repository:
+Additionally, there are a couple of script files that are part of the Phylum CLI
+project. These are linted by using [shellcheck]. The following command performs
+a full analysis on all scripts in the repository:
 
-```
+```sh
 shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 ```
 
@@ -109,4 +109,4 @@ they can be asked on the [issue tracker].
 As an alternative, you can also contact <support@phylum.io> for issues with
 using the Phylum CLI.
 
-[issue tracker]: https://github.com/alacritty/alacritty/issues
+[issue tracker]: https://github.com/phylum-dev/cli/issues
