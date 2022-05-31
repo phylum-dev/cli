@@ -7,9 +7,9 @@ Table of Contents:
 1. [Bug Reports](#bug-reports)
 2. [Feature Requests](#feature-requests)
 3. [Patches / Pull Requests](#patches--pull-requests)
-4. [Testing](#testing)
-5. [Documentation](#documentation)
-6. [Style](#style)
+    1. [Testing](#testing)
+    2. [Documentation](#documentation)
+    3. [Style](#style)
 7. [Contact](#contact)
 
 ## Bug Reports
@@ -48,7 +48,7 @@ documentation where appropriate.
 
 [pull requests]: https://github.com/phylum-dev/cli/pulls
 
-## Testing
+### Testing
 
 The CLI is tested using Rust's built in tools:
 
@@ -63,7 +63,7 @@ To validate none of the pre-release features have been broken, you can pass the
 cargo test --all-features
 ```
 
-## Documentation
+### Documentation
 
 Code should be documented where appropriate. The existing code can be used as a
 guidance here and the general `rustfmt` rules can be followed for formatting.
@@ -71,7 +71,7 @@ guidance here and the general `rustfmt` rules can be followed for formatting.
 All user-facing changes made to the CLI must also be documented in the Markdown
 documentation available in the `docs/` directory.
 
-## Style
+### Style
 
 General code format is maintained using `rustfmt`:
 
