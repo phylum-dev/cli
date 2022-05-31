@@ -65,8 +65,8 @@ cargo test --all-features
 
 ### Documentation
 
-Code should be documented where appropriate. The existing code can be used as a
-guidance here and the general `rustfmt` rules can be followed for formatting.
+Code should be documented where appropriate. The existing code can be used as
+guidance and the general `rustfmt` rules should be followed for formatting.
 
 All user-facing changes made to the CLI must also be documented in the Markdown
 documentation available in the `docs/` directory.
