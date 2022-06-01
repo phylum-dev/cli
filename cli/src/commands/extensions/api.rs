@@ -3,8 +3,11 @@
 //! implementation, having these functions unused would break CI.
 #![allow(unused)]
 
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::{get_current_project, Config};
@@ -12,7 +15,8 @@ use crate::lockfiles::Parse;
 use crate::{api::PhylumApi, auth::UserInfo};
 
 use anyhow::{anyhow, Context, Error, Result};
-use deno_core::OpState;
+use deno_core::parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
+use deno_core::{op, OpState};
 use once_cell::sync::Lazy;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -26,8 +30,8 @@ use phylum_types::types::project::ProjectDetailsResponse;
 /// visible from extension code and will have to be set up by the JS runtime builder which will
 /// load their configuration as any other command and then provide the pertinent factories.
 struct InjectedDependencies {
-    api: Lazy<PhylumApi>,
-    config: Lazy<Config>,
+    api: Arc<Lazy<PhylumApi>>,
+    config: Arc<Lazy<Config>>,
 }
 
 impl InjectedDependencies {
@@ -36,21 +40,22 @@ impl InjectedDependencies {
         config_factory: fn() -> Config,
     ) -> Self {
         InjectedDependencies {
-            api: Lazy::new(api_factory),
-            config: Lazy::new(config_factory),
+            api: Arc::new(Lazy::new(api_factory)),
+            config: Arc::new(Lazy::new(config_factory)),
         }
     }
 }
 
 /// Analyze a lockfile.
 /// Equivalent to `phylum analyze`.
+#[op]
 pub(crate) async fn analyze(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     lockfile: &str,
     project: Option<&str>,
     group: Option<&str>,
 ) -> Result<ProjectId> {
-    let api = &mut state.borrow_mut::<InjectedDependencies>().api;
+    let api = { &state.borrow().borrow::<InjectedDependencies>().api.clone() };
     let (packages, request_type) = get_packages_from_lockfile(Path::new(lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
 
@@ -81,19 +86,27 @@ pub(crate) async fn analyze(
 
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
-pub(crate) async fn get_user_info(state: &mut OpState) -> Result<UserInfo> {
-    let deps = state.borrow_mut::<InjectedDependencies>();
-    deps.api.user_info().await.map_err(Error::from)
+#[op]
+pub(crate) async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
+    let api = { &state.borrow().borrow::<InjectedDependencies>().api.clone() };
+    api.user_info().await.map_err(Error::from)
 }
 
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
+#[op]
 pub(crate) async fn get_access_token(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     ignore_certs: bool,
 ) -> Result<AccessToken> {
-    let refresh_token = get_refresh_token(state)?;
-    let config = &mut state.borrow_mut::<InjectedDependencies>().config;
+    let refresh_token = get_refresh_token::call(state.clone())?;
+    let config = {
+        &state
+            .borrow()
+            .borrow::<InjectedDependencies>()
+            .config
+            .clone()
+    };
     let access_token =
         crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
             .await?
@@ -103,8 +116,15 @@ pub(crate) async fn get_access_token(
 
 /// Retrieve the refresh token.
 /// Equivalent to `phylum auth token`.
-pub(crate) fn get_refresh_token(state: &mut OpState) -> Result<RefreshToken> {
-    let config = &mut state.borrow_mut::<InjectedDependencies>().config;
+#[op]
+pub(crate) fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
+    let config = {
+        &state
+            .borrow()
+            .borrow::<InjectedDependencies>()
+            .config
+            .clone()
+    };
     config
         .auth_info
         .offline_access
@@ -114,11 +134,12 @@ pub(crate) fn get_refresh_token(state: &mut OpState) -> Result<RefreshToken> {
 
 /// Retrieve a job's status.
 /// Equivalent to `phylum history job`.
+#[op]
 pub(crate) async fn get_job_status(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     job_id: Option<&str>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-    let api = &mut state.borrow_mut::<InjectedDependencies>().api;
+    let api = { &state.borrow().borrow::<InjectedDependencies>().api.clone() };
     let job_id = job_id
         .map(|job_id| JobId::from_str(job_id).ok())
         .unwrap_or_else(|| get_current_project().map(|p| p.id))
@@ -128,11 +149,12 @@ pub(crate) async fn get_job_status(
 
 /// Retrieve a project's details.
 /// Equivalent to `phylum history project`.
+#[op]
 pub(crate) async fn get_project_details(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     project_name: Option<&str>,
 ) -> Result<ProjectDetailsResponse> {
-    let api = &mut state.borrow_mut::<InjectedDependencies>().api;
+    let api = { &state.borrow().borrow::<InjectedDependencies>().api.clone() };
     let project_name = project_name
         .map(String::from)
         .map(Result::Ok)
@@ -148,13 +170,14 @@ pub(crate) async fn get_project_details(
 
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
+#[op]
 pub(crate) async fn analyze_package(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     name: &str,
     version: &str,
     package_type: &str,
 ) -> Result<Package> {
-    let api = &mut state.borrow_mut::<InjectedDependencies>().api;
+    let api = { &state.borrow().borrow::<InjectedDependencies>().api.clone() };
     let package_type = PackageType::from_str(package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
     api.get_package_details(&PackageDescriptor {
@@ -168,6 +191,7 @@ pub(crate) async fn analyze_package(
 
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
+#[op]
 pub(crate) fn parse_lockfile(
     lockfile: &str,
     lockfile_type: &str,

@@ -201,7 +201,7 @@ async fn handle_commands() -> CommandResult {
     }
 }
 
-async fn handle_ping(mut api: PhylumApi) -> CommandResult {
+async fn handle_ping(api: PhylumApi) -> CommandResult {
     let resp = api.ping().await;
     print_response(&resp, true, None);
     Ok(ExitCode::Ok.into())

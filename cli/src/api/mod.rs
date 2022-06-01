@@ -171,7 +171,7 @@ impl PhylumApi {
     }
 
     /// Ping the system and verify it's up
-    pub async fn ping(&mut self) -> Result<String> {
+    pub async fn ping(&self) -> Result<String> {
         Ok(self
             .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
             .await?
@@ -185,7 +185,7 @@ impl PhylumApi {
     }
 
     /// Create a new project
-    pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
+    pub async fn create_project(&self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         Ok(self
             .put::<CreateProjectResponse, _>(
                 endpoints::put_create_project(&self.api_uri),
@@ -199,10 +199,7 @@ impl PhylumApi {
     }
 
     /// Get a list of projects
-    pub async fn get_projects(
-        &mut self,
-        group: Option<&str>,
-    ) -> Result<Vec<ProjectSummaryResponse>> {
+    pub async fn get_projects(&self, group: Option<&str>) -> Result<Vec<ProjectSummaryResponse>> {
         let uri = match group {
             Some(group) => endpoints::group_project_summary(&self.api_uri, group),
             None => endpoints::get_project_summary(&self.api_uri),
@@ -212,12 +209,12 @@ impl PhylumApi {
     }
 
     /// Get user settings
-    pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
+    pub async fn get_user_settings(&self) -> Result<UserSettings> {
         self.get(endpoints::get_user_settings(&self.api_uri)).await
     }
 
     /// Put updated user settings
-    pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
+    pub async fn put_user_settings(&self, settings: &UserSettings) -> Result<bool> {
         self.put::<UserSettings, _>(endpoints::put_user_settings(&self.api_uri), &settings)
             .await?;
         Ok(true)
@@ -225,7 +222,7 @@ impl PhylumApi {
 
     /// Submit a new request to the system
     pub async fn submit_request(
-        &mut self,
+        &self,
         req_type: &PackageType,
         package_list: &[PackageDescriptor],
         is_user: bool,
@@ -249,17 +246,14 @@ impl PhylumApi {
     }
 
     /// Get the status of a previously submitted job
-    pub async fn get_job_status(
-        &mut self,
-        job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatus>> {
+    pub async fn get_job_status(&self, job_id: &JobId) -> Result<JobStatusResponse<PackageStatus>> {
         self.get(endpoints::get_job_status(&self.api_uri, job_id, false))
             .await
     }
 
     /// Get the status of a previously submitted job (verbose output)
     pub async fn get_job_status_ext(
-        &mut self,
+        &self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
         self.get(endpoints::get_job_status(&self.api_uri, job_id, true))
@@ -267,23 +261,20 @@ impl PhylumApi {
     }
 
     /// Get the status of all jobs
-    pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
+    pub async fn get_status(&self) -> Result<AllJobsStatusResponse> {
         self.get(endpoints::get_all_jobs_status(&self.api_uri, 30))
             .await
     }
 
     /// Get the details of a specific project
-    pub async fn get_project_details(
-        &mut self,
-        project_name: &str,
-    ) -> Result<ProjectDetailsResponse> {
+    pub async fn get_project_details(&self, project_name: &str) -> Result<ProjectDetailsResponse> {
         self.get(endpoints::get_project_details(&self.api_uri, project_name))
             .await
     }
 
     /// Resolve a Project Name to a Project ID
     pub async fn get_project_id(
-        &mut self,
+        &self,
         project_name: &str,
         group_name: Option<&str>,
     ) -> Result<ProjectId> {
@@ -303,18 +294,18 @@ impl PhylumApi {
     }
 
     /// Get package details
-    pub async fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<Package> {
+    pub async fn get_package_details(&self, pkg: &PackageDescriptor) -> Result<Package> {
         self.get(endpoints::get_package_status(&self.api_uri, pkg))
             .await
     }
 
     /// Get all groups the user is part of.
-    pub async fn get_groups_list(&mut self) -> Result<ListUserGroupsResponse> {
+    pub async fn get_groups_list(&self) -> Result<ListUserGroupsResponse> {
         self.get(endpoints::group_list(&self.api_uri)).await
     }
 
     /// Get all groups the user is part of.
-    pub async fn create_group(&mut self, group_name: &str) -> Result<CreateGroupResponse> {
+    pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
         let group = CreateGroupRequest {
             group_name: group_name.into(),
         };
@@ -382,7 +373,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "react".to_string(),
@@ -414,7 +405,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "react".to_string(),
@@ -489,7 +480,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
         client.get_status().await?;
         Ok(())
     }
@@ -547,7 +538,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "@schematics/angular".to_string(),
@@ -605,7 +596,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status(&job).await?;
@@ -681,7 +672,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status_ext(&job).await?;
