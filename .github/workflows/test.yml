@@ -58,6 +58,20 @@ jobs:
           command: test
           args: --locked
 
+      - name: All Features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
+  shellcheck:
+    # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Script Style Check
+        if: github.event_name != 'schedule'
+        run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
+
   # This job reports the results of the test matrix above
   test:
     if: always()

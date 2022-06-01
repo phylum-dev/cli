@@ -12,6 +12,7 @@ use walkdir::WalkDir;
 
 use crate::commands::{CommandResult, ExitCode};
 use crate::deno::DenoRuntime;
+use crate::dirs;
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
@@ -174,7 +175,7 @@ impl TryFrom<PathBuf> for Extension {
 
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
 pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
-    Ok(crate::config::data_dir()?.join("phylum").join("extensions"))
+    Ok(dirs::data_dir()?.join("phylum").join("extensions"))
 }
 
 pub fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
