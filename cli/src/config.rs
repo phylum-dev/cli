@@ -19,19 +19,19 @@ use crate::dirs;
 
 pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionInfo {
     pub uri: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthInfo {
     pub offline_access: Option<RefreshToken>,
 }
 
 pub type Packages = Vec<PackageDescriptor>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub connection: ConnectionInfo,
     pub auth_info: AuthInfo,

@@ -25,11 +25,13 @@ use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
+use crate::config::Config;
 use crate::types::PingResponse;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
 pub struct PhylumApi {
+    config: Config,
     client: Client,
     api_uri: String,
     ignore_certs: bool,

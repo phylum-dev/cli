@@ -1,0 +1,3 @@
+name = "api-extension"
+description = "This extension tests the API ops"
+entry_point = "main.ts"

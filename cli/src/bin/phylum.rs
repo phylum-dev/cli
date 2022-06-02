@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
@@ -11,7 +12,7 @@ use spinners::{Spinner, Spinners};
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::{handle_extensions, Extension};
+use phylum_cli::commands::extensions::{handle_extensions, handle_run_extension};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -194,7 +195,14 @@ async fn handle_commands() -> CommandResult {
         "extension" => handle_extensions(matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => Extension::load(extension_subcmd)?.run().await,
+        extension_subcmd => {
+            handle_run_extension(
+                extension_subcmd,
+                config.clone(),
+                Box::pin(async { api.await.map(Arc::new) }),
+            )
+            .await
+        } // Extension::load(extension_subcmd)?.run().await,
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),
