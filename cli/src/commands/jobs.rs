@@ -15,7 +15,7 @@ use phylum_types::types::package::*;
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::parse::get_packages_from_lockfile;
 use crate::commands::{CommandResult, CommandValue};
-use crate::config::{get_current_project, Config, ProjectConfig};
+use crate::config::{get_current_project, ProjectConfig};
 use crate::filter::Filter;
 use crate::print::print_response;
 use crate::print_user_success;
@@ -155,11 +155,10 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 /// displays summary information about the submitted package(s)
 pub async fn handle_submission(
     api: &mut PhylumApi,
-    config: Config,
     matches: &clap::ArgMatches,
 ) -> CommandResult {
     let mut packages = vec![];
-    let mut request_type = config.request_type; // default request type
+    let mut request_type = api.config().request_type; // default request type
     let mut synch = false; // get status after submission
     let mut verbose = false;
     let mut pretty_print = false;

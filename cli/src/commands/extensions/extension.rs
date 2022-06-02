@@ -3,7 +3,6 @@ use std::fs::{self, DirBuilder};
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
@@ -14,11 +13,10 @@ use walkdir::WalkDir;
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
-use crate::config::Config;
 use crate::deno::DenoRuntime;
 use crate::dirs;
 
-use super::api::InjectedDependencies;
+use super::api::ExtensionState;
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
@@ -122,12 +120,11 @@ impl Extension {
     /// Execute an extension subcommand.
     pub async fn run(
         &self,
-        config: Config,
-        api: BoxFuture<'static, Result<Arc<PhylumApi>>>,
+        api: BoxFuture<'static, Result<PhylumApi>>,
     ) -> CommandResult {
         let script_path = self.path.join(&self.manifest.entry_point);
 
-        let mut deno = DenoRuntime::new(InjectedDependencies::from_factories(api, config).await);
+        let mut deno = DenoRuntime::new(ExtensionState::from(api));
         deno.run(&script_path.to_string_lossy()).await?;
 
         Ok(ExitCode::Ok.into())

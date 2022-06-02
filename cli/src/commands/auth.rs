@@ -39,7 +39,7 @@ async fn handle_auth_login(
 
 /// Display the current authentication status to the user.
 pub async fn handle_auth_status(
-    mut config: Config,
+    config: Config,
     timeout: Option<u64>,
     ignore_certs: bool,
 ) -> CommandResult {
@@ -50,8 +50,7 @@ pub async fn handle_auth_status(
 
     // Create a client with our auth token attached.
     let api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
+        config,
         timeout,
         ignore_certs,
     )

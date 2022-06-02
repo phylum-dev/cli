@@ -4,12 +4,10 @@ mod extension;
 pub(crate) use api::api_decls;
 pub use extension::*;
 
-use std::sync::Arc;
 use std::{collections::HashSet, fs, io::ErrorKind, path::PathBuf};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
-use crate::config::Config;
 
 use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
@@ -80,10 +78,13 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
 
 /// Handle the `<extension>` command path.
 /// Run the extension by name.
-pub async fn handle_run_extension(name: &str, config: Config, api: BoxFuture<'static, Result<Arc<PhylumApi>>>) -> CommandResult {
+pub async fn handle_run_extension(
+    name: &str,
+    api: BoxFuture<'static, Result<PhylumApi>>,
+) -> CommandResult {
     let extension = Extension::load(name)?;
 
-    extension.run(config, api).await?;
+    extension.run(api).await?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }

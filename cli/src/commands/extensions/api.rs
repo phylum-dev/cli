@@ -3,7 +3,7 @@
 //! implementation, having these functions unused would break CI.
 #![allow(unused)]
 
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -31,8 +31,8 @@ use phylum_types::types::project::ProjectDetailsResponse;
 
 // BROKEN
 
-enum OnceFuture<T: Unpin> {
-    Future(Option<BoxFuture<'static, Result<T>>>),
+pub(crate) enum OnceFuture<T: Unpin> {
+    Future(Option<BoxFuture<'static, T>>),
     Awaited(T),
 }
 
@@ -41,48 +41,36 @@ impl<T: Unpin> OnceFuture<T> {
         OnceFuture::Future(Some(t))
     }
 
-    async fn try_get(&mut self) -> Result<&T> {
+    async fn get(&mut self) -> &T {
         match *self {
-            OnceFuture::Future(Some(ref mut t)) => {
-                *self = OnceFuture::Awaited(t.await?);
+            OnceFuture::Future(ref mut t) => {
+                *self = OnceFuture::Awaited(t.take().unwrap().await);
                 match *self {
                     OnceFuture::Future(..) => unreachable!(),
-                    OnceFuture::Awaited(ref mut t) => Ok(t),
+                    OnceFuture::Awaited(ref mut t) => t,
                 }
             }
-            OnceFuture::Awaited(ref mut t) => Ok(t)
+            OnceFuture::Awaited(ref mut t) => t,
         }
     }
 }
 
-type PhylumApiFut = OnceFuture<Result<PhylumApi>>;
+pub(crate) type ExtensionState = OnceFuture<Result<PhylumApi>>;
 
-/// Container for lazily evaluated dependencies of Extensions API functions. These values won't be
-/// visible from extension code and will have to be set up by the JS runtime builder which will
-/// load their configuration as any other command and then provide the pertinent factories.
-pub(crate) struct InjectedDependencies {
-    api: OnceFuture<Result<Arc<PhylumApi>>>,
-    config: Config,
-}
-
-impl InjectedDependencies {
-    pub(crate) async fn from_factories(
-        api_factory: BoxFuture<'static, Result<Arc<PhylumApi>>>,
-        config: Config,
-    ) -> Self {
-        InjectedDependencies {
-            api: OnceFuture::new(api_factory),
-            config,
-        }
-    }
-
-    async fn api(&mut self) -> Result<Arc<PhylumApi>> {
-        self.api
+impl ExtensionState {
+    async fn borrow_from(state: &mut OpState) -> Result<&PhylumApi> {
+        state
+            .borrow_mut::<ExtensionState>()
             .get()
             .await
             .as_ref()
-            .cloned()
             .map_err(|e| anyhow!("{:?}", e))
+    }
+}
+
+impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
+    fn from(t: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+        OnceFuture::new(t)
     }
 }
 
@@ -96,7 +84,7 @@ pub(crate) async fn analyze(
     group: Option<&str>,
 ) -> Result<ProjectId> {
     let mut state = Pin::new(state.borrow_mut());
-    let api = state.borrow_mut::<PhylumApiFut>().get().await?;
+    let api = ExtensionState::borrow_from(&mut state).await?;
 
     let (packages, request_type) = get_packages_from_lockfile(Path::new(lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
@@ -131,7 +119,8 @@ pub(crate) async fn analyze(
 #[op]
 pub(crate) async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
     let mut state = Pin::new(state.borrow_mut());
-    let api = state.borrow_mut::<InjectedDependencies>().api().await?;
+    let api = ExtensionState::borrow_from(&mut state).await?;
+
     api.user_info().await.map_err(Error::from)
 }
 
@@ -142,9 +131,9 @@ pub(crate) async fn get_access_token(
     state: Rc<RefCell<OpState>>,
     ignore_certs: bool,
 ) -> Result<AccessToken> {
-    let refresh_token = get_refresh_token::call(state.clone())?;
+    let refresh_token = get_refresh_token::call(state.clone()).await?;
     let mut state = Pin::new(state.borrow_mut());
-    let config = &state.borrow_mut::<PhylumApiFut>().await?.config;
+    let config = ExtensionState::borrow_from(&mut state).await?.config();
 
     let access_token =
         crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
@@ -156,9 +145,10 @@ pub(crate) async fn get_access_token(
 /// Retrieve the refresh token.
 /// Equivalent to `phylum auth token`.
 #[op]
-pub(crate) fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
-    let mut state = state.borrow_mut();
-    let config = &state.borrow_mut::<InjectedDependencies>().config;
+pub(crate) async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
+    let mut state = Pin::new(state.borrow_mut());
+    let config = ExtensionState::borrow_from(&mut state).await?.config();
+
     config
         .auth_info
         .offline_access
@@ -174,7 +164,7 @@ pub(crate) async fn get_job_status(
     job_id: Option<&str>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
     let mut state = Pin::new(state.borrow_mut());
-    let api = state.borrow_mut::<InjectedDependencies>().api().await?;
+    let api = ExtensionState::borrow_from(&mut state).await?;
 
     let job_id = job_id
         .map(|job_id| JobId::from_str(job_id).ok())
@@ -191,7 +181,7 @@ pub(crate) async fn get_project_details(
     project_name: Option<&str>,
 ) -> Result<ProjectDetailsResponse> {
     let mut state = Pin::new(state.borrow_mut());
-    let api = state.borrow_mut::<InjectedDependencies>().api().await?;
+    let api = ExtensionState::borrow_from(&mut state).await?;
 
     let project_name = project_name
         .map(String::from)
@@ -216,7 +206,7 @@ pub(crate) async fn analyze_package(
     package_type: &str,
 ) -> Result<Package> {
     let mut state = Pin::new(state.borrow_mut());
-    let api = state.borrow_mut::<InjectedDependencies>().api().await;
+    let api = ExtensionState::borrow_from(&mut state).await?;
 
     let package_type = PackageType::from_str(package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;

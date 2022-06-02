@@ -1,5 +1,4 @@
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
@@ -51,14 +50,14 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -
 /// Construct an instance of `PhylumApi` given configuration, optional timeout, and whether we
 /// need API to ignore certificates.
 async fn api_factory(
-    config: &mut Config,
-    config_path: &Path,
+    config: Config,
+    config_path: PathBuf,
     timeout: Option<u64>,
     ignore_certs: bool,
 ) -> Result<PhylumApi> {
     let api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
+        // &mut config.auth_info,
+        config,
         timeout,
         ignore_certs,
     )
@@ -66,7 +65,7 @@ async fn api_factory(
     .context("Error creating client")?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(config_path, &config).with_context(|| {
+    save_config(&config_path, api.config()).with_context(|| {
         format!(
             "Failed to save configuration to '{}'",
             config_path.to_string_lossy()
@@ -162,7 +161,7 @@ async fn handle_commands() -> CommandResult {
 
     // Get the future, but don't await. Commands that require access to the API will await on this,
     // so that the API is not instantiated ahead of time for subcommands that don't require it.
-    let api = api_factory(&mut config, &config_path, timeout, ignore_certs);
+    let api = api_factory(config.clone(), config_path.clone(), timeout, ignore_certs);
 
     let (subcommand, matches) = matches.subcommand().unwrap();
     match subcommand {
@@ -183,10 +182,10 @@ async fn handle_commands() -> CommandResult {
         "parse" => handle_parse(matches),
         "ping" => handle_ping(api.await?).await,
         "project" => handle_project(&mut api.await?, matches).await,
-        "package" => handle_get_package(&mut api.await?, &config.request_type, matches).await,
-        "history" => handle_submission(&mut api.await?, config, matches).await,
+        "package" => handle_get_package(&mut api.await?, matches).await,
+        "history" => handle_submission(&mut api.await?, matches).await,
         "group" => handle_group(&mut api.await?, matches).await,
-        "analyze" | "batch" => handle_submission(&mut api.await?, config, matches).await,
+        "analyze" | "batch" => handle_submission(&mut api.await?, matches).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => handle_uninstall(matches),
@@ -198,8 +197,7 @@ async fn handle_commands() -> CommandResult {
         extension_subcmd => {
             handle_run_extension(
                 extension_subcmd,
-                config.clone(),
-                Box::pin(async { api.await.map(Arc::new) }),
+                Box::pin(api),
             )
             .await
         } // Extension::load(extension_subcmd)?.run().await,
