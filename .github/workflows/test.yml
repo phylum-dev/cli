@@ -82,6 +82,15 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
+  musl-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: |
+          docker build -t phylum-dev/musl-test .
+          docker run phylum-dev/musl-test
+
   # This job reports the results of the test matrix above
   test:
     if: always()
