@@ -153,10 +153,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
-pub async fn handle_submission(
-    api: &mut PhylumApi,
-    matches: &clap::ArgMatches,
-) -> CommandResult {
+pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let mut packages = vec![];
     let mut request_type = api.config().request_type; // default request type
     let mut synch = false; // get status after submission

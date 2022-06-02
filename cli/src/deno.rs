@@ -22,9 +22,7 @@ impl DenoRuntime {
     /// Create a new Deno runtime.
     pub fn new<T: 'static>(deps: T) -> Self {
         // TODO: Add Phylum API methods here.
-        let phylum_api = Extension::builder()
-            .ops(api_decls())
-            .build();
+        let phylum_api = Extension::builder().ops(api_decls()).build();
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(TypescriptModuleLoader)),
