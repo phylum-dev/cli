@@ -87,9 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: |
-          docker build -t phylum-dev/musl-test .
-          docker run phylum-dev/musl-test
+        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 entrypoint.sh
 
   # This job reports the results of the test matrix above
   test:
