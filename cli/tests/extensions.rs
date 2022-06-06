@@ -280,10 +280,14 @@ fn api_extension() {
         .assert()
         .success();
 
-    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    println!("{}", output);
-    let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    println!("{}", output);
+    {
+        let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+        println!("{}", output);
+    }
+    {
+        let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+        println!("{}", output);
+    }
     // assert!(output.contains("extension was filtered out"));
 }
 

@@ -21,9 +21,7 @@ pub struct DenoRuntime {
 impl DenoRuntime {
     /// Create a new Deno runtime.
     pub fn new(deps: ExtensionState) -> Self {
-        let phylum_api = Extension::builder()
-            .ops(api_decls())
-            .build();
+        let phylum_api = Extension::builder().ops(api_decls()).build();
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(TypescriptModuleLoader)),
