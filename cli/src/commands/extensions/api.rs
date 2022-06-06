@@ -55,12 +55,13 @@ impl<T: Unpin> OnceFuture<T> {
     }
 }
 
-pub(crate) type ExtensionState = OnceFuture<Result<PhylumApi>>;
+pub struct ExtensionState(OnceFuture<Result<PhylumApi>>);
 
 impl ExtensionState {
     async fn borrow_from(state: &mut OpState) -> Result<&PhylumApi> {
         state
             .borrow_mut::<ExtensionState>()
+            .0
             .get()
             .await
             .as_ref()
@@ -70,7 +71,7 @@ impl ExtensionState {
 
 impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
     fn from(t: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        OnceFuture::new(t)
+        Self(OnceFuture::new(t))
     }
 }
 

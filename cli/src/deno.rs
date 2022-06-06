@@ -11,7 +11,7 @@ use deno_core::{
     ModuleType, RuntimeOptions,
 };
 
-use crate::commands::extensions::api_decls;
+use crate::commands::extensions::{api_decls, ExtensionState};
 
 /// Deno runtime state.
 pub struct DenoRuntime {
@@ -20,9 +20,10 @@ pub struct DenoRuntime {
 
 impl DenoRuntime {
     /// Create a new Deno runtime.
-    pub fn new<T: 'static>(deps: T) -> Self {
-        // TODO: Add Phylum API methods here.
-        let phylum_api = Extension::builder().ops(api_decls()).build();
+    pub fn new(deps: ExtensionState) -> Self {
+        let phylum_api = Extension::builder()
+            .ops(api_decls())
+            .build();
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(TypescriptModuleLoader)),
@@ -32,7 +33,7 @@ impl DenoRuntime {
 
         let op_state = runtime.op_state();
         let mut op_state = op_state.borrow_mut();
-        *op_state.borrow_mut() = deps;
+        op_state.put(deps);
 
         Self { runtime }
     }

@@ -16,7 +16,7 @@ use crate::commands::{CommandResult, ExitCode};
 use crate::deno::DenoRuntime;
 use crate::dirs;
 
-use super::api::ExtensionState;
+pub(crate) use super::api::ExtensionState;
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
