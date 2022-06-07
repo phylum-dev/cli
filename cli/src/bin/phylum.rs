@@ -158,14 +158,14 @@ async fn handle_commands() -> CommandResult {
     // so that the API is not instantiated ahead of time for subcommands that don't require it.
     let api = api_factory(config.clone(), config_path.clone(), timeout, ignore_certs);
 
-    let (subcommand, matches) = matches.subcommand().unwrap();
+    let (subcommand, sub_matches) = matches.subcommand().unwrap();
     match subcommand {
         "auth" => {
             drop(api);
             handle_auth(
                 config,
                 &config_path,
-                matches,
+                sub_matches,
                 app_helper,
                 timeout,
                 ignore_certs,
@@ -173,20 +173,20 @@ async fn handle_commands() -> CommandResult {
             .await
         }
         "version" => handle_version(&app_name, ver),
-        "update" => handle_update(matches).await,
-        "parse" => handle_parse(matches),
+        "update" => handle_update(sub_matches).await,
+        "parse" => handle_parse(sub_matches),
         "ping" => handle_ping(api.await?).await,
-        "project" => handle_project(&mut api.await?, matches).await,
-        "package" => handle_get_package(&mut api.await?, matches).await,
-        "history" => handle_submission(&mut api.await?, matches).await,
-        "group" => handle_group(&mut api.await?, matches).await,
-        "analyze" | "batch" => handle_submission(&mut api.await?, matches).await,
+        "project" => handle_project(&mut api.await?, sub_matches).await,
+        "package" => handle_get_package(&mut api.await?, sub_matches).await,
+        "history" => handle_history(&mut api.await?, sub_matches).await,
+        "group" => handle_group(&mut api.await?, sub_matches).await,
+        "analyze" | "batch" => handle_submission(&mut api.await?, &matches).await,
 
         #[cfg(feature = "selfmanage")]
-        "uninstall" => handle_uninstall(matches),
+        "uninstall" => handle_uninstall(sub_matches),
 
         #[cfg(feature = "extensions")]
-        "extension" => handle_extensions(matches).await,
+        "extension" => handle_extensions(sub_matches).await,
 
         #[cfg(feature = "extensions")]
         extension_subcmd => handle_run_extension(extension_subcmd, Box::pin(api)).await,
