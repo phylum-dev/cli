@@ -55,14 +55,9 @@ async fn api_factory(
     timeout: Option<u64>,
     ignore_certs: bool,
 ) -> Result<PhylumApi> {
-    let api = PhylumApi::new(
-        // &mut config.auth_info,
-        config,
-        timeout,
-        ignore_certs,
-    )
-    .await
-    .context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout, ignore_certs)
+        .await
+        .context("Error creating client")?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
     save_config(&config_path, api.config()).with_context(|| {
@@ -194,7 +189,7 @@ async fn handle_commands() -> CommandResult {
         "extension" => handle_extensions(matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => handle_run_extension(extension_subcmd, Box::pin(api)).await, // Extension::load(extension_subcmd)?.run().await,
+        extension_subcmd => handle_run_extension(extension_subcmd, Box::pin(api)).await,
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),

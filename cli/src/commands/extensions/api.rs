@@ -29,22 +29,22 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::project::ProjectDetailsResponse;
 
-// BROKEN
-
+/// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
+/// In other words, it is a lazy evaluator for the `Future`.
 pub(crate) enum OnceFuture<T: Unpin> {
-    Future(Option<BoxFuture<'static, T>>),
+    Future(BoxFuture<'static, T>),
     Awaited(T),
 }
 
 impl<T: Unpin> OnceFuture<T> {
     fn new(t: BoxFuture<'static, T>) -> Self {
-        OnceFuture::Future(Some(t))
+        OnceFuture::Future(t)
     }
 
     async fn get(&mut self) -> &T {
         match *self {
             OnceFuture::Future(ref mut t) => {
-                *self = OnceFuture::Awaited(t.take().unwrap().await);
+                *self = OnceFuture::Awaited(t.await);
                 match *self {
                     OnceFuture::Future(..) => unreachable!(),
                     OnceFuture::Awaited(ref mut t) => t,
@@ -55,9 +55,13 @@ impl<T: Unpin> OnceFuture<T> {
     }
 }
 
+/// Opaquely encapsulates the extension state.
 pub struct ExtensionState(OnceFuture<Result<PhylumApi>>);
 
 impl ExtensionState {
+    /// Borrow an instance of `ExtensionState` from a reference to Deno's
+    /// `OpState` state handler, and retrieve a reference to the inner state.
+    /// The references lives as long as `&mut OpState`.
     async fn borrow_from(state: &mut OpState) -> Result<&PhylumApi> {
         state
             .borrow_mut::<ExtensionState>()
@@ -75,15 +79,25 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
     }
 }
 
+//
+// Extension API functions
+// These functions need not be public, as Deno's declarations (`::decl()`) cloak
+// them in a data structure that is consumed by the runtime extension builder.
+//
+
 /// Analyze a lockfile.
 /// Equivalent to `phylum analyze`.
 #[op]
-pub(crate) async fn analyze(
+async fn analyze(
     state: Rc<RefCell<OpState>>,
     lockfile: &str,
     project: Option<&str>,
     group: Option<&str>,
 ) -> Result<ProjectId> {
+    // The general pattern for accessing state in extensions API functions is:
+    // - borrow from Deno's state handler
+    // - pin the borrowed reference guard
+    // - extract `Result<&PhylumApi>` from ExtensionState
     let mut state = Pin::new(state.borrow_mut());
     let api = ExtensionState::borrow_from(&mut state).await?;
 
@@ -118,7 +132,7 @@ pub(crate) async fn analyze(
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
 #[op]
-pub(crate) async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
+async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
     let mut state = Pin::new(state.borrow_mut());
     let api = ExtensionState::borrow_from(&mut state).await?;
 
@@ -128,10 +142,7 @@ pub(crate) async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInf
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
 #[op]
-pub(crate) async fn get_access_token(
-    state: Rc<RefCell<OpState>>,
-    ignore_certs: bool,
-) -> Result<AccessToken> {
+async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Result<AccessToken> {
     let refresh_token = get_refresh_token::call(state.clone()).await?;
     let mut state = Pin::new(state.borrow_mut());
     let config = ExtensionState::borrow_from(&mut state).await?.config();
@@ -146,7 +157,7 @@ pub(crate) async fn get_access_token(
 /// Retrieve the refresh token.
 /// Equivalent to `phylum auth token`.
 #[op]
-pub(crate) async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
+async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
     let mut state = Pin::new(state.borrow_mut());
     let config = ExtensionState::borrow_from(&mut state).await?.config();
 
@@ -160,7 +171,7 @@ pub(crate) async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<Ref
 /// Retrieve a job's status.
 /// Equivalent to `phylum history job`.
 #[op]
-pub(crate) async fn get_job_status(
+async fn get_job_status(
     state: Rc<RefCell<OpState>>,
     job_id: Option<&str>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
@@ -177,7 +188,7 @@ pub(crate) async fn get_job_status(
 /// Retrieve a project's details.
 /// Equivalent to `phylum history project`.
 #[op]
-pub(crate) async fn get_project_details(
+async fn get_project_details(
     state: Rc<RefCell<OpState>>,
     project_name: Option<&str>,
 ) -> Result<ProjectDetailsResponse> {
@@ -200,7 +211,7 @@ pub(crate) async fn get_project_details(
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
 #[op]
-pub(crate) async fn analyze_package(
+async fn analyze_package(
     state: Rc<RefCell<OpState>>,
     name: &str,
     version: &str,
@@ -223,10 +234,7 @@ pub(crate) async fn analyze_package(
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
 #[op]
-pub(crate) fn parse_lockfile(
-    lockfile: &str,
-    lockfile_type: &str,
-) -> Result<Vec<PackageDescriptor>> {
+fn parse_lockfile(lockfile: &str, lockfile_type: &str) -> Result<Vec<PackageDescriptor>> {
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))

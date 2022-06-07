@@ -33,7 +33,6 @@ type Result<T> = std::result::Result<T, PhylumApiError>;
 pub struct PhylumApi {
     config: Config,
     client: Client,
-    //api_uri: String,
     ignore_certs: bool,
 }
 

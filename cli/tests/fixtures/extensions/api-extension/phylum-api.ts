@@ -1,3 +1,8 @@
+// This helper file wraps Deno.core.opAsync calls for ergonomics. There is no
+// concept of injecting a module in Deno, so clients won't be able to use something
+// like `import * as PhylumApi from 'phylum-api'` and will have to manually include
+// this file instead.
+
 export async function analyze(lockfile: string, project?: string, group?: string) {
   return await Deno.core.opAsync("analyze", lockfile, project, group)
 }
