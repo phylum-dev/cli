@@ -73,6 +73,17 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
 // These functions need not be public, as Deno's declarations (`::decl()`) cloak
 // them in a data structure that is consumed by the runtime extension builder.
 //
+// The general pattern for accessing state in extensions API functions is:
+// - borrow from Deno's state handler
+// - pin the borrowed reference guard
+// - extract `Result<&PhylumApi>` from ExtensionState
+//
+// The borrow is necessary as Deno's state is held inside of a `RefCell`. The resulting mutable
+// reference is going to be held across an await point, which means it should be pinned to prevent
+// it being moved, because that would result in an invalid reference. The extracted
+// `Result<&PhylumApi>` reference lives as long as the pinned `RefMut` and can be used until both
+// go out of scope and the guard is released.
+//
 
 /// Analyze a lockfile.
 /// Equivalent to `phylum analyze`.
@@ -83,10 +94,6 @@ async fn analyze(
     project: Option<&str>,
     group: Option<&str>,
 ) -> Result<ProjectId> {
-    // The general pattern for accessing state in extensions API functions is:
-    // - borrow from Deno's state handler
-    // - pin the borrowed reference guard
-    // - extract `Result<&PhylumApi>` from ExtensionState
     let mut state = Pin::new(state.borrow_mut());
     let api = ExtensionState::borrow_from(&mut state).await?;
 
