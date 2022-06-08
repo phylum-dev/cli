@@ -29,9 +29,7 @@ impl DenoRuntime {
             ..Default::default()
         });
 
-        let op_state = runtime.op_state();
-        let mut op_state = op_state.borrow_mut();
-        op_state.put(deps);
+        runtime.op_state().borrow_mut().put(deps);
 
         Self { runtime }
     }
