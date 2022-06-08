@@ -20,7 +20,6 @@ use phylum_types::types::package::{
 use phylum_types::types::project::ProjectDetailsResponse;
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
-/// In other words, it is a lazy evaluator for the `Future`.
 pub(crate) enum OnceFuture<T: Unpin> {
     Future(BoxFuture<'static, T>),
     Awaited(T),
