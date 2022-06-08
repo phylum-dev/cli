@@ -1,26 +1,16 @@
-//! TODO remove the following annotation before merging. The functions in
-//! this module should have as unique client the Deno runtime; pending its
-//! implementation, having these functions unused would break CI.
-#![allow(unused)]
-
-use std::cell::{RefCell, RefMut};
-use std::future::Future;
+use std::cell::RefCell;
 use std::path::Path;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
-use crate::config::{get_current_project, Config};
-use crate::lockfiles::Parse;
+use crate::config::get_current_project;
 use crate::{api::PhylumApi, auth::UserInfo};
 
 use anyhow::{anyhow, Context, Error, Result};
-use deno_core::parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
 use deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
-use once_cell::sync::Lazy;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::JobStatusResponse;

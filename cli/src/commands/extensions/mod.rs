@@ -77,6 +77,7 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
 }
 
 /// Handle the `<extension>` command path.
+///
 /// Run the extension by name.
 pub async fn handle_run_extension(
     name: &str,
@@ -90,6 +91,7 @@ pub async fn handle_run_extension(
 }
 
 /// Handle the `extension add` subcommand path.
+///
 /// Add the extension from the specified path.
 async fn handle_add_extension(path: &str) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
@@ -109,6 +111,7 @@ async fn handle_add_extension(path: &str) -> CommandResult {
 }
 
 /// Handle the `extension remove` subcommand path.
+///
 /// Remove the extension named as specified.
 async fn handle_remove_extension(name: &str) -> CommandResult {
     let extension = Extension::load(name)?;
@@ -119,6 +122,7 @@ async fn handle_remove_extension(name: &str) -> CommandResult {
 }
 
 /// Handle the `extension` / `extension list` subcommand path.
+///
 /// List installed extensions.
 async fn handle_list_extensions() -> CommandResult {
     let extensions = installed_extensions()?;
