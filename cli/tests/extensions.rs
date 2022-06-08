@@ -261,36 +261,6 @@ fn conflicting_extension_name_is_filtered() {
     assert!(output.contains("extension was filtered out"));
 }
 
-#[test]
-fn api_extension() {
-    let tmp_dir = TmpDir::new();
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
-        .arg("extension")
-        .arg("add")
-        .arg(fixtures_path().join("api-extension"))
-        .assert()
-        .success();
-
-    let cmd = Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
-        .arg("api-extension")
-        .assert()
-        .success();
-
-    {
-        let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-        println!("{}", output);
-    }
-    {
-        let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-        println!("{}", output);
-    }
-    // assert!(output.contains("extension was filtered out"));
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
