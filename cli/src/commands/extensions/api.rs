@@ -27,20 +27,20 @@ pub(crate) enum OnceFuture<T: Unpin> {
 }
 
 impl<T: Unpin> OnceFuture<T> {
-    fn new(t: BoxFuture<'static, T>) -> Self {
-        OnceFuture::Future(t)
+    fn new(inner: BoxFuture<'static, T>) -> Self {
+        OnceFuture::Future(inner)
     }
 
     async fn get(&mut self) -> &T {
         match *self {
-            OnceFuture::Future(ref mut t) => {
-                *self = OnceFuture::Awaited(t.await);
+            OnceFuture::Future(ref mut inner) => {
+                *self = OnceFuture::Awaited(inner.await);
                 match *self {
                     OnceFuture::Future(..) => unreachable!(),
-                    OnceFuture::Awaited(ref mut t) => t,
+                    OnceFuture::Awaited(ref mut inner) => inner,
                 }
             }
-            OnceFuture::Awaited(ref mut t) => t,
+            OnceFuture::Awaited(ref mut inner) => inner,
         }
     }
 }
