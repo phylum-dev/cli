@@ -13,7 +13,7 @@ use phylum_types::types::project::ProjectDetailsResponse;
 use phylum_types::types::project::ProjectSummaryResponse;
 use phylum_types::types::user_settings::*;
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{Client, Method, StatusCode};
+use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use thiserror::Error as ThisError;
@@ -26,6 +26,8 @@ use crate::auth::handle_refresh_tokens;
 use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
 use crate::types::PingResponse;
+
+use self::endpoints::BaseUriError;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
@@ -44,6 +46,8 @@ pub enum PhylumApiError {
         source: reqwest::Error,
     },
     #[error(transparent)]
+    BaseUri(#[from] BaseUriError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
 
@@ -51,32 +55,36 @@ impl PhylumApiError {
     pub fn status(&self) -> Option<StatusCode> {
         match self {
             PhylumApiError::ReqwestError { source } => source.status(),
-            PhylumApiError::Other(_) => None,
+            _ => None,
         }
     }
 }
 
 impl PhylumApi {
-    async fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
-        self.send_request::<_, ()>(Method::GET, path, None).await
+    async fn get<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
+        self.send_request(Method::GET, path, None::<()>).await
     }
 
-    async fn put<T: DeserializeOwned, S: serde::Serialize>(&self, path: String, s: S) -> Result<T> {
+    async fn put<T: DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
+        &self,
+        path: U,
+        s: S,
+    ) -> Result<T> {
         self.send_request(Method::PUT, path, Some(s)).await
     }
 
-    async fn post<T: serde::de::DeserializeOwned, S: serde::Serialize>(
+    async fn post<T: serde::de::DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
         &self,
-        path: String,
+        path: U,
         s: S,
     ) -> Result<T> {
         self.send_request(Method::POST, path, Some(s)).await
     }
 
-    async fn send_request<T: DeserializeOwned, B: Serialize>(
+    async fn send_request<T: DeserializeOwned, B: Serialize, U: IntoUrl>(
         &self,
         method: Method,
-        path: String,
+        path: U,
         body: Option<B>,
     ) -> Result<T> {
         let mut request = self.client.request(method, path);
@@ -172,30 +180,28 @@ impl PhylumApi {
 
     /// Ping the system and verify it's up
     pub async fn ping(&mut self) -> Result<String> {
-        Ok(self
-            .get::<PingResponse>(endpoints::get_ping(&self.api_uri))
-            .await?
-            .response)
+        let response: PingResponse = self.get(endpoints::get_ping(&self.api_uri)?).await?;
+        Ok(response.response)
     }
 
     /// Get information about the authenticated user
     pub async fn user_info(&self) -> Result<UserInfo> {
         let oidc_settings = fetch_oidc_server_settings(self.ignore_certs, &self.api_uri).await?;
-        self.get(oidc_settings.userinfo_endpoint.into()).await
+        self.get(oidc_settings.userinfo_endpoint).await
     }
 
     /// Create a new project
     pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
-        Ok(self
-            .put::<CreateProjectResponse, _>(
-                endpoints::put_create_project(&self.api_uri),
+        let response: CreateProjectResponse = self
+            .put(
+                endpoints::put_create_project(&self.api_uri)?,
                 CreateProjectRequest {
                     name: name.to_owned(),
                     group_name: group.map(String::from),
                 },
             )
-            .await?
-            .id)
+            .await?;
+        Ok(response.id)
     }
 
     /// Get a list of projects
@@ -204,8 +210,8 @@ impl PhylumApi {
         group: Option<&str>,
     ) -> Result<Vec<ProjectSummaryResponse>> {
         let uri = match group {
-            Some(group) => endpoints::group_project_summary(&self.api_uri, group),
-            None => endpoints::get_project_summary(&self.api_uri),
+            Some(group) => endpoints::group_project_summary(&self.api_uri, group)?,
+            None => endpoints::get_project_summary(&self.api_uri)?,
         };
 
         self.get(uri).await
@@ -213,12 +219,13 @@ impl PhylumApi {
 
     /// Get user settings
     pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
-        self.get(endpoints::get_user_settings(&self.api_uri)).await
+        self.get(endpoints::get_user_settings(&self.api_uri)?).await
     }
 
     /// Put updated user settings
     pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
-        self.put::<UserSettings, _>(endpoints::put_user_settings(&self.api_uri), &settings)
+        let _response: UserSettings = self
+            .put(endpoints::put_user_settings(&self.api_uri)?, &settings)
             .await?;
         Ok(true)
     }
@@ -243,7 +250,7 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
-            .put(endpoints::put_submit_package(&self.api_uri), req)
+            .put(endpoints::put_submit_package(&self.api_uri)?, req)
             .await?;
         Ok(resp.job_id)
     }
@@ -253,7 +260,7 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(endpoints::get_job_status(&self.api_uri, job_id, false))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, false)?)
             .await
     }
 
@@ -262,13 +269,13 @@ impl PhylumApi {
         &mut self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(endpoints::get_job_status(&self.api_uri, job_id, true))
+        self.get(endpoints::get_job_status(&self.api_uri, job_id, true)?)
             .await
     }
 
     /// Get the status of all jobs
     pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
-        self.get(endpoints::get_all_jobs_status(&self.api_uri, 30))
+        self.get(endpoints::get_all_jobs_status(&self.api_uri, 30)?)
             .await
     }
 
@@ -277,7 +284,7 @@ impl PhylumApi {
         &mut self,
         project_name: &str,
     ) -> Result<ProjectDetailsResponse> {
-        self.get(endpoints::get_project_details(&self.api_uri, project_name))
+        self.get(endpoints::get_project_details(&self.api_uri, project_name)?)
             .await
     }
 
@@ -304,13 +311,16 @@ impl PhylumApi {
 
     /// Get package details
     pub async fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<Package> {
-        self.get(endpoints::get_package_status(&self.api_uri, pkg))
-            .await
+        self.get(
+            endpoints::get_package_status(&self.api_uri, pkg)
+                .map_err(|e| PhylumApiError::Other(e.into()))?,
+        )
+        .await
     }
 
     /// Get all groups the user is part of.
     pub async fn get_groups_list(&mut self) -> Result<ListUserGroupsResponse> {
-        self.get(endpoints::group_list(&self.api_uri)).await
+        self.get(endpoints::group_list(&self.api_uri)?).await
     }
 
     /// Get all groups the user is part of.
@@ -318,7 +328,7 @@ impl PhylumApi {
         let group = CreateGroupRequest {
             group_name: group_name.into(),
         };
-        self.post(endpoints::group_create(&self.api_uri), group)
+        self.post(endpoints::group_create(&self.api_uri)?, group)
             .await
     }
 }
