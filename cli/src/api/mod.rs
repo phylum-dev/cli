@@ -508,8 +508,8 @@ mod tests {
     async fn get_package_details() -> Result<()> {
         let body = r#"
         {
-          "id": "npm:@schematics~angular:9.1.9",
-          "name": "@schematics~angular",
+          "id": "npm:@schematics/angular:9.1.9",
+          "name": "@schematics/angular",
           "version": "9.1.9",
           "registry": "npm",
           "publishedDate": "1970-01-01T00:00:00+00:00",
@@ -552,7 +552,9 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path("/api/v0/data/packages/npm/@schematics~angular/9.1.9"))
+            .and(path(
+                "/api/v0/data/packages/npm/@schematics%2Fangular/9.1.9",
+            ))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;
