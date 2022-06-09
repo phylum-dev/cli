@@ -7,10 +7,6 @@ on:
   schedule:
     - cron: '30 5 * * 1'
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   cargo-update:
     runs-on: ubuntu-latest
@@ -24,7 +20,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_RELEASE_PAT }}
           commit-message: "build: Bump Cargo.lock dependencies"
           title: "build: Bump Cargo.lock dependencies"
           body: |
