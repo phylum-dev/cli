@@ -44,11 +44,13 @@ impl DenoRuntime {
             .runtime
             .load_main_module(&module_specifier, None)
             .await?;
-        let _ = self.runtime.mod_evaluate(module);
+        let result = self.runtime.mod_evaluate(module);
 
+        // Run loaded module to completion.
         self.runtime.run_event_loop(false).await?;
 
-        Ok(())
+        // Report execution errors.
+        result.await?
     }
 }
 
