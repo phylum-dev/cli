@@ -8,7 +8,7 @@ use std::{fs, thread};
 use anyhow::{anyhow, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::{
-    self, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
+    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
 };
 use deno_runtime::permissions::Permissions;
 use deno_runtime::worker::{MainWorker, WorkerOptions};
@@ -69,7 +69,11 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
 
     // Export shared state.
-    worker.js_runtime.op_state().borrow_mut().put(extension_state);
+    worker
+        .js_runtime
+        .op_state()
+        .borrow_mut()
+        .put(extension_state);
 
     // Execute extension code.
     worker.execute_main_module(&main_module).await?;

@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
-use deno_core::{op, OpDecl, OpState};
+use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
 
 use phylum_types::types::auth::{AccessToken, RefreshToken};

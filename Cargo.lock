@@ -2804,6 +2804,7 @@ dependencies = [
  "cidr",
  "clap",
  "deno_ast",
+ "deno_core",
  "deno_runtime",
  "dialoguer",
  "env_logger",
