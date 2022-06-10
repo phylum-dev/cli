@@ -1643,7 +1643,7 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#22dbba0d8be0f90d0c170e8e275b178564d200ac"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#2a5ca01382eb520839ea20712136bece4e699576"
 dependencies = [
  "chrono",
  "log",
