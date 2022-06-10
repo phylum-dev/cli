@@ -1,16 +1,14 @@
 use std::cell::RefCell;
+use std::ops::Deref;
 use std::path::Path;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::str::FromStr;
 
-use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
-use crate::config::get_current_project;
-use crate::{api::PhylumApi, auth::UserInfo};
-
 use anyhow::{anyhow, Context, Error, Result};
 use deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
+
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::JobStatusResponse;
@@ -18,6 +16,10 @@ use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectDetailsResponse;
+
+use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
+use crate::config::get_current_project;
+use crate::{api::PhylumApi, auth::UserInfo};
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
 pub(crate) enum OnceFuture<T: Unpin> {
@@ -45,26 +47,41 @@ impl<T: Unpin> OnceFuture<T> {
 }
 
 /// Opaquely encapsulates the extension state.
-pub struct ExtensionState(OnceFuture<Result<PhylumApi>>);
+pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
 
-impl ExtensionState {
-    /// Borrow an instance of `ExtensionState` from a reference to Deno's
-    /// `OpState` state handler, and retrieve a reference to the inner state.
-    /// The references lives as long as `&mut OpState`.
-    async fn borrow_from(state: &mut OpState) -> Result<&PhylumApi> {
-        state
+impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
+    fn from(t: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+        Self(OnceFuture::new(Box::pin(async { t.await.map(Rc::new) })))
+    }
+}
+
+/// Wraps a shared, counted reference to the `PhylumApi` object. The reference can be safely
+/// extracted from `Rc<RefCell<OpState>>` and cloned; it will not require mutable access to the
+/// owning `RefCell`, so the mutable borrow to it may be dropped.
+struct ExtensionStateRef(Rc<PhylumApi>);
+
+impl ExtensionStateRef {
+    // This can not be implemented as the `From<T>` trait because of `async`.
+    async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
+        let mut state_ref = Pin::new(state.try_borrow_mut()?);
+        let api = state_ref
             .borrow_mut::<ExtensionState>()
             .0
             .get()
             .await
             .as_ref()
-            .map_err(|e| anyhow!("{:?}", e))
+            .map_err(|e| anyhow!("{:?}", e))?
+            .clone();
+
+        Ok(ExtensionStateRef(api))
     }
 }
 
-impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
-    fn from(t: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(OnceFuture::new(t))
+impl Deref for ExtensionStateRef {
+    type Target = PhylumApi;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -72,17 +89,6 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
 // Extension API functions
 // These functions need not be public, as Deno's declarations (`::decl()`) cloak
 // them in a data structure that is consumed by the runtime extension builder.
-//
-// The general pattern for accessing state in extensions API functions is:
-// - borrow from Deno's state handler
-// - pin the borrowed reference guard
-// - extract `Result<&PhylumApi>` from ExtensionState
-//
-// The borrow is necessary as Deno's state is held inside of a `RefCell`. The resulting mutable
-// reference is going to be held across an await point, which means it should be pinned to prevent
-// it being moved, because that would result in an invalid reference. The extracted
-// `Result<&PhylumApi>` reference lives as long as the pinned `RefMut` and can be used until both
-// go out of scope and the guard is released.
 //
 
 /// Analyze a lockfile.
@@ -94,8 +100,7 @@ async fn analyze(
     project: Option<&str>,
     group: Option<&str>,
 ) -> Result<ProjectId> {
-    let mut state = Pin::new(state.borrow_mut());
-    let api = ExtensionState::borrow_from(&mut state).await?;
+    let api = ExtensionStateRef::from(state).await?;
 
     let (packages, request_type) = get_packages_from_lockfile(Path::new(lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
@@ -129,8 +134,7 @@ async fn analyze(
 /// Equivalent to `phylum auth status`.
 #[op]
 async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
-    let mut state = Pin::new(state.borrow_mut());
-    let api = ExtensionState::borrow_from(&mut state).await?;
+    let api = ExtensionStateRef::from(state).await?;
 
     api.user_info().await.map_err(Error::from)
 }
@@ -140,8 +144,8 @@ async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
 #[op]
 async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Result<AccessToken> {
     let refresh_token = get_refresh_token::call(state.clone()).await?;
-    let mut state = Pin::new(state.borrow_mut());
-    let config = ExtensionState::borrow_from(&mut state).await?.config();
+    let api = ExtensionStateRef::from(state).await?;
+    let config = api.config();
 
     let access_token =
         crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
@@ -154,8 +158,8 @@ async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Re
 /// Equivalent to `phylum auth token`.
 #[op]
 async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
-    let mut state = Pin::new(state.borrow_mut());
-    let config = ExtensionState::borrow_from(&mut state).await?.config();
+    let api = ExtensionStateRef::from(state).await?;
+    let config = api.config();
 
     config
         .auth_info
@@ -171,8 +175,7 @@ async fn get_job_status(
     state: Rc<RefCell<OpState>>,
     job_id: Option<&str>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-    let mut state = Pin::new(state.borrow_mut());
-    let api = ExtensionState::borrow_from(&mut state).await?;
+    let api = ExtensionStateRef::from(state).await?;
 
     let job_id = job_id
         .map(|job_id| JobId::from_str(job_id).ok())
@@ -188,8 +191,7 @@ async fn get_project_details(
     state: Rc<RefCell<OpState>>,
     project_name: Option<&str>,
 ) -> Result<ProjectDetailsResponse> {
-    let mut state = Pin::new(state.borrow_mut());
-    let api = ExtensionState::borrow_from(&mut state).await?;
+    let api = ExtensionStateRef::from(state).await?;
 
     let project_name = project_name
         .map(String::from)
@@ -213,8 +215,7 @@ async fn analyze_package(
     version: &str,
     package_type: &str,
 ) -> Result<Package> {
-    let mut state = Pin::new(state.borrow_mut());
-    let api = ExtensionState::borrow_from(&mut state).await?;
+    let api = ExtensionStateRef::from(state).await?;
 
     let package_type = PackageType::from_str(package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
