@@ -33,10 +33,10 @@ jobs:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
             github.rest.pulls.create({
-              owner: "phylum-dev",
-              repo: "cli",
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               head: "auto-cargo-update",
-              base: "main",
+              base: context.ref,
               title: "build: Bump Cargo.lock dependencies",
               body: "Bump dependencies in Cargo.lock for all SemVer-compatible updates.",
             });
