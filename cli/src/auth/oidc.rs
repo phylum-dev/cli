@@ -156,7 +156,7 @@ pub async fn fetch_oidc_server_settings(
         .danger_accept_invalid_certs(ignore_certs)
         .build()?;
     let response = client
-        .get(endpoints::oidc_discovery(api_uri))
+        .get(endpoints::oidc_discovery(api_uri)?)
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(5))
         .send()
