@@ -27,4 +27,3 @@ fn main() {
         println!("cargo:rustc-link-arg=/STACK:0x800000");
     }
 }
-
