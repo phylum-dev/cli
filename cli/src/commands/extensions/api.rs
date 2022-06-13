@@ -22,7 +22,7 @@ use crate::config::get_current_project;
 use crate::{api::PhylumApi, auth::UserInfo};
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
-pub enum OnceFuture<T: Unpin> {
+enum OnceFuture<T: Unpin> {
     Future(BoxFuture<'static, T>),
     Awaited(T),
 }
