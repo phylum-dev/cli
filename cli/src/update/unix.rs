@@ -7,6 +7,7 @@ use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::Client;
 use serde::de::DeserializeOwned;
+use spinners::{Spinner, Spinners};
 use zip::ZipArchive;
 
 #[cfg(test)]
@@ -190,6 +191,10 @@ impl ApplicationUpdater {
     ///
     /// Until we update the releases, this should suffice.
     async fn do_update(&self, latest: GithubRelease) -> anyhow::Result<GithubRelease> {
+        let mut spinner = Spinner::new(
+            Spinners::Dots12,
+            "Downloading update and verifying binary signatures...".into(),
+        );
         debug!("Performing the update process");
 
         let archive_name = format!("phylum-{}", current_platform()?);
@@ -212,6 +217,7 @@ impl ApplicationUpdater {
         debug!("Extracting package to temporary directory");
         let temp_dir = tempfile::tempdir()?;
         ZipArchive::new(Cursor::new(zip))?.extract(temp_dir.path())?;
+        spinner.stop_with_newline();
 
         debug!("Running the installer");
         let working_dir = temp_dir.path().join(archive_name);
