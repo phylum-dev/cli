@@ -11,7 +11,7 @@ use deno_core::{
     ModuleType, RuntimeOptions,
 };
 
-use crate::commands::extensions::{api_decls, ExtensionState};
+use crate::commands::extensions::{api::api_decls, extension::ExtensionState};
 
 /// Deno runtime state.
 pub struct DenoRuntime {
@@ -20,7 +20,7 @@ pub struct DenoRuntime {
 
 impl DenoRuntime {
     /// Create a new Deno runtime.
-    pub fn new(deps: ExtensionState) -> Self {
+    pub fn new(extension_state: ExtensionState) -> Self {
         let phylum_api = Extension::builder().ops(api_decls()).build();
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
@@ -29,7 +29,7 @@ impl DenoRuntime {
             ..Default::default()
         });
 
-        runtime.op_state().borrow_mut().put(deps);
+        runtime.op_state().borrow_mut().put(extension_state);
 
         Self { runtime }
     }

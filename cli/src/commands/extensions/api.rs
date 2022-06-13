@@ -22,7 +22,7 @@ use crate::config::get_current_project;
 use crate::{api::PhylumApi, auth::UserInfo};
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
-pub(crate) enum OnceFuture<T: Unpin> {
+pub enum OnceFuture<T: Unpin> {
     Future(BoxFuture<'static, T>),
     Awaited(T),
 }
@@ -50,8 +50,10 @@ impl<T: Unpin> OnceFuture<T> {
 pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
 
 impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
-    fn from(t: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(OnceFuture::new(Box::pin(async { t.await.map(Rc::new) })))
+    fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+        Self(OnceFuture::new(Box::pin(async {
+            extension_state_future.await.map(Rc::new)
+        })))
     }
 }
 

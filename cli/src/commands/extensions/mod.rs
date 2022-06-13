@@ -1,8 +1,7 @@
-mod api;
-mod extension;
+pub mod api;
+pub mod extension;
 
-pub(crate) use api::api_decls;
-pub use extension::*;
+use extension::*;
 
 use std::{collections::HashSet, fs, io::ErrorKind, path::PathBuf};
 
