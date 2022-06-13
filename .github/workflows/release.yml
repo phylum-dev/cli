@@ -156,6 +156,19 @@ jobs:
             phylum-*.zip
             phylum-*.zip.minisig
 
+      - name: Trigger phylum-ci Docker image creation
+        # Don't trigger for pre-releases
+        if: ! contains(github.ref, 'rc')
+        # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
+        run: >
+          curl
+          -X POST
+          --fail-with-body
+          -H "Accept: application/vnd.github.v3+json"
+          -H "Authorization: token ${{ secrets.GH_RELEASE_PAT }}"
+          -d '{"event_type":"build-push-docker-images","client_payload":{"CLI_version":"$GITHUB_REF_NAME"}}'
+          https://api.github.com/repos/phylum-dev/phylum-ci/dispatches
+
   Update-Documentation:
     name: Update the documentation
     needs: Release
