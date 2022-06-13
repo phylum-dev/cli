@@ -1,4 +1,4 @@
-use std::io::{self, Cursor};
+use std::io::{self, Cursor, Write};
 use std::process::Command;
 use std::str;
 
@@ -213,11 +213,14 @@ impl ApplicationUpdater {
         if !self.has_valid_signature(&zip, str::from_utf8(&sig)?) {
             anyhow::bail!("The update binary failed signature validation");
         }
+        spinner.stop_with_message(
+            "Downloading update and verifying binary signatures... Done!".into(),
+        );
+        std::io::stdout().flush()?;
 
         debug!("Extracting package to temporary directory");
         let temp_dir = tempfile::tempdir()?;
         ZipArchive::new(Cursor::new(zip))?.extract(temp_dir.path())?;
-        spinner.stop_with_newline();
 
         debug!("Running the installer");
         let working_dir = temp_dir.path().join(archive_name);
