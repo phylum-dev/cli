@@ -31,7 +31,7 @@ log = "^0.4.6"
 maplit = "1.0.2"
 minisign-verify = "0.2.1"
 nom = "7.1.1"
-open = "2.1.2"
+open = "3.0.1"
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 prettytable-rs = "0.8.0"
 rand = "0.8.4"
