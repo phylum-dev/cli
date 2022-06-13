@@ -57,9 +57,9 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
     }
 }
 
-/// Wraps a shared, counted reference to the `PhylumApi` object. The reference can be safely
-/// extracted from `Rc<RefCell<OpState>>` and cloned; it will not require mutable access to the
-/// owning `RefCell`, so the mutable borrow to it may be dropped.
+/// Wraps a shared, counted reference to the `PhylumApi` object.
+///
+/// The reference can be safely extracted from `Rc<RefCell<OpState>>` and cloned; it will not require mutable access to the owning `RefCell`, so the mutable borrow to it may be dropped.
 struct ExtensionStateRef(Rc<PhylumApi>);
 
 impl ExtensionStateRef {
