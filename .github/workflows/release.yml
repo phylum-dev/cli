@@ -167,7 +167,7 @@ jobs:
     steps:
       - name: Trigger phylum-ci Docker image creation
         # Don't trigger for pre-releases
-        if: ! contains(github.ref, 'rc')
+        if: contains(github.ref, 'rc') != true
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
         run: |
           curl \
