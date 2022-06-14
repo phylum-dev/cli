@@ -162,6 +162,7 @@ jobs:
     # The `--fail-with-body` option in `curl` was added in v7.76.0, which is too
     # new for the `ubuntu-latest` runner that currently makes use of Ubuntu 20.04.
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
+    #       https://github.com/phylum-dev/cli/issues/467
     runs-on: ubuntu-22.04
     steps:
       - name: Trigger phylum-ci Docker image creation
