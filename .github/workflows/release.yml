@@ -167,7 +167,9 @@ jobs:
     steps:
       - name: Trigger phylum-ci Docker image creation
         # Don't trigger for pre-releases
-        if: contains(github.ref, 'rc') != true
+        # NOTE: This is an instance where the expression syntax (`${{ }}`) is required for the `if` conditional,
+        #       contrary to the GitHub workflow syntax documentation. Do not remove the expression syntax.
+        if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
         run: |
           curl \
