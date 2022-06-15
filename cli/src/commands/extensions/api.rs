@@ -239,7 +239,8 @@ fn parse_lockfile(lockfile: &str, lockfile_type: &str) -> Result<Vec<PackageDesc
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
         .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
 
-    parser.parse_file(Path::new(lockfile))
+    let lockfile_data = std::fs::read_to_string(Path::new(lockfile))?;
+    parser.parse(&lockfile_data)
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {

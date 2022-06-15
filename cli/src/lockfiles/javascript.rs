@@ -167,14 +167,12 @@ impl Parse for YarnLock {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     #[test]
     fn lock_parse_package() {
         let pkgs = PackageLock
-            .parse_file(Path::new("tests/fixtures/package-lock-v6.json"))
+            .parse_file("tests/fixtures/package-lock-v6.json")
             .unwrap();
 
         assert_eq!(pkgs.len(), 17);
@@ -191,7 +189,7 @@ mod tests {
     #[test]
     fn lock_parse_package_v7() {
         let pkgs = PackageLock
-            .parse_file(Path::new("tests/fixtures/package-lock.json"))
+            .parse_file("tests/fixtures/package-lock.json")
             .unwrap();
 
         assert_eq!(pkgs.len(), 50);
@@ -221,7 +219,7 @@ mod tests {
         // We need to make sure we don't take the v2 lockfile code path because this is not a v2
         // lockfile and parsing it as one will produce incorrect results.
         let pkgs = YarnLock
-            .parse_file(Path::new("tests/fixtures/yarn-v1.simple.lock"))
+            .parse_file("tests/fixtures/yarn-v1.simple.lock")
             .unwrap();
 
         assert_eq!(
@@ -240,7 +238,7 @@ mod tests {
             "tests/fixtures/yarn-v1.lock",
             "tests/fixtures/yarn-v1.trailing_newlines.lock",
         ] {
-            let pkgs = YarnLock.parse_file(Path::new(p)).unwrap();
+            let pkgs = YarnLock.parse_file(p).unwrap();
 
             assert_eq!(pkgs.len(), 17);
 
@@ -263,15 +261,13 @@ mod tests {
     #[test]
     fn lock_parse_yarn_v1_malformed_fails() {
         YarnLock
-            .parse_file(Path::new("tests/fixtures/yarn-v1.lock.bad"))
+            .parse_file("tests/fixtures/yarn-v1.lock.bad")
             .unwrap();
     }
 
     #[test]
     fn lock_parse_yarn() {
-        let pkgs = YarnLock
-            .parse_file(Path::new("tests/fixtures/yarn.lock"))
-            .unwrap();
+        let pkgs = YarnLock.parse_file("tests/fixtures/yarn.lock").unwrap();
 
         assert_eq!(pkgs.len(), 53);
 

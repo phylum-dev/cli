@@ -76,15 +76,11 @@ impl Parse for CSProj {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     #[test]
     fn lock_parse_csproj() {
-        let pkgs = CSProj
-            .parse_file(Path::new("tests/fixtures/sample.csproj"))
-            .unwrap();
+        let pkgs = CSProj.parse_file("tests/fixtures/sample.csproj").unwrap();
 
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
@@ -100,7 +96,7 @@ mod tests {
     #[test]
     fn lock_parse_another_invalid_char() {
         let pkgs = CSProj
-            .parse_file(Path::new("tests/fixtures/Calculator.csproj"))
+            .parse_file("tests/fixtures/Calculator.csproj")
             .unwrap();
         assert!(!pkgs.is_empty());
     }

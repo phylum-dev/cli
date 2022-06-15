@@ -24,7 +24,10 @@ pub trait Parse {
     fn parse(&self, data: &str) -> ParseResult;
 
     /// Parse from a file
-    fn parse_file(&self, path: &Path) -> ParseResult {
+    fn parse_file<P: AsRef<Path>>(&self, path: P) -> ParseResult
+    where
+        Self: Sized,
+    {
         let data = read_to_string(path)?;
         self.parse(&data)
     }
