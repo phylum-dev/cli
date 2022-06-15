@@ -46,6 +46,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         module_loader: Rc::new(TypescriptModuleLoader),
         extensions: vec![phylum_api],
+        seed: None,
         unsafely_ignore_certificate_errors: Default::default(),
         should_break_on_first_statement: Default::default(),
         compiled_wasm_module_store: Default::default(),
@@ -59,7 +60,6 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         root_cert_store: Default::default(),
         blob_store: Default::default(),
         stdio: Default::default(),
-        seed: Default::default(),
     };
 
     // Disable all permissions.
