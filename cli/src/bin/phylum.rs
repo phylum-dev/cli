@@ -6,7 +6,6 @@ use clap::ArgMatches;
 use env_logger::Env;
 use log::*;
 use phylum_cli::commands::parse::handle_parse;
-use spinners::{Spinner, Spinners};
 
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
@@ -203,12 +202,7 @@ async fn handle_ping(api: PhylumApi) -> CommandResult {
 }
 
 async fn handle_update(matches: &ArgMatches) -> CommandResult {
-    let mut spinner = Spinner::new(
-        Spinners::Dots12,
-        "Downloading update and verifying binary signatures...".into(),
-    );
     let res = update::do_update(matches.is_present("prerelease")).await;
-    spinner.stop_with_newline();
     let message = res?;
     print_user_success!("{}", message);
     Ok(ExitCode::Ok.into())

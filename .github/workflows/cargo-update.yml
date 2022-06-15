@@ -7,10 +7,6 @@ on:
   schedule:
     - cron: '30 5 * * 1'
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   cargo-update:
     runs-on: ubuntu-latest
@@ -21,12 +17,26 @@ jobs:
       - name: Cargo update
         run: cargo update
 
+      - name: Commit changes
+        id: commit
+        continue-on-error: true
+        run: |
+          git config user.name 'Phylum Bot'
+          git config user.email 'phylum-bot@users.noreply.github.com'
+          git commit -a -m "build: Bump Cargo.lock dependencies"
+          git push --force origin HEAD:auto-cargo-update
+
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        if: ${{ steps.commit.outcome == 'success' }}
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "build: Bump Cargo.lock dependencies"
-          title: "build: Bump Cargo.lock dependencies"
-          body: |
-            Bump dependencies in Cargo.lock for all SemVer-compatible updates.
-          branch: auto-cargo-update
+          github-token: ${{ secrets.GH_RELEASE_PAT }}
+          script: |
+            github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: "auto-cargo-update",
+              base: context.ref,
+              title: "build: Bump Cargo.lock dependencies",
+              body: "Bump dependencies in Cargo.lock for all SemVer-compatible updates.",
+            });
