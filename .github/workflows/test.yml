@@ -65,6 +65,7 @@ jobs:
           args: --all-features
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
+    #       https://github.com/phylum-dev/cli/issues/467
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3

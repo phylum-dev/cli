@@ -156,6 +156,31 @@ jobs:
             phylum-*.zip
             phylum-*.zip.minisig
 
+  Trigger:
+    name: Trigger phylum-ci Docker image creation
+    needs: Release
+    # The `--fail-with-body` option in `curl` was added in v7.76.0, which is too
+    # new for the `ubuntu-latest` runner that currently makes use of Ubuntu 20.04.
+    # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
+    #       https://github.com/phylum-dev/cli/issues/467
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Trigger phylum-ci Docker image creation
+        # Don't trigger for pre-releases
+        # NOTE: This is an instance where the expression syntax (`${{ }}`) is required for the `if` conditional,
+        #       contrary to the GitHub workflow syntax documentation. Do not remove the expression syntax.
+        if: ${{ !contains(github.ref, 'rc') }}
+        # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
+        run: |
+          curl \
+            -X POST \
+            --fail-with-body \
+            --no-progress-meter \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_RELEASE_PAT }}" \
+            -d '{"event_type":"build-push-docker-images","client_payload":{"CLI_version":"$GITHUB_REF_NAME"}}' \
+            https://api.github.com/repos/phylum-dev/phylum-ci/dispatches
+
   Update-Documentation:
     name: Update the documentation
     needs: Release
