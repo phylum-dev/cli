@@ -211,7 +211,7 @@ async fn get_project_details(
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
 #[op]
-async fn analyze_package(
+async fn get_package_details(
     state: Rc<RefCell<OpState>>,
     name: &str,
     version: &str,
@@ -251,7 +251,7 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_refresh_token::decl(),
         get_job_status::decl(),
         get_project_details::decl(),
-        analyze_package::decl(),
+        get_package_details::decl(),
         parse_lockfile::decl(),
     ]
 }
