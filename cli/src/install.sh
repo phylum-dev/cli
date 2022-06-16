@@ -36,7 +36,7 @@ get_platform() {
 }
 
 get_rc_file() {
-    case $(basename "${SHELL}") in
+    case $(basename "${SHELL:-unknown}") in
         bash)
             echo "${HOME}/.bashrc"
             ;;
@@ -47,7 +47,7 @@ get_rc_file() {
             echo "${HOME}/.config/fish/config.fish"
             ;;
         *)
-            echo "shell's configuration file"
+            echo "shell configuration"
             ;;
     esac
 }
