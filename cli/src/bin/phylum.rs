@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
@@ -10,7 +10,7 @@ use phylum_cli::commands::parse::handle_parse;
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions::{handle_extensions, Extension};
+use phylum_cli::commands::extensions::{handle_extensions, handle_run_extension};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
@@ -49,22 +49,17 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -
 /// Construct an instance of `PhylumApi` given configuration, optional timeout, and whether we
 /// need API to ignore certificates.
 async fn api_factory(
-    config: &mut Config,
-    config_path: &Path,
+    config: Config,
+    config_path: PathBuf,
     timeout: Option<u64>,
     ignore_certs: bool,
 ) -> Result<PhylumApi> {
-    let api = PhylumApi::new(
-        &mut config.auth_info,
-        &config.connection.uri,
-        timeout,
-        ignore_certs,
-    )
-    .await
-    .context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout, ignore_certs)
+        .await
+        .context("Error creating client")?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save the config
-    save_config(config_path, &config).with_context(|| {
+    save_config(&config_path, api.config()).with_context(|| {
         format!(
             "Failed to save configuration to '{}'",
             config_path.to_string_lossy()
@@ -160,7 +155,7 @@ async fn handle_commands() -> CommandResult {
 
     // Get the future, but don't await. Commands that require access to the API will await on this,
     // so that the API is not instantiated ahead of time for subcommands that don't require it.
-    let api = api_factory(&mut config, &config_path, timeout, ignore_certs);
+    let api = api_factory(config.clone(), config_path.clone(), timeout, ignore_certs);
 
     let (subcommand, sub_matches) = matches.subcommand().unwrap();
     match subcommand {
@@ -181,10 +176,10 @@ async fn handle_commands() -> CommandResult {
         "parse" => handle_parse(sub_matches),
         "ping" => handle_ping(api.await?).await,
         "project" => handle_project(&mut api.await?, sub_matches).await,
-        "package" => handle_get_package(&mut api.await?, &config.request_type, sub_matches).await,
+        "package" => handle_get_package(&mut api.await?, sub_matches).await,
         "history" => handle_history(&mut api.await?, sub_matches).await,
         "group" => handle_group(&mut api.await?, sub_matches).await,
-        "analyze" | "batch" => handle_submission(&mut api.await?, config, &matches).await,
+        "analyze" | "batch" => handle_submission(&mut api.await?, &matches).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => handle_uninstall(sub_matches),
@@ -193,14 +188,14 @@ async fn handle_commands() -> CommandResult {
         "extension" => handle_extensions(sub_matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => Extension::load(extension_subcmd)?.run().await,
+        extension_subcmd => handle_run_extension(extension_subcmd, Box::pin(api)).await,
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),
     }
 }
 
-async fn handle_ping(mut api: PhylumApi) -> CommandResult {
+async fn handle_ping(api: PhylumApi) -> CommandResult {
     let resp = api.ping().await;
     print_response(&resp, true, None);
     Ok(ExitCode::Ok.into())

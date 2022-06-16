@@ -1614,6 +1614,7 @@ dependencies = [
  "maplit",
  "minisign-verify",
  "nom",
+ "once_cell",
  "open",
  "phylum_types",
  "prettytable-rs",

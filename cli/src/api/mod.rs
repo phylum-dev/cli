@@ -25,6 +25,7 @@ use crate::auth::handle_auth_flow;
 use crate::auth::handle_refresh_tokens;
 use crate::auth::{AuthAction, UserInfo};
 use crate::config::AuthInfo;
+use crate::config::Config;
 use crate::types::PingResponse;
 
 use self::endpoints::BaseUriError;
@@ -32,8 +33,8 @@ use self::endpoints::BaseUriError;
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
 pub struct PhylumApi {
+    config: Config,
     client: Client,
-    api_uri: String,
     ignore_certs: bool,
 }
 
@@ -110,20 +111,21 @@ impl PhylumApi {
     /// must be obtained, the auth_info struct will be updated with the new
     /// information. It is the duty of the calling code to save any changes
     pub async fn new(
-        auth_info: &mut AuthInfo,
-        api_uri: &str,
+        mut config: Config,
         request_timeout: Option<u64>,
         ignore_certs: bool,
     ) -> Result<Self> {
         // Do we have a refresh token?
-        let tokens: TokenResponse = match &auth_info.offline_access {
+        let tokens: TokenResponse = match &config.auth_info.offline_access {
             Some(refresh_token) => {
-                handle_refresh_tokens(refresh_token, ignore_certs, api_uri).await?
+                handle_refresh_tokens(refresh_token, ignore_certs, &config.connection.uri).await?
             }
-            None => handle_auth_flow(&AuthAction::Login, ignore_certs, api_uri).await?,
+            None => {
+                handle_auth_flow(&AuthAction::Login, ignore_certs, &config.connection.uri).await?
+            }
         };
 
-        auth_info.offline_access = Some(tokens.refresh_token.clone());
+        config.auth_info.offline_access = Some(tokens.refresh_token.clone());
 
         let version = env!("CARGO_PKG_VERSION");
         let mut headers = HeaderMap::new();
@@ -146,8 +148,8 @@ impl PhylumApi {
             .build()?;
 
         Ok(Self {
+            config,
             client,
-            api_uri: api_uri.to_string(),
             ignore_certs,
         })
     }
@@ -179,14 +181,17 @@ impl PhylumApi {
     }
 
     /// Ping the system and verify it's up
-    pub async fn ping(&mut self) -> Result<String> {
-        let response: PingResponse = self.get(endpoints::get_ping(&self.api_uri)?).await?;
-        Ok(response.response)
+    pub async fn ping(&self) -> Result<String> {
+        Ok(self
+            .get::<PingResponse, _>(endpoints::get_ping(&self.config.connection.uri)?)
+            .await?
+            .response)
     }
 
     /// Get information about the authenticated user
     pub async fn user_info(&self) -> Result<UserInfo> {
-        let oidc_settings = fetch_oidc_server_settings(self.ignore_certs, &self.api_uri).await?;
+        let oidc_settings =
+            fetch_oidc_server_settings(self.ignore_certs, &self.config.connection.uri).await?;
         self.get(oidc_settings.userinfo_endpoint).await
     }
 
@@ -194,7 +199,7 @@ impl PhylumApi {
     pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         let response: CreateProjectResponse = self
             .put(
-                endpoints::put_create_project(&self.api_uri)?,
+                endpoints::put_create_project(&self.config.connection.uri)?,
                 CreateProjectRequest {
                     name: name.to_owned(),
                     group_name: group.map(String::from),
@@ -205,34 +210,34 @@ impl PhylumApi {
     }
 
     /// Get a list of projects
-    pub async fn get_projects(
-        &mut self,
-        group: Option<&str>,
-    ) -> Result<Vec<ProjectSummaryResponse>> {
+    pub async fn get_projects(&self, group: Option<&str>) -> Result<Vec<ProjectSummaryResponse>> {
         let uri = match group {
-            Some(group) => endpoints::group_project_summary(&self.api_uri, group)?,
-            None => endpoints::get_project_summary(&self.api_uri)?,
+            Some(group) => endpoints::group_project_summary(&self.config.connection.uri, group)?,
+            None => endpoints::get_project_summary(&self.config.connection.uri)?,
         };
 
         self.get(uri).await
     }
 
     /// Get user settings
-    pub async fn get_user_settings(&mut self) -> Result<UserSettings> {
-        self.get(endpoints::get_user_settings(&self.api_uri)?).await
+    pub async fn get_user_settings(&self) -> Result<UserSettings> {
+        self.get(endpoints::get_user_settings(&self.config.connection.uri)?)
+            .await
     }
 
     /// Put updated user settings
-    pub async fn put_user_settings(&mut self, settings: &UserSettings) -> Result<bool> {
-        let _response: UserSettings = self
-            .put(endpoints::put_user_settings(&self.api_uri)?, &settings)
-            .await?;
+    pub async fn put_user_settings(&self, settings: &UserSettings) -> Result<bool> {
+        self.put::<UserSettings, _, _>(
+            endpoints::put_user_settings(&self.config.connection.uri)?,
+            &settings,
+        )
+        .await?;
         Ok(true)
     }
 
     /// Submit a new request to the system
     pub async fn submit_request(
-        &mut self,
+        &self,
         req_type: &PackageType,
         package_list: &[PackageDescriptor],
         is_user: bool,
@@ -250,47 +255,58 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse = self
-            .put(endpoints::put_submit_package(&self.api_uri)?, req)
+            .put(
+                endpoints::put_submit_package(&self.config.connection.uri)?,
+                req,
+            )
             .await?;
         Ok(resp.job_id)
     }
 
     /// Get the status of a previously submitted job
-    pub async fn get_job_status(
-        &mut self,
-        job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(endpoints::get_job_status(&self.api_uri, job_id, false)?)
-            .await
+    pub async fn get_job_status(&self, job_id: &JobId) -> Result<JobStatusResponse<PackageStatus>> {
+        self.get(endpoints::get_job_status(
+            &self.config.connection.uri,
+            job_id,
+            false,
+        )?)
+        .await
     }
 
     /// Get the status of a previously submitted job (verbose output)
     pub async fn get_job_status_ext(
-        &mut self,
+        &self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(endpoints::get_job_status(&self.api_uri, job_id, true)?)
-            .await
+        self.get(endpoints::get_job_status(
+            &self.config.connection.uri,
+            job_id,
+            true,
+        )?)
+        .await
     }
 
     /// Get the status of all jobs
-    pub async fn get_status(&mut self) -> Result<AllJobsStatusResponse> {
-        self.get(endpoints::get_all_jobs_status(&self.api_uri, 30)?)
-            .await
+    pub async fn get_status(&self) -> Result<AllJobsStatusResponse> {
+        self.get(endpoints::get_all_jobs_status(
+            &self.config.connection.uri,
+            30,
+        )?)
+        .await
     }
 
     /// Get the details of a specific project
-    pub async fn get_project_details(
-        &mut self,
-        project_name: &str,
-    ) -> Result<ProjectDetailsResponse> {
-        self.get(endpoints::get_project_details(&self.api_uri, project_name)?)
-            .await
+    pub async fn get_project_details(&self, project_name: &str) -> Result<ProjectDetailsResponse> {
+        self.get(endpoints::get_project_details(
+            &self.config.connection.uri,
+            project_name,
+        )?)
+        .await
     }
 
     /// Resolve a Project Name to a Project ID
     pub async fn get_project_id(
-        &mut self,
+        &self,
         project_name: &str,
         group_name: Option<&str>,
     ) -> Result<ProjectId> {
@@ -310,26 +326,31 @@ impl PhylumApi {
     }
 
     /// Get package details
-    pub async fn get_package_details(&mut self, pkg: &PackageDescriptor) -> Result<Package> {
-        self.get(
-            endpoints::get_package_status(&self.api_uri, pkg)
-                .map_err(|e| PhylumApiError::Other(e.into()))?,
-        )
+    pub async fn get_package_details(&self, pkg: &PackageDescriptor) -> Result<Package> {
+        self.get(endpoints::get_package_status(
+            &self.config.connection.uri,
+            pkg,
+        )?)
         .await
     }
 
     /// Get all groups the user is part of.
-    pub async fn get_groups_list(&mut self) -> Result<ListUserGroupsResponse> {
-        self.get(endpoints::group_list(&self.api_uri)?).await
+    pub async fn get_groups_list(&self) -> Result<ListUserGroupsResponse> {
+        self.get(endpoints::group_list(&self.config.connection.uri)?)
+            .await
     }
 
     /// Get all groups the user is part of.
-    pub async fn create_group(&mut self, group_name: &str) -> Result<CreateGroupResponse> {
+    pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
         let group = CreateGroupRequest {
             group_name: group_name.into(),
         };
-        self.post(endpoints::group_create(&self.api_uri)?, group)
+        self.post(endpoints::group_create(&self.config.connection.uri)?, group)
             .await
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 }
 
@@ -343,6 +364,7 @@ mod tests {
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
 
+    use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
 
     use super::*;
@@ -356,11 +378,20 @@ mod tests {
     #[tokio::test]
     async fn when_creating_unauthenticated_phylum_api_it_auths_itself() -> Result<()> {
         let mock_server = build_mock_server().await;
-        let mut auth_info = build_unauthenticated_auth_info();
-        PhylumApi::new(&mut auth_info, mock_server.uri().as_str(), None, false).await?;
+        let auth_info = build_unauthenticated_auth_info();
+
+        let config = Config {
+            connection: ConnectionInfo {
+                uri: mock_server.uri(),
+            },
+            auth_info,
+            ..Default::default()
+        };
+
+        let api = PhylumApi::new(config, None, false).await?;
         // After auth, auth_info should have a offline access token
         assert!(
-            auth_info.offline_access.is_some(),
+            api.config().auth_info.offline_access.is_some(),
             "Offline access token was not set"
         );
 
@@ -392,7 +423,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "react".to_string(),
@@ -424,7 +455,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "react".to_string(),
@@ -499,7 +530,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
         client.get_status().await?;
         Ok(())
     }
@@ -559,7 +590,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let pkg = PackageDescriptor {
             name: "@schematics/angular".to_string(),
@@ -617,7 +648,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status(&job).await?;
@@ -693,7 +724,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let mut client = build_phylum_api(&mock_server).await?;
+        let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         client.get_job_status_ext(&job).await?;

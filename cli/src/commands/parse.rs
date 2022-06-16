@@ -12,7 +12,7 @@ use crate::lockfiles::{
     CSProj, GemLock, GradleLock, PackageLock, Parse, PipFile, Poetry, Pom, PyRequirements, YarnLock,
 };
 
-const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
+pub const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
     ("yarn", &YarnLock),
     ("npm", &PackageLock),
     ("gem", &GemLock),
@@ -43,7 +43,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     } else {
         let parser = LOCKFILE_PARSERS
             .iter()
-            .filter_map(|(name, parser)| (*name == lockfile_type).then(|| parser))
+            .filter_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
             .next()
             .unwrap();
 
@@ -109,7 +109,7 @@ pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>
 }
 
 /// Get all packages for a specific lockfile type.
-fn parse<P: Parse + Sized>(
+pub(crate) fn parse<P: Parse + Sized>(
     parser: P,
     path: &Path,
 ) -> Result<(Vec<PackageDescriptor>, PackageType)> {

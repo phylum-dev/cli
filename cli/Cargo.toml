@@ -54,6 +54,7 @@ url = { version = "2", features = ["serde"] }
 zip = "0.6.2"
 walkdir = "2.3.2"
 regex = "1.5.5"
+once_cell = "1.12.0"
 deno_core = { version = "0.135.0", optional = true }
 deno_ast = { version = "0.15.0", features = ["transpiling"], optional = true }
 

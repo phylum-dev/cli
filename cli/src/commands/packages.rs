@@ -35,13 +35,9 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
 }
 
 /// Handle the subcommands for the `package` subcommand.
-pub async fn handle_get_package(
-    api: &mut PhylumApi,
-    req_type: &PackageType,
-    matches: &clap::ArgMatches,
-) -> CommandResult {
+pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.is_present("json");
-    let pkg = parse_package(matches, req_type);
+    let pkg = parse_package(matches, &api.config().request_type);
     if pkg.is_none() {
         return Err(anyhow!("Could not find or parse package information"));
     }

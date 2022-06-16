@@ -9,7 +9,7 @@ use std::sync::Mutex;
 
 use assert_cmd::Command;
 use lazy_static::lazy_static;
-use phylum_cli::commands::extensions::*;
+use phylum_cli::commands::extensions::extension::Extension;
 use rand::Rng;
 use regex::Regex;
 

@@ -24,7 +24,7 @@ pub mod mockito {
 
     use crate::api::{PhylumApi, PhylumApiError};
     use crate::auth::OidcServerSettings;
-    use crate::config::AuthInfo;
+    use crate::config::{AuthInfo, Config, ConnectionInfo};
     use phylum_types::types::auth::*;
 
     pub const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
@@ -139,13 +139,14 @@ pub mod mockito {
     }
 
     pub async fn build_phylum_api(mock_server: &MockServer) -> Result<PhylumApi, PhylumApiError> {
-        let phylum = PhylumApi::new(
-            &mut build_authenticated_auth_info(),
-            mock_server.uri().as_str(),
-            None,
-            false,
-        )
-        .await?;
+        let config = Config {
+            connection: ConnectionInfo {
+                uri: mock_server.uri(),
+            },
+            auth_info: build_authenticated_auth_info(),
+            ..Default::default()
+        };
+        let phylum = PhylumApi::new(config, None, false).await?;
         Ok(phylum)
     }
 }

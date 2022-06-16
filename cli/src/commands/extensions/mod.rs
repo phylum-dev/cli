@@ -1,12 +1,16 @@
-mod extension;
+pub mod api;
+pub mod extension;
 
-use std::{collections::HashSet, convert::TryFrom, fs, io::ErrorKind, path::PathBuf};
+use extension::*;
 
+use std::{collections::HashSet, fs, io::ErrorKind, path::PathBuf};
+
+use crate::api::PhylumApi;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
-pub use extension::*;
 
 use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
+use futures::future::BoxFuture;
 use log::{error, warn};
 
 pub fn command<'a>() -> Command<'a> {
@@ -71,7 +75,22 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     }
 }
 
+/// Handle the `<extension>` command path.
+///
+/// Run the extension by name.
+pub async fn handle_run_extension(
+    name: &str,
+    api: BoxFuture<'static, Result<PhylumApi>>,
+) -> CommandResult {
+    let extension = Extension::load(name)?;
+
+    extension.run(api).await?;
+
+    Ok(CommandValue::Code(ExitCode::Ok))
+}
+
 /// Handle the `extension add` subcommand path.
+///
 /// Add the extension from the specified path.
 async fn handle_add_extension(path: &str) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
@@ -91,6 +110,7 @@ async fn handle_add_extension(path: &str) -> CommandResult {
 }
 
 /// Handle the `extension remove` subcommand path.
+///
 /// Remove the extension named as specified.
 async fn handle_remove_extension(name: &str) -> CommandResult {
     let extension = Extension::load(name)?;
@@ -101,6 +121,7 @@ async fn handle_remove_extension(name: &str) -> CommandResult {
 }
 
 /// Handle the `extension` / `extension list` subcommand path.
+///
 /// List installed extensions.
 async fn handle_list_extensions() -> CommandResult {
     let extensions = installed_extensions()?;
