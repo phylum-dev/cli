@@ -12,9 +12,9 @@ const API_PATH: &str = "api/v0/";
 #[error("invalid API URL")]
 pub struct BaseUriError(#[from] pub ParseError);
 
-/// PUT /job
+/// PUT /data/jobs
 pub fn put_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("job")?)
+    Ok(get_api_path(api_uri)?.join("data/jobs")?)
 }
 
 /// GET /health
@@ -22,12 +22,12 @@ pub fn get_ping(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("health")?)
 }
 
-/// GET /job/
+/// GET /data/jobs/
 pub fn get_all_jobs_status(api_uri: &str, limit: u32) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join(&format!("job/?limit={limit}&verbose=1"))?)
+    Ok(get_api_path(api_uri)?.join(&format!("data/jobs/?limit={limit}&verbose=1"))?)
 }
 
-/// GET /job/<job_id>
+/// GET /data/jobs/<job_id>
 pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
 
@@ -35,7 +35,7 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Ur
     url.path_segments_mut()
         .unwrap()
         .pop_if_empty()
-        .extend(["job", &job_id.to_string()]);
+        .extend(["data", "jobs", &job_id.to_string()]);
 
     if verbose {
         url.query_pairs_mut().append_pair("verbose", "True");
@@ -65,24 +65,24 @@ pub fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> Result<Url,
     Ok(url)
 }
 
-/// GET /job/projects/name/<pkg_id>
+/// GET /data/projects/name/<pkg_id>
 pub fn get_project_details(api_uri: &str, pkg_id: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
     url.path_segments_mut()
         .unwrap()
         .pop_if_empty()
-        .extend(["job", "projects", "name", pkg_id]);
+        .extend(["data", "projects", "name", pkg_id]);
     Ok(url)
 }
 
-/// GET /job/projects/overview
+/// GET /data/projects/overview
 pub fn get_project_summary(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("job/projects/overview")?)
+    Ok(get_api_path(api_uri)?.join("data/projects/overview")?)
 }
 
-/// PUT /job/projects
-pub fn put_create_project(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("job/projects")?)
+/// POST /data/projects
+pub fn post_create_project(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/projects")?)
 }
 
 /// GET /settings/current-user
@@ -173,7 +173,7 @@ mod test {
     fn put_submit_package_is_correct() {
         assert_eq!(
             put_submit_package(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job"),
+            format!("{API_URI}/{API_PATH}data/jobs"),
         );
     }
 
@@ -189,7 +189,7 @@ mod test {
     fn get_all_jobs_status_is_correct() {
         assert_eq!(
             get_all_jobs_status(API_URI, 123).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job/?limit=123&verbose=1"),
+            format!("{API_URI}/{API_PATH}data/jobs/?limit=123&verbose=1"),
         );
     }
 
@@ -200,11 +200,11 @@ mod test {
 
         assert_eq!(
             get_job_status(API_URI, &job_id, false).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job/{JOB_ID}"),
+            format!("{API_URI}/{API_PATH}data/jobs/{JOB_ID}"),
         );
         assert_eq!(
             get_job_status(API_URI, &job_id, true).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job/{JOB_ID}?verbose=True"),
+            format!("{API_URI}/{API_PATH}data/jobs/{JOB_ID}?verbose=True"),
         );
     }
 
@@ -227,7 +227,7 @@ mod test {
             get_project_details(API_URI, "acme/widgets")
                 .unwrap()
                 .as_str(),
-            format!("{API_URI}/{API_PATH}job/projects/name/acme%2Fwidgets"),
+            format!("{API_URI}/{API_PATH}data/projects/name/acme%2Fwidgets"),
         );
     }
 
@@ -235,15 +235,15 @@ mod test {
     fn get_project_summary_is_correct() {
         assert_eq!(
             get_project_summary(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job/projects/overview"),
+            format!("{API_URI}/{API_PATH}data/projects/overview"),
         );
     }
 
     #[test]
     fn put_create_project_is_correct() {
         assert_eq!(
-            put_create_project(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}job/projects"),
+            post_create_project(API_URI).unwrap().as_str(),
+            format!("{API_URI}/{API_PATH}data/projects"),
         );
     }
 
