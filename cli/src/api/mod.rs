@@ -198,8 +198,8 @@ impl PhylumApi {
     /// Create a new project
     pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         let response: CreateProjectResponse = self
-            .put(
-                endpoints::put_create_project(&self.config.connection.uri)?,
+            .post(
+                endpoints::post_create_project(&self.config.connection.uri)?,
                 CreateProjectRequest {
                     name: name.to_owned(),
                     group_name: group.map(String::from),
@@ -407,7 +407,7 @@ mod tests {
         let responder_token_holder = token_holder.clone();
 
         Mock::given(method("PUT"))
-            .and(path("api/v0/job"))
+            .and(path("api/v0/data/jobs"))
             .respond_with_fn(move |request| {
                 let mut guard = responder_token_holder.lock().unwrap();
                 let auth_header = HeaderName::from_str("Authorization").unwrap();
@@ -447,7 +447,7 @@ mod tests {
     async fn submit_request() -> Result<()> {
         let mock_server = build_mock_server().await;
         Mock::given(method("PUT"))
-            .and(path("api/v0/job"))
+            .and(path("api/v0/data/jobs"))
             .respond_with_fn(|_| {
                 ResponseTemplate::new(200)
                     .set_body_string(r#"{"job_id": "59482a54-423b-448d-8325-f171c9dc336b"}"#)
@@ -523,7 +523,7 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path("api/v0/job/"))
+            .and(path("api/v0/data/jobs/"))
             .and(query_param("limit", "30"))
             .and(query_param("verbose", "1"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
@@ -643,7 +643,7 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path_regex(r"^/api/v0/job/[-\dabcdef]+$".to_string()))
+            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+$".to_string()))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;
@@ -718,7 +718,7 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path_regex(r"^/api/v0/job/[-\dabcdef]+".to_string()))
+            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+".to_string()))
             .and(query_param("verbose", "True"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
