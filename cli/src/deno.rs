@@ -1,52 +1,83 @@
 //! Deno runtime for extensions.
 
-use std::fs;
 use std::pin::Pin;
 use std::rc::Rc;
+use std::sync::Arc;
+use std::{fs, thread};
 
 use anyhow::{anyhow, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
-use deno_core::{
-    Extension, JsRuntime, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier,
-    ModuleType, RuntimeOptions,
+use deno_runtime::deno_core::{
+    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
 };
+use deno_runtime::permissions::Permissions;
+use deno_runtime::worker::{MainWorker, WorkerOptions};
+use deno_runtime::{colors, BootstrapOptions};
 
-use crate::commands::extensions::{api::api_decls, extension::ExtensionState};
+use crate::commands::extensions::api;
+use crate::commands::extensions::extension::ExtensionState;
 
-/// Deno runtime state.
-pub struct DenoRuntime {
-    runtime: JsRuntime,
-}
+/// Execute Phylum extension.
+pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<()> {
+    let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-impl DenoRuntime {
-    /// Create a new Deno runtime.
-    pub fn new(extension_state: ExtensionState) -> Self {
-        let phylum_api = Extension::builder().ops(api_decls()).build();
+    let main_module = deno_core::resolve_path(entry_point)?;
 
-        let mut runtime = JsRuntime::new(RuntimeOptions {
-            module_loader: Some(Rc::new(TypescriptModuleLoader)),
-            extensions: vec![phylum_api],
-            ..Default::default()
-        });
+    let cpu_count = thread::available_parallelism()
+        .map(|p| p.get())
+        .unwrap_or(1);
+    let bootstrap = BootstrapOptions {
+        cpu_count,
+        runtime_version: env!("CARGO_PKG_VERSION").into(),
+        user_agent: "phylum-cli/extension".into(),
+        no_color: !colors::use_color(),
+        is_tty: colors::is_tty(),
+        enable_testing_features: Default::default(),
+        debug_flag: Default::default(),
+        ts_version: Default::default(),
+        location: Default::default(),
+        unstable: Default::default(),
+        args: Default::default(),
+    };
 
-        runtime.op_state().borrow_mut().put(extension_state);
+    let options = WorkerOptions {
+        bootstrap,
+        web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
+        create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
+        module_loader: Rc::new(TypescriptModuleLoader),
+        extensions: vec![phylum_api],
+        seed: None,
+        unsafely_ignore_certificate_errors: Default::default(),
+        should_break_on_first_statement: Default::default(),
+        compiled_wasm_module_store: Default::default(),
+        shared_array_buffer_store: Default::default(),
+        maybe_inspector_server: Default::default(),
+        format_js_error_fn: Default::default(),
+        get_error_class_fn: Default::default(),
+        origin_storage_dir: Default::default(),
+        broadcast_channel: Default::default(),
+        source_map_getter: Default::default(),
+        root_cert_store: Default::default(),
+        blob_store: Default::default(),
+        stdio: Default::default(),
+    };
 
-        Self { runtime }
-    }
+    // Disable all permissions.
+    let permissions = Permissions::default();
 
-    /// Execute a JavaScript module from its main entry point.
-    pub async fn run(&mut self, entrypoint: &str) -> Result<()> {
-        let module_specifier = deno_core::resolve_path(entrypoint)?;
-        let module = self
-            .runtime
-            .load_main_module(&module_specifier, None)
-            .await?;
-        let _ = self.runtime.mod_evaluate(module);
+    // Initialize Deno runtime.
+    let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
 
-        self.runtime.run_event_loop(false).await?;
+    // Export shared state.
+    worker
+        .js_runtime
+        .op_state()
+        .borrow_mut()
+        .put(extension_state);
 
-        Ok(())
-    }
+    // Execute extension code.
+    worker.execute_main_module(&main_module).await?;
+    worker.run_event_loop(false).await
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.

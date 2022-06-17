@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
-use crate::deno::DenoRuntime;
+use crate::deno;
 use crate::dirs;
 
 pub(crate) use super::api::ExtensionState;
@@ -120,10 +120,7 @@ impl Extension {
     /// Execute an extension subcommand.
     pub async fn run(&self, api: BoxFuture<'static, Result<PhylumApi>>) -> CommandResult {
         let script_path = self.path.join(&self.manifest.entry_point);
-
-        let mut deno = DenoRuntime::new(ExtensionState::from(api));
-        deno.run(&script_path.to_string_lossy()).await?;
-
+        deno::run(ExtensionState::from(api), &script_path.to_string_lossy()).await?;
         Ok(ExitCode::Ok.into())
     }
 }
