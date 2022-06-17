@@ -17,6 +17,9 @@ use deno_runtime::{colors, BootstrapOptions};
 use crate::commands::extensions::api;
 use crate::commands::extensions::extension::ExtensionState;
 
+/// Load Phylum API for module injection.
+const EXTENSION_API: &str = include_str!("./extension_api.ts");
+
 /// Execute Phylum extension.
 pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
@@ -85,7 +88,11 @@ struct TypescriptModuleLoader;
 
 impl ModuleLoader for TypescriptModuleLoader {
     fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
-        Ok(deno_core::resolve_import(specifier, referrer)?)
+        if specifier == "phylum" {
+            Ok(ModuleSpecifier::parse("deno:phylum")?)
+        } else {
+            Ok(deno_core::resolve_import(specifier, referrer)?)
+        }
     }
 
     fn load(
@@ -96,6 +103,11 @@ impl ModuleLoader for TypescriptModuleLoader {
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
         Box::pin(async move {
+            // Inject Phylum API module.
+            if module_specifier.as_str() == "deno:phylum" {
+                return phylum_module();
+            }
+
             let path = module_specifier
                 .to_file_path()
                 .map_err(|_| anyhow!("Invalid module path"))?;
@@ -121,15 +133,7 @@ impl ModuleLoader for TypescriptModuleLoader {
             // Read the source and transpile it if necessary.
             let mut code = fs::read_to_string(&path)?;
             if should_transpile {
-                let parsed = deno_ast::parse_module(ParseParams {
-                    specifier: module_specifier.to_string(),
-                    text_info: SourceTextInfo::from_string(code),
-                    capture_tokens: false,
-                    scope_analysis: false,
-                    maybe_syntax: None,
-                    media_type,
-                })?;
-                code = parsed.transpile(&Default::default())?.text;
+                code = transpile(module_specifier.to_string(), code, media_type)?;
             }
 
             Ok(ModuleSource {
@@ -140,4 +144,34 @@ impl ModuleLoader for TypescriptModuleLoader {
             })
         })
     }
+}
+
+/// Transpile code to JavaScript.
+fn transpile(
+    specifier: impl Into<String>,
+    code: impl Into<String>,
+    media_type: MediaType,
+) -> Result<String> {
+    let parsed = deno_ast::parse_module(ParseParams {
+        text_info: SourceTextInfo::from_string(code.into()),
+        specifier: specifier.into(),
+        capture_tokens: false,
+        scope_analysis: false,
+        maybe_syntax: None,
+        media_type,
+    })?;
+    Ok(parsed.transpile(&Default::default())?.text)
+}
+
+/// Load the internal Phylum API module
+fn phylum_module() -> Result<ModuleSource> {
+    let module_url = "deno:phylum";
+    let code = transpile(module_url, EXTENSION_API, MediaType::TypeScript)?;
+
+    Ok(ModuleSource {
+        code: code.into_bytes().into_boxed_slice(),
+        module_url_specified: module_url.into(),
+        module_url_found: module_url.into(),
+        module_type: ModuleType::JavaScript,
+    })
 }
