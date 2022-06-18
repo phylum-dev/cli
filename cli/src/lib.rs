@@ -11,6 +11,7 @@ pub mod lockfiles;
 pub mod print;
 pub mod prompt;
 pub mod render;
+pub mod spinner;
 pub mod summarize;
 #[cfg(test)]
 mod test;
