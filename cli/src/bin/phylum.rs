@@ -20,6 +20,7 @@ use phylum_cli::commands::uninstall::*;
 use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
+use phylum_cli::spinner::Spinner;
 use phylum_cli::update;
 use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
 use phylum_types::types::job::Action;
@@ -174,12 +175,12 @@ async fn handle_commands() -> CommandResult {
         "version" => handle_version(&app_name, ver),
         "update" => handle_update(sub_matches).await,
         "parse" => handle_parse(sub_matches),
-        "ping" => handle_ping(api.await?).await,
-        "project" => handle_project(&mut api.await?, sub_matches).await,
-        "package" => handle_get_package(&mut api.await?, sub_matches).await,
-        "history" => handle_history(&mut api.await?, sub_matches).await,
-        "group" => handle_group(&mut api.await?, sub_matches).await,
-        "analyze" | "batch" => handle_submission(&mut api.await?, &matches).await,
+        "ping" => handle_ping(Spinner::wrap_with_message(api, "Pinging server...").await?).await,
+        "project" => handle_project(&mut Spinner::wrap(api).await?, sub_matches).await,
+        "package" => handle_get_package(&mut Spinner::wrap(api).await?, sub_matches).await,
+        "history" => handle_history(&mut Spinner::wrap(api).await?, sub_matches).await,
+        "group" => handle_group(&mut Spinner::wrap(api).await?, sub_matches).await,
+        "analyze" | "batch" => handle_submission(&mut Spinner::wrap(api).await?, &matches).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => handle_uninstall(sub_matches),
@@ -188,7 +189,9 @@ async fn handle_commands() -> CommandResult {
         "extension" => handle_extensions(sub_matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => handle_run_extension(extension_subcmd, Box::pin(api)).await,
+        extension_subcmd => {
+            handle_run_extension(extension_subcmd, Box::pin(Spinner::wrap(api))).await
+        }
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),
