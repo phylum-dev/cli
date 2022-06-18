@@ -30,7 +30,7 @@ impl Spinner {
         Self::new_inner(Some(message.into()))
     }
 
-    /// As it sounds, takes a future and shows a CLI spinner until it's output is ready
+    /// Takes a future and shows a CLI spinner until it's output is ready
     pub async fn wrap<F>(future: F) -> F::Output
     where
         F: Future,
@@ -46,19 +46,13 @@ impl Spinner {
         Self::wrap_inner(future, Some(message.into())).await
     }
 
-    /// As it sounds, takes a future and shows a CLI spinner until it's output is ready
     async fn wrap_inner<F>(future: F, message: Option<String>) -> F::Output
     where
         F: Future,
     {
-        // Start spinner
         let spinner = Spinner::new_inner(message);
-
         let result = future.await;
-
-        // Stop spinner
         spinner.stop().await;
-
         result
     }
 
