@@ -1,4 +1,4 @@
-use std::io::{self, Cursor, Write};
+use std::io::{self, Cursor};
 use std::process::Command;
 use std::str;
 
@@ -7,12 +7,12 @@ use log::debug;
 use minisign_verify::{PublicKey, Signature};
 use reqwest::Client;
 use serde::de::DeserializeOwned;
-use spinners::{Spinner, Spinners};
 use zip::ZipArchive;
 
 #[cfg(test)]
 use wiremock::MockServer;
 
+use crate::spinner::Spinner;
 use crate::types::{GithubRelease, GithubReleaseAsset};
 
 // Phylum's public key for Minisign.
@@ -191,10 +191,8 @@ impl ApplicationUpdater {
     ///
     /// Until we update the releases, this should suffice.
     async fn do_update(&self, latest: GithubRelease) -> anyhow::Result<GithubRelease> {
-        let mut spinner = Spinner::new(
-            Spinners::Dots12,
-            "Downloading update and verifying binary signatures...".into(),
-        );
+        let spinner =
+            Spinner::new_with_message("Downloading update and verifying binary signatures...");
         debug!("Performing the update process");
 
         let archive_name = format!("phylum-{}", current_platform()?);
@@ -213,10 +211,7 @@ impl ApplicationUpdater {
         if !self.has_valid_signature(&zip, str::from_utf8(&sig)?) {
             anyhow::bail!("The update binary failed signature validation");
         }
-        spinner.stop_with_message(
-            "Downloading update and verifying binary signatures... Done!".into(),
-        );
-        std::io::stdout().flush()?;
+        spinner.stop().await;
 
         debug!("Extracting package to temporary directory");
         let temp_dir = tempfile::tempdir()?;
