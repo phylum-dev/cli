@@ -191,8 +191,7 @@ impl ApplicationUpdater {
     ///
     /// Until we update the releases, this should suffice.
     async fn do_update(&self, latest: GithubRelease) -> anyhow::Result<GithubRelease> {
-        let spinner =
-            Spinner::new_with_message("Downloading update and verifying binary signatures...");
+        let spinner = Spinner::new_with_message("Downloading update...");
         debug!("Performing the update process");
 
         let archive_name = format!("phylum-{}", current_platform()?);
@@ -207,15 +206,18 @@ impl ApplicationUpdater {
         let zip = download_github_asset(zip_asset).await?;
         let sig = download_github_asset(sig_asset).await?;
 
+        spinner.set_message("Verifying binary signatures...").await;
         debug!("Verifying the package signature");
         if !self.has_valid_signature(&zip, str::from_utf8(&sig)?) {
             anyhow::bail!("The update binary failed signature validation");
         }
-        spinner.stop().await;
 
+        spinner.set_message("Extracting zip files...").await;
         debug!("Extracting package to temporary directory");
         let temp_dir = tempfile::tempdir()?;
         ZipArchive::new(Cursor::new(zip))?.extract(temp_dir.path())?;
+
+        spinner.stop().await;
 
         debug!("Running the installer");
         let working_dir = temp_dir.path().join(archive_name);
