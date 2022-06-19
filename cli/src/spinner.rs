@@ -30,7 +30,7 @@ impl Spinner {
         Self::new_inner(None)
     }
 
-    /// Like `new` but also displays a message
+    /// Like `new` but also displays a message.
     pub fn new_with_message(message: impl Into<String>) -> Self {
         Self::new_inner(Some(message.into()))
     }
@@ -41,7 +41,7 @@ impl Spinner {
         Self { tx, handle }
     }
 
-    /// Takes a future and shows a CLI spinner until it's output is ready
+    /// Takes a future and shows a CLI spinner until its output is ready.
     pub async fn wrap<F>(future: F) -> F::Output
     where
         F: Future,
@@ -49,7 +49,7 @@ impl Spinner {
         Self::wrap_inner(future, None).await
     }
 
-    /// Like `wrap` but also displays a message
+    /// Like `wrap` but also displays a message.
     pub async fn wrap_with_message<F>(future: F, message: impl Into<String>) -> F::Output
     where
         F: Future,
@@ -67,7 +67,7 @@ impl Spinner {
         result
     }
 
-    /// Set a new message for the spinner to display
+    /// Set a new message for the spinner to display.
     pub async fn set_message(&self, message: impl Into<String>) {
         self.tx
             .send(Command::Message(Some(message.into())))
@@ -87,7 +87,7 @@ impl Spinner {
         self.handle.await.ok(); // of no consequence if the spinner thread panics, squash it
     }
 
-    /// Spin until receiver finds unit
+    /// Spin until receiver sees `Command::Stop` or the channel is closed.
     async fn spin(mut rx: Receiver<Command>, msg: Option<String>) {
         let mut msg = msg;
         let mut dots = SPINNER_DOTS.iter().cycle();
