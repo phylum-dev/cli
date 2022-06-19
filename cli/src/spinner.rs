@@ -91,15 +91,15 @@ impl Spinner {
     async fn spin(mut rx: Receiver<Command>, msg: Option<String>) {
         let mut msg = msg;
         let mut dots = SPINNER_DOTS.iter().cycle();
-        eprint!("\x1B7"); // save position
-        eprint!("\x1B[?25l"); // hide cursor
-        eprint!("\x1B[2K"); // clear current line
+        eprint!("{}", ansi::CURSOR_POSITION_SAVE);
+        eprint!("{}", ansi::CURSOR_HIDE);
+        eprint!("{}", ansi::CLEAR_LINE);
         let mut interval = tokio::time::interval(time::Duration::from_millis(SPINNER_DELAY));
         loop {
             match rx.try_recv() {
                 Err(TryRecvError::Empty) => {
-                    eprint!("\x1B[0G"); // move to column 0
-                    eprint!("\x1B[2K"); // clear current line
+                    eprint!("{}", ansi::CURSOR_POSITION_0);
+                    eprint!("{}", ansi::CLEAR_LINE);
                     eprint!("{}", dots.next().unwrap());
                     if let Some(msg) = msg.as_ref() {
                         eprint!(" {}", msg)
@@ -114,9 +114,9 @@ impl Spinner {
                 }
             }
         }
-        eprint!("\x1B[2K"); // clear current line
-        eprint!("\x1B8"); // restore cursor position
-        eprint!("\x1B[?25h"); // show cursor
+        eprint!("{}", ansi::CLEAR_LINE);
+        eprint!("{}", ansi::CURSOR_POSITION_RESTORE);
+        eprint!("{}", ansi::CURSOR_SHOW);
     }
 }
 
@@ -124,4 +124,13 @@ impl Default for Spinner {
     fn default() -> Self {
         Self::new()
     }
+}
+
+mod ansi {
+    pub const CURSOR_POSITION_SAVE: &str = "\x1B7";
+    pub const CURSOR_POSITION_RESTORE: &str = "\x1B8";
+    pub const CURSOR_POSITION_0: &str = "\x1B[0G";
+    pub const CURSOR_HIDE: &str = "\x1B[?25l";
+    pub const CURSOR_SHOW: &str = "\x1B[?25h";
+    pub const CLEAR_LINE: &str = "\x1B[2K";
 }
