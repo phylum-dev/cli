@@ -125,7 +125,7 @@ impl ModuleLoader for PhylumExtensionsModuleLoader {
         let module_specifier = module_specifier.clone();
         Box::pin(async move {
             // Determine source file type.
-            // We do not care about invalid URLs yet: this match statement is inexpensive, bears
+            // We do not care about invalid URLs yet: This match statement is inexpensive, bears
             // no risk and does not do I/O -- it operates fully off of the contents of the URL.
             let media_type = MediaType::from(&module_specifier);
             let (module_type, should_transpile) = match media_type {
