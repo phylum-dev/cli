@@ -146,7 +146,7 @@ pub mod mockito {
             auth_info: build_authenticated_auth_info(),
             ..Default::default()
         };
-        let phylum = PhylumApi::new(config, None, false).await?;
+        let phylum = PhylumApi::new(config, None).await?;
         Ok(phylum)
     }
 }

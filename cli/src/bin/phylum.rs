@@ -53,9 +53,8 @@ async fn api_factory(
     config: Config,
     config_path: PathBuf,
     timeout: Option<u64>,
-    ignore_certs: bool,
 ) -> Result<PhylumApi> {
-    let api = PhylumApi::new(config, timeout, ignore_certs)
+    let api = PhylumApi::new(config, timeout)
         .await
         .context("Error creating client")?;
 
@@ -99,16 +98,16 @@ async fn handle_commands() -> CommandResult {
             err
         )
     })?;
+    config.ignore_certs |= matches.is_present("no-check-certificate");
+
+    if config.ignore_certs {
+        log::warn!("Ignoring TLS server certificate verification per user request.");
+    }
 
     // We initialize these value here, for later use by the PhylumApi object.
     let timeout = matches
         .value_of("timeout")
         .and_then(|t| t.parse::<u64>().ok());
-    let ignore_certs =
-        matches.is_present("no-check-certificate") || config.ignore_certs.unwrap_or_default();
-    if ignore_certs {
-        log::warn!("Ignoring TLS server certificate verification per user request.");
-    }
 
     //
     // Check for updates, if we haven't explicitly invoked `update`.
@@ -156,21 +155,13 @@ async fn handle_commands() -> CommandResult {
 
     // Get the future, but don't await. Commands that require access to the API will await on this,
     // so that the API is not instantiated ahead of time for subcommands that don't require it.
-    let api = api_factory(config.clone(), config_path.clone(), timeout, ignore_certs);
+    let api = api_factory(config.clone(), config_path.clone(), timeout);
 
     let (subcommand, sub_matches) = matches.subcommand().unwrap();
     match subcommand {
         "auth" => {
             drop(api);
-            handle_auth(
-                config,
-                &config_path,
-                sub_matches,
-                app_helper,
-                timeout,
-                ignore_certs,
-            )
-            .await
+            handle_auth(config, &config_path, sub_matches, app_helper, timeout).await
         }
         "version" => handle_version(&app_name, ver),
         "update" => handle_update(sub_matches).await,
