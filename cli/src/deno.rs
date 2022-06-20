@@ -156,11 +156,8 @@ impl ModuleLoader for ExtensionsModuleLoader {
                     .await?
                 }
                 ("https", Some(Host::Domain(domain))) => {
-                    ExtensionsModuleLoader::load_from_deno_std(
-                        module_specifier.clone(),
-                        domain,
-                    )
-                    .await?
+                    ExtensionsModuleLoader::load_from_deno_std(module_specifier.clone(), domain)
+                        .await?
                 }
                 _ => {
                     return Err(anyhow!(
