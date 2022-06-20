@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fs;
 use std::ops::Deref;
 use std::path::Path;
 use std::pin::Pin;
@@ -17,9 +18,10 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::project::ProjectDetailsResponse;
 
+use crate::api::PhylumApi;
+use crate::auth::UserInfo;
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
-use crate::{api::PhylumApi, auth::UserInfo};
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
 enum OnceFuture<T: Unpin> {
@@ -233,13 +235,14 @@ async fn get_package_details(
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
 #[op]
-fn parse_lockfile(lockfile: &str, lockfile_type: &str) -> Result<Vec<PackageDescriptor>> {
+fn parse_lockfile(lockfile: String, lockfile_type: String) -> Result<Vec<PackageDescriptor>> {
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
         .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
 
-    let lockfile_data = std::fs::read_to_string(Path::new(lockfile))?;
+    let lockfile_data = fs::read_to_string(&lockfile)
+        .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
     parser.parse(&lockfile_data)
 }
 
