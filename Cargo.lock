@@ -2798,6 +2798,7 @@ dependencies = [
  "ansi_term",
  "anyhow",
  "assert_cmd",
+ "atty",
  "base64 0.13.0",
  "bytes",
  "chrono",

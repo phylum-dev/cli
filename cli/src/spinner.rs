@@ -24,24 +24,29 @@ enum Command {
 }
 
 impl Spinner {
-    /// Start a CLI spinner on the current cursor line. To stop it, call `stop`
-    /// on the returned `Spinner`.
-    pub fn new() -> Self {
+    /// Try to start a CLI spinner on the current cursor line. To stop it, call
+    /// `stop` on the returned `Spinner`. Returns `None` if stderr is not a TTY.
+    pub fn new() -> Option<Self> {
         Self::new_inner(None)
     }
 
     /// Like `new` but also displays a message.
-    pub fn new_with_message(message: impl Into<String>) -> Self {
+    pub fn new_with_message(message: impl Into<String>) -> Option<Self> {
         Self::new_inner(Some(message.into()))
     }
 
-    fn new_inner(message: Option<String>) -> Self {
-        let (tx, rx) = mpsc::channel(10);
-        let handle = tokio::spawn(Self::spin(rx, message));
-        Self { tx, handle }
+    fn new_inner(message: Option<String>) -> Option<Self> {
+        if atty::is(atty::Stream::Stderr) {
+            let (tx, rx) = mpsc::channel(10);
+            let handle = tokio::spawn(Self::spin(rx, message));
+            Some(Self { tx, handle })
+        } else {
+            None
+        }
     }
 
-    /// Takes a future and shows a CLI spinner until its output is ready.
+    /// Takes a future and shows a CLI spinner (if stderr is a TTY) until its
+    /// output is ready.
     pub async fn wrap<F>(future: F) -> F::Output
     where
         F: Future,
@@ -61,10 +66,13 @@ impl Spinner {
     where
         F: Future,
     {
-        let spinner = Spinner::new_inner(message);
-        let result = future.await;
-        spinner.stop().await;
-        result
+        if let Some(spinner) = Spinner::new_inner(message) {
+            let result = future.await;
+            spinner.stop().await;
+            result
+        } else {
+            future.await
+        }
     }
 
     /// Set a new message for the spinner to display.
@@ -117,12 +125,6 @@ impl Spinner {
         eprint!("{}", ansi::CLEAR_LINE);
         eprint!("{}", ansi::CURSOR_POSITION_RESTORE);
         eprint!("{}", ansi::CURSOR_SHOW);
-    }
-}
-
-impl Default for Spinner {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
