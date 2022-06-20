@@ -35,7 +35,6 @@ type Result<T> = std::result::Result<T, PhylumApiError>;
 pub struct PhylumApi {
     config: Config,
     client: Client,
-    ignore_certs: bool,
 }
 
 /// Phylum Api Error type
@@ -110,18 +109,20 @@ impl PhylumApi {
     /// request timeout. If in the process of creating the client, credentials
     /// must be obtained, the auth_info struct will be updated with the new
     /// information. It is the duty of the calling code to save any changes
-    pub async fn new(
-        mut config: Config,
-        request_timeout: Option<u64>,
-        ignore_certs: bool,
-    ) -> Result<Self> {
+    pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &config.auth_info.offline_access {
             Some(refresh_token) => {
-                handle_refresh_tokens(refresh_token, ignore_certs, &config.connection.uri).await?
+                handle_refresh_tokens(refresh_token, config.ignore_certs, &config.connection.uri)
+                    .await?
             }
             None => {
-                handle_auth_flow(&AuthAction::Login, ignore_certs, &config.connection.uri).await?
+                handle_auth_flow(
+                    &AuthAction::Login,
+                    config.ignore_certs,
+                    &config.connection.uri,
+                )
+                .await?
             }
         };
 
@@ -143,15 +144,11 @@ impl PhylumApi {
             .timeout(Duration::from_secs(
                 request_timeout.unwrap_or(std::u64::MAX),
             ))
-            .danger_accept_invalid_certs(ignore_certs)
+            .danger_accept_invalid_certs(config.ignore_certs)
             .default_headers(headers)
             .build()?;
 
-        Ok(Self {
-            config,
-            client,
-            ignore_certs,
-        })
+        Ok(Self { config, client })
     }
 
     /// update auth info by forcing the login flow, using the given Auth
@@ -191,7 +188,8 @@ impl PhylumApi {
     /// Get information about the authenticated user
     pub async fn user_info(&self) -> Result<UserInfo> {
         let oidc_settings =
-            fetch_oidc_server_settings(self.ignore_certs, &self.config.connection.uri).await?;
+            fetch_oidc_server_settings(self.config.ignore_certs, &self.config.connection.uri)
+                .await?;
         self.get(oidc_settings.userinfo_endpoint).await
     }
 
@@ -388,7 +386,7 @@ mod tests {
             ..Default::default()
         };
 
-        let api = PhylumApi::new(config, None, false).await?;
+        let api = PhylumApi::new(config, None).await?;
         // After auth, auth_info should have a offline access token
         assert!(
             api.config().auth_info.offline_access.is_some(),
