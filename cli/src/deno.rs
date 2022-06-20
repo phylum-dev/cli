@@ -91,18 +91,23 @@ impl PhylumExtensionsModuleLoader {
         let extensions_path = extensions_path()?;
         if !path.starts_with(&extensions_path) {
             return Err(anyhow!(
-                "{}: can't import modules outside of the extensions path {}",
+                "`{}`: importing from paths outside of the extension's directory is not allowed",
                 path.to_string_lossy(),
-                extensions_path.to_string_lossy()
             ));
         }
 
         Ok(fs::read_to_string(path).await?)
     }
 
-    async fn load_from_deno_std(path: Url) -> Result<String> {
-        let response = reqwest::get(path).await?;
-        Ok(response.text().await?)
+    async fn load_from_deno_std(path: Url, domain: &str) -> Result<String> {
+        if domain == "deno.land" {
+            let response = reqwest::get(path).await?;
+            Ok(response.text().await?)
+        } else {
+            Err(anyhow!(
+                "`{domain}`: importing from domains except `deno.land` is not allowed"
+            ))
+        }
     }
 }
 
@@ -150,9 +155,12 @@ impl ModuleLoader for PhylumExtensionsModuleLoader {
                     )
                     .await?
                 }
-                ("https", Some(Host::Domain("deno.land"))) => {
-                    PhylumExtensionsModuleLoader::load_from_deno_std(module_specifier.clone())
-                        .await?
+                ("https", Some(Host::Domain(domain))) => {
+                    PhylumExtensionsModuleLoader::load_from_deno_std(
+                        module_specifier.clone(),
+                        domain,
+                    )
+                    .await?
                 }
                 _ => {
                     return Err(anyhow!(

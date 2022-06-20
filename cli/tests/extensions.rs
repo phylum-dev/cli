@@ -307,7 +307,7 @@ fn module_loader_loads_correctly() {
         .failure();
 
     let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    assert!(stderr.contains("can't import modules outside of the extensions path"));
+    assert!(stderr.contains("importing from paths outside"));
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
@@ -317,7 +317,7 @@ fn module_loader_loads_correctly() {
         .failure();
 
     let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    assert!(stderr.contains("Unsupported module specifier"));
+    assert!(stderr.contains("importing from domains except"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
