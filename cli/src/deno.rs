@@ -1,9 +1,10 @@
 //! Deno runtime for extensions.
 
+use std::path::Path;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
-use std::{fs, thread};
+use std::thread;
 
 use anyhow::{anyhow, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
@@ -13,9 +14,11 @@ use deno_runtime::deno_core::{
 use deno_runtime::permissions::Permissions;
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
+use tokio::fs;
+use url::{Host, Url};
 
 use crate::commands::extensions::api;
-use crate::commands::extensions::extension::ExtensionState;
+use crate::commands::extensions::extension::{extensions_path, ExtensionState};
 
 /// Execute Phylum extension.
 pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<()> {
@@ -44,7 +47,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         bootstrap,
         web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
-        module_loader: Rc::new(TypescriptModuleLoader),
+        module_loader: Rc::new(PhylumExtensionsModuleLoader),
         extensions: vec![phylum_api],
         seed: None,
         unsafely_ignore_certificate_errors: Default::default(),
@@ -81,9 +84,29 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
-struct TypescriptModuleLoader;
+struct PhylumExtensionsModuleLoader;
 
-impl ModuleLoader for TypescriptModuleLoader {
+impl PhylumExtensionsModuleLoader {
+    async fn load_from_filesystem(path: &Path) -> Result<String> {
+        let extensions_path = extensions_path()?;
+        if !path.starts_with(&extensions_path) {
+            return Err(anyhow!(
+                "{}: can't import modules outside of the extensions path {}",
+                path.to_string_lossy(),
+                extensions_path.to_string_lossy()
+            ));
+        }
+
+        Ok(fs::read_to_string(path).await?)
+    }
+
+    async fn load_from_deno_std(path: Url) -> Result<String> {
+        let response = reqwest::get(path).await?;
+        Ok(response.text().await?)
+    }
+}
+
+impl ModuleLoader for PhylumExtensionsModuleLoader {
     fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
         Ok(deno_core::resolve_import(specifier, referrer)?)
     }
@@ -96,12 +119,10 @@ impl ModuleLoader for TypescriptModuleLoader {
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
         Box::pin(async move {
-            let path = module_specifier
-                .to_file_path()
-                .map_err(|_| anyhow!("Invalid module path"))?;
-
             // Determine source file type.
-            let media_type = MediaType::from(&path);
+            // We do not care about invalid URLs yet: this match statement is inexpensive, bears
+            // no risk and does not do I/O -- it operates fully off of the contents of the URL.
+            let media_type = MediaType::from(&module_specifier);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
@@ -118,8 +139,29 @@ impl ModuleLoader for TypescriptModuleLoader {
                 _ => return Err(anyhow!("Unknown JS module format: {}", module_specifier)),
             };
 
-            // Read the source and transpile it if necessary.
-            let mut code = fs::read_to_string(&path)?;
+            // Load either a local file under the extensions directory, or a Deno standard library
+            // module. Reject all URLs that do not fit these two use cases.
+            let mut code = match (module_specifier.scheme(), module_specifier.host()) {
+                ("file", None) => {
+                    PhylumExtensionsModuleLoader::load_from_filesystem(
+                        &module_specifier
+                            .to_file_path()
+                            .map_err(|_| anyhow!("Invalid module path: {module_specifier:?}"))?,
+                    )
+                    .await?
+                }
+                ("https", Some(Host::Domain("deno.land"))) => {
+                    PhylumExtensionsModuleLoader::load_from_deno_std(module_specifier.clone())
+                        .await?
+                }
+                _ => {
+                    return Err(anyhow!(
+                        "Unsupported module specifier: {}",
+                        module_specifier
+                    ))
+                }
+            };
+
             if should_transpile {
                 let parsed = deno_ast::parse_module(ParseParams {
                     specifier: module_specifier.to_string(),
