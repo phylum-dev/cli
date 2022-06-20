@@ -261,6 +261,65 @@ fn conflicting_extension_name_is_filtered() {
     assert!(output.contains("extension was filtered out"));
 }
 
+// Test that the rules of the module loader are obeyed:
+// - Both TypeScript and JavaScript are supported.
+// - Files under $XDG_DATA_HOME/phylum/extensions may be imported.
+// - Remote URLs under https://deno.land are supported -- i.e., the Deno's standard library.
+// - No other URLs are supported.
+//   - We explicitly test that a https:// url which is not under `deno.land` is rejected.
+//   - We explicitly test that a directory traversal attempt is rejected.
+//
+// These tests are based on the fixtures under `fixtures/module-import-extension`.
+#[test]
+fn module_loader_loads_correctly() {
+    let tmp_dir = TmpDir::new();
+
+    for extension in ["successful", "fail-local", "fail-remote"] {
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", &tmp_dir)
+            .arg("extension")
+            .arg("add")
+            .arg(
+                fixtures_path()
+                    .join("module-import-extension")
+                    .join(extension),
+            )
+            .assert()
+            .success();
+    }
+
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("module-import-success")
+        .assert()
+        .success();
+
+    let stdout = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+    assert!(stdout.contains("I should contain 12345"));
+
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("module-import-fail-local")
+        .assert()
+        .failure();
+
+    let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+    assert!(stderr.contains("can't import modules outside of the extensions path"));
+
+    let cmd = Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", &tmp_dir)
+        .arg("module-import-fail-remote")
+        .assert()
+        .failure();
+
+    let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+    assert!(stderr.contains("Unsupported module specifier"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
