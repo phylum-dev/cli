@@ -166,7 +166,7 @@ async fn handle_commands() -> CommandResult {
         "version" => handle_version(&app_name, ver),
         "update" => handle_update(sub_matches).await,
         "parse" => handle_parse(sub_matches),
-        "ping" => handle_ping(Spinner::wrap_with_message(api, "Pinging server...").await?).await,
+        "ping" => handle_ping(Spinner::wrap(api).await?).await,
         "project" => handle_project(&mut Spinner::wrap(api).await?, sub_matches).await,
         "package" => handle_get_package(&mut Spinner::wrap(api).await?, sub_matches).await,
         "history" => handle_history(&mut Spinner::wrap(api).await?, sub_matches).await,
