@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
@@ -29,16 +29,21 @@ pub struct AuthInfo {
     pub offline_access: Option<RefreshToken>,
 }
 
-pub type Packages = Vec<PackageDescriptor>;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub connection: ConnectionInfo,
     pub auth_info: AuthInfo,
     pub request_type: PackageType,
-    pub packages: Option<Packages>,
     pub last_update: Option<usize>,
-    pub ignore_certs: Option<bool>,
+    #[serde(deserialize_with = "default_option_bool")]
+    pub ignore_certs: bool,
+}
+
+fn default_option_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(Option::<bool>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,9 +64,8 @@ impl Default for Config {
                 offline_access: None,
             },
             request_type: PackageType::Npm,
-            packages: None,
+            ignore_certs: false,
             last_update: None,
-            ignore_certs: None,
         }
     }
 }
@@ -205,31 +209,12 @@ mod tests {
             offline_access: Some(RefreshToken::new("FAKE TOKEN")),
         };
 
-        let packages = vec![
-            PackageDescriptor {
-                name: "foo".into(),
-                version: "1.2.3".into(),
-                package_type: PackageType::Npm,
-            },
-            PackageDescriptor {
-                name: "bar".into(),
-                version: "3.4.5".into(),
-                package_type: PackageType::Npm,
-            },
-            PackageDescriptor {
-                name: "baz".into(),
-                version: "2020.2.12".into(),
-                package_type: PackageType::Npm,
-            },
-        ];
-
         let config = Config {
             connection: con,
             auth_info: auth,
             request_type: PackageType::Npm,
-            packages: Some(packages),
+            ignore_certs: false,
             last_update: None,
-            ignore_certs: None,
         };
         let temp_dir = temp_dir();
         let test_config_file = temp_dir.as_path().join("test_config");
