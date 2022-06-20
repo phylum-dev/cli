@@ -47,7 +47,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         bootstrap,
         web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
-        module_loader: Rc::new(PhylumExtensionsModuleLoader),
+        module_loader: Rc::new(ExtensionsModuleLoader),
         extensions: vec![phylum_api],
         seed: None,
         unsafely_ignore_certificate_errors: Default::default(),
@@ -84,9 +84,9 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
-struct PhylumExtensionsModuleLoader;
+struct ExtensionsModuleLoader;
 
-impl PhylumExtensionsModuleLoader {
+impl ExtensionsModuleLoader {
     async fn load_from_filesystem(path: &Path) -> Result<String> {
         let extensions_path = extensions_path()?;
         if !path.starts_with(&extensions_path) {
@@ -111,7 +111,7 @@ impl PhylumExtensionsModuleLoader {
     }
 }
 
-impl ModuleLoader for PhylumExtensionsModuleLoader {
+impl ModuleLoader for ExtensionsModuleLoader {
     fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
         Ok(deno_core::resolve_import(specifier, referrer)?)
     }
@@ -148,7 +148,7 @@ impl ModuleLoader for PhylumExtensionsModuleLoader {
             // module. Reject all URLs that do not fit these two use cases.
             let mut code = match (module_specifier.scheme(), module_specifier.host()) {
                 ("file", None) => {
-                    PhylumExtensionsModuleLoader::load_from_filesystem(
+                    ExtensionsModuleLoader::load_from_filesystem(
                         &module_specifier
                             .to_file_path()
                             .map_err(|_| anyhow!("Invalid module path: {module_specifier:?}"))?,
@@ -156,7 +156,7 @@ impl ModuleLoader for PhylumExtensionsModuleLoader {
                     .await?
                 }
                 ("https", Some(Host::Domain(domain))) => {
-                    PhylumExtensionsModuleLoader::load_from_deno_std(
+                    ExtensionsModuleLoader::load_from_deno_std(
                         module_specifier.clone(),
                         domain,
                     )
