@@ -46,7 +46,7 @@ export class PhylumApi {
     }
 
     /// Get dependencies inside a lockfile.
-    static parseLockfile(lockfile: string, lockfileType: string): [object] {
-        return Deno.core.opSync('parse_lockfile', lockfile, lockfileType);
+    static async parseLockfile(lockfile: string, lockfileType: string): [object] {
+        return await Deno.core.opAsync('parse_lockfile', lockfile, lockfileType);
     }
 }

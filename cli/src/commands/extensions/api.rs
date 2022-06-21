@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::fs;
 use std::ops::Deref;
 use std::path::Path;
 use std::pin::Pin;
@@ -9,6 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
+use tokio::fs;
 
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -235,13 +235,14 @@ async fn get_package_details(
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
 #[op]
-fn parse_lockfile(lockfile: String, lockfile_type: String) -> Result<Vec<PackageDescriptor>> {
+async fn parse_lockfile(lockfile: String, lockfile_type: String) -> Result<Vec<PackageDescriptor>> {
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
         .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
 
     let lockfile_data = fs::read_to_string(&lockfile)
+        .await
         .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
     parser.parse(&lockfile_data)
 }
