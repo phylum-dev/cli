@@ -60,9 +60,10 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
 
 impl ExtensionState {
     async fn get(&self) -> Result<Rc<PhylumApi>> {
-        // The mutex guard is only useful for synchronizing access to the encapsulated future.
-        // Once a `Result<Rc<PhylumApi>>` is obtained, the guard is dropped: subsequent awaits on
-        // `PhylumApi` methods are not synchronized via this mutex, and can happen concurrently.
+        // The mutex guard is only useful for synchronizing internally mutable access to the
+        // encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained, the guard is dropped:
+        // subsequent awaits on `PhylumApi` methods are not synchronized via this mutex, and can
+        // happen concurrently.
         let mut guard = self.0.lock().await;
         Ok(Rc::clone(
             guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?,
