@@ -87,7 +87,11 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
 struct ExtensionsModuleLoader;
 
 impl ExtensionsModuleLoader {
-    async fn load_from_filesystem(path: &Path) -> Result<String> {
+    async fn load_from_filesystem(path: &Url) -> Result<String> {
+        let path = path
+            .to_file_path()
+            .map_err(|_| anyhow!("{path:?}: is not a path"))?;
+
         let extensions_path = extensions_path()?;
         if !path.starts_with(&extensions_path) {
             return Err(anyhow!(
@@ -106,9 +110,9 @@ impl ExtensionsModuleLoader {
         Ok(fs::read_to_string(path).await?)
     }
 
-    async fn load_from_deno_std(path: Url, domain: &str) -> Result<String> {
+    async fn load_from_deno_std(path: &Url, domain: &str) -> Result<String> {
         if domain == "deno.land" {
-            let response = reqwest::get(path).await?;
+            let response = reqwest::get(path.clone()).await?;
             Ok(response.text().await?)
         } else {
             Err(anyhow!(
@@ -155,16 +159,10 @@ impl ModuleLoader for ExtensionsModuleLoader {
             // module. Reject all URLs that do not fit these two use cases.
             let mut code = match (module_specifier.scheme(), module_specifier.host()) {
                 ("file", None) => {
-                    ExtensionsModuleLoader::load_from_filesystem(
-                        &module_specifier
-                            .to_file_path()
-                            .map_err(|_| anyhow!("Invalid module path: {module_specifier:?}"))?,
-                    )
-                    .await?
+                    ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?
                 }
                 ("https", Some(Host::Domain(domain))) => {
-                    ExtensionsModuleLoader::load_from_deno_std(module_specifier.clone(), domain)
-                        .await?
+                    ExtensionsModuleLoader::load_from_deno_std(&module_specifier, domain).await?
                 }
                 _ => {
                     return Err(anyhow!(
