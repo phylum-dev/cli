@@ -3,9 +3,10 @@ use std::path::Path;
 use ansi_term::Color::{Blue, White};
 use anyhow::{anyhow, Context};
 use chrono::Local;
+use reqwest::StatusCode;
 
 use super::{CommandResult, ExitCode};
-use crate::api::PhylumApi;
+use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 use crate::print::*;
 use crate::print_user_failure;
@@ -39,7 +40,17 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         log::info!("Initializing new project: `{}`", name);
 
-        let project_id = api.create_project(name, group).await?;
+        let project_id = match api.create_project(name, group).await {
+            Ok(project_id) => project_id,
+            Err(PhylumApiError::Response(ResponseError {
+                code: StatusCode::CONFLICT,
+                ..
+            })) => {
+                print_user_failure!("Project '{}' already exists", name);
+                return Ok(ExitCode::AlreadyExists.into());
+            }
+            Err(err) => return Err(err.into()),
+        };
 
         let proj_conf = ProjectConfig {
             id: project_id.to_owned(),
