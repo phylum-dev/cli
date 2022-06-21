@@ -1,5 +1,7 @@
 import * as PhylumApi from './phylum-api.ts'
 
+await Promise.all([PhylumApi.get_user_info(), PhylumApi.get_user_info()])
+
 // Extension tests should be ran against an integration context, and not in CI
 // at least for the moment, as they require access to an API instance, or a
 // well-formed, external mock of it.
