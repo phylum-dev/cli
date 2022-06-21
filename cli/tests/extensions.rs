@@ -225,6 +225,27 @@ fn extension_list_should_emit_output() {
     assert!(output.lines().any(|m| re.is_match(m)));
 }
 
+// Extensions relying on the injected Phylum API work.
+#[tokio::test]
+async fn injected_api() {
+    let tempdir = TempDir::new().unwrap();
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .args(&["extension", "add"])
+        .arg(fixtures_path().join("api-extension"))
+        .assert()
+        .success();
+
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .arg("api-extension")
+        .assert()
+        .success()
+        .stdout("44\n");
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Miscellaneous tests
 ////////////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
+use tokio::fs;
 use tokio::sync::Mutex;
 
 use phylum_types::types::auth::{AccessToken, RefreshToken};
@@ -18,9 +19,10 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::project::ProjectDetailsResponse;
 
+use crate::api::PhylumApi;
+use crate::auth::UserInfo;
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
-use crate::{api::PhylumApi, auth::UserInfo};
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
 enum OnceFuture<T: Unpin> {
@@ -106,17 +108,17 @@ impl Deref for ExtensionStateRef {
 #[op]
 async fn analyze(
     state: Rc<RefCell<OpState>>,
-    lockfile: &str,
-    project: Option<&str>,
-    group: Option<&str>,
+    lockfile: String,
+    project: Option<String>,
+    group: Option<String>,
 ) -> Result<ProjectId> {
     let api = ExtensionStateRef::from(state).await?;
 
-    let (packages, request_type) = get_packages_from_lockfile(Path::new(lockfile))
+    let (packages, request_type) = get_packages_from_lockfile(Path::new(&lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
 
     let (project, group) = match (project, group) {
-        (Some(project), group) => (api.get_project_id(project, group).await?, None),
+        (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
         (None, _) => {
             if let Some(p) = get_current_project() {
                 (p.id, p.group_name)
@@ -183,12 +185,12 @@ async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> 
 #[op]
 async fn get_job_status(
     state: Rc<RefCell<OpState>>,
-    job_id: Option<&str>,
+    job_id: Option<String>,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
     let api = ExtensionStateRef::from(state).await?;
 
     let job_id = job_id
-        .map(|job_id| JobId::from_str(job_id).ok())
+        .map(|job_id| JobId::from_str(&job_id).ok())
         .unwrap_or_else(|| get_current_project().map(|p| p.id))
         .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))?;
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
@@ -199,7 +201,7 @@ async fn get_job_status(
 #[op]
 async fn get_project_details(
     state: Rc<RefCell<OpState>>,
-    project_name: Option<&str>,
+    project_name: Option<String>,
 ) -> Result<ProjectDetailsResponse> {
     let api = ExtensionStateRef::from(state).await?;
 
@@ -221,13 +223,13 @@ async fn get_project_details(
 #[op]
 async fn get_package_details(
     state: Rc<RefCell<OpState>>,
-    name: &str,
-    version: &str,
-    package_type: &str,
+    name: String,
+    version: String,
+    package_type: String,
 ) -> Result<Package> {
     let api = ExtensionStateRef::from(state).await?;
 
-    let package_type = PackageType::from_str(package_type)
+    let package_type = PackageType::from_str(&package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
     api.get_package_details(&PackageDescriptor {
         name: name.to_string(),
@@ -241,13 +243,15 @@ async fn get_package_details(
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
 #[op]
-fn parse_lockfile(lockfile: &str, lockfile_type: &str) -> Result<Vec<PackageDescriptor>> {
+async fn parse_lockfile(lockfile: String, lockfile_type: String) -> Result<Vec<PackageDescriptor>> {
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
         .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
 
-    let lockfile_data = std::fs::read_to_string(Path::new(lockfile))?;
+    let lockfile_data = fs::read_to_string(&lockfile)
+        .await
+        .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
     parser.parse(&lockfile_data)
 }
 

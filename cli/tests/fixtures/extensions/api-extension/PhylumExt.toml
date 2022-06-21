@@ -1,0 +1,3 @@
+name = "api-extension"
+description = "Test phylum API injection"
+entry_point = "main.ts"
