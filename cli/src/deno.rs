@@ -1,6 +1,5 @@
 //! Deno runtime for extensions.
 
-use std::path::Path;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;

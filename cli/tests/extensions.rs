@@ -272,12 +272,12 @@ fn conflicting_extension_name_is_filtered() {
 // These tests are based on the fixtures under `fixtures/module-import-extension`.
 #[test]
 fn module_loader_loads_correctly() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
 
     for extension in ["successful", "fail-local", "fail-remote"] {
         Command::cargo_bin("phylum")
             .unwrap()
-            .env("XDG_DATA_HOME", &tmp_dir)
+            .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("add")
             .arg(
@@ -291,7 +291,7 @@ fn module_loader_loads_correctly() {
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("module-import-success")
         .assert()
         .success();
@@ -301,7 +301,7 @@ fn module_loader_loads_correctly() {
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("module-import-fail-local")
         .assert()
         .failure();
@@ -311,7 +311,7 @@ fn module_loader_loads_correctly() {
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("module-import-fail-remote")
         .assert()
         .failure();
