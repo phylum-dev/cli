@@ -21,41 +21,51 @@ use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 use crate::{api::PhylumApi, auth::UserInfo};
 
-/// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
-enum OnceFuture<T: Unpin> {
-    Future(BoxFuture<'static, T>),
-    Awaited(T),
-}
-
-impl<T: Unpin> OnceFuture<T> {
-    fn new(inner: BoxFuture<'static, T>) -> Self {
-        OnceFuture::Future(inner)
-    }
-
-    async fn get(&mut self) -> &T {
-        match *self {
-            OnceFuture::Future(ref mut inner) => {
-                *self = OnceFuture::Awaited(inner.await);
-                match *self {
-                    OnceFuture::Future(..) => unreachable!(),
-                    OnceFuture::Awaited(ref mut inner) => inner,
-                }
-            }
-            OnceFuture::Awaited(ref mut inner) => inner,
-        }
-    }
-}
+// /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
+// enum OnceFuture<T: Unpin> {
+//     Future(BoxFuture<'static, T>),
+//     Awaited(T),
+// }
+//
+// impl<T: Unpin> OnceFuture<T> {
+//     fn new(inner: BoxFuture<'static, T>) -> Self {
+//         OnceFuture::Future(inner)
+//     }
+//
+//     async fn get(&mut self) -> &T {
+//         match *self {
+//             OnceFuture::Future(ref mut inner) => {
+//                 *self = OnceFuture::Awaited(inner.await);
+//                 match *self {
+//                     OnceFuture::Future(..) => unreachable!(),
+//                     OnceFuture::Awaited(ref mut inner) => inner,
+//                 }
+//             }
+//             OnceFuture::Awaited(ref mut inner) => inner,
+//         }
+//     }
+// }
 
 /// Opaquely encapsulates the extension state.
-pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
+pub struct ExtensionState(BoxFuture<'static, Result<Rc<PhylumApi>>>);
 
 impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
     fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(OnceFuture::new(Box::pin(async {
+        Self(Box::pin(async {
             extension_state_future.await.map(Rc::new)
-        })))
+        }))
     }
 }
+
+// pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
+//
+// impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
+//     fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+//         Self(OnceFuture::new(Box::pin(async {
+//             extension_state_future.await.map(Rc::new)
+//         })))
+//     }
+// }
 
 /// Wraps a shared, counted reference to the `PhylumApi` object.
 ///
@@ -65,17 +75,27 @@ struct ExtensionStateRef(Rc<PhylumApi>);
 impl ExtensionStateRef {
     // This can not be implemented as the `From<T>` trait because of `async`.
     async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
-        let mut state_ref = Pin::new(state.try_borrow_mut()?);
-        let api = state_ref
-            .borrow_mut::<ExtensionState>()
-            .0
-            .get()
-            .await
-            .as_ref()
-            .map_err(|e| anyhow!("{:?}", e))?
-            .clone();
+        let state_ref = { state.try_borrow_mut()?.try_take::<ExtensionState>() };
+        if let Some(extension_state) = state_ref {
+            let api = Rc::new(extension_state.0.await?);
+            {
+                state.try_borrow_mut()?.put(api);
+            }
+        }
 
-        Ok(ExtensionStateRef(api))
+        Ok(Self(Rc::clone(state.borrow().borrow::<Rc<PhylumApi>>())))
+
+        // let mut state_ref = Pin::new(state.try_borrow_mut()?);
+        // let api = state_ref
+        //     .borrow_mut::<ExtensionState>()
+        //     .0
+        //     .get()
+        //     .await
+        //     .as_ref()
+        //     .map_err(|e| anyhow!("{:?}", e))?
+        //     .clone();
+
+        // Ok(ExtensionStateRef(api))
     }
 }
 
