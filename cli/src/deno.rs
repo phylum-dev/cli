@@ -115,7 +115,7 @@ impl ExtensionsModuleLoader {
             Ok(response.text().await?)
         } else {
             Err(anyhow!(
-                "`{}`: importing from domains except `deno.land` is not allowed",
+                "`{}`: importing from domains other than `deno.land` is not allowed",
                 path.host().unwrap_or(Host::Domain("<unknown host>"))
             ))
         }
