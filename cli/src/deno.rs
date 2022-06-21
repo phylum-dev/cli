@@ -96,6 +96,13 @@ impl ExtensionsModuleLoader {
             ));
         }
 
+        if path.is_symlink() {
+            return Err(anyhow!(
+                "`{}`: importing from symlinks is not allowed",
+                path.to_string_lossy(),
+            ));
+        }
+
         Ok(fs::read_to_string(path).await?)
     }
 
