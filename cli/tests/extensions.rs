@@ -2,16 +2,14 @@
 
 use std::convert::TryFrom;
 use std::env;
-use std::ffi::OsStr;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use assert_cmd::Command;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
-use rand::Rng;
 use regex::Regex;
+use tempfile::TempDir;
 
 lazy_static! {
     // Lock this mutex when setting an environment variable, for the lifetime of function calls
@@ -29,10 +27,10 @@ lazy_static! {
 // working directory should be installed.
 #[test]
 fn extension_is_installed_correctly() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
@@ -40,7 +38,7 @@ fn extension_is_installed_correctly() {
         .success();
 
     let _guard = ENV_MUTEX.lock().unwrap();
-    env::set_var("XDG_DATA_HOME", &tmp_dir);
+    env::set_var("XDG_DATA_HOME", tempdir.path());
 
     let installed_ext = Extension::load("sample-extension").unwrap();
     assert_eq!(installed_ext.name(), "sample-extension");
@@ -54,10 +52,10 @@ fn extension_is_installed_correctly() {
 // the foobar extension.
 #[test]
 fn can_run_installed_extension() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
@@ -66,7 +64,7 @@ fn can_run_installed_extension() {
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("sample-extension")
         .assert()
         .success()
@@ -78,10 +76,10 @@ fn can_run_installed_extension() {
 // some context on how the given extension works.
 #[test]
 fn successful_installation_prints_message() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
@@ -98,7 +96,7 @@ fn successful_installation_prints_message() {
 // inform the user as to why.
 #[test]
 fn unsuccessful_installation_prints_failure_message() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
 
     fn stderr_match_regex(cmd: assert_cmd::assert::Assert, pattern: &str) -> bool {
         let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
@@ -109,7 +107,7 @@ fn unsuccessful_installation_prints_failure_message() {
     // Install the extension. Should succeed.
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
@@ -120,7 +118,7 @@ fn unsuccessful_installation_prints_failure_message() {
     assert!(stderr_match_regex(
         Command::cargo_bin("phylum")
             .unwrap()
-            .env("XDG_DATA_HOME", &tmp_dir)
+            .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("add")
             .arg(fixtures_path().join("sample-extension"))
@@ -133,11 +131,11 @@ fn unsuccessful_installation_prints_failure_message() {
     assert!(stderr_match_regex(
         Command::cargo_bin("phylum")
             .unwrap()
-            .env("XDG_DATA_HOME", &tmp_dir)
+            .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("add")
             .arg(
-                PathBuf::from(&tmp_dir)
+                PathBuf::from(tempdir.path())
                     .join("phylum")
                     .join("extensions")
                     .join("sample-extension"),
@@ -152,18 +150,20 @@ fn unsuccessful_installation_prints_failure_message() {
 // should be entirely removed from the user system.
 #[test]
 fn extension_is_uninstalled_correctly() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
 
-    let extension_path = PathBuf::from(&tmp_dir)
+    let extension_path = tempdir
+        .path()
+        .to_path_buf()
         .join("phylum")
         .join("extensions")
         .join("sample-extension");
@@ -172,7 +172,7 @@ fn extension_is_uninstalled_correctly() {
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("remove")
         .arg("sample-extension")
@@ -187,12 +187,12 @@ fn extension_is_uninstalled_correctly() {
 // on what the extension does should be shown in a table format.
 #[test]
 fn extension_list_should_emit_output() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
 
     // Output that no extension is installed when that is the case.
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("list")
         .assert();
@@ -205,7 +205,7 @@ fn extension_list_should_emit_output() {
     // Install one extension
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("sample-extension"))
@@ -214,7 +214,7 @@ fn extension_list_should_emit_output() {
     // Output name and description of the extension when one is installed
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("list")
         .assert();
@@ -238,11 +238,11 @@ fn valid_extension_is_loaded_correctly() {
 
 #[test]
 fn conflicting_extension_name_is_filtered() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new().unwrap();
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("ping-extension"))
@@ -251,7 +251,7 @@ fn conflicting_extension_name_is_filtered() {
 
     let cmd = Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("list")
         .assert()
@@ -301,46 +301,4 @@ fn fixtures_path() -> PathBuf {
         .join("tests")
         .join("fixtures")
         .join("extensions")
-}
-
-struct TmpDir(PathBuf);
-
-impl TmpDir {
-    fn new() -> Self {
-        let dir_uid: String = rand::thread_rng()
-            .sample_iter(&rand::distributions::Alphanumeric)
-            .take(16)
-            .map(char::from)
-            .collect();
-
-        let dir_name = format!("phylum-test-{dir_uid}");
-
-        let path = tmp_path().join(dir_name);
-        fs::create_dir_all(&path).unwrap();
-        Self(path)
-    }
-}
-
-impl AsRef<Path> for TmpDir {
-    fn as_ref(&self) -> &Path {
-        &self.0
-    }
-}
-
-impl AsRef<OsStr> for TmpDir {
-    fn as_ref(&self) -> &OsStr {
-        self.0.as_os_str()
-    }
-}
-
-impl Drop for TmpDir {
-    fn drop(&mut self) {
-        if env::var_os("PHYLUM_TEST_SKIP_CLEANUP").is_none() {
-            fs::remove_dir_all(&self.0).unwrap();
-        }
-    }
-}
-
-fn tmp_path() -> PathBuf {
-    project_root().join("target").join("tests-tmp")
 }
