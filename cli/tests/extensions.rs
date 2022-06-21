@@ -270,21 +270,17 @@ fn async_api_borrows_do_not_panic() {
         .env("XDG_DATA_HOME", &tmp_dir)
         .arg("extension")
         .arg("add")
-        .arg(fixtures_path().join("api-extension"))
+        .arg(fixtures_path().join("async-borrows"))
         .assert()
         .success();
 
-    let cmd = Command::cargo_bin("phylum")
+    Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", &tmp_dir)
         .env("RUST_BACKTRACE", "1")
-        .arg("api-extension")
-        .assert();
-
-    let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    println!("{output}");
-    let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    println!("{output}");
+        .arg("async-borrows")
+        .assert()
+        .success();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

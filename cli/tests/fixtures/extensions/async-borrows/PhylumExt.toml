@@ -1,0 +1,3 @@
+name = "async-borrows"
+description = "This extension tests concurrent access to the API"
+entry_point = "main.ts"
