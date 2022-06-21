@@ -13,9 +13,12 @@ const SPINNER_DOTS: [&str; 56] = [
     "⠀⢘", "⠀⡘", "⠀⠨", "⠀⢐", "⠀⡐", "⠀⠠", "⠀⢀", "⠀⡀",
 ];
 
+/// A CLI spinner. All public constructors are gated behind a
+/// check that stderr is a TTY. If this is not the case, every method is a
+/// no-op.
 pub struct Spinner {
-    tx: Sender<Command>,
-    handle: JoinHandle<()>,
+    tx: Option<Sender<Command>>,
+    handle: Option<JoinHandle<()>>,
 }
 
 enum Command {
@@ -24,24 +27,30 @@ enum Command {
 }
 
 impl Spinner {
-    /// Try to start a CLI spinner on the current cursor line. To stop it, call
-    /// `stop` on the returned `Spinner`. Returns `None` if stderr is not a TTY.
-    pub fn new() -> Option<Self> {
+    /// Start a CLI spinner on the current cursor line. To stop it, call
+    /// `stop` on the returned `Spinner`.
+    pub fn new() -> Self {
         Self::new_inner(None)
     }
 
     /// Like `new` but also displays a message.
-    pub fn new_with_message(message: impl Into<String>) -> Option<Self> {
+    pub fn new_with_message(message: impl Into<String>) -> Self {
         Self::new_inner(Some(message.into()))
     }
 
-    fn new_inner(message: Option<String>) -> Option<Self> {
+    fn new_inner(message: Option<String>) -> Self {
         if atty::is(atty::Stream::Stderr) {
             let (tx, rx) = mpsc::channel(10);
             let handle = tokio::spawn(Self::spin(rx, message));
-            Some(Self { tx, handle })
+            Self {
+                tx: Some(tx),
+                handle: Some(handle),
+            }
         } else {
-            None
+            Self {
+                tx: None,
+                handle: None,
+            }
         }
     }
 
@@ -66,33 +75,36 @@ impl Spinner {
     where
         F: Future,
     {
-        if let Some(spinner) = Spinner::new_inner(message) {
-            let result = future.await;
-            spinner.stop().await;
-            result
-        } else {
-            future.await
-        }
+        let spinner = Spinner::new_inner(message);
+        let result = future.await;
+        spinner.stop().await;
+        result
     }
 
     /// Set a new message for the spinner to display.
     pub async fn set_message(&self, message: impl Into<String>) {
-        self.tx
-            .send(Command::Message(Some(message.into())))
-            .await
-            .ok();
+        if let Some(tx) = &self.tx {
+            tx.send(Command::Message(Some(message.into()))).await.ok();
+        }
     }
 
     /// Remove the existing spinner message (if any)
     pub async fn unset_message(&self) {
-        self.tx.send(Command::Message(None)).await.ok();
+        if let Some(tx) = &self.tx {
+            tx.send(Command::Message(None)).await.ok();
+        }
     }
 
     /// Stop the spinner. This requires a bit of cleanup, and so should be `await`ed before doing
     /// any other i/o.
     pub async fn stop(self) {
-        self.tx.send(Command::Stop).await.ok();
-        self.handle.await.ok(); // of no consequence if the spinner thread panics, squash it
+        if let Some(tx) = &self.tx {
+            tx.send(Command::Stop).await.ok();
+        }
+        if let Some(handle) = self.handle {
+            // of no consequence if the spinner thread panics, squash it
+            handle.await.ok();
+        }
     }
 
     /// Spin until receiver sees `Command::Stop` or the channel is closed.
@@ -125,6 +137,12 @@ impl Spinner {
         eprint!("{}", ansi::CLEAR_LINE);
         eprint!("{}", ansi::CURSOR_POSITION_RESTORE);
         eprint!("{}", ansi::CURSOR_SHOW);
+    }
+}
+
+impl Default for Spinner {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
