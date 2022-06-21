@@ -263,11 +263,11 @@ fn conflicting_extension_name_is_filtered() {
 
 #[test]
 fn async_api_borrows_do_not_panic() {
-    let tmp_dir = TmpDir::new();
+    let tempdir = TempDir::new();
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", &tempdir)
         .arg("extension")
         .arg("add")
         .arg(fixtures_path().join("async-borrows"))
@@ -276,7 +276,7 @@ fn async_api_borrows_do_not_panic() {
 
     Command::cargo_bin("phylum")
         .unwrap()
-        .env("XDG_DATA_HOME", &tmp_dir)
+        .env("XDG_DATA_HOME", &tempdir)
         .env("RUST_BACKTRACE", "1")
         .arg("async-borrows")
         .assert()
