@@ -8,6 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
+use tokio::sync::Mutex;
 
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -21,81 +22,68 @@ use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 use crate::{api::PhylumApi, auth::UserInfo};
 
-// /// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
-// enum OnceFuture<T: Unpin> {
-//     Future(BoxFuture<'static, T>),
-//     Awaited(T),
-// }
-//
-// impl<T: Unpin> OnceFuture<T> {
-//     fn new(inner: BoxFuture<'static, T>) -> Self {
-//         OnceFuture::Future(inner)
-//     }
-//
-//     async fn get(&mut self) -> &T {
-//         match *self {
-//             OnceFuture::Future(ref mut inner) => {
-//                 *self = OnceFuture::Awaited(inner.await);
-//                 match *self {
-//                     OnceFuture::Future(..) => unreachable!(),
-//                     OnceFuture::Awaited(ref mut inner) => inner,
-//                 }
-//             }
-//             OnceFuture::Awaited(ref mut inner) => inner,
-//         }
-//     }
-// }
+/// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
+enum OnceFuture<T: Unpin> {
+    Future(BoxFuture<'static, T>),
+    Awaited(T),
+}
 
-/// Opaquely encapsulates the extension state.
-pub struct ExtensionState(BoxFuture<'static, Result<Rc<PhylumApi>>>);
+impl<T: Unpin> OnceFuture<T> {
+    fn new(inner: BoxFuture<'static, T>) -> Self {
+        OnceFuture::Future(inner)
+    }
 
-impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
-    fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(Box::pin(async {
-            extension_state_future.await.map(Rc::new)
-        }))
+    async fn get(&mut self) -> &T {
+        match *self {
+            OnceFuture::Future(ref mut inner) => {
+                *self = OnceFuture::Awaited(inner.await);
+                match *self {
+                    OnceFuture::Future(..) => unreachable!(),
+                    OnceFuture::Awaited(ref mut inner) => inner,
+                }
+            }
+            OnceFuture::Awaited(ref mut inner) => inner,
+        }
     }
 }
 
-// pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
-//
-// impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
-//     fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-//         Self(OnceFuture::new(Box::pin(async {
-//             extension_state_future.await.map(Rc::new)
-//         })))
-//     }
-// }
+/// Opaquely encapsulates the extension state.
+pub struct ExtensionState(Mutex<OnceFuture<Result<Rc<PhylumApi>>>>);
+
+impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
+    fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+        Self(Mutex::new(OnceFuture::new(Box::pin(async {
+            extension_state_future.await.map(Rc::new)
+        }))))
+    }
+}
+
+impl ExtensionState {
+    async fn get(&self) -> Result<Rc<PhylumApi>> {
+        // The mutex guard is only useful for synchronizing access to the encapsulated future.
+        // Once a `Result<Rc<PhylumApi>>` is obtained, the guard is dropped: subsequent awaits on
+        // `PhylumApi` methods are not synchronized via this mutex, and can happen concurrently.
+        let mut guard = self.0.lock().await;
+        Ok(Rc::clone(
+            guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?,
+        ))
+    }
+}
 
 /// Wraps a shared, counted reference to the `PhylumApi` object.
 ///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` and cloned; it will not require mutable access to the owning `RefCell`, so the mutable borrow to it may be dropped.
+/// The reference can be safely extracted from `Rc<RefCell<OpState>>` and
+/// cloned; it will not require mutable access to the owning `RefCell`, so the
+/// mutable borrow to it may be dropped.
 struct ExtensionStateRef(Rc<PhylumApi>);
 
 impl ExtensionStateRef {
     // This can not be implemented as the `From<T>` trait because of `async`.
     async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
-        let state_ref = { state.try_borrow_mut()?.try_take::<ExtensionState>() };
-        if let Some(extension_state) = state_ref {
-            let api = Rc::new(extension_state.0.await?);
-            {
-                state.try_borrow_mut()?.put(api);
-            }
-        }
-
-        Ok(Self(Rc::clone(state.borrow().borrow::<Rc<PhylumApi>>())))
-
-        // let mut state_ref = Pin::new(state.try_borrow_mut()?);
-        // let api = state_ref
-        //     .borrow_mut::<ExtensionState>()
-        //     .0
-        //     .get()
-        //     .await
-        //     .as_ref()
-        //     .map_err(|e| anyhow!("{:?}", e))?
-        //     .clone();
-
-        // Ok(ExtensionStateRef(api))
+        let state_ref = Pin::new(state.borrow());
+        Ok(ExtensionStateRef(
+            state_ref.borrow::<ExtensionState>().get().await?,
+        ))
     }
 }
 
