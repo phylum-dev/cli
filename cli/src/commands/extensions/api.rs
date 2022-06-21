@@ -72,9 +72,8 @@ impl ExtensionState {
 
 /// Wraps a shared, counted reference to the `PhylumApi` object.
 ///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` and
-/// cloned; it will not require mutable access to the owning `RefCell`, so the
-/// mutable borrow to it may be dropped.
+/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an immutable borrow,
+/// and then cloned via the `ExtensionState::get` method.
 struct ExtensionStateRef(Rc<PhylumApi>);
 
 impl ExtensionStateRef {
