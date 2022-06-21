@@ -109,13 +109,14 @@ impl ExtensionsModuleLoader {
         Ok(fs::read_to_string(path).await?)
     }
 
-    async fn load_from_deno_std(path: &Url, domain: &str) -> Result<String> {
-        if domain == "deno.land" {
+    async fn load_from_deno_std(path: &Url) -> Result<String> {
+        if let Some(Host::Domain("deno.land")) = path.host() {
             let response = reqwest::get(path.clone()).await?;
             Ok(response.text().await?)
         } else {
             Err(anyhow!(
-                "`{domain}`: importing from domains except `deno.land` is not allowed"
+                "`{}`: importing from domains except `deno.land` is not allowed",
+                path.host().unwrap_or(Host::Domain("<unknown host>"))
             ))
         }
     }
@@ -156,13 +157,9 @@ impl ModuleLoader for ExtensionsModuleLoader {
 
             // Load either a local file under the extensions directory, or a Deno standard library
             // module. Reject all URLs that do not fit these two use cases.
-            let mut code = match (module_specifier.scheme(), module_specifier.host()) {
-                ("file", None) => {
-                    ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?
-                }
-                ("https", Some(Host::Domain(domain))) => {
-                    ExtensionsModuleLoader::load_from_deno_std(&module_specifier, domain).await?
-                }
+            let mut code = match module_specifier.scheme() {
+                "file" => ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?,
+                "https" => ExtensionsModuleLoader::load_from_deno_std(&module_specifier).await?,
                 _ => {
                     return Err(anyhow!(
                         "Unsupported module specifier: {}",
