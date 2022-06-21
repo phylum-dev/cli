@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use anyhow::Context;
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
 use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
@@ -314,13 +313,7 @@ impl PhylumApi {
             .iter()
             .find(|project| project.name == project_name)
             .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
-            .and_then(|project| {
-                project
-                    .id
-                    .parse()
-                    .context("Invalid Project ID")
-                    .map_err(PhylumApiError::from)
-            })
+            .map(|project| project.id)
     }
 
     /// Get package details
