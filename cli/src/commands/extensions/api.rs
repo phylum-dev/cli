@@ -9,6 +9,7 @@ use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
 use tokio::fs;
+use tokio::sync::Mutex;
 
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -49,35 +50,42 @@ impl<T: Unpin> OnceFuture<T> {
 }
 
 /// Opaquely encapsulates the extension state.
-pub struct ExtensionState(OnceFuture<Result<Rc<PhylumApi>>>);
+pub struct ExtensionState(Mutex<OnceFuture<Result<Rc<PhylumApi>>>>);
 
 impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
     fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(OnceFuture::new(Box::pin(async {
+        Self(Mutex::new(OnceFuture::new(Box::pin(async {
             extension_state_future.await.map(Rc::new)
-        })))
+        }))))
+    }
+}
+
+impl ExtensionState {
+    async fn get(&self) -> Result<Rc<PhylumApi>> {
+        // The mutex guard is only useful for synchronizing internally mutable access to the
+        // encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained, the guard is dropped:
+        // subsequent awaits on `PhylumApi` methods are not synchronized via this mutex, and can
+        // happen concurrently.
+        let mut guard = self.0.lock().await;
+        Ok(Rc::clone(
+            guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?,
+        ))
     }
 }
 
 /// Wraps a shared, counted reference to the `PhylumApi` object.
 ///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` and cloned; it will not require mutable access to the owning `RefCell`, so the mutable borrow to it may be dropped.
+/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an immutable borrow,
+/// and then cloned via the `ExtensionState::get` method.
 struct ExtensionStateRef(Rc<PhylumApi>);
 
 impl ExtensionStateRef {
     // This can not be implemented as the `From<T>` trait because of `async`.
     async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
-        let mut state_ref = Pin::new(state.try_borrow_mut()?);
-        let api = state_ref
-            .borrow_mut::<ExtensionState>()
-            .0
-            .get()
-            .await
-            .as_ref()
-            .map_err(|e| anyhow!("{:?}", e))?
-            .clone();
-
-        Ok(ExtensionStateRef(api))
+        let state_ref = Pin::new(state.borrow());
+        Ok(ExtensionStateRef(
+            state_ref.borrow::<ExtensionState>().get().await?,
+        ))
     }
 }
 
