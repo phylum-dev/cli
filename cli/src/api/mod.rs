@@ -47,6 +47,8 @@ pub enum PhylumApiError {
     #[error(transparent)]
     BaseUri(#[from] BaseUriError),
     #[error(transparent)]
+    Response(#[from] ResponseError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
 
@@ -57,6 +59,14 @@ impl PhylumApiError {
             _ => None,
         }
     }
+}
+
+/// Non-successful request response.
+#[derive(ThisError, Debug)]
+#[error("HTTP request error ({code}):\n{body}")]
+pub struct ResponseError {
+    pub code: StatusCode,
+    pub body: String,
 }
 
 impl PhylumApi {
@@ -92,11 +102,15 @@ impl PhylumApi {
         }
 
         let response = request.send().await?;
-        let success = response.status().is_success();
+        let status_code = response.status();
         let body = response.text().await?;
 
-        if !success {
-            return Err(anyhow!(body).into());
+        if !status_code.is_success() {
+            let err = ResponseError {
+                body,
+                code: status_code,
+            };
+            return Err(err.into());
         }
 
         serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
