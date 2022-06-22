@@ -233,7 +233,6 @@ pub async fn handle_auth_flow(
 
 #[cfg(test)]
 mod test {
-
     use anyhow::Result;
     use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};

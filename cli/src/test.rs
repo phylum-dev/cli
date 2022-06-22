@@ -3,7 +3,6 @@
 /// enables logging statically for any test module this module it is imported
 /// into
 pub mod logging {
-
     use lazy_static::lazy_static;
 
     lazy_static! {
@@ -15,7 +14,6 @@ pub mod logging {
 }
 
 pub mod mockito {
-
     use std::borrow::Cow;
     use std::collections::HashMap;
     use std::str::FromStr;
