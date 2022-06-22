@@ -42,10 +42,7 @@ jobs:
 
       - name: Format check
         if: github.event_name != 'schedule'
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: +nightly --all -- --check
+        run: cargo +nightly fmt --all -- --check
 
       - name: Build
         uses: actions-rs/cargo@v1
