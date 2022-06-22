@@ -338,7 +338,7 @@ fn module_loader_loads_correctly() {
         .failure();
 
     let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    assert!(stderr.contains("importing from domains except"));
+    assert!(stderr.contains("importing from domains other than"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
