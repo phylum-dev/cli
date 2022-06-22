@@ -34,20 +34,12 @@ impl Pom {
 
         // Get the reporting dependencies
         let mut reporting_dependencies = Self::get_plugin_deps(
-            &project
-                .reporting
-                .unwrap_or_default()
-                .plugins
-                .unwrap_or_default(),
+            &project.reporting.unwrap_or_default().plugins.unwrap_or_default(),
         );
 
         // Combine plugins and plugin dependencies
         let mut build_plugins = Self::get_plugin_deps(
-            &project
-                .build
-                .as_ref()
-                .and_then(|b| b.plugins.clone())
-                .unwrap_or_default(),
+            &project.build.as_ref().and_then(|b| b.plugins.clone()).unwrap_or_default(),
         );
 
         // Get build artifacts
@@ -166,7 +158,7 @@ impl Parse for Pom {
                 packages.dedup();
 
                 Ok(packages)
-            }
+            },
         }
     }
 
@@ -181,9 +173,7 @@ mod tests {
 
     #[test]
     fn lock_parse_gradle() {
-        let pkgs = GradleLock
-            .parse_file("tests/fixtures/gradle.lockfile")
-            .unwrap();
+        let pkgs = GradleLock.parse_file("tests/fixtures/gradle.lockfile").unwrap();
 
         assert_eq!(pkgs.len(), 5);
 
@@ -218,9 +208,7 @@ mod tests {
 
     #[test]
     fn lock_parse_workspace_effective_pom() {
-        let pkgs = Pom
-            .parse_file("tests/fixtures/workspace-effective-pom.xml")
-            .unwrap();
+        let pkgs = Pom.parse_file("tests/fixtures/workspace-effective-pom.xml").unwrap();
 
         assert_eq!(pkgs.len(), 17);
 

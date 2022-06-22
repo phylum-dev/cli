@@ -27,11 +27,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
             .unwrap_or(package_type);
     }
 
-    Some(PackageDescriptor {
-        name,
-        version,
-        package_type,
-    })
+    Some(PackageDescriptor { name, version, package_type })
 }
 
 /// Handle the subcommands for the `package` subcommand.

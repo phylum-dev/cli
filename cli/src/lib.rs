@@ -17,9 +17,8 @@ mod test;
 pub mod types;
 pub mod update;
 
+pub use reqwest::Error;
 #[cfg(test)]
 #[allow(unused_imports)]
 // Enable logging for ALL doc & local tests
 use test::logging;
-
-pub use reqwest::Error;

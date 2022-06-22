@@ -1,8 +1,7 @@
 use std::fs::read_to_string;
 use std::path::Path;
 
-use phylum_types::types::package::PackageDescriptor;
-use phylum_types::types::package::PackageType;
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 mod csharp;
 mod java;

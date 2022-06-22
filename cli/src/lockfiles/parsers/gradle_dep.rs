@@ -18,9 +18,7 @@ fn artifact_id_version(input: &str) -> Result<&str, &str> {
 }
 
 fn filter_line(input: &str) -> Result<&str, &str> {
-    verify(rest, |s: &str| {
-        !s.starts_with('#') && !s.starts_with("empty=")
-    })(input)
+    verify(rest, |s: &str| !s.starts_with('#') && !s.starts_with("empty="))(input)
 }
 
 fn package(input: &str) -> Option<PackageDescriptor> {

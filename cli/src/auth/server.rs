@@ -3,12 +3,12 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
 #[cfg(not(test))]
 use open;
+use phylum_types::types::auth::{AuthorizationCode, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -17,15 +17,12 @@ use routerify::{Router, RouterService};
 use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
+use super::oidc::{
+    acquire_tokens, build_auth_url, check_if_routable, fetch_oidc_server_settings, AuthAction,
+    ChallengeCode, CodeVerifier, OidcServerSettings,
+};
 #[cfg(test)]
 use crate::test::open;
-use phylum_types::types::auth::{AuthorizationCode, TokenResponse};
-
-use super::oidc::acquire_tokens;
-use super::oidc::{
-    build_auth_url, check_if_routable, fetch_oidc_server_settings, CodeVerifier, OidcServerSettings,
-};
-use super::oidc::{AuthAction, ChallengeCode};
 
 pub const AUTH_CALLBACK_TEMPLATE: &str = include_str!("./auth_callback_template.html");
 
@@ -34,7 +31,8 @@ pub const AUTH_CALLBACK_TEMPLATE: &str = include_str!("./auth_callback_template.
 #[derive(Clone)]
 struct AuthCodeState(Arc<Mutex<Option<String>>>);
 
-//State to store the oauth2 state parameter so it can be set and checked in the callback
+// State to store the oauth2 state parameter so it can be set and checked in the
+// callback
 #[derive(Clone)]
 struct OAuth2CallbackState(Arc<String>);
 
@@ -45,17 +43,16 @@ struct ShutdownHookState(Mutex<Option<Sender<()>>>);
 ///
 /// This handler tries to parse the request and extract the code.
 ///
-/// If a code is present, it updates the internal state and stores the code in it
+/// If a code is present, it updates the internal state and stores the code in
+/// it
 async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Body>> {
     log::debug!("Callback handler triggered!");
 
-    let shutdown_hook = request
-        .data::<ShutdownHookState>()
-        .expect("Shutdown hook not set as hyper state");
+    let shutdown_hook =
+        request.data::<ShutdownHookState>().expect("Shutdown hook not set as hyper state");
 
-    let auth_code: &AuthCodeState = request
-        .data::<AuthCodeState>()
-        .expect("State for holding auth code not set");
+    let auth_code: &AuthCodeState =
+        request.data::<AuthCodeState>().expect("State for holding auth code not set");
 
     let saved_state: &OAuth2CallbackState = request
         .data::<OAuth2CallbackState>()
@@ -66,11 +63,7 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
     let query_parameters: HashMap<String, String> = request
         .uri()
         .query()
-        .map(|v| {
-            url::form_urlencoded::parse(v.as_bytes())
-                .into_owned()
-                .collect()
-        })
+        .map(|v| url::form_urlencoded::parse(v.as_bytes()).into_owned().collect())
         .unwrap_or_else(HashMap::new);
 
     // Check that XSRF prevention state was properly returned.
@@ -79,14 +72,14 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
             let msg = "Oauth server did return XSRF prevention state nonce";
             log::error!("{}", msg);
             return Err(anyhow!(msg));
-        }
+        },
         Some(state) => {
             if *state != *saved_state.0 {
                 let msg = "OAuth server returned wrong XSRF prevention state nonce";
                 log::error!("{}", msg);
                 return Err(anyhow!(msg));
             }
-        }
+        },
     };
 
     let response_body = match query_parameters.get("code") {
@@ -94,21 +87,17 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
             log::error!(
                 "Encountered error during auth response\n  Error: {} :{}",
                 query_parameters.get("error").unwrap_or(&"".to_owned()),
-                query_parameters
-                    .get("error_description")
-                    .unwrap_or(&"".to_owned())
+                query_parameters.get("error_description").unwrap_or(&"".to_owned())
             );
-            AUTH_CALLBACK_TEMPLATE.replace(
-                "{{}}",
-                "Login / Registration failed, did not get authorization code",
-            )
-        }
+            AUTH_CALLBACK_TEMPLATE
+                .replace("{{}}", "Login / Registration failed, did not get authorization code")
+        },
         Some(code) => {
             log::debug!("Authoriztion successful, acquired authorization code");
             let mut lock = auth_code.0.lock().await;
             *lock = Some(code.to_owned());
             AUTH_CALLBACK_TEMPLATE.replace("{{}}", "Login / Registration succeeded")
-        }
+        },
     };
 
     let response = Response::builder()
@@ -120,7 +109,8 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
     // Schedule shutdown of the hyper server
     let mut shutdown_lock = shutdown_hook.0.lock().await;
     if let Some(sender) = (*shutdown_lock).take() {
-        // Slight delay to ensure we send a browser response before the server shuts down...
+        // Slight delay to ensure we send a browser response before the server shuts
+        // down...
         tokio::spawn(async {
             tokio::time::sleep(Duration::from_millis(250)).await;
             match sender.send(()) {
@@ -177,13 +167,8 @@ async fn spawn_server_and_get_auth_code(
         receive_shutdown.await.ok();
     });
 
-    let authorization_url = build_auth_url(
-        redirect_type,
-        oidc_settings,
-        &callback_url,
-        code_challenge,
-        state,
-    )?;
+    let authorization_url =
+        build_auth_url(redirect_type, oidc_settings, &callback_url, code_challenge, state)?;
 
     log::debug!("Authorization url is {}", authorization_url);
 
@@ -240,21 +225,10 @@ pub async fn handle_auth_flow(
 ) -> Result<TokenResponse> {
     let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
-    let state: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
+    let state: String = thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
-    acquire_tokens(
-        &oidc_settings,
-        &callback_url,
-        &auth_code,
-        &code_verifier,
-        ignore_certs,
-    )
-    .await
+    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier, ignore_certs).await
 }
 
 #[cfg(test)]
@@ -276,11 +250,8 @@ mod test {
         let (_verifier, challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let state: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(32)
-            .map(char::from)
-            .collect();
+        let state: String =
+            thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
         spawn_server_and_get_auth_code(&oidc_settings, &AuthAction::Login, &challenge, state)
             .await?;

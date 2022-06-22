@@ -1,17 +1,19 @@
 pub mod api;
 pub mod extension;
 
-use extension::*;
-
-use std::{collections::HashSet, fs, io::ErrorKind, path::PathBuf};
-
-use crate::api::PhylumApi;
-use crate::commands::{CommandResult, CommandValue, ExitCode};
+use std::collections::HashSet;
+use std::fs;
+use std::io::ErrorKind;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
+use extension::*;
 use futures::future::BoxFuture;
 use log::{error, warn};
+
+use crate::api::PhylumApi;
+use crate::commands::{CommandResult, CommandValue, ExitCode};
 
 pub fn command<'a>() -> Command<'a> {
     Command::new("extension")
@@ -22,9 +24,7 @@ pub fn command<'a>() -> Command<'a> {
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
-            Command::new("remove")
-                .about("Uninstall extension")
-                .arg(arg!([NAME]).required(true)),
+            Command::new("remove").about("Uninstall extension").arg(arg!([NAME]).required(true)),
         )
         .subcommand(Command::new("list").about("List installed extensions"))
 }
@@ -37,30 +37,22 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
         Err(e) => {
             error!("Couldn't list extensions: {}", e);
             return command;
-        }
+        },
     };
 
-    let names = command
-        .get_subcommands()
-        .map(|n| n.get_name().to_string())
-        .collect::<HashSet<_>>();
+    let names = command.get_subcommands().map(|n| n.get_name().to_string()).collect::<HashSet<_>>();
 
     extensions
         .into_iter()
         .filter(|ext| {
             if names.contains(ext.name()) {
-                warn!(
-                    "{}: extension was filtered out due to name conflict",
-                    ext.name()
-                );
+                warn!("{}: extension was filtered out due to name conflict", ext.name());
                 false
             } else {
                 true
             }
         })
-        .fold(command, |command, ext| {
-            command.subcommand(Command::new(ext.name()))
-        })
+        .fold(command, |command, ext| command.subcommand(Command::new(ext.name())))
 }
 
 /// Entry point for the `extensions` subcommand.
@@ -69,7 +61,7 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
         Some(("add", matches)) => handle_add_extension(matches.value_of("PATH").unwrap()).await,
         Some(("remove", matches)) => {
             handle_remove_extension(matches.value_of("NAME").unwrap()).await
-        }
+        },
         Some(("list", _)) | None => handle_list_extensions().await,
         _ => unreachable!(),
     }
@@ -95,10 +87,7 @@ pub async fn handle_run_extension(
 async fn handle_add_extension(path: &str) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
-        return Err(anyhow!(
-            "Ambiguous extension URI '{}', use './{0}' instead",
-            path
-        ));
+        return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
     }
 
     let extension_path = PathBuf::from(path);
@@ -137,7 +126,8 @@ async fn handle_list_extensions() -> CommandResult {
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
-/// Return a list of installed extensions. Filter out invalid extensions instead of exiting early.
+/// Return a list of installed extensions. Filter out invalid extensions instead
+/// of exiting early.
 pub fn installed_extensions() -> Result<Vec<Extension>> {
     let extensions_path = extensions_path()?;
 
@@ -149,7 +139,7 @@ pub fn installed_extensions() -> Result<Vec<Extension>> {
             } else {
                 return Err(e.into());
             }
-        }
+        },
     };
 
     Ok(dir_entry
@@ -162,7 +152,7 @@ pub fn installed_extensions() -> Result<Vec<Extension>> {
                 Err(e) => {
                     error!("{e}");
                     None
-                }
+                },
             }
         })
         .collect::<Vec<_>>())

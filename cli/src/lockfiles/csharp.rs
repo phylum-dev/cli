@@ -1,7 +1,6 @@
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
-
-use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::lockfiles::{Parse, ParseResult};
 
@@ -95,9 +94,7 @@ mod tests {
 
     #[test]
     fn lock_parse_another_invalid_char() {
-        let pkgs = CSProj
-            .parse_file("tests/fixtures/Calculator.csproj")
-            .unwrap();
+        let pkgs = CSProj.parse_file("tests/fixtures/Calculator.csproj").unwrap();
         assert!(!pkgs.is_empty());
     }
 }

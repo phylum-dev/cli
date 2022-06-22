@@ -127,7 +127,8 @@ fn unsuccessful_installation_prints_failure_message() {
         r#"extension already exists"#,
     ));
 
-    // Try to install the extension from the installed path. Should fail with an error.
+    // Try to install the extension from the installed path. Should fail with an
+    // error.
     assert!(stderr_match_regex(
         Command::cargo_bin("phylum")
             .unwrap()
@@ -161,12 +162,8 @@ fn extension_is_uninstalled_correctly() {
         .assert()
         .success();
 
-    let extension_path = tempdir
-        .path()
-        .to_path_buf()
-        .join("phylum")
-        .join("extensions")
-        .join("sample-extension");
+    let extension_path =
+        tempdir.path().to_path_buf().join("phylum").join("extensions").join("sample-extension");
 
     assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 
@@ -287,17 +284,9 @@ fn conflicting_extension_name_is_filtered() {
 ////////////////////////////////////////////////////////////////////////////////
 
 fn project_root() -> PathBuf {
-    Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(1)
-        .unwrap()
-        .to_path_buf()
+    Path::new(&env!("CARGO_MANIFEST_DIR")).ancestors().nth(1).unwrap().to_path_buf()
 }
 
 fn fixtures_path() -> PathBuf {
-    project_root()
-        .join("cli")
-        .join("tests")
-        .join("fixtures")
-        .join("extensions")
+    project_root().join("cli").join("tests").join("fixtures").join("extensions")
 }

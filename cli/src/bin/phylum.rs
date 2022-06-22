@@ -5,8 +5,6 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use env_logger::Env;
 use log::*;
-use phylum_cli::commands::parse::handle_parse;
-
 use phylum_cli::api::PhylumApi;
 use phylum_cli::commands::auth::*;
 #[cfg(feature = "extensions")]
@@ -14,14 +12,14 @@ use phylum_cli::commands::extensions::{handle_extensions, handle_run_extension};
 use phylum_cli::commands::group::handle_group;
 use phylum_cli::commands::jobs::*;
 use phylum_cli::commands::packages::*;
+use phylum_cli::commands::parse::handle_parse;
 use phylum_cli::commands::project::handle_project;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall::*;
 use phylum_cli::commands::{CommandResult, CommandValue, ExitCode};
 use phylum_cli::config::*;
 use phylum_cli::print::*;
-use phylum_cli::update;
-use phylum_cli::{print_user_failure, print_user_success, print_user_warning};
+use phylum_cli::{print_user_failure, print_user_success, print_user_warning, update};
 use phylum_types::types::job::Action;
 
 /// Print a warning message to the user before exiting with exit code 0.
@@ -46,36 +44,29 @@ pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -
     ExitCode::Generic.exit()
 }
 
-/// Construct an instance of `PhylumApi` given configuration, optional timeout, and whether we
-/// need API to ignore certificates.
+/// Construct an instance of `PhylumApi` given configuration, optional timeout,
+/// and whether we need API to ignore certificates.
 async fn api_factory(
     config: Config,
     config_path: PathBuf,
     timeout: Option<u64>,
 ) -> Result<PhylumApi> {
-    let api = PhylumApi::new(config, timeout)
-        .await
-        .context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout).await.context("Error creating client")?;
 
-    // PhylumApi may have had to log in, updating the auth info so we should save the config
+    // PhylumApi may have had to log in, updating the auth info so we should save
+    // the config
     save_config(&config_path, api.config()).with_context(|| {
-        format!(
-            "Failed to save configuration to '{}'",
-            config_path.to_string_lossy()
-        )
+        format!("Failed to save configuration to '{}'", config_path.to_string_lossy())
     })?;
 
     Ok(api)
 }
 
 async fn handle_commands() -> CommandResult {
-    //
     // Initialize clap app and read configuration.
     //
 
-    let app = phylum_cli::app::app()
-        .arg_required_else_help(true)
-        .subcommand_required(true);
+    let app = phylum_cli::app::app().arg_required_else_help(true).subcommand_required(true);
     let app_name = app.get_name().to_string();
     // Required for printing help messages since `get_matches()` consumes `App`
     let app_helper = &mut app.clone();
@@ -91,11 +82,7 @@ async fn handle_commands() -> CommandResult {
 
     log::debug!("Reading config from {}", config_path.to_string_lossy());
     let mut config: Config = read_configuration(&config_path).map_err(|err| {
-        anyhow!(
-            "Failed to read configuration at `{}`: {}",
-            config_path.to_string_lossy(),
-            err
-        )
+        anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
     })?;
     config.ignore_certs |= matches.is_present("no-check-certificate");
 
@@ -104,11 +91,8 @@ async fn handle_commands() -> CommandResult {
     }
 
     // We initialize these value here, for later use by the PhylumApi object.
-    let timeout = matches
-        .value_of("timeout")
-        .and_then(|t| t.parse::<u64>().ok());
+    let timeout = matches.value_of("timeout").and_then(|t| t.parse::<u64>().ok());
 
-    //
     // Check for updates, if we haven't explicitly invoked `update`.
     //
 
@@ -134,7 +118,6 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    //
     // Subcommands with precedence
     //
 
@@ -152,8 +135,9 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    // Get the future, but don't await. Commands that require access to the API will await on this,
-    // so that the API is not instantiated ahead of time for subcommands that don't require it.
+    // Get the future, but don't await. Commands that require access to the API will
+    // await on this, so that the API is not instantiated ahead of time for
+    // subcommands that don't require it.
     let api = api_factory(config.clone(), config_path.clone(), timeout);
 
     let (subcommand, sub_matches) = matches.subcommand().unwrap();
@@ -161,7 +145,7 @@ async fn handle_commands() -> CommandResult {
         "auth" => {
             drop(api);
             handle_auth(config, &config_path, sub_matches, app_helper, timeout).await
-        }
+        },
         "version" => handle_version(&app_name, ver),
         "update" => handle_update(sub_matches).await,
         "parse" => handle_parse(sub_matches),

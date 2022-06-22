@@ -1,19 +1,17 @@
-use std::env;
-use std::fs;
 #[cfg(unix)]
 use std::fs::{DirBuilder, Permissions};
 use std::io::{self, Write};
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
-use serde::{Deserialize, Deserializer, Serialize};
-
 use phylum_types::types::auth::*;
 use phylum_types::types::common::*;
 use phylum_types::types::package::*;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::dirs;
 
@@ -57,12 +55,8 @@ pub struct ProjectConfig {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            connection: ConnectionInfo {
-                uri: "https://api.phylum.io".into(),
-            },
-            auth_info: AuthInfo {
-                offline_access: None,
-            },
+            connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
+            auth_info: AuthInfo { offline_access: None },
             request_type: PackageType::Npm,
             ignore_certs: false,
             last_update: None,
@@ -70,8 +64,8 @@ impl Default for Config {
     }
 }
 
-/// Create or open a file. If the file is created, it will restrict permissions to allow read/write
-/// access only to the current user.
+/// Create or open a file. If the file is created, it will restrict permissions
+/// to allow read/write access only to the current user.
 fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
     // Use OpenOptions so that we can specify the permission bits
     let mut opts = fs::OpenOptions::new();
@@ -81,16 +75,17 @@ fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
         opts.mode(0o600);
     }
 
-    // Windows file permissions are complicated and home folders aren't usually globally readable,
-    // so we can ignore Windows for now.
+    // Windows file permissions are complicated and home folders aren't usually
+    // globally readable, so we can ignore Windows for now.
 
     opts.open(path)
 }
 
 // TODO: define explicit error types
 // TODO: This is NOT atomic, and file corruption can occur
-// TODO: Config should be saved to temp file first, then rename() used to 'move' it to new location
-// Rename is guaranteed atomic. Need to handle case when files are on different mount point
+// TODO: Config should be saved to temp file first, then rename() used to 'move'
+// it to new location Rename is guaranteed atomic. Need to handle case when
+// files are on different mount point
 pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
@@ -100,10 +95,7 @@ where
         fs::create_dir_all(config_dir)?;
 
         #[cfg(unix)]
-        DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(config_dir)?;
+        DirBuilder::new().recursive(true).mode(0o700).create(config_dir)?;
     }
     let yaml = serde_yaml::to_string(config)?;
 
@@ -158,10 +150,7 @@ pub fn find_project_conf(starting_directory: &Path) -> Option<PathBuf> {
 
 pub fn get_current_project() -> Option<ProjectConfig> {
     find_project_conf(Path::new(".")).and_then(|s| {
-        log::info!(
-            "Found project configuration file at {}",
-            s.to_string_lossy()
-        );
+        log::info!("Found project configuration file at {}", s.to_string_lossy());
         parse_config(&s).ok()
     })
 }
@@ -180,10 +169,7 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
         #[cfg(unix)]
         {
             fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
-            DirBuilder::new()
-                .recursive(true)
-                .mode(0o700)
-                .create(&config_dir)?;
+            DirBuilder::new().recursive(true).mode(0o700).create(&config_dir)?;
         }
 
         #[cfg(not(unix))]
@@ -197,17 +183,14 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::env::temp_dir;
 
-    fn write_test_config() {
-        let con = ConnectionInfo {
-            uri: "http://127.0.0.1".into(),
-        };
+    use super::*;
 
-        let auth = AuthInfo {
-            offline_access: Some(RefreshToken::new("FAKE TOKEN")),
-        };
+    fn write_test_config() {
+        let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
+
+        let auth = AuthInfo { offline_access: Some(RefreshToken::new("FAKE TOKEN")) };
 
         let config = Config {
             connection: con,
@@ -246,9 +229,6 @@ mod tests {
 
         let config: Config = read_configuration(&test_config_file).unwrap();
 
-        assert_eq!(
-            config.auth_info.offline_access,
-            Some(RefreshToken::new(ENV_TOKEN))
-        );
+        assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
     }
 }

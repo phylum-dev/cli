@@ -4,25 +4,21 @@ use std::str::FromStr;
 
 use ansi_term::Color::Blue;
 use anyhow::{anyhow, Context, Result};
-use phylum_types::types::common::ProjectId;
+use phylum_types::types::common::{JobId, ProjectId};
+use phylum_types::types::job::*;
+use phylum_types::types::package::*;
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use phylum_types::types::common::JobId;
-use phylum_types::types::job::*;
-use phylum_types::types::package::*;
-
+use super::project::get_project_list;
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::parse::get_packages_from_lockfile;
 use crate::commands::{CommandResult, CommandValue};
 use crate::config::{get_current_project, ProjectConfig};
 use crate::filter::Filter;
 use crate::print::print_response;
-use crate::print_user_success;
-use crate::print_user_warning;
 use crate::summarize::Summarize;
-
-use super::project::get_project_list;
+use crate::{print_user_success, print_user_warning};
 
 fn handle_status<T>(
     resp: Result<JobStatusResponse<T>, PhylumApiError>,
@@ -90,9 +86,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     let pretty_print = !matches.is_present("json");
     let verbose = matches.is_present("verbose");
     let mut action = Action::None;
-    let display_filter = matches
-        .value_of("filter")
-        .and_then(|v| Filter::from_str(v).ok());
+    let display_filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
 
     if let Some(matches) = matches.subcommand_matches("project") {
         let project_name = matches.value_of("project_name");
@@ -101,16 +95,16 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         if let Some(project_name) = project_name {
             if project_job_id.is_none() {
                 print_user_warning!(
-                    "`phylum history project <PROJECT>` is deprecated, \
-                    use `phylum history --project <PROJECT>` instead"
+                    "`phylum history project <PROJECT>` is deprecated, use `phylum history \
+                     --project <PROJECT>` instead"
                 );
 
                 let resp = api.get_project_details(project_name).await;
                 print_response(&resp, pretty_print, None);
             } else {
                 print_user_warning!(
-                    "`phylum history project <PROJECT> <JOB_ID>` is deprecated, \
-                    use `phylum history <JOB_ID>` instead"
+                    "`phylum history project <PROJECT> <JOB_ID>` is deprecated, use `phylum \
+                     history <JOB_ID>` instead"
                 );
 
                 // TODO The original code had unwrap in it above. This needs to
@@ -170,9 +164,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         (project, group) = cli_project(api, matches).await?;
 
         // Should never get here if `LOCKFILE` was not specified
-        let lockfile = matches
-            .value_of("LOCKFILE")
-            .ok_or_else(|| anyhow!("Lockfile not found"))?;
+        let lockfile = matches.value_of("LOCKFILE").ok_or_else(|| anyhow!("Lockfile not found"))?;
         let res = get_packages_from_lockfile(Path::new(lockfile))
             .context("Unable to locate any valid package in package lockfile")?;
 
@@ -182,9 +174,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         label = matches.value_of("label");
         verbose = matches.is_present("verbose");
         pretty_print = !matches.is_present("json");
-        display_filter = matches
-            .value_of("filter")
-            .and_then(|v| Filter::from_str(v).ok());
+        display_filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
         is_user = !matches.is_present("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
@@ -229,10 +219,10 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                         package_type: request_type.to_owned(),
                     });
                     line.clear();
-                }
+                },
                 Err(err) => {
                     return Err(anyhow!(err));
-                }
+                },
             }
         }
     } else {
@@ -263,7 +253,8 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
 /// Get the current project.
 ///
-/// Assumes that the clap `matches` has a `project` and `group` arguments option.
+/// Assumes that the clap `matches` has a `project` and `group` arguments
+/// option.
 async fn cli_project(
     api: &mut PhylumApi,
     matches: &clap::ArgMatches,
@@ -276,12 +267,10 @@ async fn cli_project(
     }
 
     // Retrieve the project from the `.phylum_project` file.
-    get_current_project()
-        .map(|p: ProjectConfig| (p.id, p.group_name))
-        .ok_or_else(|| {
-            anyhow!(
-                "Failed to find a valid project configuration. Specify an existing project using \
-                the `--project` flag, or create a new one with `phylum project create <name>`"
-            )
-        })
+    get_current_project().map(|p: ProjectConfig| (p.id, p.group_name)).ok_or_else(|| {
+        anyhow!(
+            "Failed to find a valid project configuration. Specify an existing project using the \
+             `--project` flag, or create a new one with `phylum project create <name>`"
+        )
+    })
 }

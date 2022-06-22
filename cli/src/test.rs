@@ -1,6 +1,7 @@
 //! Module containing useful doc / unit test utilities.
 
-/// enables logging statically for any test module this module it is imported into
+/// enables logging statically for any test module this module it is imported
+/// into
 pub mod logging {
 
     use lazy_static::lazy_static;
@@ -15,17 +16,18 @@ pub mod logging {
 
 pub mod mockito {
 
-    use reqwest::Url;
     use std::borrow::Cow;
     use std::collections::HashMap;
     use std::str::FromStr;
+
+    use phylum_types::types::auth::*;
+    use reqwest::Url;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockBuilder, MockServer, Request, Respond, ResponseTemplate};
 
     use crate::api::{PhylumApi, PhylumApiError};
     use crate::auth::OidcServerSettings;
     use crate::config::{AuthInfo, Config, ConnectionInfo};
-    use phylum_types::types::auth::*;
 
     pub const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
     pub const DUMMY_ACCESS_TOKEN: &str = "DUMMY_ACCESS_TOKEN";
@@ -93,14 +95,10 @@ pub mod mockito {
         Mock::given(method("POST"))
             .and(path(AUTH_URI))
             .respond_with_fn(|request| {
-                let query_params = request
-                    .url
-                    .query_pairs()
-                    .collect::<HashMap<Cow<str>, Cow<str>>>();
-                let redirect_uri = query_params
-                    .get("redirect_uri")
-                    .expect("redirect_uri not set")
-                    .to_string();
+                let query_params =
+                    request.url.query_pairs().collect::<HashMap<Cow<str>, Cow<str>>>();
+                let redirect_uri =
+                    query_params.get("redirect_uri").expect("redirect_uri not set").to_string();
                 ResponseTemplate::new(302).insert_header::<&str, &str>(
                     "Location",
                     &(redirect_uri + &format!("/?code={}", DUMMY_AUTH_CODE)),
@@ -127,22 +125,16 @@ pub mod mockito {
     }
 
     pub fn build_authenticated_auth_info() -> AuthInfo {
-        AuthInfo {
-            offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)),
-        }
+        AuthInfo { offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)) }
     }
 
     pub fn build_unauthenticated_auth_info() -> AuthInfo {
-        AuthInfo {
-            offline_access: None,
-        }
+        AuthInfo { offline_access: None }
     }
 
     pub async fn build_phylum_api(mock_server: &MockServer) -> Result<PhylumApi, PhylumApiError> {
         let config = Config {
-            connection: ConnectionInfo {
-                uri: mock_server.uri(),
-            },
+            connection: ConnectionInfo { uri: mock_server.uri() },
             auth_info: build_authenticated_auth_info(),
             ..Default::default()
         };
@@ -171,23 +163,15 @@ pub mod open {
 
             let code = "FAKE_OAUTH_ATHORIZATION_CODE";
 
-            let query_params = url
-                .query_pairs()
-                .into_owned()
-                .collect::<HashMap<String, String>>();
-            let state = query_params
-                .get("state")
-                .expect("Failed to find request state on auth url");
-            let redirect_uri = query_params
-                .get("redirect_uri")
-                .expect("Failed to find redirect_uri on auth url");
+            let query_params = url.query_pairs().into_owned().collect::<HashMap<String, String>>();
+            let state =
+                query_params.get("state").expect("Failed to find request state on auth url");
+            let redirect_uri =
+                query_params.get("redirect_uri").expect("Failed to find redirect_uri on auth url");
 
             let mut callback_url =
                 Url::from_str(redirect_uri).expect("Failed to parse redirect_uri");
-            callback_url
-                .query_pairs_mut()
-                .append_pair("code", code)
-                .append_pair("state", state);
+            callback_url.query_pairs_mut().append_pair("code", code).append_pair("state", state);
 
             log::debug!("Calling callback url: {}", callback_url);
 

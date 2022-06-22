@@ -25,10 +25,7 @@ where
     T: Renderable,
 {
     fn render(&self) -> String {
-        self.iter()
-            .map(|t| t.render())
-            .collect::<Vec<_>>()
-            .join("\n")
+        self.iter().map(|t| t.render()).collect::<Vec<_>>().join("\n")
     }
 }
 
@@ -81,44 +78,33 @@ impl Renderable for ProjectDetailsResponse {
 
         let mut renderer = String::new();
         renderer.push_str(
-            format!(
-                "{:>15} {:<50} Project ID: {}\n",
-                "Project Name:", self.name, self.id
-            )
-            .as_str(),
+            format!("{:>15} {:<50} Project ID: {}\n", "Project Name:", self.name, self.id).as_str(),
         );
         renderer.push_str(format!("{:>15} {}\n\n", "Ecosystem:", self.ecosystem).as_str());
-        renderer.push_str(format!("{:>15} {}\n", "Thresholds:", "Score requirements to PASS or FAIL a run. Runs that have a score below the threshold value will FAIL.").as_str());
+        renderer.push_str(
+            format!(
+                "{:>15} {}\n",
+                "Thresholds:",
+                "Score requirements to PASS or FAIL a run. Runs that have a score below the \
+                 threshold value will FAIL."
+            )
+            .as_str(),
+        );
         renderer.push_str(format!("{:>24}: {}\n", "Project Score", threshold_total).as_str());
         renderer.push_str(
-            format!(
-                "{:>20} {}: {}\n",
-                "Malicious Code Risk", "MAL", threshold_malicious
-            )
-            .as_str(),
+            format!("{:>20} {}: {}\n", "Malicious Code Risk", "MAL", threshold_malicious).as_str(),
         );
         renderer.push_str(
-            format!(
-                "{:>20} {}: {}\n",
-                "Vulnerability Risk", "VLN", threshold_vulnerability
-            )
-            .as_str(),
+            format!("{:>20} {}: {}\n", "Vulnerability Risk", "VLN", threshold_vulnerability)
+                .as_str(),
         );
         renderer.push_str(
-            format!(
-                "{:>20} {}: {}\n",
-                "Engineering Risk", "ENG", threshold_engineering
-            )
-            .as_str(),
+            format!("{:>20} {}: {}\n", "Engineering Risk", "ENG", threshold_engineering).as_str(),
         );
         renderer
             .push_str(format!("{:>20} {}: {}\n", "Author Risk", "AUT", threshold_author).as_str());
         renderer.push_str(
-            format!(
-                "{:>20} {}: {}\n\n",
-                "License Risk", "LIC", threshold_license
-            )
-            .as_str(),
+            format!("{:>20} {}: {}\n\n", "License Risk", "LIC", threshold_license).as_str(),
         );
         renderer.push_str(format!("Last {} jobs from project history\n", self.jobs.len()).as_str());
         renderer.push_str(
@@ -237,12 +223,7 @@ impl Renderable for PackageStatus {
                 "Last updated:",
                 self.last_updated
             ],
-            [
-                "Num Deps:",
-                self.num_dependencies,
-                "Num Vulns:",
-                self.num_vulnerabilities
-            ]
+            ["Num Deps:", self.num_dependencies, "Num Vulns:", self.num_vulnerabilities]
         );
 
         table.set_format(table_format(0, 0));

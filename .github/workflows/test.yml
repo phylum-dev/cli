@@ -28,7 +28,15 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
-          components: rustfmt, clippy
+          components: clippy
+
+      - name: Install Rust nightly toolchain
+        if: github.event_name != 'schedule'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rustfmt
 
       - uses: Swatinem/rust-cache@v1
 
@@ -37,7 +45,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: +nightly --all -- --check
 
       - name: Build
         uses: actions-rs/cargo@v1

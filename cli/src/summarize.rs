@@ -50,12 +50,7 @@ impl Histogram {
                 values[bucket_id as usize] += 1;
             }
         }
-        Histogram {
-            min,
-            max,
-            bins,
-            values,
-        }
+        Histogram { min, max, bins, values }
     }
 
     fn buckets(&self) -> Vec<(f64, f64)> {
@@ -79,12 +74,9 @@ impl fmt::Display for Histogram {
             56.0 * f32::log2(s) / f32::log2(max)
         };
 
-        let output = self
-            .values
-            .iter()
-            .rev()
-            .zip(self.buckets().iter().rev())
-            .fold("".to_string(), |acc, x| {
+        let output = self.values.iter().rev().zip(self.buckets().iter().rev()).fold(
+            "".to_string(),
+            |acc, x| {
                 let min = (100.0 * x.1 .0).round() as u32;
                 vec![
                     acc,
@@ -100,7 +92,8 @@ impl fmt::Display for Histogram {
                     ),
                 ]
                 .join("\n")
-            });
+            },
+        );
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
         write!(f, "{}", output)
@@ -150,18 +143,8 @@ where
             "Date",
             format!("{} UTC", date_time),
         ),
-        (
-            "Num Deps",
-            resp.packages.len().to_string(),
-            "Job ID",
-            resp.job_id.to_string(),
-        ),
-        (
-            "User ID",
-            resp.user_email.to_string(),
-            "Ecosystem",
-            ecosystem.render(),
-        ),
+        ("Num Deps", resp.packages.len().to_string(), "Job ID", resp.job_id.to_string()),
+        ("User ID", resp.user_email.to_string(), "Ecosystem", ecosystem.render()),
     ];
     let summary = details.iter().fold("".to_string(), |acc, x| {
         format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
@@ -172,13 +155,7 @@ where
     } else if resp.pass {
         format!("{:>16}: {}", "Status", Green.paint("PASS"))
     } else {
-        format!(
-            "{:>16}: {}\n{:>16}: {}",
-            "Status",
-            Red.paint("FAIL"),
-            "Reason",
-            resp.msg
-        )
+        format!("{:>16}: {}\n{:>16}: {}", "Status", Red.paint("FAIL"), "Reason", resp.msg)
     };
 
     let scores: Vec<f64> = resp.packages.iter().map(|p| p.score()).collect();
@@ -307,12 +284,8 @@ impl Summarize for PackageStatusExtended {
             issues_table.add_empty_row();
         }
 
-        let risk_to_string = |key| {
-            format!(
-                "{}",
-                (100.0 * self.risk_vectors.get(key).unwrap_or(&1.0)).round()
-            )
-        };
+        let risk_to_string =
+            |key| format!("{}", (100.0 * self.risk_vectors.get(key).unwrap_or(&1.0)).round());
 
         let mut risks_table = table![
             ["Author Risk:", r -> risk_to_string("author")],
@@ -457,11 +430,8 @@ fn issue_to_row(issue: &Issue) -> Vec<Row> {
     let row_1 = Row::new(vec![
         Cell::new_align(&issue.severity.to_string(), format::Alignment::LEFT)
             .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.severity))),
-        Cell::new_align(
-            &format!("{} [{}]", &issue.title, issue.domain),
-            format::Alignment::LEFT,
-        )
-        .with_style(Attr::Bold),
+        Cell::new_align(&format!("{} [{}]", &issue.title, issue.domain), format::Alignment::LEFT)
+            .with_style(Attr::Bold),
     ]);
 
     let row_2 = Row::new(vec![
