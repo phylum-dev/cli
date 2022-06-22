@@ -17,7 +17,7 @@ use tokio::fs;
 use url::{Host, Url};
 
 use crate::commands::extensions::api;
-use crate::commands::extensions::extension::ExtensionState;
+use crate::commands::extensions::extension::{self, ExtensionState};
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
@@ -94,7 +94,7 @@ impl ExtensionsModuleLoader {
             .to_file_path()
             .map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
-        let extensions_path = extensions_path()?;
+        let extensions_path = extension::extensions_path()?;
         if !path.starts_with(&extensions_path) {
             return Err(anyhow!(
                 "`{}`: importing from paths outside of the extension's directory is not allowed",
