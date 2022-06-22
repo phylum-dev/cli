@@ -1,6 +1,3 @@
-pub mod api;
-pub mod extension;
-
 use std::collections::HashSet;
 use std::fs;
 use std::io::ErrorKind;
@@ -14,6 +11,9 @@ use log::{error, warn};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
+
+pub mod api;
+pub mod extension;
 
 pub fn command<'a>() -> Command<'a> {
     Command::new("extension")

@@ -3,18 +3,18 @@ use std::path::Path;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
+pub use csharp::CSProj;
+pub use java::{GradleLock, Pom};
+pub use javascript::{PackageLock, YarnLock};
+pub use python::{PipFile, Poetry, PyRequirements};
+pub use ruby::GemLock;
+
 mod csharp;
 mod java;
 mod javascript;
 mod parsers;
 mod python;
 mod ruby;
-
-pub use csharp::CSProj;
-pub use java::{GradleLock, Pom};
-pub use javascript::{PackageLock, YarnLock};
-pub use python::{PipFile, Poetry, PyRequirements};
-pub use ruby::GemLock;
 
 pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 

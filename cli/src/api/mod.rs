@@ -16,14 +16,14 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use thiserror::Error as ThisError;
 
-pub mod endpoints;
-
 use self::endpoints::BaseUriError;
 use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::PingResponse;
+
+pub mod endpoints;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
 

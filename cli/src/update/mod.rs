@@ -5,11 +5,11 @@
 //! Windows support, see issue #221
 
 #[cfg(unix)]
-mod unix;
-#[cfg(unix)]
 pub use self::unix::*;
-
-#[cfg(not(unix))]
-mod unsupported;
 #[cfg(not(unix))]
 pub use self::unsupported::*;
+
+#[cfg(unix)]
+mod unix;
+#[cfg(not(unix))]
+mod unsupported;
