@@ -8,9 +8,9 @@ use std::{env, fs};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
-use phylum_types::types::auth::*;
-use phylum_types::types::common::*;
-use phylum_types::types::package::*;
+use phylum_types::types::auth::RefreshToken;
+use phylum_types::types::common::ProjectId;
+use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::dirs;

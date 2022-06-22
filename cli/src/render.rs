@@ -3,10 +3,16 @@ use std::fmt::Write;
 use ansi_term::Color::{Blue, Green, Red, White, Yellow};
 use chrono::{Local, TimeZone};
 use phylum_types::types::group::ListUserGroupsResponse;
-use phylum_types::types::job::*;
-use phylum_types::types::package::*;
-use phylum_types::types::project::*;
-use prettytable::*;
+use phylum_types::types::job::{
+    AllJobsStatusResponse, CancelJobResponse, JobDescriptor, JobStatusResponse,
+};
+use phylum_types::types::package::{
+    Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
+};
+use phylum_types::types::project::{
+    ProjectDetailsResponse, ProjectSummaryResponse, ProjectThresholds,
+};
+use prettytable::{cell, row, table};
 
 use crate::print::{self, table_format};
 

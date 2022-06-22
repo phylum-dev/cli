@@ -4,8 +4,8 @@ use std::process::Command;
 
 use anyhow::{Error, Result};
 use clap_complete::generate_to;
-use clap_complete::shells::*;
-use log::*;
+use clap_complete::shells::{Bash, Fish, Zsh};
+use log::{info, LevelFilter};
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
 
 fn main() -> Result<()> {

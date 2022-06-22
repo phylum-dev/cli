@@ -8,7 +8,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use base64;
 use maplit::hashmap;
-use phylum_types::types::auth::*;
+use phylum_types::types::auth::{AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;

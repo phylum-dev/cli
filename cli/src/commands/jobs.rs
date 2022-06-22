@@ -5,8 +5,8 @@ use std::str::FromStr;
 use ansi_term::Color::Blue;
 use anyhow::{anyhow, Context, Result};
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::job::*;
-use phylum_types::types::package::*;
+use phylum_types::types::job::{Action, JobStatusResponse};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 use serde::Serialize;
 

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
-use extension::*;
+use extension::Extension;
 use futures::future::BoxFuture;
 use log::{error, warn};
 
@@ -129,7 +129,7 @@ async fn handle_list_extensions() -> CommandResult {
 /// Return a list of installed extensions. Filter out invalid extensions instead
 /// of exiting early.
 pub fn installed_extensions() -> Result<Vec<Extension>> {
-    let extensions_path = extensions_path()?;
+    let extensions_path = extension::extensions_path()?;
 
     let dir_entry = match fs::read_dir(extensions_path) {
         Ok(d) => d,

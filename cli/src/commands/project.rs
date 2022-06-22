@@ -8,9 +8,8 @@ use reqwest::StatusCode;
 use super::{CommandResult, ExitCode};
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
-use crate::print::*;
 use crate::prompt::prompt_threshold;
-use crate::{print_user_failure, print_user_success};
+use crate::{print, print_user_failure, print_user_success};
 
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Option<&str>) {
@@ -23,7 +22,7 @@ pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Op
         println!("{:<38}{}", proj_title, id_title);
     }
 
-    print_response(&resp, pretty_print, None);
+    print::print_response(&resp, pretty_print, None);
     println!();
 }
 

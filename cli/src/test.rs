@@ -18,7 +18,7 @@ pub mod mockito {
     use std::collections::HashMap;
     use std::str::FromStr;
 
-    use phylum_types::types::auth::*;
+    use phylum_types::types::auth::{AccessToken, IdToken, RefreshToken, TokenResponse};
     use reqwest::Url;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockBuilder, MockServer, Request, Respond, ResponseTemplate};

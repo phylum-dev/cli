@@ -1,15 +1,19 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use phylum_types::types::auth::*;
-use phylum_types::types::common::*;
+use phylum_types::types::auth::TokenResponse;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
-use phylum_types::types::job::*;
-use phylum_types::types::package::*;
+use phylum_types::types::job::{
+    AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
+};
+use phylum_types::types::package::{
+    Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
+};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectDetailsResponse, ProjectSummaryResponse,
 };
-use phylum_types::types::user_settings::*;
+use phylum_types::types::user_settings::UserSettings;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::DeserializeOwned;
@@ -327,6 +331,7 @@ mod tests {
     use super::*;
     use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
+
     #[tokio::test]
     async fn create_client() -> Result<()> {
         let mock_server = build_mock_server().await;

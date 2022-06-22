@@ -1,11 +1,10 @@
 use std::fs::read_to_string;
 use std::path::Path;
 
-use phylum_types::types::package::{PackageDescriptor, PackageType};
-
 pub use csharp::CSProj;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 
