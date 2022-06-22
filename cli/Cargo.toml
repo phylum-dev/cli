@@ -61,5 +61,5 @@ deno_ast = { version = "0.15.0", features = ["transpiling"], optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
-predicates = "2.1.1"
+predicates = { version = "2.0", default-features = false, features = ["diff"] }
 wiremock = "0.5.7"
