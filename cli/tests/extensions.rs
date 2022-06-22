@@ -5,6 +5,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use predicates::prelude::*;
+
 use assert_cmd::Command;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
@@ -339,6 +341,38 @@ fn module_loader_loads_correctly() {
 
     let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
     assert!(stderr.contains("importing from domains other than"));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlinks_are_rejected() {
+    let tempdir = TempDir::new().unwrap();
+    let ext_path = tempdir
+        .path()
+        .join("phylum")
+        .join("extensions")
+        .join("symlink-extension");
+
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .args(&["extension", "add"])
+        .arg(fixtures_path().join("symlink-extension"))
+        .assert()
+        .success();
+
+    std::os::unix::fs::symlink(ext_path.join("symlink_me.ts"), ext_path.join("symlink.ts"))
+        .unwrap();
+
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .arg("symlink-extension")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "importing from symlinks is not allowed",
+        ));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
