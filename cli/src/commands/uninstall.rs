@@ -92,7 +92,8 @@ impl Shell {
         }
     }
 
-    /// Remove all lines from the shell config which were added by the installer.
+    /// Remove all lines from the shell config which were added by the
+    /// installer.
     fn cleanup(&self) -> Result<()> {
         let rc_path = self.rc_path()?;
         let mut rc_content = fs::read_to_string(&rc_path)?;
@@ -107,9 +108,8 @@ impl Shell {
         rc_content = rc_content.replace(&config_line, "");
 
         // Write to tempfile on same mountpoint to avoid accidental corruption.
-        let rc_dir = rc_path
-            .parent()
-            .ok_or_else(|| anyhow!("Shell file has no parent directory"))?;
+        let rc_dir =
+            rc_path.parent().ok_or_else(|| anyhow!("Shell file has no parent directory"))?;
         let mut tmpfile = NamedTempFile::new_in(rc_dir)?;
         tmpfile.write_all(rc_content.as_bytes())?;
 

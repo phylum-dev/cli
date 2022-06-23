@@ -5,11 +5,10 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use predicates::prelude::*;
-
 use assert_cmd::Command;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
+use predicates::prelude::*;
 use regex::Regex;
 use tempfile::TempDir;
 
@@ -129,7 +128,8 @@ fn unsuccessful_installation_prints_failure_message() {
         r#"extension already exists"#,
     ));
 
-    // Try to install the extension from the installed path. Should fail with an error.
+    // Try to install the extension from the installed path. Should fail with an
+    // error.
     assert!(stderr_match_regex(
         Command::cargo_bin("phylum")
             .unwrap()
@@ -163,12 +163,8 @@ fn extension_is_uninstalled_correctly() {
         .assert()
         .success();
 
-    let extension_path = tempdir
-        .path()
-        .to_path_buf()
-        .join("phylum")
-        .join("extensions")
-        .join("sample-extension");
+    let extension_path =
+        tempdir.path().to_path_buf().join("phylum").join("extensions").join("sample-extension");
 
     assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 
@@ -287,12 +283,15 @@ fn conflicting_extension_name_is_filtered() {
 // Test that the rules of the module loader are obeyed:
 // - Both TypeScript and JavaScript are supported.
 // - Files under $XDG_DATA_HOME/phylum/extensions may be imported.
-// - Remote URLs under https://deno.land are supported -- i.e., the Deno's standard library.
+// - Remote URLs under https://deno.land are supported -- i.e., the Deno's
+//   standard library.
 // - No other URLs are supported.
-//   - We explicitly test that a https:// url which is not under `deno.land` is rejected.
+//   - We explicitly test that a https:// url which is not under `deno.land` is
+//     rejected.
 //   - We explicitly test that a directory traversal attempt is rejected.
 //
-// These tests are based on the fixtures under `fixtures/module-import-extension`.
+// These tests are based on the fixtures under
+// `fixtures/module-import-extension`.
 #[test]
 fn module_loader_loads_correctly() {
     let tempdir = TempDir::new().unwrap();
@@ -303,11 +302,7 @@ fn module_loader_loads_correctly() {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("add")
-            .arg(
-                fixtures_path()
-                    .join("module-import-extension")
-                    .join(extension),
-            )
+            .arg(fixtures_path().join("module-import-extension").join(extension))
             .assert()
             .success();
     }
@@ -347,11 +342,7 @@ fn module_loader_loads_correctly() {
 #[test]
 fn symlinks_are_rejected() {
     let tempdir = TempDir::new().unwrap();
-    let ext_path = tempdir
-        .path()
-        .join("phylum")
-        .join("extensions")
-        .join("symlink-extension");
+    let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink-extension");
 
     Command::cargo_bin("phylum")
         .unwrap()
@@ -370,9 +361,7 @@ fn symlinks_are_rejected() {
         .arg("symlink-extension")
         .assert()
         .failure()
-        .stderr(predicate::str::contains(
-            "importing from symlinks is not allowed",
-        ));
+        .stderr(predicate::str::contains("importing from symlinks is not allowed"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,17 +369,9 @@ fn symlinks_are_rejected() {
 ////////////////////////////////////////////////////////////////////////////////
 
 fn project_root() -> PathBuf {
-    Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(1)
-        .unwrap()
-        .to_path_buf()
+    Path::new(&env!("CARGO_MANIFEST_DIR")).ancestors().nth(1).unwrap().to_path_buf()
 }
 
 fn fixtures_path() -> PathBuf {
-    project_root()
-        .join("cli")
-        .join("tests")
-        .join("fixtures")
-        .join("extensions")
+    project_root().join("cli").join("tests").join("fixtures").join("extensions")
 }

@@ -12,12 +12,10 @@ use regex::Regex;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+pub(crate) use super::api::ExtensionState;
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
-use crate::deno;
-use crate::dirs;
-
-pub(crate) use super::api::ExtensionState;
+use crate::{deno, dirs};
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
@@ -64,9 +62,7 @@ impl Extension {
         }
 
         if target_prefix == self.path {
-            return Err(anyhow!(
-                "extension path and installation path are identical, skipping"
-            ));
+            return Err(anyhow!("extension path and installation path are identical, skipping"));
         }
 
         for entry in WalkDir::new(&self.path) {
@@ -105,10 +101,7 @@ impl Extension {
         let target_prefix = extension_path(self.name())?;
 
         if target_prefix != self.path {
-            return Err(anyhow!(
-                "extension {} is not installed, skipping",
-                self.name()
-            ));
+            return Err(anyhow!("extension {} is not installed, skipping", self.name()));
         }
 
         fs::remove_dir_all(&self.path)?;
@@ -142,11 +135,7 @@ impl TryFrom<PathBuf> for Extension {
 
         let manifest_path = path.join(MANIFEST_NAME);
         if !manifest_path.exists() {
-            return Err(anyhow!(
-                "{}: missing {}",
-                path.to_string_lossy(),
-                MANIFEST_NAME
-            ));
+            return Err(anyhow!("{}: missing {}", path.to_string_lossy(), MANIFEST_NAME));
         }
 
         let buf = fs::read(manifest_path)?;
@@ -170,7 +159,8 @@ impl TryFrom<PathBuf> for Extension {
 
         if !EXTENSION_NAME_RE.is_match(&manifest.name) {
             return Err(anyhow!(
-                "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore (_)",
+                "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or \
+                 underscore (_)",
                 manifest.name
             ));
         }
@@ -189,7 +179,11 @@ pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
 
 pub fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
     if !EXTENSION_NAME_RE.is_match(name) {
-        return Err(anyhow!("{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore (_) ", name));
+        return Err(anyhow!(
+            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore \
+             (_) ",
+            name
+        ));
     }
 
     Ok(extensions_path()?.join(name))

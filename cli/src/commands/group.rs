@@ -15,14 +15,11 @@ pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> Comm
             Ok(response) => {
                 print_user_success!("Successfully created group {}", response.group_name);
                 Ok(ExitCode::Ok.into())
-            }
-            Err(PhylumApiError::Response(ResponseError {
-                code: StatusCode::CONFLICT,
-                ..
-            })) => {
+            },
+            Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
                 print_user_failure!("Group '{}' already exists", group_name);
                 Ok(ExitCode::AlreadyExists.into())
-            }
+            },
             Err(err) => Err(err.into()),
         }
     } else {

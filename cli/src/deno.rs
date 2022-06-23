@@ -28,9 +28,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
 
     let main_module = deno_core::resolve_path(entry_point)?;
 
-    let cpu_count = thread::available_parallelism()
-        .map(|p| p.get())
-        .unwrap_or(1);
+    let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
     let bootstrap = BootstrapOptions {
         cpu_count,
         runtime_version: env!("CARGO_PKG_VERSION").into(),
@@ -74,11 +72,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
 
     // Export shared state.
-    worker
-        .js_runtime
-        .op_state()
-        .borrow_mut()
-        .put(extension_state);
+    worker.js_runtime.op_state().borrow_mut().put(extension_state);
 
     // Execute extension code.
     worker.execute_main_module(&main_module).await?;
@@ -90,9 +84,7 @@ struct ExtensionsModuleLoader;
 
 impl ExtensionsModuleLoader {
     async fn load_from_filesystem(path: &Url) -> Result<String> {
-        let path = path
-            .to_file_path()
-            .map_err(|_| anyhow!("{path:?}: is not a path"))?;
+        let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
         let extensions_path = extension::extensions_path()?;
         if !path.starts_with(&extensions_path) {
@@ -148,13 +140,14 @@ impl ModuleLoader for ExtensionsModuleLoader {
             }
 
             // Determine source file type.
-            // We do not care about invalid URLs yet: This match statement is inexpensive, bears
-            // no risk and does not do I/O -- it operates fully off of the contents of the URL.
+            // We do not care about invalid URLs yet: This match statement is inexpensive,
+            // bears no risk and does not do I/O -- it operates fully off of the
+            // contents of the URL.
             let media_type = MediaType::from(&module_specifier);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
-                }
+                },
                 MediaType::TypeScript
                 | MediaType::Jsx
                 | MediaType::Mts
@@ -167,17 +160,13 @@ impl ModuleLoader for ExtensionsModuleLoader {
                 _ => return Err(anyhow!("Unknown JS module format: {}", module_specifier)),
             };
 
-            // Load either a local file under the extensions directory, or a Deno standard library
-            // module. Reject all URLs that do not fit these two use cases.
+            // Load either a local file under the extensions directory, or a Deno standard
+            // library module. Reject all URLs that do not fit these two use
+            // cases.
             let mut code = match module_specifier.scheme() {
                 "file" => ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?,
                 "https" => ExtensionsModuleLoader::load_from_deno_std(&module_specifier).await?,
-                _ => {
-                    return Err(anyhow!(
-                        "Unsupported module specifier: {}",
-                        module_specifier
-                    ))
-                }
+                _ => return Err(anyhow!("Unsupported module specifier: {}", module_specifier)),
             };
 
             if should_transpile {
