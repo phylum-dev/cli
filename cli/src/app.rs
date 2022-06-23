@@ -318,14 +318,13 @@ pub fn app<'a>() -> clap::Command<'a> {
 
     #[cfg(feature = "selfmanage")]
     {
-        app = app.subcommand(
-            Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
+        app =
+            app.subcommand(Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
                 Arg::new("purge")
                     .short('p')
                     .long("purge")
                     .help("Remove all files, including configuration files (default: false)"),
-            ),
-        );
+            ));
     }
 
     app
