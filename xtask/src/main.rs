@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{Error, Result};
-use clap_complete::{generate_to, shells::*};
-use log::*;
+use clap_complete::generate_to;
+use clap_complete::shells::{Bash, Fish, Zsh};
+use log::{info, LevelFilter};
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
 
 fn main() -> Result<()> {
@@ -20,15 +21,14 @@ fn main() -> Result<()> {
         None | Some("help") => {
             print_help();
             Ok(())
-        }
+        },
         _ => {
             print_help();
             Ok(())
-        }
+        },
     }
 }
 
-//
 // Help task
 //
 
@@ -47,7 +47,6 @@ fn print_help() {
     );
 }
 
-//
 // generate-completions task
 //
 
@@ -79,7 +78,6 @@ mod gencomp {
     }
 }
 
-//
 // CLI arguments test
 //
 
@@ -121,10 +119,7 @@ mod cli_args_test {
     }
 
     fn copy_fixtures() -> Result<()> {
-        let src = project_root()
-            .join("xtask")
-            .join("fixtures")
-            .join("test-project");
+        let src = project_root().join("xtask").join("fixtures").join("test-project");
         let dst = project_root().join("target").join("tmp");
         std::fs::remove_dir_all(&dst).ok();
         std::fs::create_dir_all(&dst).ok();
@@ -139,16 +134,10 @@ mod cli_args_test {
         }
         println!("`\n");
 
-        let workdir = project_root()
-            .join("target")
-            .join("tmp")
-            .join("test-project");
+        let workdir = project_root().join("target").join("tmp").join("test-project");
         let mut args = vec!["run", "--quiet", "--bin", "phylum", "--"];
         args.extend(phylum_args);
-        let status = Command::new("cargo")
-            .current_dir(&workdir)
-            .args(&args)
-            .status()?;
+        let status = Command::new("cargo").current_dir(&workdir).args(&args).status()?;
 
         if !status.success() {
             Err(Error::msg("cargo run failed"))
@@ -158,14 +147,9 @@ mod cli_args_test {
     }
 }
 
-//
 // Utilities
 //
 
 fn project_root() -> PathBuf {
-    Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(1)
-        .unwrap()
-        .to_path_buf()
+    Path::new(&env!("CARGO_MANIFEST_DIR")).ancestors().nth(1).unwrap().to_path_buf()
 }

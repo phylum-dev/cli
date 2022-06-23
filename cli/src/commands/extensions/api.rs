@@ -8,9 +8,6 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use futures::future::BoxFuture;
-use tokio::fs;
-use tokio::sync::Mutex;
-
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::JobStatusResponse;
@@ -18,13 +15,16 @@ use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectDetailsResponse;
+use tokio::fs;
+use tokio::sync::Mutex;
 
 use crate::api::PhylumApi;
 use crate::auth::UserInfo;
 use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 
-/// Holds either an unawaited, boxed `Future`, or the result of awaiting the future.
+/// Holds either an unawaited, boxed `Future`, or the result of awaiting the
+/// future.
 enum OnceFuture<T: Unpin> {
     Future(BoxFuture<'static, T>),
     Awaited(T),
@@ -43,7 +43,7 @@ impl<T: Unpin> OnceFuture<T> {
                     OnceFuture::Future(..) => unreachable!(),
                     OnceFuture::Awaited(ref mut inner) => inner,
                 }
-            }
+            },
             OnceFuture::Awaited(ref mut inner) => inner,
         }
     }
@@ -62,30 +62,26 @@ impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
 
 impl ExtensionState {
     async fn get(&self) -> Result<Rc<PhylumApi>> {
-        // The mutex guard is only useful for synchronizing internally mutable access to the
-        // encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained, the guard is dropped:
-        // subsequent awaits on `PhylumApi` methods are not synchronized via this mutex, and can
-        // happen concurrently.
+        // The mutex guard is only useful for synchronizing internally mutable access to
+        // the encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained,
+        // the guard is dropped: subsequent awaits on `PhylumApi` methods are
+        // not synchronized via this mutex, and can happen concurrently.
         let mut guard = self.0.lock().await;
-        Ok(Rc::clone(
-            guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?,
-        ))
+        Ok(Rc::clone(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?))
     }
 }
 
 /// Wraps a shared, counted reference to the `PhylumApi` object.
 ///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an immutable borrow,
-/// and then cloned via the `ExtensionState::get` method.
+/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an
+/// immutable borrow, and then cloned via the `ExtensionState::get` method.
 struct ExtensionStateRef(Rc<PhylumApi>);
 
 impl ExtensionStateRef {
     // This can not be implemented as the `From<T>` trait because of `async`.
     async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
         let state_ref = Pin::new(state.borrow());
-        Ok(ExtensionStateRef(
-            state_ref.borrow::<ExtensionState>().get().await?,
-        ))
+        Ok(ExtensionStateRef(state_ref.borrow::<ExtensionState>().get().await?))
     }
 }
 
@@ -97,7 +93,6 @@ impl Deref for ExtensionStateRef {
     }
 }
 
-//
 // Extension API functions
 // These functions need not be public, as Deno's declarations (`::decl()`) cloak
 // them in a data structure that is consumed by the runtime extension builder.
@@ -125,18 +120,11 @@ async fn analyze(
             } else {
                 return Err(anyhow!("Failed to find a valid project configuration"));
             }
-        }
+        },
     };
 
     let job_id = api
-        .submit_request(
-            &request_type,
-            &packages,
-            false,
-            project,
-            None,
-            group.map(String::from),
-        )
+        .submit_request(&request_type, &packages, false, project, None, group.map(String::from))
         .await?;
 
     Ok(job_id)
@@ -205,17 +193,12 @@ async fn get_project_details(
 ) -> Result<ProjectDetailsResponse> {
     let api = ExtensionStateRef::from(state).await?;
 
-    let project_name = project_name
-        .map(String::from)
-        .map(Result::Ok)
-        .unwrap_or_else(|| {
-            get_current_project()
-                .map(|p| p.name)
-                .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))
-        })?;
-    api.get_project_details(&project_name)
-        .await
-        .map_err(Error::from)
+    let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
+        get_current_project()
+            .map(|p| p.name)
+            .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))
+    })?;
+    api.get_project_details(&project_name).await.map_err(Error::from)
 }
 
 /// Analyze a single package.
