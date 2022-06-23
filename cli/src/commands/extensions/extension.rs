@@ -5,6 +5,7 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
+use deno_runtime::permissions::PermissionsOptions;
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -17,6 +18,7 @@ use crate::deno;
 use crate::dirs;
 
 pub(crate) use super::api::ExtensionState;
+use super::permissions::Permissions;
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";
 
@@ -35,6 +37,7 @@ pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: String,
+    permissions: Option<Permissions>,
 }
 
 impl Extension {
@@ -48,6 +51,14 @@ impl Extension {
 
     pub fn entry_point(&self) -> &String {
         &self.manifest.entry_point
+    }
+
+    pub fn permissions(&self) -> Result<PermissionsOptions> {
+        self.manifest
+            .permissions
+            .clone()
+            .unwrap_or_default()
+            .try_into()
     }
 
     /// Install the extension in the default path.
@@ -117,10 +128,13 @@ impl Extension {
         Extension::try_from(extension_path(name)?)
     }
 
+    pub fn path(&self) -> Result<PathBuf, std::io::Error> {
+        self.path.join(&self.manifest.entry_point).canonicalize()
+    }
+
     /// Execute an extension subcommand.
     pub async fn run(&self, api: BoxFuture<'static, Result<PhylumApi>>) -> CommandResult {
-        let script_path = self.path.join(&self.manifest.entry_point);
-        deno::run(ExtensionState::from(api), &script_path.to_string_lossy()).await?;
+        deno::run(ExtensionState::from(api), self).await?;
         Ok(ExitCode::Ok.into())
     }
 }

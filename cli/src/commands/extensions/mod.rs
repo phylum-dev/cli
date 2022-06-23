@@ -1,5 +1,6 @@
 pub mod api;
 pub mod extension;
+pub mod permissions;
 
 use extension::*;
 

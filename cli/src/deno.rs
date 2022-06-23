@@ -15,20 +15,21 @@ use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
 
 use crate::commands::extensions::api;
-use crate::commands::extensions::extension::ExtensionState;
+use crate::commands::extensions::extension::{Extension as PhylumExtension, ExtensionState};
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
 
 /// Execute Phylum extension.
-pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<()> {
+pub async fn run(extension_state: ExtensionState, extension: &PhylumExtension) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-    let main_module = deno_core::resolve_path(entry_point)?;
+    let main_module = deno_core::resolve_path(&extension.path()?.to_string_lossy())?;
 
     let cpu_count = thread::available_parallelism()
         .map(|p| p.get())
         .unwrap_or(1);
+
     let bootstrap = BootstrapOptions {
         cpu_count,
         runtime_version: env!("CARGO_PKG_VERSION").into(),
@@ -66,7 +67,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
     };
 
     // Disable all permissions.
-    let permissions = Permissions::default();
+    let permissions = Permissions::from_options(&extension.permissions()?);
 
     // Initialize Deno runtime.
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
