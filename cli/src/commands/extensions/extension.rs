@@ -51,8 +51,12 @@ impl Extension {
         &self.manifest.entry_point
     }
 
-    pub fn permissions(&self) -> Result<PermissionsOptions> {
-        self.manifest.permissions.clone().unwrap_or_default().try_into()
+    pub fn permissions(&self) -> Permissions {
+        self.manifest.permissions.clone().unwrap_or_default()
+    }
+
+    pub fn requires_permissions(&self) -> bool {
+        self.manifest.permissions.as_ref().map(|p| !p.is_empty()).unwrap_or(false)
     }
 
     /// Install the extension in the default path.

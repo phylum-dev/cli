@@ -65,7 +65,7 @@ pub async fn run(extension_state: ExtensionState, extension: &PhylumExtension) -
     };
 
     // Disable all permissions.
-    let permissions = Permissions::from_options(&extension.permissions()?);
+    let permissions = Permissions::from_options(&extension.permissions().try_into()?);
 
     // Initialize Deno runtime.
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);

@@ -22,6 +22,7 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("add")
                 .about("Install extension")
+                .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -59,7 +60,13 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
-        Some(("add", matches)) => handle_add_extension(matches.value_of("PATH").unwrap()).await,
+        Some(("add", matches)) => {
+            handle_add_extension(
+                matches.value_of("PATH").unwrap(),
+                matches.get_one::<bool>("yes").copied().unwrap_or(false),
+            )
+            .await
+        },
         Some(("remove", matches)) => {
             handle_remove_extension(matches.value_of("NAME").unwrap()).await
         },
@@ -85,7 +92,7 @@ pub async fn handle_run_extension(
 /// Handle the `extension add` subcommand path.
 ///
 /// Add the extension from the specified path.
-async fn handle_add_extension(path: &str) -> CommandResult {
+async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
@@ -93,6 +100,42 @@ async fn handle_add_extension(path: &str) -> CommandResult {
 
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
+
+    if !accept_permissions && extension.requires_permissions() {
+        let permissions = extension.permissions();
+
+        println!("The `{}` extension requires the following permissions:", extension.name());
+
+        if let Some(read_paths) = permissions.read() {
+            println!("  Read from the following paths:");
+            for path in read_paths {
+                println!("    {}", path);
+            }
+        }
+
+        if let Some(write_paths) = permissions.write() {
+            println!("  Write to the following paths:");
+            for path in write_paths {
+                println!("    {}", path);
+            }
+        }
+
+        if let Some(run_commands) = permissions.run() {
+            println!("  Run the following commands:");
+            for cmd in run_commands {
+                println!("    {}", cmd);
+            }
+        }
+
+        if let Some(access_urls) = permissions.net() {
+            println!("  Access the following URLs:");
+            for url in access_urls {
+                println!("    {}", url);
+            }
+        }
+
+        println!("Do you accept? [y/n]");
+    }
 
     extension.install()?;
 
