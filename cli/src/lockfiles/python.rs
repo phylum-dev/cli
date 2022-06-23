@@ -60,7 +60,7 @@ impl Parse for PipFile {
                     Value::Object(s) => match s.get("version") {
                         Some(s) if s.as_str().unwrap_or_default().contains("==") => {
                             Some(s.as_str().unwrap_or_default())
-                        }
+                        },
                         _ => None,
                     },
                     _ => None,
@@ -76,7 +76,7 @@ impl Parse for PipFile {
                     None => {
                         log::warn!("Could not determine version for package: {}", k);
                         None
-                    }
+                    },
                 }
             })
             .collect::<Result<Vec<_>, _>>()
@@ -95,8 +95,8 @@ impl Parse for Poetry {
         // Warn if the version of this lockfile might not be supported.
         if !lock.metadata.lock_version.starts_with("1.") {
             log::warn!(
-                "Expected poetry lockfile version ^1.0.0, found {}. \
-                Attempting to continue, but results might be inaccurate.",
+                "Expected poetry lockfile version ^1.0.0, found {}. Attempting to continue, but \
+                 results might be inaccurate.",
                 lock.metadata.lock_version
             );
         }
@@ -105,10 +105,7 @@ impl Parse for Poetry {
             .packages
             .drain(..)
             .filter(|package| {
-                package
-                    .source
-                    .as_ref()
-                    .map_or(true, |source| source.source_type == "git")
+                package.source.as_ref().map_or(true, |source| source.source_type == "git")
             })
             .map(PackageDescriptor::from)
             .collect())
@@ -143,11 +140,7 @@ impl From<Package> for PackageDescriptor {
             })
             .unwrap_or(package.version);
 
-        Self {
-            name: package.name,
-            package_type: PackageType::PyPi,
-            version,
-        }
+        Self { name: package.name, package_type: PackageType::PyPi, version }
     }
 }
 
@@ -171,9 +164,7 @@ mod tests {
 
     #[test]
     fn parse_requirements() {
-        let pkgs = PyRequirements
-            .parse_file("tests/fixtures/requirements.txt")
-            .unwrap();
+        let pkgs = PyRequirements.parse_file("tests/fixtures/requirements.txt").unwrap();
         assert_eq!(pkgs.len(), 131);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
@@ -187,9 +178,7 @@ mod tests {
 
     #[test]
     fn parse_requirements_complex() {
-        let pkgs = PyRequirements
-            .parse_file("tests/fixtures/complex-requirements.txt")
-            .unwrap();
+        let pkgs = PyRequirements.parse_file("tests/fixtures/complex-requirements.txt").unwrap();
         assert_eq!(pkgs.len(), 8);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
