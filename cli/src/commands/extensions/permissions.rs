@@ -20,14 +20,8 @@ impl Permissions {
             return Err(anyhow!("`{src_path}`: absolute paths are not allowed"));
         }
 
-        if path
-            .components()
-            .into_iter()
-            .any(|c| c == Component::ParentDir)
-        {
-            return Err(anyhow!(
-                "`{src_path}`: directory traversals are not allowed"
-            ));
+        if path.components().into_iter().any(|c| c == Component::ParentDir) {
+            return Err(anyhow!("`{src_path}`: directory traversals are not allowed"));
         }
 
         path.canonicalize().map_err(|e| e.into())
@@ -38,29 +32,19 @@ impl TryFrom<Permissions> for PermissionsOptions {
     type Error = anyhow::Error;
 
     fn try_from(value: Permissions) -> Result<Self, Self::Error> {
-        let Permissions {
-            read,
-            write,
-            net,
-            run,
-        } = value;
+        let Permissions { read, write, net, run } = value;
 
         let allow_read = match read {
-            Some(read) => Some(
-                read.into_iter()
-                    .map(Permissions::resolve_path)
-                    .collect::<Result<Vec<_>>>()?,
-            ),
+            Some(read) => {
+                Some(read.into_iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
+            },
             None => None,
         };
 
         let allow_write = match write {
-            Some(write) => Some(
-                write
-                    .into_iter()
-                    .map(Permissions::resolve_path)
-                    .collect::<Result<Vec<_>>>()?,
-            ),
+            Some(write) => {
+                Some(write.into_iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
+            },
             None => None,
         };
 

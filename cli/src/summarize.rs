@@ -1,16 +1,18 @@
 use std::fmt;
 use std::str::FromStr;
 
-use ansi_term::Color::*;
+use ansi_term::Color;
 use chrono::NaiveDateTime;
-use color::Color;
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::{
     AllJobsStatusResponse, CancelJobResponse, JobDescriptor, JobStatusResponse,
 };
-use phylum_types::types::package::*;
-use phylum_types::types::project::*;
-use prettytable::*;
+use phylum_types::types::package::{
+    Issue, IssuesListItem, Package, PackageStatus, PackageStatusExtended, PackageType, RiskLevel,
+};
+use phylum_types::types::project::ProjectDetailsResponse;
+use prettytable::format::Alignment;
+use prettytable::{cell, color as table_color, row, table, Attr, Cell, Row, Table};
 
 use crate::filter::Filter;
 use crate::print::{self, table_format};
@@ -50,12 +52,7 @@ impl Histogram {
                 values[bucket_id as usize] += 1;
             }
         }
-        Histogram {
-            min,
-            max,
-            bins,
-            values,
-        }
+        Histogram { min, max, bins, values }
     }
 
     fn buckets(&self) -> Vec<(f64, f64)> {
@@ -79,12 +76,9 @@ impl fmt::Display for Histogram {
             56.0 * f32::log2(s) / f32::log2(max)
         };
 
-        let output = self
-            .values
-            .iter()
-            .rev()
-            .zip(self.buckets().iter().rev())
-            .fold("".to_string(), |acc, x| {
+        let output = self.values.iter().rev().zip(self.buckets().iter().rev()).fold(
+            "".to_string(),
+            |acc, x| {
                 let min = (100.0 * x.1 .0).round() as u32;
                 vec![
                     acc,
@@ -100,7 +94,8 @@ impl fmt::Display for Histogram {
                     ),
                 ]
                 .join("\n")
-            });
+            },
+        );
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
         write!(f, "{}", output)
@@ -150,35 +145,19 @@ where
             "Date",
             format!("{} UTC", date_time),
         ),
-        (
-            "Num Deps",
-            resp.packages.len().to_string(),
-            "Job ID",
-            resp.job_id.to_string(),
-        ),
-        (
-            "User ID",
-            resp.user_email.to_string(),
-            "Ecosystem",
-            ecosystem.render(),
-        ),
+        ("Num Deps", resp.packages.len().to_string(), "Job ID", resp.job_id.to_string()),
+        ("User ID", resp.user_email.to_string(), "Ecosystem", ecosystem.render()),
     ];
     let summary = details.iter().fold("".to_string(), |acc, x| {
         format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
     });
 
     let status = if resp.num_incomplete > 0 {
-        format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
+        format!("{:>16}: {}", "Status", Color::Yellow.paint("INCOMPLETE"))
     } else if resp.pass {
-        format!("{:>16}: {}", "Status", Green.paint("PASS"))
+        format!("{:>16}: {}", "Status", Color::Green.paint("PASS"))
     } else {
-        format!(
-            "{:>16}: {}\n{:>16}: {}",
-            "Status",
-            Red.paint("FAIL"),
-            "Reason",
-            resp.msg
-        )
+        format!("{:>16}: {}\n{:>16}: {}", "Status", Color::Red.paint("FAIL"), "Reason", resp.msg)
     };
 
     let scores: Vec<f64> = resp.packages.iter().map(|p| p.score()).collect();
@@ -194,7 +173,7 @@ where
     if resp.num_incomplete > 0 {
         let notice = format!(
             "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.",
-            Purple.paint("PROCESSING"),
+            Color::Purple.paint("PROCESSING"),
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
         table.add_row(row![notice]);
@@ -307,12 +286,8 @@ impl Summarize for PackageStatusExtended {
             issues_table.add_empty_row();
         }
 
-        let risk_to_string = |key| {
-            format!(
-                "{}",
-                (100.0 * self.risk_vectors.get(key).unwrap_or(&1.0)).round()
-            )
-        };
+        let risk_to_string =
+            |key| format!("{}", (100.0 * self.risk_vectors.get(key).unwrap_or(&1.0)).round());
 
         let mut risks_table = table![
             ["Author Risk:", r -> risk_to_string("author")],
@@ -443,25 +418,22 @@ mod tests {
     }
 }
 
-fn risk_level_to_color(level: &RiskLevel) -> Color {
+fn risk_level_to_color(level: &RiskLevel) -> table_color::Color {
     match level {
-        RiskLevel::Critical => color::BRIGHT_RED,
-        RiskLevel::High => color::YELLOW,
-        RiskLevel::Medium => color::BRIGHT_YELLOW,
-        RiskLevel::Low => color::BLUE,
-        RiskLevel::Info => color::WHITE,
+        RiskLevel::Critical => table_color::BRIGHT_RED,
+        RiskLevel::High => table_color::YELLOW,
+        RiskLevel::Medium => table_color::BRIGHT_YELLOW,
+        RiskLevel::Low => table_color::BLUE,
+        RiskLevel::Info => table_color::WHITE,
     }
 }
 
 fn issue_to_row(issue: &Issue) -> Vec<Row> {
     let row_1 = Row::new(vec![
-        Cell::new_align(&issue.severity.to_string(), format::Alignment::LEFT)
+        Cell::new_align(&issue.severity.to_string(), Alignment::LEFT)
             .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.severity))),
-        Cell::new_align(
-            &format!("{} [{}]", &issue.title, issue.domain),
-            format::Alignment::LEFT,
-        )
-        .with_style(Attr::Bold),
+        Cell::new_align(&format!("{} [{}]", &issue.title, issue.domain), Alignment::LEFT)
+            .with_style(Attr::Bold),
     ]);
 
     let row_2 = Row::new(vec![
@@ -475,13 +447,10 @@ fn issue_to_row(issue: &Issue) -> Vec<Row> {
 
 fn issueslistitem_to_row(issue: &IssuesListItem) -> Vec<Row> {
     let row_1 = Row::new(vec![
-        Cell::new_align(&issue.impact.to_string(), format::Alignment::LEFT)
+        Cell::new_align(&issue.impact.to_string(), Alignment::LEFT)
             .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.impact))),
-        Cell::new_align(
-            &format!("{} [{}]", &issue.title, issue.risk_type),
-            format::Alignment::LEFT,
-        )
-        .with_style(Attr::Bold),
+        Cell::new_align(&format!("{} [{}]", &issue.title, issue.risk_type), Alignment::LEFT)
+            .with_style(Attr::Bold),
     ]);
 
     let row_2 = Row::new(vec![

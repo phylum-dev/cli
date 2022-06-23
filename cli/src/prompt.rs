@@ -1,7 +1,6 @@
 use ansi_term::Color::White;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Input, Select};
-
 use phylum_types::types::user_settings::Threshold;
 
 /// Project thresholds which cannot be disabled.
@@ -11,10 +10,7 @@ const ALWAYS_ENABLED_THRESHOLDS: [&str; 1] = ["total project"];
 /// threshold.
 pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
     let threshold = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!(
-            "{} Threshold",
-            format_args!("{}", White.paint(name.to_uppercase()))
-        ))
+        .with_prompt(format!("{} Threshold", format_args!("{}", White.paint(name.to_uppercase()))))
         .validate_with(|input: &String| -> Result<(), String> {
             if input.eq_ignore_ascii_case("disabled") {
                 if ALWAYS_ENABLED_THRESHOLDS.contains(&name) {
@@ -37,17 +33,10 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
         .interact_text()?;
 
     if threshold.eq_ignore_ascii_case("disabled") {
-        println!(
-            "\nDisabling {} risk domain",
-            format_args!("{}", White.paint(name))
-        );
+        println!("\nDisabling {} risk domain", format_args!("{}", White.paint(name)));
         println!("\n-----\n");
 
-        return Ok(Threshold {
-            action: "none".into(),
-            threshold: 0.,
-            active: false,
-        });
+        return Ok(Threshold { action: "none".into(), threshold: 0., active: false });
     }
 
     println!(
@@ -55,11 +44,7 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
         format_args!("{}", White.paint(name))
     );
 
-    let items = vec![
-        "Break the CI/CD build",
-        "Print a warning message",
-        "Do nothing",
-    ];
+    let items = vec!["Break the CI/CD build", "Print a warning message", "Do nothing"];
 
     let selection = Select::with_theme(&ColorfulTheme::default())
         .items(&items)
@@ -83,9 +68,5 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
     }
     .to_owned();
 
-    Ok(Threshold {
-        active: true,
-        threshold,
-        action,
-    })
+    Ok(Threshold { active: true, threshold, action })
 }

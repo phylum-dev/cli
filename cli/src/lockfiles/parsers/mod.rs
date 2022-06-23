@@ -1,14 +1,11 @@
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take, take_until},
-    character::complete::{line_ending, multispace0, none_of, space0},
-    combinator::{eof, opt, recognize},
-    error::{context, ParseError, VerboseError},
-    multi::{count, many1, many_till},
-    sequence::{delimited, tuple},
-    AsChar, IResult,
-};
-
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take, take_until};
+use nom::character::complete::{line_ending, multispace0, none_of, space0};
+use nom::combinator::{eof, opt, recognize};
+use nom::error::{context, ParseError, VerboseError};
+use nom::multi::{count, many1, many_till};
+use nom::sequence::{delimited, tuple};
+use nom::{AsChar, IResult};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 pub mod gem;
@@ -17,18 +14,16 @@ pub mod pypi;
 pub mod yarn;
 
 fn take_till_line_end(input: &str) -> Result<&str, &str> {
-    recognize(tuple((
-        alt((take_until("\n"), take_until("\r\n"))),
-        take(1usize),
-    )))(input)
+    recognize(tuple((alt((take_until("\n"), take_until("\r\n"))), take(1usize))))(input)
 }
 
 fn take_till_blank_line(input: &str) -> Result<&str, &str> {
     recognize(alt((take_until("\n\n"), take_until("\r\n\r\n"))))(input)
 }
 
-/// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
-/// trailing whitespace, returning the output of `inner`.
+/// A combinator that takes a parser `inner` and produces a parser that also
+/// consumes both leading and trailing whitespace, returning the output of
+/// `inner`.
 fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(
     inner: F,
 ) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>

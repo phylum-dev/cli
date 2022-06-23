@@ -4,12 +4,10 @@ use anyhow::{anyhow, Context, Result};
 use clap::Command;
 
 use crate::api::PhylumApi;
-use crate::auth;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::print::print_sc_help;
-use crate::print_user_success;
-use crate::print_user_warning;
+use crate::{auth, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
@@ -37,9 +35,7 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
     }
 
     // Create a client with our auth token attached.
-    let api = PhylumApi::new(config, timeout)
-        .await
-        .context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout).await.context("Error creating client")?;
 
     let user_info = api.user_info().await;
 
@@ -50,11 +46,11 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
                 user.email
             );
             Ok(ExitCode::Ok.into())
-        }
+        },
         Err(_err) => {
             print_user_warning!("Refresh token could not be validated");
             Ok(ExitCode::AuthenticationFailure.into())
-        }
+        },
     }
 }
 
@@ -67,7 +63,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
                 "User is not currently authenticated, please login with `phylum auth login`"
             );
             return Ok(ExitCode::NotAuthenticated.into());
-        }
+        },
     };
 
     if matches.is_present("bearer") {
@@ -95,7 +91,7 @@ pub async fn handle_auth(
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok.into())
-            }
+            },
             Err(error) => Err(error).context("User registration failed"),
         }
     } else if matches.subcommand_matches("login").is_some() {
@@ -103,7 +99,7 @@ pub async fn handle_auth(
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok.into())
-            }
+            },
             Err(error) => Err(error).context("User login failed"),
         }
     } else if matches.subcommand_matches("status").is_some() {

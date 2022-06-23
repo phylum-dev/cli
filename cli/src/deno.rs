@@ -26,9 +26,7 @@ pub async fn run(extension_state: ExtensionState, extension: &PhylumExtension) -
 
     let main_module = deno_core::resolve_path(&extension.path()?.to_string_lossy())?;
 
-    let cpu_count = thread::available_parallelism()
-        .map(|p| p.get())
-        .unwrap_or(1);
+    let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
 
     let bootstrap = BootstrapOptions {
         cpu_count,
@@ -73,11 +71,7 @@ pub async fn run(extension_state: ExtensionState, extension: &PhylumExtension) -
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
 
     // Export shared state.
-    worker
-        .js_runtime
-        .op_state()
-        .borrow_mut()
-        .put(extension_state);
+    worker.js_runtime.op_state().borrow_mut().put(extension_state);
 
     // Execute extension code.
     worker.execute_main_module(&main_module).await?;
@@ -109,16 +103,15 @@ impl ModuleLoader for TypescriptModuleLoader {
                 return phylum_module();
             }
 
-            let path = module_specifier
-                .to_file_path()
-                .map_err(|_| anyhow!("Invalid module path"))?;
+            let path =
+                module_specifier.to_file_path().map_err(|_| anyhow!("Invalid module path"))?;
 
             // Determine source file type.
             let media_type = MediaType::from(&path);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
-                }
+                },
                 MediaType::TypeScript
                 | MediaType::Jsx
                 | MediaType::Mts

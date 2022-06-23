@@ -62,24 +62,18 @@ pub fn print_response<T>(
                 )
                 .unwrap_or_else(|e| log::debug!("Failed writing to stdout: {}", e));
             }
-        }
+        },
         Err(err) => {
             print_user_failure!("Response error:\n{}", err);
-        }
+        },
     }
 }
 
 /// Prints a verbose message informing the user that an update is available.
 pub fn print_update_message() {
-    eprintln!(
-        "---------------- {} ----------------\n",
-        Cyan.paint("Update Available")
-    );
+    eprintln!("---------------- {} ----------------\n", Cyan.paint("Update Available"));
     eprintln!("A new version of the Phylum CLI is available. Run");
-    eprintln!(
-        "\n\t{}\n\nto update to the latest version!\n",
-        Blue.paint("phylum update")
-    );
+    eprintln!("\n\t{}\n\nto update to the latest version!\n", Blue.paint("phylum update"));
     eprintln!("{:-^50}\n\n", "");
 }
 
@@ -93,7 +87,8 @@ pub fn print_sc_help(app: &mut Command, subcommand: &str) {
     println!();
 }
 
-/// Limit a string to a specific length, using an ellipsis to indicate truncation.
+/// Limit a string to a specific length, using an ellipsis to indicate
+/// truncation.
 pub fn truncate(text: &str, max_length: usize) -> Cow<str> {
     if text.width() > max_length {
         let mut len = 0;

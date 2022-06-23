@@ -8,10 +8,8 @@ use reqwest::StatusCode;
 use super::{CommandResult, ExitCode};
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
-use crate::print::*;
-use crate::print_user_failure;
-use crate::print_user_success;
 use crate::prompt::prompt_threshold;
+use crate::{print, print_user_failure, print_user_success};
 
 /// List the projects in this account.
 pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Option<&str>) {
@@ -24,13 +22,13 @@ pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Op
         println!("{:<38}{}", proj_title, id_title);
     }
 
-    print_response(&resp, pretty_print, None);
+    print::print_response(&resp, pretty_print, None);
     println!();
 }
 
-/// Handle the project subcommand. Provides facilities for creating a new project,
-/// linking a current repository to an existing project, listing projects and
-/// setting project thresholds for risk domains.
+/// Handle the project subcommand. Provides facilities for creating a new
+/// project, linking a current repository to an existing project, listing
+/// projects and setting project thresholds for risk domains.
 pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.is_present("json");
 
@@ -42,13 +40,10 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         let project_id = match api.create_project(name, group).await {
             Ok(project_id) => project_id,
-            Err(PhylumApiError::Response(ResponseError {
-                code: StatusCode::CONFLICT,
-                ..
-            })) => {
+            Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
                 print_user_failure!("Project '{}' already exists", name);
                 return Ok(ExitCode::AlreadyExists.into());
-            }
+            },
             Err(err) => return Err(err.into()),
         };
 
@@ -95,11 +90,8 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let mut project_name = matches.value_of("name").unwrap_or("current");
         let group_name = matches.value_of("group");
 
-        let proj = if project_name == "current" {
-            get_current_project().map(|p| p.name)
-        } else {
-            None
-        };
+        let proj =
+            if project_name == "current" { get_current_project().map(|p| p.name) } else { None };
 
         project_name = proj.as_deref().unwrap_or(project_name);
         log::debug!("Setting thresholds for project `{}`", project_name);
@@ -149,7 +141,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             Err(e) => {
                 log::error!("Failed to get user settings: {}", e);
                 return Err(anyhow!("Could not get user settings"));
-            }
+            },
         };
 
         for threshold_name in &[
@@ -165,7 +157,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 Err(_) => {
                     print_user_failure!("Failed to read user input");
                     continue;
-                }
+                },
             };
 
             // API expects slight key change for specific fields.
@@ -185,14 +177,14 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                     "Set all thresholds for the {} project",
                     White.paint(project_name)
                 );
-            }
+            },
             _ => {
                 print_user_failure!(
                     "Failed to set thresholds for the {} project",
                     White.paint(project_name)
                 );
                 return Ok(ExitCode::SetThresholdsFailure.into());
-            }
+            },
         }
     } else {
         let group = matches.value_of("group");

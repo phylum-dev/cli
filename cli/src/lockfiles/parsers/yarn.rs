@@ -22,14 +22,11 @@ fn entry(input: &str) -> Result<&str, PackageDescriptor> {
 fn parse_entry(input: &str) -> Result<&str, PackageDescriptor> {
     context("entry", tuple((entry_name, entry_version)))(input).map(|(next_input, res)| {
         let (name, version) = res;
-        (
-            next_input,
-            PackageDescriptor {
-                name: name.to_string(),
-                version: version.to_string(),
-                package_type: PackageType::Npm,
-            },
-        )
+        (next_input, PackageDescriptor {
+            name: name.to_string(),
+            version: version.to_string(),
+            package_type: PackageType::Npm,
+        })
     })
 }
 

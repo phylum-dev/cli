@@ -23,11 +23,7 @@ impl Parse for PackageLock {
                 .and_then(|v| v.as_str())
                 .map(|x| x.to_string())
                 .ok_or_else(|| anyhow!("Failed to parse version for '{}' dependency", name))?;
-            let pkg = PackageDescriptor {
-                name,
-                version,
-                package_type: self.package_type(),
-            };
+            let pkg = PackageDescriptor { name, version, package_type: self.package_type() };
             Ok(pkg)
         };
 
@@ -43,10 +39,7 @@ impl Parse for PackageLock {
                 .map(into_descriptor)
                 .collect()
         } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
-            deps.into_iter()
-                .map(|(k, v)| (k.to_string(), v))
-                .map(into_descriptor)
-                .collect()
+            deps.into_iter().map(|(k, v)| (k.to_string(), v)).map(into_descriptor).collect()
         } else {
             Err(anyhow!("Failed to find dependencies"))
         }
@@ -59,11 +52,10 @@ impl Parse for PackageLock {
 
 /// Check if a YAML file is a valid v2 yarn lockfile.
 ///
-/// Since some v1 yarn lockfiles can be parsed as valid yaml, this ensures that the __metadata
-/// field is present to identify v2 lockfiles.
+/// Since some v1 yarn lockfiles can be parsed as valid yaml, this ensures that
+/// the __metadata field is present to identify v2 lockfiles.
 fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
-    yaml.iter()
-        .any(|(k, _v)| k.as_str().unwrap_or_default() == "__metadata")
+    yaml.iter().any(|(k, _v)| k.as_str().unwrap_or_default() == "__metadata")
 }
 
 impl Parse for YarnLock {
@@ -81,7 +73,7 @@ impl Parse for YarnLock {
                     .map_err(|e| anyhow!(convert_error(data, e)))
                     .context("Failed to parse yarn lock file")?;
                 return Ok(entries);
-            }
+            },
         };
 
         let mut packages = Vec::new();
@@ -104,7 +96,7 @@ impl Parse for YarnLock {
                         "Failed to parse yarn resolution field for '{}'",
                         resolution
                     ))
-                }
+                },
             };
 
             // Extract original resolver from patch.
@@ -119,7 +111,7 @@ impl Parse for YarnLock {
                             "Failed to parse yarn patch dependency for '{}'",
                             resolution
                         ))
-                    }
+                    },
                 };
 
                 // Revert character replacements.
@@ -171,9 +163,7 @@ mod tests {
 
     #[test]
     fn lock_parse_package() {
-        let pkgs = PackageLock
-            .parse_file("tests/fixtures/package-lock-v6.json")
-            .unwrap();
+        let pkgs = PackageLock.parse_file("tests/fixtures/package-lock-v6.json").unwrap();
 
         assert_eq!(pkgs.len(), 17);
         assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
@@ -188,9 +178,7 @@ mod tests {
 
     #[test]
     fn lock_parse_package_v7() {
-        let pkgs = PackageLock
-            .parse_file("tests/fixtures/package-lock.json")
-            .unwrap();
+        let pkgs = PackageLock.parse_file("tests/fixtures/package-lock.json").unwrap();
 
         assert_eq!(pkgs.len(), 50);
 
@@ -216,28 +204,21 @@ mod tests {
         // This file contains only one package and that package has no dependencies.
         // This makes the file valid YAML according to serde_yaml.
         //
-        // We need to make sure we don't take the v2 lockfile code path because this is not a v2
-        // lockfile and parsing it as one will produce incorrect results.
-        let pkgs = YarnLock
-            .parse_file("tests/fixtures/yarn-v1.simple.lock")
-            .unwrap();
+        // We need to make sure we don't take the v2 lockfile code path because this is
+        // not a v2 lockfile and parsing it as one will produce incorrect
+        // results.
+        let pkgs = YarnLock.parse_file("tests/fixtures/yarn-v1.simple.lock").unwrap();
 
-        assert_eq!(
-            pkgs,
-            vec![PackageDescriptor {
-                name: "@yarnpkg/lockfile".to_string(),
-                version: "1.1.0".to_string(),
-                package_type: PackageType::Npm,
-            }]
-        );
+        assert_eq!(pkgs, vec![PackageDescriptor {
+            name: "@yarnpkg/lockfile".to_string(),
+            version: "1.1.0".to_string(),
+            package_type: PackageType::Npm,
+        }]);
     }
 
     #[test]
     fn lock_parse_yarn_v1() {
-        for p in &[
-            "tests/fixtures/yarn-v1.lock",
-            "tests/fixtures/yarn-v1.trailing_newlines.lock",
-        ] {
+        for p in &["tests/fixtures/yarn-v1.lock", "tests/fixtures/yarn-v1.trailing_newlines.lock"] {
             let pkgs = YarnLock.parse_file(p).unwrap();
 
             assert_eq!(pkgs.len(), 17);
@@ -260,9 +241,7 @@ mod tests {
     #[should_panic]
     #[test]
     fn lock_parse_yarn_v1_malformed_fails() {
-        YarnLock
-            .parse_file("tests/fixtures/yarn-v1.lock.bad")
-            .unwrap();
+        YarnLock.parse_file("tests/fixtures/yarn-v1.lock.bad").unwrap();
     }
 
     #[test]
