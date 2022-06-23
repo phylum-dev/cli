@@ -39,6 +39,8 @@ jobs:
           components: rustfmt
 
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: v1
 
       - name: Format check
         if: github.event_name != 'schedule'
