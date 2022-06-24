@@ -1,0 +1,3 @@
+name = "module-import-fail-local"
+description = "Test: fail to import disallowed local path"
+entry_point = "main.ts"

@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
+use log::warn;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
@@ -82,6 +83,11 @@ impl Extension {
 
                 builder.recursive(true);
                 builder.create(&dest_path)?;
+            } else if source_path.is_symlink() {
+                warn!(
+                    "install {}: `{:?}`: is a symbolic link, skipping",
+                    self.manifest.name, source_path
+                );
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
