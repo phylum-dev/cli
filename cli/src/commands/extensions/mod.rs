@@ -4,6 +4,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
+use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
 use futures::future::BoxFuture;
@@ -171,9 +172,12 @@ async fn handle_list_extensions() -> CommandResult {
     if extensions.is_empty() {
         println!("No extensions are currently installed.");
     } else {
-        extensions.into_iter().for_each(|ext| {
-            println!("{:20}   {}", ext.name(), ext.description().unwrap_or(""));
-        });
+        let heading = Color::Blue.paint("Extension Name         Description");
+        println!("{heading}");
+
+        for extension in extensions {
+            println!("{:20}   {}", extension.name(), extension.description().unwrap_or(""));
+        }
     }
 
     Ok(CommandValue::Code(ExitCode::Ok))
