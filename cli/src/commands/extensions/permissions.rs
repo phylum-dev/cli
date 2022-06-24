@@ -33,8 +33,8 @@ impl Permissions {
         self.net.as_ref()
     }
 
-    fn resolve_path(src_path: String) -> Result<PathBuf> {
-        let path = PathBuf::from(&src_path);
+    fn resolve_path<S: AsRef<str> + std::fmt::Display>(src_path: S) -> Result<PathBuf> {
+        let path = PathBuf::from(src_path.as_ref());
 
         if !path.is_relative() {
             return Err(anyhow!("`{src_path}`: absolute paths are not allowed"));
@@ -51,28 +51,28 @@ impl Permissions {
     }
 }
 
-impl TryFrom<Permissions> for PermissionsOptions {
+impl TryFrom<&Permissions> for PermissionsOptions {
     type Error = anyhow::Error;
 
-    fn try_from(value: Permissions) -> Result<Self, Self::Error> {
+    fn try_from(value: &Permissions) -> Result<Self, Self::Error> {
         let Permissions { read, write, net, run } = value;
 
         let allow_read = match read {
             Some(read) => {
-                Some(read.into_iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
+                Some(read.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
             },
             None => None,
         };
 
         let allow_write = match write {
             Some(write) => {
-                Some(write.into_iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
+                Some(write.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
             },
             None => None,
         };
 
-        let allow_net = net;
-        let allow_run = run;
+        let allow_net = net.clone();
+        let allow_run = run.clone();
 
         Ok(PermissionsOptions {
             allow_read,
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn well_formed_permission_is_converted() {
-        let permissions_options: Result<PermissionsOptions> = Permissions {
+        let permissions = Permissions {
             read: Some(vec![
                 "./node_modules".to_string(),
                 "package-lock.json".to_string(),
@@ -105,8 +105,8 @@ mod tests {
                 "poetry".to_string(),
             ]),
             net: None,
-        }
-        .try_into();
+        };
+        let permissions_options = PermissionsOptions::try_from(&permissions);
 
         println!("{:?}", permissions_options);
         assert!(permissions_options.is_ok());
@@ -114,26 +114,26 @@ mod tests {
 
     #[test]
     fn directory_traversal_is_denied() {
-        let permissions_options: Result<PermissionsOptions> = Permissions {
+        let permissions = Permissions {
             read: Some(vec!["../node_modules".to_string()]),
             write: None,
             run: None,
             net: None,
-        }
-        .try_into();
+        };
+        let permissions_options = PermissionsOptions::try_from(&permissions);
 
         assert!(permissions_options.is_err());
     }
 
     #[test]
     fn absolute_paths_are_denied() {
-        let permissions_options: Result<PermissionsOptions> = Permissions {
+        let permissions = Permissions {
             read: Some(vec!["/tmp/node_modules".to_string()]),
             write: None,
             run: None,
             net: None,
-        }
-        .try_into();
+        };
+        let permissions_options = PermissionsOptions::try_from(&permissions);
 
         assert!(permissions_options.is_err());
     }

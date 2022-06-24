@@ -5,7 +5,6 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use deno_runtime::permissions::PermissionsOptions;
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -35,7 +34,8 @@ pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: String,
-    permissions: Option<Permissions>,
+    #[serde(default)]
+    permissions: Permissions,
 }
 
 impl Extension {
@@ -51,12 +51,12 @@ impl Extension {
         &self.manifest.entry_point
     }
 
-    pub fn permissions(&self) -> Permissions {
-        self.manifest.permissions.clone().unwrap_or_default()
+    pub fn permissions(&self) -> &Permissions {
+        &self.manifest.permissions
     }
 
     pub fn requires_permissions(&self) -> bool {
-        self.manifest.permissions.as_ref().map(|p| !p.is_empty()).unwrap_or(false)
+        !self.manifest.permissions.is_empty()
     }
 
     /// Install the extension in the default path.
