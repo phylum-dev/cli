@@ -1,0 +1,16 @@
+[package]
+name = "integration"
+description = "Phylum CLI integration tests"
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies.phylum-cli]
+path = "../cli"
+
+[dependencies]
+predicates = "2.1.1"
+serde_yaml = "0.8.14"
+assert_cmd = "2.0.4"
+tempfile = "3.3.0"
