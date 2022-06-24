@@ -1,0 +1,6 @@
+name = "incorrect-read-perms"
+description = "An extension with incorrectly specified permissions"
+entry_point = "main.ts"
+
+[permissions]
+read = ["../../test.txt"]

@@ -4,7 +4,10 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use clap::{arg, ArgMatches, Command, ValueHint};
+use clap::{arg, ArgAction, ArgMatches, Command, ValueHint};
+use deno_runtime::permissions::PermissionsOptions;
+use dialoguer::console::Term;
+use dialoguer::Confirm;
 use extension::Extension;
 use futures::future::BoxFuture;
 use log::{error, warn};
@@ -22,7 +25,10 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("add")
                 .about("Install extension")
-                .arg(arg!(-y --yes "Automatically accept requested permissions"))
+                .arg(
+                    arg!(-y --yes "Automatically accept requested permissions")
+                        .action(ArgAction::SetTrue),
+                )
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -101,9 +107,13 @@ async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandRe
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    if !accept_permissions && extension.requires_permissions() {
-        let permissions = extension.permissions();
+    let permissions = extension.permissions();
 
+    // Attempt to construct a `PermissionsOptions` from the `Permissions`
+    // object in order to validate the permissions.
+    let _ = PermissionsOptions::try_from(permissions)?;
+
+    if !accept_permissions && extension.requires_permissions() {
         println!("The `{}` extension requires the following permissions:", extension.name());
 
         if let Some(read_paths) = permissions.read() {
@@ -134,7 +144,13 @@ async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandRe
             }
         }
 
-        println!("Do you accept? [y/n]");
+        if !Term::stdout().is_term() {
+            return Err(anyhow!("can't ask for permissions: not a terminal"));
+        }
+
+        if !Confirm::new().with_prompt("Do you accept?").interact()? {
+            return Err(anyhow!("permissions not granted, aborting"));
+        }
     }
 
     extension.install()?;

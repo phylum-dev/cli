@@ -279,6 +279,110 @@ fn conflicting_extension_name_is_filtered() {
     assert!(output.contains("extension was filtered out"));
 }
 
+mod permissions {
+    use std::ffi::OsStr;
+
+    use assert_cmd::assert::Assert;
+    use predicates::prelude::*;
+
+    use super::*;
+
+    struct TestCLI {
+        tempdir: TempDir,
+        cwd: Option<PathBuf>,
+    }
+
+    impl Default for TestCLI {
+        fn default() -> Self {
+            Self { tempdir: TempDir::new().unwrap(), cwd: None }
+        }
+    }
+
+    impl TestCLI {
+        fn new() -> Self {
+            Default::default()
+        }
+
+        fn cwd(mut self, cwd: PathBuf) -> Self {
+            self.cwd = Some(cwd);
+            self
+        }
+
+        fn install_extension(&self, path: &Path) -> Assert {
+            self.run(&["extension", "add", "-y", &path.to_string_lossy()])
+        }
+
+        fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
+            let mut cmd = Command::cargo_bin("phylum").unwrap();
+
+            cmd.env("XDG_DATA_HOME", self.tempdir.path()).args(args);
+
+            if let Some(cwd) = self.cwd.as_ref() {
+                cmd.current_dir(cwd);
+            }
+
+            cmd.assert()
+        }
+    }
+
+    #[test]
+    fn permission_dialog_is_shown_without_yes_flag() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        let cmd = test_cli
+            .run(&[
+                "extension",
+                "add",
+                &fixtures_path().join("permissions").join("correct-read-perms").to_string_lossy(),
+            ])
+            .failure()
+            .stdout(predicate::str::contains("Read from the following paths"))
+            .stderr(predicate::str::contains("can't ask for permissions"));
+
+        let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+        println!("{}", output);
+        let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+        println!("{}", output);
+    }
+
+    #[test]
+    fn correct_read_permission_successful_install_and_run() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("correct-read-perms"))
+            .success();
+
+        let cmd = test_cli
+            .run(&["correct-read-perms"])
+            .success()
+            .stdout(predicate::str::contains("await Deno.readFile"));
+    }
+
+    #[test]
+    fn incorrect_read_permission_unsuccessful_install() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("incorrect-read-perms"))
+            .failure();
+    }
+
+    #[test]
+    fn missing_read_permission_unsuccessful_run() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("missing-read-perms"))
+            .success();
+
+        test_cli
+            .run(&["missing-read-perms"])
+            .failure()
+            .stderr(predicate::str::contains("Error: Requires read access"));
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
