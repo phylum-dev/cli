@@ -2820,6 +2820,7 @@ dependencies = [
  "once_cell",
  "open",
  "phylum_types",
+ "predicates",
  "prettytable-rs",
  "rand 0.8.5",
  "regex",

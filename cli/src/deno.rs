@@ -3,7 +3,7 @@
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
-use std::{fs, thread};
+use std::thread;
 
 use anyhow::{anyhow, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
@@ -13,9 +13,11 @@ use deno_runtime::deno_core::{
 use deno_runtime::permissions::Permissions;
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
+use tokio::fs;
+use url::{Host, Url};
 
 use crate::commands::extensions::api;
-use crate::commands::extensions::extension::ExtensionState;
+use crate::commands::extensions::extension::{self, ExtensionState};
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
@@ -45,7 +47,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         bootstrap,
         web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
-        module_loader: Rc::new(TypescriptModuleLoader),
+        module_loader: Rc::new(ExtensionsModuleLoader),
         extensions: vec![phylum_api],
         seed: None,
         unsafely_ignore_certificate_errors: Default::default(),
@@ -78,9 +80,44 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
-struct TypescriptModuleLoader;
+struct ExtensionsModuleLoader;
 
-impl ModuleLoader for TypescriptModuleLoader {
+impl ExtensionsModuleLoader {
+    async fn load_from_filesystem(path: &Url) -> Result<String> {
+        let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
+
+        let extensions_path = extension::extensions_path()?;
+        if !path.starts_with(&extensions_path) {
+            return Err(anyhow!(
+                "`{}`: importing from paths outside of the extension's directory is not allowed",
+                path.to_string_lossy(),
+            ));
+        }
+
+        if path.is_symlink() {
+            return Err(anyhow!(
+                "`{}`: importing from symlinks is not allowed",
+                path.to_string_lossy(),
+            ));
+        }
+
+        Ok(fs::read_to_string(path).await?)
+    }
+
+    async fn load_from_deno_std(path: &Url) -> Result<String> {
+        if let Some(Host::Domain("deno.land")) = path.host() {
+            let response = reqwest::get(path.clone()).await?;
+            Ok(response.text().await?)
+        } else {
+            Err(anyhow!(
+                "`{}`: importing from domains other than `deno.land` is not allowed",
+                path.host().unwrap_or(Host::Domain("<unknown host>"))
+            ))
+        }
+    }
+}
+
+impl ModuleLoader for ExtensionsModuleLoader {
     fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
         if specifier == "phylum" {
             Ok(ModuleSpecifier::parse("deno:phylum")?)
@@ -102,11 +139,11 @@ impl ModuleLoader for TypescriptModuleLoader {
                 return phylum_module();
             }
 
-            let path =
-                module_specifier.to_file_path().map_err(|_| anyhow!("Invalid module path"))?;
-
             // Determine source file type.
-            let media_type = MediaType::from(&path);
+            // We do not care about invalid URLs yet: This match statement is inexpensive,
+            // bears no risk and does not do I/O -- it operates fully off of the
+            // contents of the URL.
+            let media_type = MediaType::from(&module_specifier);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
@@ -123,8 +160,15 @@ impl ModuleLoader for TypescriptModuleLoader {
                 _ => return Err(anyhow!("Unknown JS module format: {}", module_specifier)),
             };
 
-            // Read the source and transpile it if necessary.
-            let mut code = fs::read_to_string(&path)?;
+            // Load either a local file under the extensions directory, or a Deno standard
+            // library module. Reject all URLs that do not fit these two use
+            // cases.
+            let mut code = match module_specifier.scheme() {
+                "file" => ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?,
+                "https" => ExtensionsModuleLoader::load_from_deno_std(&module_specifier).await?,
+                _ => return Err(anyhow!("Unsupported module specifier: {}", module_specifier)),
+            };
+
             if should_transpile {
                 code = transpile(module_specifier.to_string(), code, media_type)?;
             }

@@ -1,0 +1,3 @@
+name = "module-import-fail-remote"
+description = "Test: fail to load unsupported remote URL"
+entry_point = "main.ts"
