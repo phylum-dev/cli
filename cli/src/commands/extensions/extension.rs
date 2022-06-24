@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 pub(crate) use super::api::ExtensionState;
@@ -22,17 +22,23 @@ lazy_static! {
     static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z][a-z0-9-]+$"#).unwrap();
 }
 
-#[derive(Debug)]
-pub struct Extension {
-    path: PathBuf,
-    manifest: ExtensionManifest,
-}
-
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: String,
+}
+
+impl ExtensionManifest {
+    pub fn new(name: String, entry_point: String, description: Option<String>) -> Self {
+        Self { description, entry_point, name }
+    }
+}
+
+#[derive(Debug)]
+pub struct Extension {
+    path: PathBuf,
+    manifest: ExtensionManifest,
 }
 
 impl Extension {

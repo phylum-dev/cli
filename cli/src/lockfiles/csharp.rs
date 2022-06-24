@@ -8,7 +8,7 @@ pub struct CSProj;
 
 const INVALID_CHAR: &str = "\u{feff}";
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct PackageReference {
     #[serde(alias = "Include", default)]
     pub name: String,
@@ -17,13 +17,13 @@ pub struct PackageReference {
     pub version: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 struct ItemGroup {
     #[serde(alias = "PackageReference", default)]
     pub dependencies: Vec<PackageReference>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 struct Project {
     #[serde(rename = "ItemGroup", default)]
     pub item_groups: Vec<ItemGroup>,
