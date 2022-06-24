@@ -1,9 +1,9 @@
-use futures::Future;
 use std::time;
-use tokio::{
-    sync::mpsc::{self, error::TryRecvError, Receiver, Sender},
-    task::JoinHandle,
-};
+
+use futures::Future;
+use tokio::sync::mpsc::error::TryRecvError;
+use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::task::JoinHandle;
 
 const SPINNER_DELAY: u64 = 40;
 const SPINNER_DOTS: [&str; 56] = [
@@ -42,15 +42,9 @@ impl Spinner {
         if atty::is(atty::Stream::Stderr) {
             let (tx, rx) = mpsc::channel(10);
             let handle = tokio::spawn(Self::spin(rx, message));
-            Self {
-                tx: Some(tx),
-                handle: Some(handle),
-            }
+            Self { tx: Some(tx), handle: Some(handle) }
         } else {
-            Self {
-                tx: None,
-                handle: None,
-            }
+            Self { tx: None, handle: None }
         }
     }
 
@@ -95,8 +89,8 @@ impl Spinner {
         }
     }
 
-    /// Stop the spinner. This requires a bit of cleanup, and so should be `await`ed before doing
-    /// any other i/o.
+    /// Stop the spinner. This requires a bit of cleanup, and so should be
+    /// `await`ed before doing any other i/o.
     pub async fn stop(self) {
         if let Some(tx) = &self.tx {
             tx.send(Command::Stop).await.ok();
@@ -125,13 +119,13 @@ impl Spinner {
                         eprint!(" {}", msg)
                     }
                     interval.tick().await;
-                }
+                },
                 Ok(Command::Message(new_msg)) => {
                     msg = new_msg;
-                }
+                },
                 _ => {
                     break;
-                }
+                },
             }
         }
         eprint!("{}", ansi::CLEAR_LINE);
