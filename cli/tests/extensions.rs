@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use assert_cmd::Command;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
+use predicates::prelude::*;
 use regex::Regex;
 use tempfile::TempDir;
 
@@ -329,7 +330,7 @@ mod permissions {
     fn permission_dialog_is_shown_without_yes_flag() {
         let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
 
-        let cmd = test_cli
+        test_cli
             .run(&[
                 "extension",
                 "add",
@@ -338,11 +339,6 @@ mod permissions {
             .failure()
             .stdout(predicate::str::contains("Read from the following paths"))
             .stderr(predicate::str::contains("can't ask for permissions"));
-
-        let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-        println!("{}", output);
-        let output = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-        println!("{}", output);
     }
 
     #[test]
@@ -353,7 +349,7 @@ mod permissions {
             .install_extension(&fixtures_path().join("permissions").join("correct-read-perms"))
             .success();
 
-        let cmd = test_cli
+        test_cli
             .run(&["correct-read-perms"])
             .success()
             .stdout(predicate::str::contains("await Deno.readFile"));
@@ -380,6 +376,128 @@ mod permissions {
             .run(&["missing-read-perms"])
             .failure()
             .stderr(predicate::str::contains("Error: Requires read access"));
+    }
+}
+
+// Test that the rules of the module loader are obeyed:
+// - Both TypeScript and JavaScript are supported.
+// - Files under $XDG_DATA_HOME/phylum/extensions may be imported.
+// - Symlinks are not allowed.
+// - Remote URLs under https://deno.land are supported -- i.e., the Deno's
+//   standard library.
+// - No other URLs are supported.
+//   - We explicitly test that a https:// url which is not under `deno.land` is
+//     rejected.
+//   - We explicitly test that a directory traversal attempt is rejected.
+//
+// These tests are based on the fixtures under
+// `fixtures/module-import-extension`.
+mod module_loader_tests {
+    use super::*;
+
+    // The fixture for this test requires one local .ts file, one local .js file,
+    // and one file from Deno's standard library.
+    #[test]
+    fn good_module_loads_successfully() {
+        let tempdir = TempDir::new().unwrap();
+
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("extension")
+            .arg("add")
+            .arg(fixtures_path().join("module-import-extension").join("successful"))
+            .assert()
+            .success();
+
+        let cmd = Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("module-import-success")
+            .assert()
+            .success();
+
+        let stdout = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
+        assert!(stdout.contains("I should contain 12345"));
+    }
+
+    // The fixture for this test attempts a directory traversal.
+    #[test]
+    fn module_with_traversal_fails_to_load() {
+        let tempdir = TempDir::new().unwrap();
+
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("extension")
+            .arg("add")
+            .arg(fixtures_path().join("module-import-extension").join("fail-local"))
+            .assert()
+            .success();
+
+        let cmd = Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("module-import-fail-local")
+            .assert()
+            .failure();
+
+        let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+        assert!(stderr.contains("importing from paths outside"));
+    }
+
+    // The fixture for this test attempts to load a module from a non-`deno.land`
+    // URL.
+    #[test]
+    fn module_with_non_allowed_url_fails_to_load() {
+        let tempdir = TempDir::new().unwrap();
+
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("extension")
+            .arg("add")
+            .arg(fixtures_path().join("module-import-extension").join("fail-remote"))
+            .assert()
+            .success();
+
+        let cmd = Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("module-import-fail-remote")
+            .assert()
+            .failure();
+
+        let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
+        assert!(stderr.contains("importing from domains other than"));
+    }
+
+    // A symlink is directly created during the test, as no symlinks are committed
+    // to the repo.
+    #[cfg(unix)]
+    #[test]
+    fn symlinks_are_rejected() {
+        let tempdir = TempDir::new().unwrap();
+        let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink-extension");
+
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .args(&["extension", "add"])
+            .arg(fixtures_path().join("symlink-extension"))
+            .assert()
+            .success();
+
+        std::os::unix::fs::symlink(ext_path.join("symlink_me.ts"), ext_path.join("symlink.ts"))
+            .unwrap();
+
+        Command::cargo_bin("phylum")
+            .unwrap()
+            .env("XDG_DATA_HOME", tempdir.path())
+            .arg("symlink-extension")
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains("importing from symlinks is not allowed"));
     }
 }
 

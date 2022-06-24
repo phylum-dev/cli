@@ -7,8 +7,9 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
+use log::warn;
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 pub(crate) use super::api::ExtensionState;
@@ -23,19 +24,31 @@ lazy_static! {
     static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z][a-z0-9-]+$"#).unwrap();
 }
 
-#[derive(Debug)]
-pub struct Extension {
-    path: PathBuf,
-    manifest: ExtensionManifest,
-}
-
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: String,
     #[serde(default)]
     permissions: Permissions,
+}
+
+impl ExtensionManifest {
+    pub fn new(
+        name: String,
+        entry_point: String,
+        description: Option<String>,
+        permissions: Option<Permissions>,
+    ) -> Self {
+        let permissions = permissions.unwrap_or_default();
+        Self { description, entry_point, name, permissions }
+    }
+}
+
+#[derive(Debug)]
+pub struct Extension {
+    path: PathBuf,
+    manifest: ExtensionManifest,
 }
 
 impl Extension {
@@ -87,6 +100,11 @@ impl Extension {
 
                 builder.recursive(true);
                 builder.create(&dest_path)?;
+            } else if source_path.is_symlink() {
+                warn!(
+                    "install {}: `{:?}`: is a symbolic link, skipping",
+                    self.manifest.name, source_path
+                );
             } else if source_path.is_file() {
                 if dest_path.exists() {
                     return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));

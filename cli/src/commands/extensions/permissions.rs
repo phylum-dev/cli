@@ -2,9 +2,9 @@ use std::path::{Component, PathBuf};
 
 use anyhow::{anyhow, Result};
 use deno_runtime::permissions::PermissionsOptions;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Deserialize, Debug)]
+#[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
     read: Option<Vec<String>>,
     write: Option<Vec<String>>,
