@@ -18,7 +18,7 @@ anyhow = "1.0.44"
 atty = "0.2.14"
 base64 = "0.13.0"
 bytes = "1.1.0"
-chrono = { version = "^0.4", features = ["serde"] }
+chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
 cidr = "0.2.0"
 clap = { version = "3.0.14" }
 dialoguer = "0.10.0"

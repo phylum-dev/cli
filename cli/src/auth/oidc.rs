@@ -8,7 +8,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use base64;
 use maplit::hashmap;
-use phylum_types::types::auth::*;
+use phylum_types::types::auth::{AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -58,11 +58,8 @@ impl CodeVerifier {
         if !(43..=128).contains(&length) {
             return Err(anyhow!("length must be between 43 and 128 inclusive."));
         }
-        let code_verifier: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(length as usize)
-            .map(char::from)
-            .collect();
+        let code_verifier: String =
+            thread_rng().sample_iter(&Alphanumeric).take(length as usize).map(char::from).collect();
         let mut hasher = Sha256::new();
         hasher.update(&code_verifier);
         let hash = hasher.finalize();
@@ -119,7 +116,7 @@ pub fn build_auth_url(
                 .pop()
                 .push("registrations");
             auth_url
-        }
+        },
     };
 
     auth_url
@@ -152,9 +149,7 @@ pub async fn fetch_oidc_server_settings(
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<OidcServerSettings> {
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(ignore_certs)
-        .build()?;
+    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
     let response = client
         .get(endpoints::oidc_discovery(api_uri)?)
         .header("Accept", "application/json")
@@ -211,9 +206,7 @@ pub async fn acquire_tokens(
     let body =
         build_grant_type_auth_code_post_body(redirect_url, authorization_code, code_verifier)?;
 
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(ignore_certs)
-        .build()?;
+    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")
@@ -232,8 +225,8 @@ pub async fn acquire_tokens(
             .map_or(false, |response| response.error == "not_allowed")
         {
             err = err.context(
-                "Your account is not authorized to perform this action. \
-                Please contact Phylum support.",
+                "Your account is not authorized to perform this action. Please contact Phylum \
+                 support.",
             );
         }
 
@@ -252,9 +245,7 @@ pub async fn refresh_tokens(
 
     let body = build_grant_type_refresh_token_post_body(refresh_token)?;
 
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(ignore_certs)
-        .build()?;
+    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")

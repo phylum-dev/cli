@@ -1,11 +1,9 @@
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take_until},
-    character::complete::{alphanumeric1, char, not_line_ending},
-    combinator::{opt, recognize, rest, verify},
-    multi::{many0, many1, separated_list0},
-    sequence::{delimited, pair, terminated},
-};
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_until};
+use nom::character::complete::{alphanumeric1, char, not_line_ending};
+use nom::combinator::{opt, recognize, rest, verify};
+use nom::multi::{many0, many1, separated_list0};
+use nom::sequence::{delimited, pair, terminated};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{ws, Result};
@@ -20,10 +18,9 @@ fn filter_package_name(input: &str) -> Result<&str, &str> {
 }
 
 fn identifier(input: &str) -> Result<&str, &str> {
-    recognize(pair(
-        alphanumeric1,
-        many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag(".")))))),
-    ))(input)
+    recognize(pair(alphanumeric1, many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag("."))))))))(
+        input,
+    )
 }
 
 fn identifier_list(input: &str) -> Result<&str, &str> {
@@ -63,9 +60,7 @@ fn get_package_version(input: &str) -> Result<&str, &str> {
 }
 
 fn get_git_version(input: &str) -> Result<&str, &str> {
-    verify(rest, |s: &str| {
-        s.contains("http://") || s.contains("https://")
-    })(input)
+    verify(rest, |s: &str| s.contains("http://") || s.contains("https://"))(input)
 }
 
 fn filter_line(input: &str) -> Result<&str, &str> {
@@ -78,24 +73,20 @@ fn package(input: &str) -> Option<PackageDescriptor> {
     let (_, name) = filter_line(input).ok()?;
     let (name, version) = match filter_git_repo(name).ok() {
         Some((_, s)) => match filter_egg_name(s).ok() {
-            Some((n, v)) => (
-                n.trim_start_matches("#egg=").to_string(),
-                v.trim_start_matches("-e").to_string(),
-            ),
+            Some((n, v)) => {
+                (n.trim_start_matches("#egg=").to_string(), v.trim_start_matches("-e").to_string())
+            },
             None => {
                 let (version, pkg) = filter_pip_name(s).ok()?;
                 let (_, name) = filter_package_name(pkg).ok()?;
-                (
-                    name.to_string(),
-                    version.trim_start_matches('@').to_string(),
-                )
-            }
+                (name.to_string(), version.trim_start_matches('@').to_string())
+            },
         },
         None => {
             let (version, name) = filter_package_name(name).ok()?;
             let name: String = name.to_string().split_whitespace().collect();
             (name, version.to_string())
-        }
+        },
     };
 
     let version: String = match get_package_version(version.trim()).ok() {
@@ -105,7 +96,7 @@ fn package(input: &str) -> Option<PackageDescriptor> {
             None => {
                 log::warn!("Could not determine version for package: {}", name);
                 None
-            }
+            },
         },
     }?;
 

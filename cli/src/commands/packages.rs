@@ -3,7 +3,7 @@ use std::str::FromStr;
 use ansi_term::Color::Blue;
 use anyhow::anyhow;
 use clap::ArgMatches;
-use phylum_types::types::package::*;
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 
 use crate::api::PhylumApi;
@@ -27,11 +27,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> Option<Pac
             .unwrap_or(package_type);
     }
 
-    Some(PackageDescriptor {
-        name,
-        version,
-        package_type,
-    })
+    Some(PackageDescriptor { name, version, package_type })
 }
 
 /// Handle the subcommands for the `package` subcommand.

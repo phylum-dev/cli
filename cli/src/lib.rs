@@ -1,3 +1,5 @@
+pub use reqwest::Error;
+
 pub mod api;
 pub mod app;
 pub mod auth;
@@ -17,10 +19,3 @@ pub mod summarize;
 mod test;
 pub mod types;
 pub mod update;
-
-#[cfg(test)]
-#[allow(unused_imports)]
-// Enable logging for ALL doc & local tests
-use test::logging;
-
-pub use reqwest::Error;

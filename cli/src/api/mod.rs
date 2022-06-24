@@ -1,33 +1,33 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use phylum_types::types::auth::*;
-use phylum_types::types::common::*;
+use phylum_types::types::auth::TokenResponse;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
-use phylum_types::types::job::*;
-use phylum_types::types::package::*;
-use phylum_types::types::project::CreateProjectRequest;
-use phylum_types::types::project::CreateProjectResponse;
-use phylum_types::types::project::ProjectDetailsResponse;
-use phylum_types::types::project::ProjectSummaryResponse;
-use phylum_types::types::user_settings::*;
+use phylum_types::types::job::{
+    AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
+};
+use phylum_types::types::package::{
+    Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
+};
+use phylum_types::types::project::{
+    CreateProjectRequest, CreateProjectResponse, ProjectDetailsResponse, ProjectSummaryResponse,
+};
+use phylum_types::types::user_settings::UserSettings;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use thiserror::Error as ThisError;
 
-pub mod endpoints;
-
-use crate::auth::fetch_oidc_server_settings;
-use crate::auth::handle_auth_flow;
-use crate::auth::handle_refresh_tokens;
-use crate::auth::{AuthAction, UserInfo};
-use crate::config::AuthInfo;
-use crate::config::Config;
+use self::endpoints::BaseUriError;
+use crate::auth::{
+    fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
+};
+use crate::config::{AuthInfo, Config};
 use crate::types::PingResponse;
 
-use self::endpoints::BaseUriError;
+pub mod endpoints;
 
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
@@ -47,6 +47,8 @@ pub enum PhylumApiError {
     #[error(transparent)]
     BaseUri(#[from] BaseUriError),
     #[error(transparent)]
+    Response(#[from] ResponseError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
 
@@ -57,6 +59,14 @@ impl PhylumApiError {
             _ => None,
         }
     }
+}
+
+/// Non-successful request response.
+#[derive(ThisError, Debug)]
+#[error("HTTP request error ({code}):\n{body}")]
+pub struct ResponseError {
+    pub code: StatusCode,
+    pub body: String,
 }
 
 impl PhylumApi {
@@ -92,11 +102,12 @@ impl PhylumApi {
         }
 
         let response = request.send().await?;
-        let success = response.status().is_success();
+        let status_code = response.status();
         let body = response.text().await?;
 
-        if !success {
-            return Err(anyhow!(body).into());
+        if !status_code.is_success() {
+            let err = ResponseError { body, code: status_code };
+            return Err(err.into());
         }
 
         serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
@@ -104,25 +115,22 @@ impl PhylumApi {
 }
 
 impl PhylumApi {
-    /// Create a phylum API client using the given Auth configuration, api url and
-    /// request timeout. If in the process of creating the client, credentials
-    /// must be obtained, the auth_info struct will be updated with the new
-    /// information. It is the duty of the calling code to save any changes
+    /// Create a phylum API client using the given Auth configuration, api url
+    /// and request timeout. If in the process of creating the client,
+    /// credentials must be obtained, the auth_info struct will be updated
+    /// with the new information. It is the duty of the calling code to save
+    /// any changes
     pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &config.auth_info.offline_access {
             Some(refresh_token) => {
                 handle_refresh_tokens(refresh_token, config.ignore_certs, &config.connection.uri)
                     .await?
-            }
+            },
             None => {
-                handle_auth_flow(
-                    &AuthAction::Login,
-                    config.ignore_certs,
-                    &config.connection.uri,
-                )
-                .await?
-            }
+                handle_auth_flow(&AuthAction::Login, config.ignore_certs, &config.connection.uri)
+                    .await?
+            },
         };
 
         config.auth_info.offline_access = Some(tokens.refresh_token.clone());
@@ -140,9 +148,7 @@ impl PhylumApi {
         headers.insert("version", HeaderValue::from_str(version).unwrap());
 
         let client = Client::builder()
-            .timeout(Duration::from_secs(
-                request_timeout.unwrap_or(std::u64::MAX),
-            ))
+            .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
             .danger_accept_invalid_certs(config.ignore_certs)
             .default_headers(headers)
             .build()?;
@@ -197,10 +203,7 @@ impl PhylumApi {
         let response: CreateProjectResponse = self
             .post(
                 endpoints::post_create_project(&self.config.connection.uri)?,
-                CreateProjectRequest {
-                    name: name.to_owned(),
-                    group_name: group.map(String::from),
-                },
+                CreateProjectRequest { name: name.to_owned(), group_name: group.map(String::from) },
             )
             .await?;
         Ok(response.id)
@@ -218,8 +221,7 @@ impl PhylumApi {
 
     /// Get user settings
     pub async fn get_user_settings(&self) -> Result<UserSettings> {
-        self.get(endpoints::get_user_settings(&self.config.connection.uri)?)
-            .await
+        self.get(endpoints::get_user_settings(&self.config.connection.uri)?).await
     }
 
     /// Put updated user settings
@@ -251,23 +253,14 @@ impl PhylumApi {
             group_name,
         };
         log::debug!("==> Sending package submission: {:?}", req);
-        let resp: SubmitPackageResponse = self
-            .put(
-                endpoints::put_submit_package(&self.config.connection.uri)?,
-                req,
-            )
-            .await?;
+        let resp: SubmitPackageResponse =
+            self.put(endpoints::put_submit_package(&self.config.connection.uri)?, req).await?;
         Ok(resp.job_id)
     }
 
     /// Get the status of a previously submitted job
     pub async fn get_job_status(&self, job_id: &JobId) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(endpoints::get_job_status(
-            &self.config.connection.uri,
-            job_id,
-            false,
-        )?)
-        .await
+        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, false)?).await
     }
 
     /// Get the status of a previously submitted job (verbose output)
@@ -275,30 +268,17 @@ impl PhylumApi {
         &self,
         job_id: &JobId,
     ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(endpoints::get_job_status(
-            &self.config.connection.uri,
-            job_id,
-            true,
-        )?)
-        .await
+        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, true)?).await
     }
 
     /// Get the status of all jobs
     pub async fn get_status(&self) -> Result<AllJobsStatusResponse> {
-        self.get(endpoints::get_all_jobs_status(
-            &self.config.connection.uri,
-            30,
-        )?)
-        .await
+        self.get(endpoints::get_all_jobs_status(&self.config.connection.uri, 30)?).await
     }
 
     /// Get the details of a specific project
     pub async fn get_project_details(&self, project_name: &str) -> Result<ProjectDetailsResponse> {
-        self.get(endpoints::get_project_details(
-            &self.config.connection.uri,
-            project_name,
-        )?)
-        .await
+        self.get(endpoints::get_project_details(&self.config.connection.uri, project_name)?).await
     }
 
     /// Resolve a Project Name to a Project ID
@@ -318,26 +298,18 @@ impl PhylumApi {
 
     /// Get package details
     pub async fn get_package_details(&self, pkg: &PackageDescriptor) -> Result<Package> {
-        self.get(endpoints::get_package_status(
-            &self.config.connection.uri,
-            pkg,
-        )?)
-        .await
+        self.get(endpoints::get_package_status(&self.config.connection.uri, pkg)?).await
     }
 
     /// Get all groups the user is part of.
     pub async fn get_groups_list(&self) -> Result<ListUserGroupsResponse> {
-        self.get(endpoints::group_list(&self.config.connection.uri)?)
-            .await
+        self.get(endpoints::group_list(&self.config.connection.uri)?).await
     }
 
     /// Get all groups the user is part of.
     pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
-        let group = CreateGroupRequest {
-            group_name: group_name.into(),
-        };
-        self.post(endpoints::group_create(&self.config.connection.uri)?, group)
-            .await
+        let group = CreateGroupRequest { group_name: group_name.into() };
+        self.post(endpoints::group_create(&self.config.connection.uri)?, group).await
     }
 
     pub fn config(&self) -> &Config {
@@ -351,14 +323,15 @@ mod tests {
 
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
+
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
 
+    use super::*;
     use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
 
-    use super::*;
     #[tokio::test]
     async fn create_client() -> Result<()> {
         let mock_server = build_mock_server().await;
@@ -372,9 +345,7 @@ mod tests {
         let auth_info = build_unauthenticated_auth_info();
 
         let config = Config {
-            connection: ConnectionInfo {
-                uri: mock_server.uri(),
-            },
+            connection: ConnectionInfo { uri: mock_server.uri() },
             auth_info,
             ..Default::default()
         };
@@ -403,10 +374,7 @@ mod tests {
                 let mut guard = responder_token_holder.lock().unwrap();
                 let auth_header = HeaderName::from_str("Authorization").unwrap();
 
-                *guard = request
-                    .headers
-                    .get(&auth_header)
-                    .map(|v| v.as_str().to_owned());
+                *guard = request.headers.get(&auth_header).map(|v| v.as_str().to_owned());
 
                 ResponseTemplate::new(200)
                     .set_body_string(r#"{"job_id": "59482a54-423b-448d-8325-f171c9dc336b"}"#)
@@ -423,9 +391,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
-            .await?;
+        client.submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None).await?;
 
         // Request should have been submitted with a bearer token
         let bearer_token = token_holder.lock().unwrap().take();
@@ -455,9 +421,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client
-            .submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None)
-            .await?;
+        client.submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None).await?;
         Ok(())
     }
 
@@ -574,9 +538,7 @@ mod tests {
 
         let mock_server = build_mock_server().await;
         Mock::given(method("GET"))
-            .and(path(
-                "/api/v0/data/packages/npm/@schematics%2Fangular/9.1.9",
-            ))
+            .and(path("/api/v0/data/packages/npm/@schematics%2Fangular/9.1.9"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;

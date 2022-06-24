@@ -25,11 +25,7 @@ pub const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
 ];
 
 pub fn lockfile_types() -> Vec<&'static str> {
-    LOCKFILE_PARSERS
-        .iter()
-        .map(|(name, _)| *name)
-        .chain(["auto"])
-        .collect()
+    LOCKFILE_PARSERS.iter().map(|(name, _)| *name).chain(["auto"]).collect()
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
@@ -131,6 +127,7 @@ mod tests {
             ("tests/fixtures/sample.csproj", PackageType::Nuget),
             ("tests/fixtures/gradle.lockfile", PackageType::Maven),
             ("tests/fixtures/effective-pom.xml", PackageType::Maven),
+            ("tests/fixtures/workspace-effective-pom.xml", PackageType::Maven),
             ("tests/fixtures/requirements.txt", PackageType::PyPi),
             ("tests/fixtures/Pipfile", PackageType::PyPi),
             ("tests/fixtures/Pipfile.lock", PackageType::PyPi),

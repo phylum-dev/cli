@@ -59,11 +59,7 @@ impl FromStr for Filter {
             })
             .collect::<HashSet<RiskType>>();
 
-        let domains = if domains.is_empty() {
-            None
-        } else {
-            Some(Vec::from_iter(domains))
-        };
+        let domains = if domains.is_empty() { None } else { Some(Vec::from_iter(domains)) };
 
         if level.is_none() && domains.is_none() {
             Err(())
@@ -98,9 +94,7 @@ mod tests {
 
         let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
 
-        let domains = filter
-            .domains
-            .expect("No risk domains parsed from filter string");
+        let domains = filter.domains.expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 2);
         assert!(domains.contains(&RiskType::AuthorsRisk));
@@ -110,9 +104,7 @@ mod tests {
 
         let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
 
-        let domains = filter
-            .domains
-            .expect("No risk domains parsed from filter string");
+        let domains = filter.domains.expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 3);
         assert!(domains.contains(&RiskType::AuthorsRisk));

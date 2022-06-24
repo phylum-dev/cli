@@ -6,8 +6,9 @@ use super::{JobId, PackageDescriptor};
 
 const API_PATH: &str = "api/v0/";
 
-// This wrapper provides important context to the user when their configuration has a bad URL.
-// Without it, the message can be something like "Error creating client" caused by "empty host".
+// This wrapper provides important context to the user when their configuration
+// has a bad URL. Without it, the message can be something like "Error creating
+// client" caused by "empty host".
 #[derive(Debug, ThisError)]
 #[error("invalid API URL")]
 pub struct BaseUriError(#[from] pub ParseError);
@@ -32,10 +33,7 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Ur
     let mut url = get_api_path(api_uri)?;
 
     // Unwrap is okay because get_api_path only returns URLs that can be base URLs.
-    url.path_segments_mut()
-        .unwrap()
-        .pop_if_empty()
-        .extend(["data", "jobs", &job_id.to_string()]);
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "jobs", &job_id.to_string()]);
 
     if verbose {
         url.query_pairs_mut().append_pair("verbose", "True");
@@ -48,12 +46,7 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Ur
 pub fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
 
-    let PackageDescriptor {
-        name,
-        package_type,
-        version,
-        ..
-    } = pkg;
+    let PackageDescriptor { name, package_type, version, .. } = pkg;
     url.path_segments_mut().unwrap().pop_if_empty().extend([
         "data",
         "packages",
@@ -68,10 +61,7 @@ pub fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> Result<Url,
 /// GET /data/projects/name/<pkg_id>
 pub fn get_project_details(api_uri: &str, pkg_id: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
-    url.path_segments_mut()
-        .unwrap()
-        .pop_if_empty()
-        .extend(["data", "projects", "name", pkg_id]);
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", "name", pkg_id]);
     Ok(url)
 }
 
@@ -108,10 +98,7 @@ pub(crate) fn group_create(api_uri: &str) -> Result<Url, BaseUriError> {
 /// GET /groups/<groupName>/projects
 pub fn group_project_summary(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
-    url.path_segments_mut()
-        .unwrap()
-        .pop_if_empty()
-        .extend(["groups", group, "projects"]);
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group, "projects"]);
     Ok(url)
 }
 
@@ -123,8 +110,8 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
 fn parse_base_url(api_uri: &str) -> Result<Url, BaseUriError> {
     let mut url = Url::parse(api_uri)?;
 
-    // Ensure the path can be a base and ends with a slash so it can be safely joined to.
-    // If we don't do this, https://example.com/a and https://example.com/a/ are different.
+    // Ensure the path can be a base and ends with a slash so it can be safely
+    // joined to. If we don't do this, https://example.com/a and https://example.com/a/ are different.
     url.path_segments_mut()
         .map_err(|_| ParseError::RelativeUrlWithCannotBeABaseBase)?
         .pop_if_empty()
@@ -160,11 +147,10 @@ mod test {
             "https://example.com/a/api/v0/",
         );
 
-        // Maybe an error should be reported in this case instead of stripping the extras.
+        // Maybe an error should be reported in this case instead of stripping the
+        // extras.
         assert_eq!(
-            get_api_path("https://example.com/search?q=invalid#search")
-                .unwrap()
-                .as_str(),
+            get_api_path("https://example.com/search?q=invalid#search").unwrap().as_str(),
             "https://example.com/search/api/v0/",
         );
     }
@@ -179,10 +165,7 @@ mod test {
 
     #[test]
     fn get_ping_is_correct() {
-        assert_eq!(
-            get_ping(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}health"),
-        );
+        assert_eq!(get_ping(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}health"),);
     }
 
     #[test]
@@ -224,9 +207,7 @@ mod test {
     #[test]
     fn get_project_details_is_correct() {
         assert_eq!(
-            get_project_details(API_URI, "acme/widgets")
-                .unwrap()
-                .as_str(),
+            get_project_details(API_URI, "acme/widgets").unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/projects/name/acme%2Fwidgets"),
         );
     }
@@ -265,26 +246,18 @@ mod test {
 
     #[test]
     fn group_list_is_correct() {
-        assert_eq!(
-            group_list(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}groups"),
-        );
+        assert_eq!(group_list(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}groups"),);
     }
 
     #[test]
     fn group_create_is_correct() {
-        assert_eq!(
-            group_create(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}groups"),
-        );
+        assert_eq!(group_create(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}groups"),);
     }
 
     #[test]
     fn group_project_summary_is_correct() {
         assert_eq!(
-            group_project_summary(API_URI, "acme/misc. projects")
-                .unwrap()
-                .as_str(),
+            group_project_summary(API_URI, "acme/misc. projects").unwrap().as_str(),
             format!("{API_URI}/{API_PATH}groups/acme%2Fmisc.%20projects/projects"),
         );
     }
