@@ -12,25 +12,32 @@ pub struct Permissions {
     net: Option<Vec<String>>,
 }
 
+// XXX In Deno, `Some(vec![])` actually means "allow all". We do not ever
+// want that, so we manually convert those instances into `None` in the
+// getter methods below. We need to make sure to always go through these when
+// constructing a `PermissionsOptions` object.
 impl Permissions {
-    pub fn is_empty(&self) -> bool {
-        self.read.is_none() && self.write.is_none() && self.run.is_none() && self.net.is_none()
-    }
-
     pub fn read(&self) -> Option<&Vec<String>> {
-        self.read.as_ref()
+        self.read.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
 
     pub fn write(&self) -> Option<&Vec<String>> {
-        self.write.as_ref()
+        self.write.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
 
     pub fn run(&self) -> Option<&Vec<String>> {
-        self.run.as_ref()
+        self.run.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
 
     pub fn net(&self) -> Option<&Vec<String>> {
-        self.net.as_ref()
+        self.net.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.read().is_none()
+            && self.write().is_none()
+            && self.run().is_none()
+            && self.net().is_none()
     }
 
     fn resolve_path<S: AsRef<str> + std::fmt::Display>(src_path: S) -> Result<PathBuf> {
@@ -55,20 +62,18 @@ impl TryFrom<&Permissions> for PermissionsOptions {
     type Error = anyhow::Error;
 
     fn try_from(value: &Permissions) -> Result<Self, Self::Error> {
-        let Permissions { read, write, net, run } = value;
-
-        let allow_read = read
-            .as_ref()
+        let allow_read = value
+            .read()
             .map(|read| read.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
             .transpose()?;
 
-        let allow_write = write
-            .as_ref()
+        let allow_write = value
+            .write()
             .map(|write| write.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
             .transpose()?;
 
-        let allow_net = net.clone();
-        let allow_run = run.clone();
+        let allow_net = value.net().cloned();
+        let allow_run = value.run().cloned();
 
         Ok(PermissionsOptions {
             allow_read,
