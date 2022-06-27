@@ -57,19 +57,15 @@ impl TryFrom<&Permissions> for PermissionsOptions {
     fn try_from(value: &Permissions) -> Result<Self, Self::Error> {
         let Permissions { read, write, net, run } = value;
 
-        let allow_read = match read {
-            Some(read) => {
-                Some(read.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
-            },
-            None => None,
-        };
+        let allow_read = read
+            .as_ref()
+            .map(|read| read.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
+            .transpose()?;
 
-        let allow_write = match write {
-            Some(write) => {
-                Some(write.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>()?)
-            },
-            None => None,
-        };
+        let allow_write = write
+            .as_ref()
+            .map(|write| write.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
+            .transpose()?;
 
         let allow_net = net.clone();
         let allow_run = run.clone();
