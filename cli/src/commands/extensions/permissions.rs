@@ -138,4 +138,22 @@ mod tests {
 
         assert!(permissions_options.is_err());
     }
+
+    #[test]
+    fn empty_vecs_are_turned_into_none() {
+        let permissions = Permissions {
+            read: Some(vec![]),
+            write: Some(vec![]),
+            run: Some(vec![]),
+            net: Some(vec![]),
+        };
+
+        let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
+
+        assert!(permissions.is_empty());
+        assert!(permissions_options.allow_read.is_none());
+        assert!(permissions_options.allow_write.is_none());
+        assert!(permissions_options.allow_run.is_none());
+        assert!(permissions_options.allow_net.is_none());
+    }
 }
