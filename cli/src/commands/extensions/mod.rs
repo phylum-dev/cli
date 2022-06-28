@@ -135,7 +135,7 @@ async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandRe
         print_permissions_list("Read from the following paths:", permissions.read());
         print_permissions_list("Write to the following paths:", permissions.write());
         print_permissions_list("Run the following commands:", permissions.run());
-        print_permissions_list("Access the following URLs:", permissions.net());
+        print_permissions_list("Access the following domains:", permissions.net());
 
         if !Term::stdout().is_term() {
             return Err(anyhow!(
