@@ -338,7 +338,7 @@ mod permissions {
             ])
             .failure()
             .stdout(predicate::str::contains("Read from the following paths"))
-            .stderr(predicate::str::contains("can't ask for permissions"));
+            .stderr(predicate::str::contains("Can't ask for permissions"));
     }
 
     #[test]
@@ -376,6 +376,34 @@ mod permissions {
             .run(&["missing-read-perms"])
             .failure()
             .stderr(predicate::str::contains("Error: Requires read access"));
+    }
+
+    #[test]
+    fn correct_net_permission_successful_install_and_run() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("correct-net-perms"))
+            .success();
+
+        test_cli
+            .run(&["correct-net-perms"])
+            .success()
+            .stdout(predicate::str::contains("upload_url"));
+    }
+
+    #[test]
+    fn incorrect_net_permission_unsuccessful_run() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("incorrect-net-perms"))
+            .success();
+
+        test_cli
+            .run(&["incorrect-net-perms"])
+            .failure()
+            .stderr(predicate::str::contains(r#"Error: Requires net access to "api.github.com""#));
     }
 }
 
