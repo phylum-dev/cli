@@ -6,11 +6,11 @@ use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 use phylum_types::types::auth::RefreshToken;
 use reqwest::StatusCode;
 
+mod extension;
+
 // TODO: Hardcode this?
 const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
-
-mod extension;
 
 /// Create config file for the desired environment.
 pub fn create_config(dir: &Path) -> PathBuf {

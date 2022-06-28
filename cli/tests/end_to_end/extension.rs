@@ -5,7 +5,7 @@ use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use tempfile::TempDir;
 
-use crate::integration;
+use crate::end_to_end;
 
 const HEADER: &str = "import { PhylumApi } from 'phylum';";
 
@@ -15,9 +15,9 @@ pub async fn api() {
     let tempdir = TempDir::new().unwrap();
     let tempdir = tempdir.path();
 
-    let lockfile = integration::create_lockfile(tempdir);
-    let config = integration::create_config(&tempdir);
-    let project = integration::create_project().await;
+    let lockfile = end_to_end::create_lockfile(tempdir);
+    let config = end_to_end::create_config(&tempdir);
+    let project = end_to_end::create_project().await;
 
     with_extension(&config, "console.log(await PhylumApi.getUserInfo())", |assert| {
         assert.success().stdout(predicates::str::contains("email"));
@@ -68,7 +68,7 @@ pub fn async_state() {
     let tempdir = TempDir::new().unwrap();
     let tempdir = tempdir.path();
 
-    let config = integration::create_config(&tempdir);
+    let config = end_to_end::create_config(&tempdir);
 
     with_extension(
         &config,
