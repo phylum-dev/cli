@@ -12,7 +12,7 @@ pub struct Permissions {
     net: Option<Vec<String>>,
 }
 
-// XXX In Deno, `Some(vec![])` actually means "allow all". We do not ever
+// XXX In Deno, `Some(vec![])` actually means "allow all". We never
 // want that, so we manually convert those instances into `None` in the
 // getter methods below. We need to make sure to always go through these when
 // constructing a `PermissionsOptions` object.
@@ -33,7 +33,7 @@ impl Permissions {
         self.net.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn is_allow_none(&self) -> bool {
         self.read().is_none()
             && self.write().is_none()
             && self.run().is_none()
@@ -150,7 +150,7 @@ mod tests {
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
 
-        assert!(permissions.is_empty());
+        assert!(permissions.is_allow_none());
         assert!(permissions_options.allow_read.is_none());
         assert!(permissions_options.allow_write.is_none());
         assert!(permissions_options.allow_run.is_none());

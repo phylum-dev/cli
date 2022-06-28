@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 use std::ffi::OsStr;
+use std::fmt::Display;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, ArgAction, ArgMatches, Command, ValueHint};
+use clap::{arg, ArgMatches, Command, ValueHint};
 use deno_runtime::permissions::PermissionsOptions;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
@@ -119,39 +120,28 @@ async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandRe
     // object in order to validate the permissions.
     let _ = PermissionsOptions::try_from(permissions)?;
 
-    if !accept_permissions && extension.requires_permissions() {
+    if !accept_permissions && !extension.permissions().is_allow_none() {
         println!("The `{}` extension requires the following permissions:", extension.name());
 
-        if let Some(read_paths) = permissions.read() {
-            println!("  Read from the following paths:");
-            for path in read_paths {
-                println!("    {}", path);
+        fn print_permissions_list<S: Display>(header: &str, items: Option<&Vec<S>>) {
+            println!("  {header}");
+            if let Some(items) = items {
+                for item in items {
+                    println!("    {item}");
+                }
             }
         }
 
-        if let Some(write_paths) = permissions.write() {
-            println!("  Write to the following paths:");
-            for path in write_paths {
-                println!("    {}", path);
-            }
-        }
-
-        if let Some(run_commands) = permissions.run() {
-            println!("  Run the following commands:");
-            for cmd in run_commands {
-                println!("    {}", cmd);
-            }
-        }
-
-        if let Some(access_urls) = permissions.net() {
-            println!("  Access the following URLs:");
-            for url in access_urls {
-                println!("    {}", url);
-            }
-        }
+        print_permissions_list("Read from the following paths:", permissions.read());
+        print_permissions_list("Write to the following paths:", permissions.write());
+        print_permissions_list("Run the following commands:", permissions.run());
+        print_permissions_list("Access the following URLs:", permissions.net());
 
         if !Term::stdout().is_term() {
-            return Err(anyhow!("can't ask for permissions: not a terminal"));
+            return Err(anyhow!(
+                "Can't ask for permissions: not a terminal. For unsupervised usage, consider \
+                 using the -y / --yes flag."
+            ));
         }
 
         if !Confirm::new().with_prompt("Do you accept?").interact()? {

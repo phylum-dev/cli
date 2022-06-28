@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::fs::{self, DirBuilder};
+use std::io;
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
@@ -66,10 +67,6 @@ impl Extension {
 
     pub fn permissions(&self) -> &Permissions {
         &self.manifest.permissions
-    }
-
-    pub fn requires_permissions(&self) -> bool {
-        !self.manifest.permissions.is_empty()
     }
 
     /// Install the extension in the default path.
@@ -139,7 +136,8 @@ impl Extension {
         Extension::try_from(extension_path(name)?)
     }
 
-    pub fn path(&self) -> Result<PathBuf, std::io::Error> {
+    /// Return the canonicalized, absolute path to this extension's entry point.
+    pub fn path(&self) -> Result<PathBuf, io::Error> {
         self.path.join(&self.manifest.entry_point).canonicalize()
     }
 
