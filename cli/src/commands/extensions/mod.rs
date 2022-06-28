@@ -34,10 +34,7 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("add")
                 .about("Install extension")
-                .arg(
-                    arg!(-y --yes "Automatically accept requested permissions")
-                        .action(ArgAction::SetTrue),
-                )
+                .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -79,11 +76,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
         Some(("add", matches)) => {
-            handle_add_extension(
-                matches.value_of("PATH").unwrap(),
-                matches.get_one::<bool>("yes").copied().unwrap_or(false),
-            )
-            .await
+            handle_add_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes")).await
         },
         Some(("remove", matches)) => {
             handle_remove_extension(matches.value_of("NAME").unwrap()).await
