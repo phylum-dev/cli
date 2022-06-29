@@ -23,7 +23,11 @@ use crate::commands::extensions::extension::{self, ExtensionState};
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
 
 /// Execute Phylum extension.
-pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<()> {
+pub async fn run(
+    extension_state: ExtensionState,
+    entry_point: &str,
+    args: Vec<String>,
+) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
     let main_module = deno_core::resolve_path(entry_point)?;
@@ -31,6 +35,7 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
     let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
     let bootstrap = BootstrapOptions {
         cpu_count,
+        args,
         runtime_version: env!("CARGO_PKG_VERSION").into(),
         user_agent: "phylum-cli/extension".into(),
         no_color: !colors::use_color(),
@@ -40,7 +45,6 @@ pub async fn run(extension_state: ExtensionState, entry_point: &str) -> Result<(
         ts_version: Default::default(),
         location: Default::default(),
         unstable: Default::default(),
-        args: Default::default(),
     };
 
     let options = WorkerOptions {

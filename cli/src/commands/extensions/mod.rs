@@ -42,7 +42,6 @@ pub fn command<'a>() -> Command<'a> {
 }
 
 /// Generate the subcommands for each extension.
-/// TODO add tests.
 pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
     let extensions = match installed_extensions() {
         Ok(extensions) => extensions,
@@ -64,7 +63,9 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
                 true
             }
         })
-        .fold(command, |command, ext| command.subcommand(Command::new(ext.name())))
+        .fold(command, |command, ext| {
+            command.subcommand(Command::new(ext.name()).ignore_errors(true))
+        })
 }
 
 /// Entry point for the `extensions` subcommand.
