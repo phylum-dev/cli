@@ -33,13 +33,13 @@ pub fn command<'a>() -> Command<'a> {
     Command::new("extension")
         .about("Run extensions")
         .subcommand(
-            Command::new("add")
+            Command::new("install")
                 .about("Install extension")
                 .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
-            Command::new("remove").about("Uninstall extension").arg(arg!([NAME]).required(true)),
+            Command::new("uninstall").about("Uninstall extension").arg(arg!([NAME]).required(true)),
         )
         .subcommand(
             Command::new("new").about("Create a new extension").arg(arg!([PATH]).required(true)),
@@ -76,11 +76,12 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
-        Some(("add", matches)) => {
-            handle_add_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes")).await
+        Some(("install", matches)) => {
+            handle_install_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes"))
+                .await
         },
-        Some(("remove", matches)) => {
-            handle_remove_extension(matches.value_of("NAME").unwrap()).await
+        Some(("uninstall", matches)) => {
+            handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
         },
         Some(("new", matches)) => handle_create_extension(matches.value_of("PATH").unwrap()).await,
         Some(("list", _)) | None => handle_list_extensions().await,
@@ -102,10 +103,10 @@ pub async fn handle_run_extension(
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
-/// Handle the `extension add` subcommand path.
+/// Handle the `extension install` subcommand path.
 ///
-/// Add the extension from the specified path.
-async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandResult {
+/// Install the extension from the specified path.
+async fn handle_install_extension(path: &str, accept_permissions: bool) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
@@ -154,10 +155,10 @@ async fn handle_add_extension(path: &str, accept_permissions: bool) -> CommandRe
     Ok(CommandValue::Code(ExitCode::Ok))
 }
 
-/// Handle the `extension remove` subcommand path.
+/// Handle the `extension uninstall` subcommand path.
 ///
-/// Remove the extension named as specified.
-async fn handle_remove_extension(name: &str) -> CommandResult {
+/// Uninstall the extension named as specified.
+async fn handle_uninstall_extension(name: &str) -> CommandResult {
     let extension = Extension::load(name)?;
 
     extension.uninstall()?;

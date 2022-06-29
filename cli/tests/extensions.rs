@@ -33,7 +33,7 @@ fn extension_is_installed_correctly() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
@@ -58,7 +58,7 @@ fn can_run_installed_extension() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
@@ -82,7 +82,7 @@ fn successful_installation_prints_message() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
@@ -110,7 +110,7 @@ fn unsuccessful_installation_prints_failure_message() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
@@ -121,7 +121,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
-            .arg("add")
+            .arg("install")
             .arg(fixtures_path().join("sample-extension"))
             .assert()
             .failure(),
@@ -135,7 +135,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
-            .arg("add")
+            .arg("install")
             .arg(
                 PathBuf::from(tempdir.path())
                     .join("phylum")
@@ -158,7 +158,7 @@ fn extension_is_uninstalled_correctly() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert()
         .success();
@@ -172,7 +172,7 @@ fn extension_is_uninstalled_correctly() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("remove")
+        .arg("uninstall")
         .arg("sample-extension")
         .assert()
         .success();
@@ -205,7 +205,7 @@ fn extension_list_should_emit_output() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("sample-extension"))
         .assert();
 
@@ -230,7 +230,7 @@ async fn injected_api() {
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
-        .args(&["extension", "add"])
+        .args(&["extension", "install"])
         .arg(fixtures_path().join("api-extension"))
         .assert()
         .success();
@@ -263,7 +263,7 @@ fn conflicting_extension_name_is_filtered() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
-        .arg("add")
+        .arg("install")
         .arg(fixtures_path().join("ping-extension"))
         .assert()
         .success();
@@ -310,7 +310,7 @@ mod permissions {
         }
 
         fn install_extension(&self, path: &Path) -> Assert {
-            self.run(&["extension", "add", "-y", &path.to_string_lossy()])
+            self.run(&["extension", "install", "-y", &path.to_string_lossy()])
         }
 
         fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
@@ -333,7 +333,7 @@ mod permissions {
         test_cli
             .run(&[
                 "extension",
-                "add",
+                "install",
                 &fixtures_path().join("permissions").join("correct-read-perms").to_string_lossy(),
             ])
             .failure()
@@ -424,7 +424,7 @@ mod module_loader_tests {
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
-            .arg("add")
+            .arg("install")
             .arg(fixtures_path().join("module-import-extension").join("successful"))
             .assert()
             .success();
@@ -449,7 +449,7 @@ mod module_loader_tests {
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
-            .arg("add")
+            .arg("install")
             .arg(fixtures_path().join("module-import-extension").join("fail-local"))
             .assert()
             .success();
@@ -475,7 +475,7 @@ mod module_loader_tests {
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
-            .arg("add")
+            .arg("install")
             .arg(fixtures_path().join("module-import-extension").join("fail-remote"))
             .assert()
             .success();
@@ -502,7 +502,7 @@ mod module_loader_tests {
         Command::cargo_bin("phylum")
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
-            .args(&["extension", "add"])
+            .args(&["extension", "install"])
             .arg(fixtures_path().join("symlink-extension"))
             .assert()
             .success();
