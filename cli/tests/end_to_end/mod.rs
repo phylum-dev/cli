@@ -8,7 +8,6 @@ use reqwest::StatusCode;
 
 mod extension;
 
-// TODO: Hardcode this?
 const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
