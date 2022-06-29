@@ -39,38 +39,17 @@ impl Permissions {
             && self.run().is_none()
             && self.net().is_none()
     }
-
-    fn resolve_path<S: AsRef<str> + std::fmt::Display>(src_path: S) -> Result<PathBuf> {
-        let path = PathBuf::from(src_path.as_ref());
-
-        if !path.is_relative() {
-            return Err(anyhow!("`{src_path}`: absolute paths are not allowed"));
-        }
-
-        if path.components().into_iter().any(|c| c == Component::ParentDir) {
-            return Err(anyhow!("`{src_path}`: directory traversals are not allowed"));
-        }
-
-        // Path is intentionally not canonicalized. Checking for the existence
-        // of the file the permission was requested for should be an extension's
-        // responsibility.
-        Ok(path)
-    }
 }
 
 impl TryFrom<&Permissions> for PermissionsOptions {
     type Error = anyhow::Error;
 
     fn try_from(value: &Permissions) -> Result<Self, Self::Error> {
-        let allow_read = value
-            .read()
-            .map(|read| read.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
-            .transpose()?;
+        let allow_read =
+            value.read().map(|read| read.iter().map(PathBuf::from).collect::<Vec<_>>());
 
-        let allow_write = value
-            .write()
-            .map(|write| write.iter().map(Permissions::resolve_path).collect::<Result<Vec<_>>>())
-            .transpose()?;
+        let allow_write =
+            value.write().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
 
         let allow_net = value.net().cloned();
         let allow_run = value.run().cloned();
@@ -111,32 +90,6 @@ mod tests {
 
         println!("{:?}", permissions_options);
         assert!(permissions_options.is_ok());
-    }
-
-    #[test]
-    fn directory_traversal_is_denied() {
-        let permissions = Permissions {
-            read: Some(vec!["../node_modules".to_string()]),
-            write: None,
-            run: None,
-            net: None,
-        };
-        let permissions_options = PermissionsOptions::try_from(&permissions);
-
-        assert!(permissions_options.is_err());
-    }
-
-    #[test]
-    fn absolute_paths_are_denied() {
-        let permissions = Permissions {
-            read: Some(vec!["/tmp/node_modules".to_string()]),
-            write: None,
-            run: None,
-            net: None,
-        };
-        let permissions_options = PermissionsOptions::try_from(&permissions);
-
-        assert!(permissions_options.is_err());
     }
 
     #[test]

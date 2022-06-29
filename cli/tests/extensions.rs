@@ -356,24 +356,15 @@ mod permissions {
     }
 
     #[test]
-    fn incorrect_read_permission_unsuccessful_install() {
+    fn incorrect_read_permission_unsuccessful_run() {
         let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("incorrect-read-perms"))
-            .failure();
-    }
-
-    #[test]
-    fn missing_read_permission_unsuccessful_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
-
-        test_cli
-            .install_extension(&fixtures_path().join("permissions").join("missing-read-perms"))
             .success();
 
         test_cli
-            .run(&["missing-read-perms"])
+            .run(&["incorrect-read-perms"])
             .failure()
             .stderr(predicate::str::contains("Error: Requires read access"));
     }
