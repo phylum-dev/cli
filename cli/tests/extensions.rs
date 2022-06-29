@@ -396,6 +396,17 @@ mod permissions {
             .failure()
             .stderr(predicate::str::contains(r#"Error: Requires net access to "api.github.com""#));
     }
+
+    #[test]
+    fn correct_run_permission_successful_install_and_run() {
+        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+
+        test_cli
+            .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
+            .success();
+
+        test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("install"));
+    }
 }
 
 // Test that the rules of the module loader are obeyed:
