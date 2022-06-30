@@ -1,10 +1,5 @@
 #![cfg(feature = "extensions")]
 
-#[path = "extensions/module_loader.rs"]
-mod module_loader;
-#[path = "extensions/permissions.rs"]
-mod permissions;
-
 use std::convert::TryFrom;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -16,6 +11,11 @@ use phylum_cli::commands::extensions::extension::Extension;
 use predicates::prelude::*;
 use regex::Regex;
 use tempfile::TempDir;
+
+#[path = "extensions/module_loader.rs"]
+mod module_loader;
+#[path = "extensions/permissions.rs"]
+mod permissions;
 
 lazy_static! {
     // Lock this mutex when setting an environment variable, for the lifetime of function calls
