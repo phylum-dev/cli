@@ -23,8 +23,6 @@ pub fn app<'a>() -> clap::Command<'a> {
     // Windows.
     #[allow(unused_mut)]
     let mut app = Command::new("phylum")
-        // TODO: Required until https://github.com/clap-rs/clap/pull/3885 is merged.
-        .ignore_errors(true)
         .bin_name("phylum")
         .version(VERSION)
         .author("Phylum, Inc.")

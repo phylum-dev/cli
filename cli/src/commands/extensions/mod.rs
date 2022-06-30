@@ -64,7 +64,12 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
             }
         })
         .fold(command, |command, ext| {
-            command.subcommand(Command::new(ext.name()).ignore_errors(true))
+            command.subcommand(
+                Command::new(ext.name())
+                    .allow_hyphen_values(true)
+                    .disable_help_flag(true)
+                    .arg(arg!(<OPTIONS> ... "Extension parameters"))
+            )
         })
 }
 
