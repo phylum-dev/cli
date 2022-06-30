@@ -1,6 +1,5 @@
-use std::path::{Component, PathBuf};
+use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
 use deno_runtime::permissions::PermissionsOptions;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Permissions {
     read: Option<Vec<String>>,
     write: Option<Vec<String>>,
+    env: Option<Vec<String>>,
     run: Option<Vec<String>>,
     net: Option<Vec<String>>,
 }
@@ -25,6 +25,10 @@ impl Permissions {
         self.write.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
 
+    pub fn env(&self) -> Option<&Vec<String>> {
+        self.env.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
+    }
+
     pub fn run(&self) -> Option<&Vec<String>> {
         self.run.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
     }
@@ -36,31 +40,34 @@ impl Permissions {
     pub fn is_allow_none(&self) -> bool {
         self.read().is_none()
             && self.write().is_none()
+            && self.env().is_none()
             && self.run().is_none()
             && self.net().is_none()
     }
 }
 
-impl TryFrom<&Permissions> for PermissionsOptions {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &Permissions) -> Result<Self, Self::Error> {
+impl From<&Permissions> for PermissionsOptions {
+    fn from(value: &Permissions) -> Self {
         let allow_read =
             value.read().map(|read| read.iter().map(PathBuf::from).collect::<Vec<_>>());
 
         let allow_write =
             value.write().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
 
+        let allow_env = value.env().cloned();
         let allow_net = value.net().cloned();
         let allow_run = value.run().cloned();
 
-        Ok(PermissionsOptions {
+        PermissionsOptions {
             allow_read,
             allow_write,
             allow_net,
             allow_run,
-            ..Default::default()
-        })
+            allow_env,
+            allow_ffi: None,
+            allow_hrtime: false,
+            prompt: false,
+        }
     }
 }
 
@@ -69,34 +76,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn well_formed_permission_is_converted() {
-        let permissions = Permissions {
-            read: Some(vec![
-                "./node_modules".to_string(),
-                "package-lock.json".to_string(),
-                "yarn.lock".to_string(),
-            ]),
-            write: None,
-            run: Some(vec![
-                "npm".to_string(),
-                "yarn".to_string(),
-                "yarnpkg".to_string(),
-                "pip".to_string(),
-                "poetry".to_string(),
-            ]),
-            net: None,
-        };
-        let permissions_options = PermissionsOptions::try_from(&permissions);
-
-        println!("{:?}", permissions_options);
-        assert!(permissions_options.is_ok());
-    }
-
-    #[test]
     fn empty_vecs_are_turned_into_none() {
         let permissions = Permissions {
             read: Some(vec![]),
             write: Some(vec![]),
+            env: Some(vec![]),
             run: Some(vec![]),
             net: Some(vec![]),
         };
@@ -106,6 +90,7 @@ mod tests {
         assert!(permissions.is_allow_none());
         assert!(permissions_options.allow_read.is_none());
         assert!(permissions_options.allow_write.is_none());
+        assert!(permissions_options.allow_env.is_none());
         assert!(permissions_options.allow_run.is_none());
         assert!(permissions_options.allow_net.is_none());
     }

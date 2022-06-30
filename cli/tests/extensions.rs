@@ -288,18 +288,18 @@ mod permissions {
 
     use super::*;
 
-    struct TestCLI {
+    struct TestCli {
         tempdir: TempDir,
         cwd: Option<PathBuf>,
     }
 
-    impl Default for TestCLI {
+    impl Default for TestCli {
         fn default() -> Self {
             Self { tempdir: TempDir::new().unwrap(), cwd: None }
         }
     }
 
-    impl TestCLI {
+    impl TestCli {
         fn new() -> Self {
             Default::default()
         }
@@ -328,7 +328,7 @@ mod permissions {
 
     #[test]
     fn permission_dialog_is_shown_without_yes_flag() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .run(&[
@@ -337,13 +337,12 @@ mod permissions {
                 &fixtures_path().join("permissions").join("correct-read-perms").to_string_lossy(),
             ])
             .failure()
-            .stdout(predicate::str::contains("Read from the following paths"))
             .stderr(predicate::str::contains("Can't ask for permissions"));
     }
 
     #[test]
     fn correct_read_permission_successful_install_and_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("correct-read-perms"))
@@ -357,7 +356,7 @@ mod permissions {
 
     #[test]
     fn incorrect_read_permission_unsuccessful_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("incorrect-read-perms"))
@@ -371,7 +370,7 @@ mod permissions {
 
     #[test]
     fn correct_net_permission_successful_install_and_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("correct-net-perms"))
@@ -385,7 +384,7 @@ mod permissions {
 
     #[test]
     fn incorrect_net_permission_unsuccessful_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("incorrect-net-perms"))
@@ -399,7 +398,7 @@ mod permissions {
 
     #[test]
     fn correct_run_permission_successful_install_and_run() {
-        let test_cli = TestCLI::new().cwd(fixtures_path().join("permissions"));
+        let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
 
         test_cli
             .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))

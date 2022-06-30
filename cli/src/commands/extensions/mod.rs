@@ -115,44 +115,50 @@ async fn handle_install_extension(path: &str, accept_permissions: bool) -> Comma
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    let permissions = extension.permissions();
-
     // Attempt to construct a `PermissionsOptions` from the `Permissions`
     // object in order to validate the permissions.
-    let _ = PermissionsOptions::try_from(permissions)?;
+    let _ = PermissionsOptions::try_from(extension.permissions())?;
 
     if !accept_permissions && !extension.permissions().is_allow_none() {
-        println!("The `{}` extension requires the following permissions:", extension.name());
-
-        fn print_permissions_list<S: Display>(header: &str, items: Option<&Vec<S>>) {
-            println!("  {header}");
-            if let Some(items) = items {
-                for item in items {
-                    println!("    {item}");
-                }
-            }
-        }
-
-        print_permissions_list("Read from the following paths:", permissions.read());
-        print_permissions_list("Write to the following paths:", permissions.write());
-        print_permissions_list("Run the following commands:", permissions.run());
-        print_permissions_list("Access the following domains:", permissions.net());
-
-        if !Term::stdout().is_term() {
-            return Err(anyhow!(
-                "Can't ask for permissions: not a terminal. For unsupervised usage, consider \
-                 using the -y / --yes flag."
-            ));
-        }
-
-        if !Confirm::new().with_prompt("Do you accept?").interact()? {
-            return Err(anyhow!("permissions not granted, aborting"));
-        }
+        ask_permissions(&extension)?;
     }
 
     extension.install()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
+}
+
+fn ask_permissions(extension: &Extension) -> Result<()> {
+    if !Term::stdout().is_term() {
+        return Err(anyhow!(
+            "Can't ask for permissions: not a terminal. For unsupervised usage, consider using \
+             the -y / --yes flag."
+        ));
+    }
+
+    let permissions = extension.permissions();
+
+    println!("The `{}` extension requires the following permissions:", extension.name());
+
+    fn print_permissions_list<S: Display>(header: &str, items: Option<&Vec<S>>) {
+        println!("  {header}");
+        if let Some(items) = items {
+            for item in items {
+                println!("    {item}");
+            }
+        }
+    }
+
+    print_permissions_list("Read from the following paths:", permissions.read());
+    print_permissions_list("Write to the following paths:", permissions.write());
+    print_permissions_list("Run the following commands:", permissions.run());
+    print_permissions_list("Access the following domains:", permissions.net());
+
+    if !Confirm::new().with_prompt("Do you accept?").interact()? {
+        Err(anyhow!("permissions not granted, aborting"))
+    } else {
+        Ok(())
+    }
 }
 
 /// Handle the `extension uninstall` subcommand path.
