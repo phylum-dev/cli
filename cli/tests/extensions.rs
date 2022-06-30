@@ -88,9 +88,7 @@ fn successful_installation_prints_message() {
         .success();
 
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    assert!(output
-        .lines()
-        .any(|m| m.contains("Extension sample installed successfully")));
+    assert!(output.lines().any(|m| m.contains("Extension sample installed successfully")));
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -136,12 +134,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(
-                PathBuf::from(tempdir.path())
-                    .join("phylum")
-                    .join("extensions")
-                    .join("sample"),
-            )
+            .arg(PathBuf::from(tempdir.path()).join("phylum").join("extensions").join("sample"),)
             .assert()
             .failure(),
         "skipping",
