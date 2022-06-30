@@ -68,7 +68,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
                 Command::new(ext.name())
                     .allow_hyphen_values(true)
                     .disable_help_flag(true)
-                    .arg(arg!(<OPTIONS> ... "Extension parameters"))
+                    .arg(arg!(<OPTIONS> ... "Extension parameters")),
             )
         })
 }

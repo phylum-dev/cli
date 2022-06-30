@@ -125,18 +125,10 @@ impl Extension {
 
     /// Execute an extension subcommand.
     pub async fn run(&self, api: BoxFuture<'static, Result<PhylumApi>>) -> CommandResult {
-        let args = env::args()
-            .skip_while(|arg| arg != self.name())
-            .skip(1)
-            .collect();
+        let args = env::args().skip_while(|arg| arg != self.name()).skip(1).collect();
 
         let script_path = self.path.join(&self.manifest.entry_point);
-        deno::run(
-            ExtensionState::from(api),
-            &script_path.to_string_lossy(),
-            args,
-        )
-        .await?;
+        deno::run(ExtensionState::from(api), &script_path.to_string_lossy(), args).await?;
         Ok(ExitCode::Ok.into())
     }
 }
