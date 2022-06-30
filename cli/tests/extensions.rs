@@ -217,8 +217,8 @@ fn extension_list_should_emit_output() {
 }
 
 // Extensions relying on the injected Phylum API work.
-#[tokio::test]
-async fn injected_api() {
+#[test]
+fn injected_api() {
     let tempdir = TempDir::new().unwrap();
     Command::cargo_bin("phylum")
         .unwrap()
@@ -235,6 +235,28 @@ async fn injected_api() {
         .assert()
         .success()
         .stdout("44\n");
+}
+
+// Extensions can access CLI arguments.
+#[test]
+fn arg_access() {
+    let tempdir = TempDir::new().unwrap();
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .arg("extension")
+        .arg("install")
+        .arg(fixtures_path().join("args-extension"))
+        .assert()
+        .success();
+
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .env("XDG_DATA_HOME", tempdir.path())
+        .args(&["args-extension", "--test", "-x", "a"])
+        .assert()
+        .success()
+        .stdout("[ \"--test\", \"-x\", \"a\" ]\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

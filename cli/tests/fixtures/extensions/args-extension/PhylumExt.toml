@@ -1,0 +1,3 @@
+name = "args-extension"
+description = "Print deno args"
+entry_point = "main.ts"
