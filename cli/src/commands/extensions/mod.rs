@@ -68,7 +68,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
                 Command::new(ext.name())
                     .allow_hyphen_values(true)
                     .disable_help_flag(true)
-                    .arg(arg!(<OPTIONS> ... "Extension parameters")),
+                    .arg(arg!([OPTIONS] ... "Extension parameters")),
             )
         })
 }
@@ -92,12 +92,15 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
 ///
 /// Run the extension by name.
 pub async fn handle_run_extension(
-    name: &str,
     api: BoxFuture<'static, Result<PhylumApi>>,
+    name: &str,
+    args: &ArgMatches,
 ) -> CommandResult {
+    let options = args.get_many("OPTIONS").map(|options| options.cloned().collect());
+
     let extension = Extension::load(name)?;
 
-    extension.run(api).await?;
+    extension.run(api, options.unwrap_or_default()).await?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }

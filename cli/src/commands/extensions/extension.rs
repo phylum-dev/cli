@@ -1,5 +1,4 @@
 use std::convert::TryFrom;
-use std::env;
 use std::fs::{self, DirBuilder};
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
@@ -124,9 +123,11 @@ impl Extension {
     }
 
     /// Execute an extension subcommand.
-    pub async fn run(&self, api: BoxFuture<'static, Result<PhylumApi>>) -> CommandResult {
-        let args = env::args().skip_while(|arg| arg != self.name()).skip(1).collect();
-
+    pub async fn run(
+        &self,
+        api: BoxFuture<'static, Result<PhylumApi>>,
+        args: Vec<String>,
+    ) -> CommandResult {
         let script_path = self.path.join(&self.manifest.entry_point);
         deno::run(ExtensionState::from(api), &script_path.to_string_lossy(), args).await?;
         Ok(ExitCode::Ok.into())
