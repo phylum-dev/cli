@@ -70,6 +70,8 @@ jobs:
         with:
           command: test
           args: --all-features
+        env:
+          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
     #       https://github.com/phylum-dev/cli/issues/467
