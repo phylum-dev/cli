@@ -8,6 +8,7 @@ rust-version = "1.60"
 [features]
 default = ["selfmanage"]
 selfmanage = []
+end-to-end-tests = []
 extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
