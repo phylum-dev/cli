@@ -16,6 +16,7 @@ extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
 [dependencies]
 ansi_term = "0.12.1"
 anyhow = "1.0.44"
+atty = "0.2.14"
 base64 = "0.13.0"
 bytes = "1.1.0"
 chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
@@ -44,7 +45,6 @@ serde_yaml = "0.8.14"
 serde-xml-rs = "0.5.1"
 sha2 = "0.10.2"
 shellexpand = "2.0.0"
-spinners = "4.0.0"
 tempfile = "3.3.0"
 textwrap = "0.15.0"
 thiserror = "1.0.29"
