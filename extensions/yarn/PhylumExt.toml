@@ -1,0 +1,6 @@
+name = "yarn"
+description = "yarn package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+run = ["yarn"]

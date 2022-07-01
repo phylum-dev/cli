@@ -1,0 +1,6 @@
+name = "npm"
+description = "NPM package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+run = ["npm"]
