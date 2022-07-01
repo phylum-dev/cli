@@ -110,7 +110,7 @@ fn incorrect_net_permission_unsuccessful_run() {
     test_cli
         .run(&["incorrect-net-perms"])
         .failure()
-        .stderr(predicate::str::contains(r#"Error: Requires net access to "api.github.com""#));
+        .stderr(predicate::str::contains(r#"Error: Requires net access to "phylum.io""#));
 }
 
 #[test]
