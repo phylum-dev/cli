@@ -149,21 +149,28 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
 
     println!("The `{}` extension requires the following permissions:", extension.name());
 
-    fn print_permissions_list<S: Display>(header: &str, items: Option<&Vec<S>>) {
-        println!("  {header}");
-        if let Some(items) = items {
-            for item in items {
-                println!("    {item}");
-            }
+    fn print_permissions_list<S: Display>(key: &str, detail: &str, items: Option<&Vec<S>>) {
+        // Don't prompt if no permissions are requested.
+        let permissions = match items {
+            Some(permissions) => permissions,
+            None => return,
+        };
+
+        // It should be impossible to create an empty permissions vector.
+        assert!(!permissions.is_empty(), "unexpected permissions value");
+
+        println!("\n  {} {detail}", Color::Blue.bold().paint(key));
+        for permission in permissions {
+            println!("    '{permission}'");
         }
     }
 
-    print_permissions_list("Read from the following paths:", permissions.read());
-    print_permissions_list("Write to the following paths:", permissions.write());
-    print_permissions_list("Run the following commands:", permissions.run());
-    print_permissions_list("Access the following domains:", permissions.net());
+    print_permissions_list("Read", "from the following paths:", permissions.read());
+    print_permissions_list("Write", "to the following paths:", permissions.write());
+    print_permissions_list("Run", "the following commands:", permissions.run());
+    print_permissions_list("Access", "the following domains:", permissions.net());
 
-    if !Confirm::new().with_prompt("Do you accept?").interact()? {
+    if !Confirm::new().with_prompt("\nDo you accept?").default(false).interact()? {
         Err(anyhow!("permissions not granted, aborting"))
     } else {
         Ok(())
