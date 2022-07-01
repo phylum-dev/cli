@@ -1,0 +1,3 @@
+name = "args"
+description = "Print deno args"
+entry_point = "main.ts"
