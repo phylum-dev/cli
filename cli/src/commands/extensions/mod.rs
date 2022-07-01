@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::ffi::OsStr;
+use std::fmt::Display;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -7,6 +8,9 @@ use std::path::PathBuf;
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
+use deno_runtime::permissions::PermissionsOptions;
+use dialoguer::console::Term;
+use dialoguer::Confirm;
 use futures::future::BoxFuture;
 use log::{error, warn};
 
@@ -17,6 +21,7 @@ use crate::print_user_success;
 
 pub mod api;
 pub mod extension;
+pub mod permissions;
 
 const EXTENSION_SKELETON: &[u8] = b"\
 import { PhylumApi } from 'phylum';
@@ -30,6 +35,7 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("install")
                 .about("Install extension")
+                .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -77,7 +83,8 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
-            handle_install_extension(matches.value_of("PATH").unwrap()).await
+            handle_install_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes"))
+                .await
         },
         Some(("uninstall", matches)) => {
             handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
@@ -108,7 +115,7 @@ pub async fn handle_run_extension(
 /// Handle the `extension install` subcommand path.
 ///
 /// Install the extension from the specified path.
-async fn handle_install_extension(path: &str) -> CommandResult {
+async fn handle_install_extension(path: &str, accept_permissions: bool) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
@@ -117,9 +124,50 @@ async fn handle_install_extension(path: &str) -> CommandResult {
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
+    // Attempt to construct a `PermissionsOptions` from the `Permissions`
+    // object in order to validate the permissions.
+    let _ = PermissionsOptions::try_from(extension.permissions())?;
+
+    if !accept_permissions && !extension.permissions().is_allow_none() {
+        ask_permissions(&extension)?;
+    }
+
     extension.install()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
+}
+
+fn ask_permissions(extension: &Extension) -> Result<()> {
+    if !Term::stdout().is_term() {
+        return Err(anyhow!(
+            "Can't ask for permissions: not a terminal. For unsupervised usage, consider using \
+             the -y / --yes flag."
+        ));
+    }
+
+    let permissions = extension.permissions();
+
+    println!("The `{}` extension requires the following permissions:", extension.name());
+
+    fn print_permissions_list<S: Display>(header: &str, items: Option<&Vec<S>>) {
+        println!("  {header}");
+        if let Some(items) = items {
+            for item in items {
+                println!("    {item}");
+            }
+        }
+    }
+
+    print_permissions_list("Read from the following paths:", permissions.read());
+    print_permissions_list("Write to the following paths:", permissions.write());
+    print_permissions_list("Run the following commands:", permissions.run());
+    print_permissions_list("Access the following domains:", permissions.net());
+
+    if !Confirm::new().with_prompt("Do you accept?").interact()? {
+        Err(anyhow!("permissions not granted, aborting"))
+    } else {
+        Ok(())
+    }
 }
 
 /// Handle the `extension uninstall` subcommand path.
@@ -157,7 +205,7 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
         .with_context(|| format!("Unable to create all directories in {path:?}"))?;
 
     // Write manifest file.
-    let manifest = ExtensionManifest::new(name.into(), "main.ts".into(), None);
+    let manifest = ExtensionManifest::new(name.into(), "main.ts".into(), None, None);
     let manifest_path = extension_path.join("PhylumExt.toml");
     fs::write(manifest_path, toml::to_string(&manifest)?.as_bytes())?;
 

@@ -1,0 +1,6 @@
+name = "correct-net-perms"
+description = "An extension with correctly specified permissions"
+entry_point = "main.ts"
+
+[permissions]
+net = ["www.phylum.io"]

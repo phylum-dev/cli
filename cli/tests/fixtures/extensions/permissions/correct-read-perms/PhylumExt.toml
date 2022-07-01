@@ -1,0 +1,6 @@
+name = "correct-read-perms"
+description = "An extension with correctly specified permissions"
+entry_point = "main.ts"
+
+[permissions]
+read = ["./correct-read-perms/main.ts"]

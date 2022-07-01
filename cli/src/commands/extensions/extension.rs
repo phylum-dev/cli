@@ -12,8 +12,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
-pub(crate) use super::api::ExtensionState;
 use crate::api::PhylumApi;
+pub(crate) use crate::commands::extensions::api::ExtensionState;
+use crate::commands::extensions::permissions::Permissions;
 use crate::commands::{CommandResult, ExitCode};
 use crate::{deno, dirs};
 
@@ -28,11 +29,19 @@ pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: String,
+    #[serde(default)]
+    permissions: Permissions,
 }
 
 impl ExtensionManifest {
-    pub fn new(name: String, entry_point: String, description: Option<String>) -> Self {
-        Self { description, entry_point, name }
+    pub fn new(
+        name: String,
+        entry_point: String,
+        description: Option<String>,
+        permissions: Option<Permissions>,
+    ) -> Self {
+        let permissions = permissions.unwrap_or_default();
+        Self { description, entry_point, name, permissions }
     }
 }
 
@@ -53,6 +62,10 @@ impl Extension {
 
     pub fn entry_point(&self) -> &String {
         &self.manifest.entry_point
+    }
+
+    pub fn permissions(&self) -> &Permissions {
+        &self.manifest.permissions
     }
 
     /// Install the extension in the default path.
@@ -122,14 +135,18 @@ impl Extension {
         Extension::try_from(extension_path(name)?)
     }
 
+    /// Return the path to this extension's entry point.
+    pub fn path(&self) -> PathBuf {
+        self.path.join(&self.manifest.entry_point)
+    }
+
     /// Execute an extension subcommand.
     pub async fn run(
         &self,
         api: BoxFuture<'static, Result<PhylumApi>>,
         args: Vec<String>,
     ) -> CommandResult {
-        let script_path = self.path.join(&self.manifest.entry_point);
-        deno::run(ExtensionState::from(api), &script_path.to_string_lossy(), args).await?;
+        deno::run(ExtensionState::from(api), self, args).await?;
         Ok(ExitCode::Ok.into())
     }
 }

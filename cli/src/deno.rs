@@ -25,14 +25,15 @@ const EXTENSION_API: &str = include_str!("./extension_api.ts");
 /// Execute Phylum extension.
 pub async fn run(
     extension_state: ExtensionState,
-    entry_point: &str,
+    extension: &extension::Extension,
     args: Vec<String>,
 ) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-    let main_module = deno_core::resolve_path(entry_point)?;
+    let main_module = deno_core::resolve_path(&extension.path().to_string_lossy())?;
 
     let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
+
     let bootstrap = BootstrapOptions {
         cpu_count,
         args,
@@ -69,8 +70,8 @@ pub async fn run(
         stdio: Default::default(),
     };
 
-    // Disable all permissions.
-    let permissions = Permissions::default();
+    // Build permissions object from extension's requested permissions.
+    let permissions = Permissions::from_options(&extension.permissions().try_into()?);
 
     // Initialize Deno runtime.
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
