@@ -246,14 +246,14 @@ fn arg_access() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("args-extension"))
+        .arg(fixtures_path().join("args"))
         .assert()
         .success();
 
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
-        .args(&["args-extension", "--test", "-x", "a"])
+        .args(&["args", "--test", "-x", "a"])
         .assert()
         .success()
         .stdout("[ \"--test\", \"-x\", \"a\" ]\n");
