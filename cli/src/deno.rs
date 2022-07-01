@@ -70,7 +70,7 @@ pub async fn run(
         stdio: Default::default(),
     };
 
-    // Disable all permissions.
+    // Build permissions object from extension's requested permissions.
     let permissions = Permissions::from_options(&extension.permissions().try_into()?);
 
     // Initialize Deno runtime.
