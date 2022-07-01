@@ -34,17 +34,17 @@ fn extension_is_installed_correctly() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert()
         .success();
 
     let _guard = ENV_MUTEX.lock().unwrap();
     env::set_var("XDG_DATA_HOME", tempdir.path());
 
-    let installed_ext = Extension::load("sample-extension").unwrap();
-    assert_eq!(installed_ext.name(), "sample-extension");
+    let installed_ext = Extension::load("sample").unwrap();
+    assert_eq!(installed_ext.name(), "sample");
 
-    let not_installed_ext = Extension::load("sample-other-extension");
+    let not_installed_ext = Extension::load("sample-other");
     assert!(not_installed_ext.is_err());
 }
 
@@ -59,14 +59,14 @@ fn can_run_installed_extension() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert()
         .success();
 
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
-        .arg("sample-extension")
+        .arg("sample")
         .assert()
         .success()
         .stdout("Hello, World!\n");
@@ -83,14 +83,12 @@ fn successful_installation_prints_message() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert()
         .success();
 
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    assert!(output
-        .lines()
-        .any(|m| m.contains("Extension sample-extension installed successfully")));
+    assert!(output.lines().any(|m| m.contains("Extension sample installed successfully")));
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -111,7 +109,7 @@ fn unsuccessful_installation_prints_failure_message() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert()
         .success();
 
@@ -122,7 +120,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(fixtures_path().join("sample-extension"))
+            .arg(fixtures_path().join("sample"))
             .assert()
             .failure(),
         r#"extension already exists"#,
@@ -136,12 +134,7 @@ fn unsuccessful_installation_prints_failure_message() {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(
-                PathBuf::from(tempdir.path())
-                    .join("phylum")
-                    .join("extensions")
-                    .join("sample-extension"),
-            )
+            .arg(PathBuf::from(tempdir.path()).join("phylum").join("extensions").join("sample"),)
             .assert()
             .failure(),
         "skipping",
@@ -159,12 +152,12 @@ fn extension_is_uninstalled_correctly() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert()
         .success();
 
     let extension_path =
-        tempdir.path().to_path_buf().join("phylum").join("extensions").join("sample-extension");
+        tempdir.path().to_path_buf().join("phylum").join("extensions").join("sample");
 
     assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 
@@ -173,7 +166,7 @@ fn extension_is_uninstalled_correctly() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("uninstall")
-        .arg("sample-extension")
+        .arg("sample")
         .assert()
         .success();
 
@@ -206,7 +199,7 @@ fn extension_list_should_emit_output() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("sample-extension"))
+        .arg(fixtures_path().join("sample"))
         .assert();
 
     // Output name and description of the extension when one is installed
@@ -218,7 +211,7 @@ fn extension_list_should_emit_output() {
         .assert();
 
     let output = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    let re = Regex::new(r#"^sample-extension\s+This extension does a thing"#).unwrap();
+    let re = Regex::new(r#"^sample\s+This extension does a thing"#).unwrap();
 
     assert!(output.lines().any(|m| re.is_match(m)));
 }
@@ -231,14 +224,14 @@ async fn injected_api() {
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .args(&["extension", "install"])
-        .arg(fixtures_path().join("api-extension"))
+        .arg(fixtures_path().join("api"))
         .assert()
         .success();
 
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
-        .arg("api-extension")
+        .arg("api")
         .assert()
         .success()
         .stdout("44\n");
@@ -250,9 +243,9 @@ async fn injected_api() {
 
 #[test]
 fn valid_extension_is_loaded_correctly() {
-    let ext = Extension::try_from(fixtures_path().join("sample-extension")).unwrap();
+    let ext = Extension::try_from(fixtures_path().join("sample")).unwrap();
 
-    assert_eq!(ext.name(), "sample-extension");
+    assert_eq!(ext.name(), "sample");
 }
 
 #[test]
@@ -264,7 +257,7 @@ fn conflicting_extension_name_is_filtered() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("ping-extension"))
+        .arg(fixtures_path().join("ping"))
         .assert()
         .success();
 
@@ -292,7 +285,7 @@ fn conflicting_extension_name_is_filtered() {
 //   - We explicitly test that a directory traversal attempt is rejected.
 //
 // These tests are based on the fixtures under
-// `fixtures/module-import-extension`.
+// `fixtures/module-import`.
 mod module_loader_tests {
     use super::*;
 
@@ -307,7 +300,7 @@ mod module_loader_tests {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(fixtures_path().join("module-import-extension").join("successful"))
+            .arg(fixtures_path().join("module-import").join("successful"))
             .assert()
             .success();
 
@@ -332,7 +325,7 @@ mod module_loader_tests {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(fixtures_path().join("module-import-extension").join("fail-local"))
+            .arg(fixtures_path().join("module-import").join("fail-local"))
             .assert()
             .success();
 
@@ -358,7 +351,7 @@ mod module_loader_tests {
             .env("XDG_DATA_HOME", tempdir.path())
             .arg("extension")
             .arg("install")
-            .arg(fixtures_path().join("module-import-extension").join("fail-remote"))
+            .arg(fixtures_path().join("module-import").join("fail-remote"))
             .assert()
             .success();
 
@@ -379,13 +372,13 @@ mod module_loader_tests {
     #[test]
     fn symlinks_are_rejected() {
         let tempdir = TempDir::new().unwrap();
-        let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink-extension");
+        let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink");
 
         Command::cargo_bin("phylum")
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
             .args(&["extension", "install"])
-            .arg(fixtures_path().join("symlink-extension"))
+            .arg(fixtures_path().join("symlink"))
             .assert()
             .success();
 
@@ -395,7 +388,7 @@ mod module_loader_tests {
         Command::cargo_bin("phylum")
             .unwrap()
             .env("XDG_DATA_HOME", tempdir.path())
-            .arg("symlink-extension")
+            .arg("symlink")
             .assert()
             .failure()
             .stderr(predicate::str::contains("importing from symlinks is not allowed"));

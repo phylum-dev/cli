@@ -1,3 +1,3 @@
-name = "sample-extension"
+name = "sample"
 description = "This extension does a thing"
 entry_point = "main.ts"
