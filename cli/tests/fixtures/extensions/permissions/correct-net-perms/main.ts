@@ -1,4 +1,4 @@
-let response = await fetch('https://api.github.com/repos/phylum-dev/cli/releases/latest')
-let release = await response.json()
+let response = await fetch('https://www.phylum.io')
+let release = await response.text()
 
 console.log(release)
