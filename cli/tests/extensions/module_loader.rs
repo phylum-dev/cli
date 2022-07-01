@@ -24,7 +24,7 @@ fn good_module_loads_successfully() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("module-import-extension").join("successful"))
+        .arg(fixtures_path().join("module-import").join("successful"))
         .assert()
         .success();
 
@@ -49,7 +49,7 @@ fn module_with_traversal_fails_to_load() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("module-import-extension").join("fail-local"))
+        .arg(fixtures_path().join("module-import").join("fail-local"))
         .assert()
         .success();
 
@@ -75,7 +75,7 @@ fn module_with_non_allowed_url_fails_to_load() {
         .env("XDG_DATA_HOME", tempdir.path())
         .arg("extension")
         .arg("install")
-        .arg(fixtures_path().join("module-import-extension").join("fail-remote"))
+        .arg(fixtures_path().join("module-import").join("fail-remote"))
         .assert()
         .success();
 
@@ -96,13 +96,13 @@ fn module_with_non_allowed_url_fails_to_load() {
 #[test]
 fn symlinks_are_rejected() {
     let tempdir = TempDir::new().unwrap();
-    let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink-extension");
+    let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink");
 
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
         .args(&["extension", "install"])
-        .arg(fixtures_path().join("symlink-extension"))
+        .arg(fixtures_path().join("symlink"))
         .assert()
         .success();
 
@@ -112,7 +112,7 @@ fn symlinks_are_rejected() {
     Command::cargo_bin("phylum")
         .unwrap()
         .env("XDG_DATA_HOME", tempdir.path())
-        .arg("symlink-extension")
+        .arg("symlink")
         .assert()
         .failure()
         .stderr(predicate::str::contains("importing from symlinks is not allowed"));

@@ -163,7 +163,9 @@ async fn handle_commands() -> CommandResult {
         "extension" => extensions::handle_extensions(sub_matches).await,
 
         #[cfg(feature = "extensions")]
-        extension_subcmd => extensions::handle_run_extension(extension_subcmd, Box::pin(api)).await,
+        extension_subcmd => {
+            extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
+        },
 
         #[cfg(not(feature = "extensions"))]
         _ => unreachable!(),

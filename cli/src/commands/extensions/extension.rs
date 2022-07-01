@@ -141,8 +141,12 @@ impl Extension {
     }
 
     /// Execute an extension subcommand.
-    pub async fn run(&self, api: BoxFuture<'static, Result<PhylumApi>>) -> CommandResult {
-        deno::run(ExtensionState::from(api), self).await?;
+    pub async fn run(
+        &self,
+        api: BoxFuture<'static, Result<PhylumApi>>,
+        args: Vec<String>,
+    ) -> CommandResult {
+        deno::run(ExtensionState::from(api), self, args).await?;
         Ok(ExitCode::Ok.into())
     }
 }
