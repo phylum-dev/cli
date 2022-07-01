@@ -16,7 +16,7 @@ pub async fn api() {
     let tempdir = tempdir.path();
 
     let lockfile = end_to_end::create_lockfile(tempdir);
-    let config = end_to_end::create_config(&tempdir);
+    let config = end_to_end::create_config(tempdir);
     let project = end_to_end::create_project().await;
 
     with_extension(&config, "console.log(await PhylumApi.getUserInfo())", |assert| {
@@ -68,7 +68,7 @@ pub fn async_state() {
     let tempdir = TempDir::new().unwrap();
     let tempdir = tempdir.path();
 
-    let config = end_to_end::create_config(&tempdir);
+    let config = end_to_end::create_config(tempdir);
 
     with_extension(
         &config,
