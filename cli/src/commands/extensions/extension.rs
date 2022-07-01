@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 use std::fs::{self, DirBuilder};
-use std::io;
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
@@ -136,9 +135,9 @@ impl Extension {
         Extension::try_from(extension_path(name)?)
     }
 
-    /// Return the canonicalized, absolute path to this extension's entry point.
-    pub fn path(&self) -> Result<PathBuf, io::Error> {
-        self.path.join(&self.manifest.entry_point).canonicalize()
+    /// Return the path to this extension's entry point.
+    pub fn path(&self) -> PathBuf {
+        self.path.join(&self.manifest.entry_point)
     }
 
     /// Execute an extension subcommand.

@@ -26,7 +26,7 @@ const EXTENSION_API: &str = include_str!("./extension_api.ts");
 pub async fn run(extension_state: ExtensionState, extension: &extension::Extension) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-    let main_module = deno_core::resolve_path(&extension.path()?.to_string_lossy())?;
+    let main_module = deno_core::resolve_path(&extension.path().to_string_lossy())?;
 
     let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
 
@@ -85,8 +85,7 @@ struct ExtensionsModuleLoader;
 
 impl ExtensionsModuleLoader {
     async fn load_from_filesystem(path: &Url) -> Result<String> {
-        let path =
-            path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?.canonicalize()?;
+        let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
         let extensions_path = extension::extensions_path()?;
         if !path.starts_with(&extensions_path) {
