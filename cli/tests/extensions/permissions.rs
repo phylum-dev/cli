@@ -118,5 +118,8 @@ fn correct_run_permission_successful_install_and_run() {
         .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
         .success();
 
-    test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("install"));
+    test_cli
+        .run(&["correct-run-perms"])
+        .success()
+        .stdout(predicate::str::contains("install").or(predicate::str::contains("API rate limit")));
 }
