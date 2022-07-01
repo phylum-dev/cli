@@ -13,9 +13,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
-pub(crate) use super::api::ExtensionState;
-use super::permissions::Permissions;
 use crate::api::PhylumApi;
+pub(crate) use crate::commands::extensions::api::ExtensionState;
+use crate::commands::extensions::permissions::Permissions;
 use crate::commands::{CommandResult, ExitCode};
 use crate::{deno, dirs};
 

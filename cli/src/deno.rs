@@ -85,7 +85,8 @@ struct ExtensionsModuleLoader;
 
 impl ExtensionsModuleLoader {
     async fn load_from_filesystem(path: &Url) -> Result<String> {
-        let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
+        let path =
+            path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?.canonicalize()?;
 
         let extensions_path = extension::extensions_path()?;
         if !path.starts_with(&extensions_path) {
