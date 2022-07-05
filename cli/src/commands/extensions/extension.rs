@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
-use log::warn;
+use log::{warn, LevelFilter};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
@@ -146,7 +146,11 @@ impl Extension {
         api: BoxFuture<'static, Result<PhylumApi>>,
         args: Vec<String>,
     ) -> CommandResult {
+        // Disable logging for running extensions.
+        log::set_max_level(LevelFilter::Off);
+
         deno::run(ExtensionState::from(api), self, args).await?;
+
         Ok(ExitCode::Ok.into())
     }
 }
