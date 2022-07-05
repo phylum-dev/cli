@@ -11,6 +11,10 @@ selfmanage = []
 end-to-end-tests = []
 extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
 
+[[test]]
+name = "extensions"
+path = "tests/extensions/mod.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
