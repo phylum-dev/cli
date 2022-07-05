@@ -60,8 +60,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .args(&[
                     Arg::new("JOB_ID")
                         .value_name("JOB_ID")
-                        .help("The job id to query (or `current` for the most recent job)")
-                        .required(true),
+                        .help("The job id to query (or `current` for the most recent job)"),
                     Arg::new("verbose")
                         .short('v')
                         .long("verbose")
