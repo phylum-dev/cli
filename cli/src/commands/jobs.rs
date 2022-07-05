@@ -65,18 +65,6 @@ pub async fn get_job_status(
     }
 }
 
-/// Resolve a potential job_id, which could be a UUID string or the value
-/// 'current' which means the UUID of the current running job.
-fn resolve_job_id(job_id: &str) -> Result<JobId> {
-    let maybe_job_id = if job_id == "current" {
-        get_current_project().map(|p: ProjectConfig| p.id)
-    } else {
-        JobId::from_str(job_id).ok()
-    };
-
-    maybe_job_id.ok_or_else(|| anyhow!("Unable to resolve, or invalid job id: {}", job_id))
-}
-
 /// Handle the history subcommand.
 ///
 /// This allows us to list last N job runs, list the projects, list runs
@@ -109,7 +97,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
                 // TODO The original code had unwrap in it above. This needs to
                 // be refactored in general for better flow
-                let job_id = resolve_job_id(project_job_id.expect("No job id found"))?;
+                let job_id = JobId::from_str(project_job_id.expect("No job id found"))?;
                 action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
             }
         } else {
@@ -120,7 +108,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             get_project_list(api, pretty_print, None).await;
         }
     } else if matches.is_present("JOB_ID") {
-        let job_id = resolve_job_id(matches.value_of("JOB_ID").expect("No job id found"))?;
+        let job_id = JobId::from_str(matches.value_of("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else if let Some(project) = matches.value_of("project") {
         let resp = api.get_project_details(project).await.map(|r| r.jobs);
