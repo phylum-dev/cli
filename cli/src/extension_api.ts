@@ -25,7 +25,7 @@ export class PhylumApi {
     }
 
     /// Get job results.
-    static async getJobStatus(jobId?: string): object {
+    static async getJobStatus(jobId: string): object {
         return await Deno.core.opAsync('get_job_status', jobId);
     }
 
