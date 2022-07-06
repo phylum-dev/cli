@@ -115,6 +115,19 @@ pub fn app<'a>() -> clap::Command<'a> {
                     ]),
                 )
                 .subcommand(
+                    Command::new("delete").about("Delete a project").aliases(&["rm"]).args(&[
+                        Arg::new("name")
+                            .value_name("name")
+                            .help("Name of the project")
+                            .required(true),
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("group_name")
+                            .help("Group that owns the project"),
+                    ]),
+                )
+                .subcommand(
                     Command::new("list").about("List all existing projects").args(&[
                         Arg::new("json")
                             .short('j')
