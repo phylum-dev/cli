@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
-use url::Url;
 
 #[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
@@ -11,11 +10,11 @@ pub struct Permissions {
     write: Option<Vec<String>>,
     env: Option<Vec<String>>,
     run: Option<Vec<String>>,
-    #[serde(deserialize_with = "net_permission")]
+    #[serde(default, deserialize_with = "net_permission")]
     net: Option<Vec<String>>,
 }
 
-/// Deserialize URLs, ignoring everything but their domain.
+/// Deserialize network permissions.
 fn net_permission<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
 where
     D: Deserializer<'de>,
@@ -27,15 +26,12 @@ where
         None => return Ok(permissions),
     };
 
-    // Trim path/scheme from URL (https://api.phylum.io/path -> api.phylum.io).
+    // Error out if URL contains scheme or path segments.
     for url in net {
-        let parsed = Url::parse(&url).map_err(|err| D::Error::custom(err))?;
-        let domain = parsed
-            .domain()
-            .ok_or_else(|| D::Error::custom(format!("No domain in URL permission: {:?}", url)))?;
-
-        if domain != url {
-            let err = format!("Superfluous content in net permission: {url} -> {domain}");
+        if url.contains('/') {
+            let err = format!(
+                "Found '/' in net permission {url:?}, only domains and subdomains may be specified"
+            );
             return Err(D::Error::custom(err));
         }
     }
@@ -124,5 +120,23 @@ mod tests {
         assert!(permissions_options.allow_env.is_none());
         assert!(permissions_options.allow_run.is_none());
         assert!(permissions_options.allow_net.is_none());
+    }
+
+    #[test]
+    fn deserialize_valid_permissions() {
+        let valid_toml = r#"net = ["api.phylum.io"]"#;
+
+        let permissions = toml::from_str::<Permissions>(valid_toml).unwrap();
+
+        assert_eq!(permissions.net, Some(vec!["api.phylum.io".into()]));
+    }
+
+    #[test]
+    fn deserialize_invalid_net_permissions() {
+        let invalid_toml = r#"net = ["https://api.phylum.io/test"]"#;
+
+        let result = toml::from_str::<Permissions>(invalid_toml);
+
+        assert!(result.is_err());
     }
 }
