@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use deno_runtime::permissions::PermissionsOptions;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
+use url::Url;
 
 #[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
@@ -9,7 +11,36 @@ pub struct Permissions {
     write: Option<Vec<String>>,
     env: Option<Vec<String>>,
     run: Option<Vec<String>>,
+    #[serde(deserialize_with = "net_permission")]
     net: Option<Vec<String>>,
+}
+
+/// Deserialize URLs, ignoring everything but their domain.
+fn net_permission<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut permissions = Option::<Vec<String>>::deserialize(deserializer)?;
+
+    let net = match permissions.as_mut() {
+        Some(net) => net,
+        None => return Ok(permissions),
+    };
+
+    // Trim path/scheme from URL (https://api.phylum.io/path -> api.phylum.io).
+    for url in net {
+        let parsed = Url::parse(&url).map_err(|err| D::Error::custom(err))?;
+        let domain = parsed
+            .domain()
+            .ok_or_else(|| D::Error::custom(format!("No domain in URL permission: {:?}", url)))?;
+
+        if domain != url {
+            let err = format!("Superfluous content in net permission: {url} -> {domain}");
+            return Err(D::Error::custom(err));
+        }
+    }
+
+    Ok(permissions)
 }
 
 // XXX In Deno, `Some(vec![])` actually means "allow all". We never
