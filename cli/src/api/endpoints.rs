@@ -75,6 +75,13 @@ pub fn post_create_project(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/projects")?)
 }
 
+/// DELETE /data/projects/<project_id>
+pub fn delete_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", project_id]);
+    Ok(url)
+}
+
 /// GET /settings/current-user
 pub(crate) fn get_user_settings(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("settings/current-user")?)
@@ -225,6 +232,14 @@ mod test {
         assert_eq!(
             post_create_project(API_URI).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/projects"),
+        );
+    }
+
+    #[test]
+    fn delete_project_is_correct() {
+        assert_eq!(
+            delete_project(API_URI, "12345678-90ab-cdef-1234-567890abcdef").unwrap().as_str(),
+            format!("{API_URI}/{API_PATH}data/projects/12345678-90ab-cdef-1234-567890abcdef"),
         );
     }
 
