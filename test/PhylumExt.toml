@@ -1,6 +1,0 @@
-name = "test"
-description = "API injection test"
-entry_point = "main.ts"
-
-[permissions]
-net = ["http://blog.phylum.io/test/ing"]
