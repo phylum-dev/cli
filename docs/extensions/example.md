@@ -212,11 +212,12 @@ await Deno.writeTextFile(
 When replacing the `console.log` with this function call and executing our
 extension, you'll run into the following error:
 
-TODO: This error likely needs to be updated on release.
+```
+❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt", run again with the --allow-write flag
+```
 
-```
-Execution failed: Error: Requires write access to "./duplicates.txt"
-```
+The `--allow-write` flag here comes directly from Deno and is **not** supported
+by Phylum's CLI extensions.
 
 This is exactly what should have happened, since Deno's sandbox doesn't allow us
 to interact with the outside world unless we've been granted permission to do

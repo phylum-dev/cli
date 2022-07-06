@@ -16,12 +16,13 @@ available to all extensions without any imports.
 
 Additionally, Deno also provides a complementary standard library. This includes
 utility functions for several commonly used structures like collections, http,
-and async. These modules can be imported using the URLs documented in Deno's STD
-documentation or by downloading them and including individual modules as files.
-All STD functionality is documented in [Deno's STD docs]
+and async. These modules can be imported using the URLs documented in Deno's
+standard library documentation or by downloading them and including individual
+modules as files. All standard library functionality is documented in [Deno's
+standard library docs]
 
 [Deno's API docs]: https://doc.deno.land/deno/stable
-[Deno's STD docs]: https://deno.land/std
+[Deno's standard library docs]: https://deno.land/std
 
 ## Phylum API
 

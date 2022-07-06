@@ -85,9 +85,10 @@ permission and vice versa.
 Net permissions list domains which can be accessed by the extension.
 
 Network permissions only describe the domains and subdomains an extension has
-access to, regardless of its path segments. Access to a domain does not
-automatically grant access to all of its subdomains.
+access to, regardless of its path segments or protocol scheme. Access to a
+domain does not automatically grant access to all of its subdomains.
 
 If the requested domain requests a redirect, you'll also require permissions to
 access the redirect target. It's easiest to just specify the redirect target
-directly when making requests.
+directly when making requests, otherwise you'll have to request permissions for
+both domains.
