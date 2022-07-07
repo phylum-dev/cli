@@ -31,7 +31,7 @@ console.log('Hello, World!');
 
 pub fn command<'a>() -> Command<'a> {
     Command::new("extension")
-        .about("Run extensions")
+        .about("Manage extensions")
         .subcommand(
             Command::new("install")
                 .about("Install extension")

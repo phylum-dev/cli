@@ -33,6 +33,7 @@ phylum analyze [OPTIONS] <lockfile>
 &emsp; Increase verbosity of API response
 
 ### Examples
+
 ```sh
 # Analyze an npm lock file
 $ phylum analyze package-lock.json
