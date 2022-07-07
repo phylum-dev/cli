@@ -15,9 +15,21 @@ const HEADER: &str = "import { PhylumApi } from 'phylum';";
 const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
+enum Cwd {
+    Path(PathBuf),
+    TempDir,
+    None,
+}
+
+impl Default for Cwd {
+    fn default() -> Self {
+        Cwd::None
+    }
+}
+
 #[derive(Default)]
 pub struct TestCliBuilder {
-    cwd: Option<PathBuf>,
+    cwd: Cwd,
     with_config: bool,
 }
 
@@ -26,16 +38,32 @@ impl TestCliBuilder {
         let tempdir = TempDir::new().unwrap();
         let config_path = if self.with_config { Some(create_config(tempdir.path())) } else { None };
 
-        TestCli { tempdir, cwd: self.cwd, config_path }
+        let cwd = match self.cwd {
+            Cwd::Path(p) => Some(p),
+            Cwd::TempDir => Some(tempdir.path().to_owned()),
+            Cwd::None => None,
+        };
+
+        TestCli { tempdir, cwd, config_path }
     }
 
+    /// If true, a configuration will be generated, stored and passed as an
+    /// option.
     pub fn with_config(mut self, with_config: bool) -> Self {
         self.with_config = with_config;
         self
     }
 
+    /// Set the current working directory of the CLI to the provided path.
     pub fn cwd(mut self, cwd: PathBuf) -> Self {
-        self.cwd = Some(cwd);
+        self.cwd = Cwd::Path(cwd);
+        self
+    }
+
+    /// Set the current working directory of the CLI to the path of the
+    /// temporary directory that is created.
+    pub fn cwd_temp(mut self) -> Self {
+        self.cwd = Cwd::TempDir;
         self
     }
 }

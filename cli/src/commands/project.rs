@@ -59,6 +59,18 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         });
 
         print_user_success!("Successfully created new project, {}", name);
+    } else if let Some(matches) = matches.subcommand_matches("delete") {
+        let project_name = matches.value_of("name").unwrap();
+        let group_name = matches.value_of("group");
+
+        let proj_uuid = api
+            .get_project_id(project_name, group_name)
+            .await
+            .context("A project with that name does not exist")?;
+
+        api.delete_project(proj_uuid).await?;
+
+        print_user_success!("Successfully deleted project, {}", project_name);
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let group = matches.value_of("group");
         let pretty_print = pretty_print && !matches.is_present("json");

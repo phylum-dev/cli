@@ -173,14 +173,11 @@ async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> 
 #[op]
 async fn get_job_status(
     state: Rc<RefCell<OpState>>,
-    job_id: Option<String>,
+    job_id: String,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
     let api = ExtensionStateRef::from(state).await?;
 
-    let job_id = job_id
-        .map(|job_id| JobId::from_str(&job_id).ok())
-        .unwrap_or_else(|| get_current_project().map(|p| p.id))
-        .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))?;
+    let job_id = JobId::from_str(&job_id)?;
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
 }
 

@@ -16,7 +16,7 @@ use phylum_types::types::project::{
 use phylum_types::types::user_settings::UserSettings;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
-use serde::de::DeserializeOwned;
+use serde::de::{DeserializeOwned, IgnoredAny};
 use serde::Serialize;
 use thiserror::Error as ThisError;
 
@@ -72,6 +72,10 @@ pub struct ResponseError {
 impl PhylumApi {
     async fn get<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
         self.send_request(Method::GET, path, None::<()>).await
+    }
+
+    async fn delete<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
+        self.send_request(Method::DELETE, path, None::<()>).await
     }
 
     async fn put<T: DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
@@ -207,6 +211,17 @@ impl PhylumApi {
             )
             .await?;
         Ok(response.id)
+    }
+
+    /// Delete a project
+    pub async fn delete_project(&mut self, project_id: ProjectId) -> Result<()> {
+        let _: IgnoredAny = self
+            .delete(endpoints::delete_project(
+                &self.config.connection.uri,
+                &format!("{}", project_id),
+            )?)
+            .await?;
+        Ok(())
     }
 
     /// Get a list of projects

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use deno_runtime::permissions::PermissionsOptions;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
@@ -9,7 +10,33 @@ pub struct Permissions {
     write: Option<Vec<String>>,
     env: Option<Vec<String>>,
     run: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "net_permission")]
     net: Option<Vec<String>>,
+}
+
+/// Deserialize network permissions.
+fn net_permission<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut permissions = Option::<Vec<String>>::deserialize(deserializer)?;
+
+    let net = match permissions.as_mut() {
+        Some(net) => net,
+        None => return Ok(permissions),
+    };
+
+    // Error out if URL contains scheme or path segments.
+    for url in net {
+        if url.contains('/') {
+            let err = format!(
+                "Found '/' in net permission {url:?}, only domains and subdomains may be specified"
+            );
+            return Err(D::Error::custom(err));
+        }
+    }
+
+    Ok(permissions)
 }
 
 // XXX In Deno, `Some(vec![])` actually means "allow all". We never
@@ -93,5 +120,23 @@ mod tests {
         assert!(permissions_options.allow_env.is_none());
         assert!(permissions_options.allow_run.is_none());
         assert!(permissions_options.allow_net.is_none());
+    }
+
+    #[test]
+    fn deserialize_valid_permissions() {
+        let valid_toml = r#"net = ["api.phylum.io"]"#;
+
+        let permissions = toml::from_str::<Permissions>(valid_toml).unwrap();
+
+        assert_eq!(permissions.net, Some(vec!["api.phylum.io".into()]));
+    }
+
+    #[test]
+    fn deserialize_invalid_net_permissions() {
+        let invalid_toml = r#"net = ["https://api.phylum.io/test"]"#;
+
+        let result = toml::from_str::<Permissions>(invalid_toml);
+
+        assert!(result.is_err());
     }
 }

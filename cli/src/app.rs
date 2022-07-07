@@ -60,8 +60,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .args(&[
                     Arg::new("JOB_ID")
                         .value_name("JOB_ID")
-                        .help("The job id to query (or `current` for the most recent job)")
-                        .required(true),
+                        .help("The job id to query (or `current` for the most recent job)"),
                     Arg::new("verbose")
                         .short('v')
                         .long("verbose")
@@ -113,6 +112,19 @@ pub fn app<'a>() -> clap::Command<'a> {
                             .long("group")
                             .value_name("group_name")
                             .help("Group which will be the owner of the project"),
+                    ]),
+                )
+                .subcommand(
+                    Command::new("delete").about("Delete a project").aliases(&["rm"]).args(&[
+                        Arg::new("name")
+                            .value_name("name")
+                            .help("Name of the project")
+                            .required(true),
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("group_name")
+                            .help("Group that owns the project"),
                     ]),
                 )
                 .subcommand(

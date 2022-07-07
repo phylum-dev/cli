@@ -150,6 +150,28 @@ fn arg_access() {
         .stdout(predicate::str::contains(r#"[ "--test", "-x", "a" ]"#));
 }
 
+// Extension creation works.
+#[test]
+fn create_extension() {
+    let test_cli = TestCli::builder().cwd_temp().build();
+
+    test_cli
+        .run(&["extension", "new", "my-ext"])
+        .success()
+        .stderr(predicates::str::contains("✅ Extension created successfully"));
+}
+
+// Extension creation with invalid name fails
+#[test]
+fn create_incorrect_name() {
+    let test_cli = TestCli::builder().cwd_temp().build();
+
+    test_cli
+        .run(&["extension", "new", "my-ext"])
+        .failure()
+        .stderr(predicates::str::contains("invalid extension name"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Miscellaneous tests
 ////////////////////////////////////////////////////////////////////////////////
