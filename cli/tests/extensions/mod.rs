@@ -167,7 +167,7 @@ fn create_incorrect_name() {
     let test_cli = TestCli::builder().cwd_temp().build();
 
     test_cli
-        .run(&["extension", "new", "my-ext"])
+        .run(&["extension", "new", "@@@"])
         .failure()
         .stderr(predicates::str::contains("invalid extension name"));
 }
