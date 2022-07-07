@@ -194,4 +194,4 @@ jobs:
       - name: Update v2-latest using rdme
         uses: readmeio/rdme@7.3.0
         with:
-          rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
+          rdme: docs ./docs/*/* --key=${{ secrets.README_API }} --version=2-latest

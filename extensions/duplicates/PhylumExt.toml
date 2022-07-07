@@ -1,0 +1,5 @@
+name = "duplicates"
+entry_point = "main.ts"
+
+# [permissions]
+# write = ["./duplicates.txt"]

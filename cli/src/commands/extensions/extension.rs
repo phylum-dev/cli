@@ -188,13 +188,7 @@ impl TryFrom<PathBuf> for Extension {
             ));
         }
 
-        if !EXTENSION_NAME_RE.is_match(&manifest.name) {
-            return Err(anyhow!(
-                "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or \
-                 underscore (_)",
-                manifest.name
-            ));
-        }
+        validate_name(&manifest.name)?;
 
         // TODO add further validation if necessary:
         // - Check that the entry point is a supported format (.wasm?)
@@ -203,19 +197,24 @@ impl TryFrom<PathBuf> for Extension {
     }
 }
 
+/// Check extension name for validity.
+pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
+    if EXTENSION_NAME_RE.is_match(&name) {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore \
+             (_)",
+            name
+        ))
+    }
+}
+
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
 pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
     Ok(dirs::data_dir()?.join("phylum").join("extensions"))
 }
 
-pub fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
-    if !EXTENSION_NAME_RE.is_match(name) {
-        return Err(anyhow!(
-            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore \
-             (_) ",
-            name
-        ));
-    }
-
+fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
     Ok(extensions_path()?.join(name))
 }
