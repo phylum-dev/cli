@@ -11,7 +11,6 @@
 //
 // These tests are based on the fixtures under
 // `fixtures/module-import-extension`.
-
 use test_utils::*;
 
 use crate::*;
