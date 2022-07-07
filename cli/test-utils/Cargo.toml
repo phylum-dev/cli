@@ -1,0 +1,15 @@
+[package]
+name = "test-utils"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+phylum-cli = { path = "../" }
+phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
+assert_cmd = "2.0.4"
+predicates = { version = "2.0", default-features = false, features = ["diff"] }
+tempfile = "3.3.0"
+reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls"], default-features = false }
+serde_yaml = "0.8.14"

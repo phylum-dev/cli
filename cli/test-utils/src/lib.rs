@@ -2,14 +2,13 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
+pub use assert_cmd::assert::Assert;
+pub use assert_cmd::Command;
 use phylum_cli::api::{PhylumApi, PhylumApiError, ResponseError};
 use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 use phylum_types::types::auth::RefreshToken;
-use reqwest::StatusCode;
-
-pub use assert_cmd::assert::Assert;
-pub use assert_cmd::Command;
 pub use predicates::prelude::*;
+use reqwest::StatusCode;
 use tempfile::TempDir;
 
 const HEADER: &str = "import { PhylumApi } from 'phylum';";

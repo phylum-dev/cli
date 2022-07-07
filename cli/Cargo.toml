@@ -15,6 +15,10 @@ extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
 name = "extensions"
 path = "tests/extensions/mod.rs"
 
+[[test]]
+name = "end_to_end"
+path = "tests/end_to_end/mod.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -68,3 +72,4 @@ deno_ast = { version = "0.15.0", features = ["transpiling"], optional = true }
 assert_cmd = "2.0.4"
 predicates = { version = "2.0", default-features = false, features = ["diff"] }
 wiremock = "0.5.7"
+test-utils = { path = "./test-utils" }
