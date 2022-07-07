@@ -291,7 +291,7 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse =
-            self.put(endpoints::put_submit_package(&self.config.connection.uri)?, req).await?;
+            self.post(endpoints::post_submit_package(&self.config.connection.uri)?, req).await?;
         Ok(resp.job_id)
     }
 
@@ -405,7 +405,7 @@ mod tests {
 
         let responder_token_holder = token_holder.clone();
 
-        Mock::given(method("PUT"))
+        Mock::given(method("POST"))
             .and(path("api/v0/data/jobs"))
             .respond_with_fn(move |request| {
                 let mut guard = responder_token_holder.lock().unwrap();
@@ -440,7 +440,7 @@ mod tests {
     #[tokio::test]
     async fn submit_request() -> Result<()> {
         let mock_server = build_mock_server().await;
-        Mock::given(method("PUT"))
+        Mock::given(method("POST"))
             .and(path("api/v0/data/jobs"))
             .respond_with_fn(|_| {
                 ResponseTemplate::new(200)
