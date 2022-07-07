@@ -20,7 +20,7 @@ use tokio::sync::Mutex;
 
 use crate::api::PhylumApi;
 use crate::auth::UserInfo;
-use crate::commands::parse::{get_packages_from_lockfile, LOCKFILE_PARSERS};
+use crate::commands::parse::{self, get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 
 /// Holds either an unawaited, boxed `Future`, or the result of awaiting the
@@ -223,7 +223,18 @@ async fn get_package_details(
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
 #[op]
-async fn parse_lockfile(lockfile: String, lockfile_type: String) -> Result<Vec<PackageDescriptor>> {
+async fn parse_lockfile(
+    lockfile: String,
+    lockfile_type: Option<String>,
+) -> Result<Vec<PackageDescriptor>> {
+    // Fallback to automatic parser without lockfile type specified.
+    let lockfile_type = match lockfile_type {
+        Some(lockfile_type) => lockfile_type,
+        None => return Ok(parse::get_packages_from_lockfile(&Path::new(&lockfile))?.0),
+    };
+
+    // Attempt to parse as requested lockfile type.
+
     let parser = LOCKFILE_PARSERS
         .iter()
         .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
