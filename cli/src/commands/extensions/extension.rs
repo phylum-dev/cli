@@ -208,14 +208,6 @@ pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
     Ok(dirs::data_dir()?.join("phylum").join("extensions"))
 }
 
-pub fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
-    if !EXTENSION_NAME_RE.is_match(name) {
-        return Err(anyhow!(
-            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore \
-             (_) ",
-            name
-        ));
-    }
-
+fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
     Ok(extensions_path()?.join(name))
 }
