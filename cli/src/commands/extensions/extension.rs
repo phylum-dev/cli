@@ -188,18 +188,25 @@ impl TryFrom<PathBuf> for Extension {
             ));
         }
 
-        if !EXTENSION_NAME_RE.is_match(&manifest.name) {
-            return Err(anyhow!(
-                "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or \
-                 underscore (_)",
-                manifest.name
-            ));
-        }
+        validate_name(&manifest.name)?;
 
         // TODO add further validation if necessary:
         // - Check that the entry point is a supported format (.wasm?)
         // - Check that the entry point is appropriately signed
         Ok(Extension { path, manifest })
+    }
+}
+
+/// Check extension name for validity.
+pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
+    if EXTENSION_NAME_RE.is_match(&name) {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or \
+             underscore (_)",
+            name
+        ))
     }
 }
 

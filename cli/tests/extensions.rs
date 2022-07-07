@@ -264,6 +264,38 @@ fn arg_access() {
         .stdout("[ \"--test\", \"-x\", \"a\" ]\n");
 }
 
+// Extension creation works.
+#[test]
+fn create_extension() {
+    let tempdir = TempDir::new().unwrap();
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .current_dir(tempdir.path())
+        .env("XDG_DATA_HOME", tempdir.path())
+        .arg("extension")
+        .arg("new")
+        .arg("my-ext")
+        .assert()
+        .success()
+        .stderr(predicates::str::contains("✅ Extension created successfully"));
+}
+
+// Extension creation with invalid name fails
+#[test]
+fn create_incorrect_name() {
+    let tempdir = TempDir::new().unwrap();
+    Command::cargo_bin("phylum")
+        .unwrap()
+        .current_dir(tempdir.path())
+        .env("XDG_DATA_HOME", tempdir.path())
+        .arg("extension")
+        .arg("new")
+        .arg("@@@")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("invalid extension name"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Miscellaneous tests
 ////////////////////////////////////////////////////////////////////////////////
