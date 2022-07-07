@@ -203,8 +203,8 @@ pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
         Ok(())
     } else {
         Err(anyhow!(
-            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or \
-             underscore (_)",
+            "{}: invalid extension name, must be lowercase alphanumeric, dash (-) or underscore \
+             (_)",
             name
         ))
     }
