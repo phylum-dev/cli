@@ -207,6 +207,8 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
         .and_then(OsStr::to_str)
         .ok_or_else(|| anyhow!("Last segment in {path:?} is not a valid extension name"))?;
 
+    extension::validate_name(name)?;
+
     // Create all missing directories.
     fs::create_dir_all(&extension_path)
         .with_context(|| format!("Unable to create all directories in {path:?}"))?;
