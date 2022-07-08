@@ -24,6 +24,7 @@ The command line interface (CLI) allows users to submit their project package de
    | Target | Package |
    | --- | --- |
    | x86_64-unknown-linux-musl | [phylum-x86_64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip) |
+   | aarch64-unknown-linux-musl | [phylum-aarch64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip) |
    | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) |
    | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) |
 

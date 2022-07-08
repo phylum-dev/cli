@@ -80,8 +80,12 @@ async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<by
     Ok(r.bytes().await?)
 }
 
-const SUPPORTED_PLATFORMS: &[&str] =
-    &["x86_64-unknown-linux-musl", "x86_64-apple-darwin", "aarch64-apple-darwin"];
+const SUPPORTED_PLATFORMS: &[&str] = &[
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+];
 
 /// Determine the current platform. Error if unsupported.
 fn current_platform() -> anyhow::Result<String> {
