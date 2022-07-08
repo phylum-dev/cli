@@ -214,7 +214,7 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
         .with_context(|| format!("Unable to create all directories in {path:?}"))?;
 
     // Write manifest file.
-    let manifest = ExtensionManifest::new(name.into(), "main.ts".into(), None, None);
+    let manifest = ExtensionManifest::new(name);
     let manifest_path = extension_path.join("PhylumExt.toml");
     fs::write(manifest_path, toml::to_string(&manifest)?.as_bytes())?;
 

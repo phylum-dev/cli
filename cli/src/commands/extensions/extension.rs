@@ -28,20 +28,23 @@ lazy_static! {
 pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
-    entry_point: String,
+    entry_point: Option<String>,
     #[serde(default)]
     permissions: Permissions,
 }
 
 impl ExtensionManifest {
-    pub fn new(
-        name: String,
-        entry_point: String,
-        description: Option<String>,
-        permissions: Option<Permissions>,
-    ) -> Self {
-        let permissions = permissions.unwrap_or_default();
-        Self { description, entry_point, name, permissions }
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: Default::default(),
+            entry_point: Default::default(),
+            permissions: Default::default(),
+        }
+    }
+
+    fn entry_point(&self) -> &str {
+        self.entry_point.as_deref().unwrap_or("main.ts")
     }
 }
 
@@ -60,8 +63,8 @@ impl Extension {
         self.manifest.description.as_deref()
     }
 
-    pub fn entry_point(&self) -> &String {
-        &self.manifest.entry_point
+    pub fn entry_point(&self) -> &str {
+        self.manifest.entry_point()
     }
 
     pub fn permissions(&self) -> &Permissions {
@@ -137,7 +140,7 @@ impl Extension {
 
     /// Return the path to this extension's entry point.
     pub fn path(&self) -> PathBuf {
-        self.path.join(&self.manifest.entry_point)
+        self.path.join(self.entry_point())
     }
 
     /// Execute an extension subcommand.
@@ -172,7 +175,7 @@ impl TryFrom<PathBuf> for Extension {
         let buf = fs::read(manifest_path)?;
 
         let manifest: ExtensionManifest = toml::from_slice(&buf)?;
-        let entry_point_path = path.join(&manifest.entry_point);
+        let entry_point_path = path.join(manifest.entry_point());
 
         if !entry_point_path.exists() {
             return Err(anyhow!(
