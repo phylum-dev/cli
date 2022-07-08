@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fs::{self, DirBuilder};
 #[cfg(unix)]
@@ -29,8 +30,7 @@ pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: Option<String>,
-    #[serde(default)]
-    permissions: Permissions,
+    permissions: Option<Permissions>,
 }
 
 impl ExtensionManifest {
@@ -67,8 +67,11 @@ impl Extension {
         self.manifest.entry_point()
     }
 
-    pub fn permissions(&self) -> &Permissions {
-        &self.manifest.permissions
+    pub fn permissions(&self) -> Cow<'_, Permissions> {
+        match self.manifest.permissions.as_ref() {
+            Some(permissions) => Cow::Borrowed(permissions),
+            None => Cow::Owned(Permissions::default()),
+        }
     }
 
     /// Install the extension in the default path.
