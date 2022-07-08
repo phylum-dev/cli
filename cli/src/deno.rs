@@ -1,5 +1,6 @@
 //! Deno runtime for extensions.
 
+use std::borrow::Borrow;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::{
     self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
 };
-use deno_runtime::permissions::Permissions;
+use deno_runtime::permissions::{Permissions, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
 use tokio::fs;
@@ -71,7 +72,8 @@ pub async fn run(
     };
 
     // Build permissions object from extension's requested permissions.
-    let permissions = Permissions::from_options(&extension.permissions().try_into()?);
+    let permissions_options = PermissionsOptions::try_from(extension.permissions().borrow())?;
+    let permissions = Permissions::from_options(&permissions_options);
 
     // Initialize Deno runtime.
     let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
