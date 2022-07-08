@@ -1,4 +1,4 @@
-use test_utils::{create_lockfile, create_project, TestCli};
+use crate::common::{create_lockfile, create_project, TestCli};
 
 /// Test Phylum API functions.
 #[tokio::test]

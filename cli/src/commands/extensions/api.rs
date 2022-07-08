@@ -230,7 +230,7 @@ async fn parse_lockfile(
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {
         Some(lockfile_type) => lockfile_type,
-        None => return Ok(parse::get_packages_from_lockfile(&Path::new(&lockfile))?.0),
+        None => return Ok(parse::get_packages_from_lockfile(Path::new(&lockfile))?.0),
     };
 
     // Attempt to parse as requested lockfile type.

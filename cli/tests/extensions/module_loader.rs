@@ -11,8 +11,7 @@
 //
 // These tests are based on the fixtures under
 // `fixtures/module-import-extension`.
-use test_utils::*;
-
+use crate::common::*;
 use crate::*;
 
 // The fixture for this test requires one local .ts file, one local .js file,

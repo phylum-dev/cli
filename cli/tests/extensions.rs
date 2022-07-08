@@ -7,10 +7,16 @@ use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
-use test_utils::*;
 
+#[path = "common/mod.rs"]
+mod common;
+
+#[path = "extensions/module_loader.rs"]
 mod module_loader;
+#[path = "extensions/permissions.rs"]
 mod permissions;
+
+use common::*;
 
 lazy_static! {
     // Lock this mutex when setting an environment variable, for the lifetime of function calls
