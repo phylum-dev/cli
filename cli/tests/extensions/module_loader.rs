@@ -12,7 +12,7 @@
 // These tests are based on the fixtures under
 // `fixtures/module-import-extension`.
 use crate::common::*;
-use crate::*;
+use crate::extensions::fixtures_path;
 
 // The fixture for this test requires one local .ts file, one local .js file,
 // and one file from Deno's standard library.

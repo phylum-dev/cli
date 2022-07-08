@@ -1,5 +1,5 @@
 use crate::common::*;
-use crate::*;
+use crate::extensions::fixtures_path;
 
 #[test]
 fn permission_dialog_is_shown_without_yes_flag() {

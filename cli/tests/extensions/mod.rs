@@ -1,5 +1,3 @@
-#![cfg(feature = "extensions")]
-
 use std::convert::TryFrom;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -8,15 +6,10 @@ use std::sync::Mutex;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
 
-#[path = "common/mod.rs"]
-pub mod common;
+use crate::common::*;
 
-#[path = "extensions/module_loader.rs"]
 mod module_loader;
-#[path = "extensions/permissions.rs"]
 mod permissions;
-
-use common::*;
 
 lazy_static! {
     // Lock this mutex when setting an environment variable, for the lifetime of function calls
