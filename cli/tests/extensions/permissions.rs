@@ -40,7 +40,7 @@ fn incorrect_read_permission_unsuccessful_run() {
     test_cli
         .run(&["incorrect-read-perms"])
         .failure()
-        .stderr(predicate::str::contains("Error: Requires read access"));
+        .stderr("❗ Error: Execution failed caused by: Requires read access to \"/tmp/passwd\"\n");
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn incorrect_net_permission_unsuccessful_run() {
     test_cli
         .run(&["incorrect-net-perms"])
         .failure()
-        .stderr(predicate::str::contains(r#"Error: Requires net access to "phylum.io""#));
+        .stderr("❗ Error: Execution failed caused by: Requires net access to \"phylum.io\"\n");
 }
 
 #[test]
