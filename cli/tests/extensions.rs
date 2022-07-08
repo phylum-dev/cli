@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
 
 #[path = "common/mod.rs"]
-mod common;
+pub mod common;
 
 #[path = "extensions/module_loader.rs"]
 mod module_loader;
