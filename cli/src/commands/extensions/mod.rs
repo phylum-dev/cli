@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fmt::Display;
@@ -126,7 +127,8 @@ async fn handle_install_extension(path: &str, accept_permissions: bool) -> Comma
 
     // Attempt to construct a `PermissionsOptions` from the `Permissions`
     // object in order to validate the permissions.
-    let _ = PermissionsOptions::try_from(extension.permissions())?;
+    let permissions = extension.permissions();
+    let _ = PermissionsOptions::try_from(permissions.borrow())?;
 
     if !accept_permissions && !extension.permissions().is_allow_none() {
         ask_permissions(&extension)?;
@@ -214,7 +216,7 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
         .with_context(|| format!("Unable to create all directories in {path:?}"))?;
 
     // Write manifest file.
-    let manifest = ExtensionManifest::new(name.into(), "main.ts".into(), None, None);
+    let manifest = ExtensionManifest::new(name);
     let manifest_path = extension_path.join("PhylumExt.toml");
     fs::write(manifest_path, toml::to_string(&manifest)?.as_bytes())?;
 
