@@ -6,8 +6,15 @@ use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// Resource permissions.
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
+#[serde(transparent)]
 pub struct Permission(Option<Vec<String>>);
+
+impl From<Option<Vec<String>>> for Permission {
+    fn from(raw: Option<Vec<String>>) -> Self {
+        Permission(raw)
+    }
+}
 
 impl Permission {
     // XXX In Deno, `Some(vec![])` actually means "allow all". We never
@@ -105,11 +112,11 @@ mod tests {
     #[test]
     fn empty_vecs_are_turned_into_none() {
         let permissions = Permissions {
-            read: Some(vec![]),
-            write: Some(vec![]),
-            env: Some(vec![]),
-            run: Some(vec![]),
-            net: Some(vec![]),
+            read: Permission(Some(vec![])),
+            write: Permission(Some(vec![])),
+            env: Permission(Some(vec![])),
+            run: Permission(Some(vec![])),
+            net: Permission(Some(vec![])),
         };
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
@@ -128,7 +135,7 @@ mod tests {
 
         let permissions = toml::from_str::<Permissions>(valid_toml).unwrap();
 
-        assert_eq!(permissions.net, Some(vec!["api.phylum.io".into()]));
+        assert_eq!(permissions.net, Permission(Some(vec!["api.phylum.io".into()])));
     }
 
     #[test]
