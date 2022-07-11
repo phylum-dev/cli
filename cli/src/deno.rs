@@ -1,6 +1,5 @@
 //! Deno runtime for extensions.
 
-use std::borrow::Borrow;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -14,9 +13,11 @@ use deno_runtime::deno_core::{
 use deno_runtime::permissions::{Permissions, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
+use futures::future::BoxFuture;
 use tokio::fs;
 use url::{Host, Url};
 
+use crate::api::PhylumApi;
 use crate::commands::extensions::api;
 use crate::commands::extensions::extension::{self, ExtensionState};
 
@@ -25,7 +26,7 @@ const EXTENSION_API: &str = include_str!("./extension_api.ts");
 
 /// Execute Phylum extension.
 pub async fn run(
-    extension_state: ExtensionState,
+    api: BoxFuture<'static, Result<PhylumApi>>,
     extension: &extension::Extension,
     args: Vec<String>,
 ) -> Result<()> {
@@ -72,14 +73,17 @@ pub async fn run(
     };
 
     // Build permissions object from extension's requested permissions.
-    let permissions_options = PermissionsOptions::try_from(extension.permissions().borrow())?;
-    let permissions = Permissions::from_options(&permissions_options);
+    let permissions = extension.permissions().into_owned();
+    let permissions_options = PermissionsOptions::try_from(&permissions)?;
+    let worker_permissions = Permissions::from_options(&permissions_options);
 
     // Initialize Deno runtime.
-    let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
+    let mut worker =
+        MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
 
     // Export shared state.
-    worker.js_runtime.op_state().borrow_mut().put(extension_state);
+    let state = ExtensionState::new(api, permissions);
+    worker.js_runtime.op_state().borrow_mut().put(state);
 
     // Execute extension code.
     worker.execute_main_module(&main_module).await?;

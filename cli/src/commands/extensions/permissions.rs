@@ -1,29 +1,60 @@
 use std::path::PathBuf;
 
+use anyhow::{anyhow, Result};
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
+/// Resource permissions.
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
+#[serde(transparent)]
+pub struct Permission(Option<Vec<String>>);
+
+impl From<Option<Vec<String>>> for Permission {
+    fn from(raw: Option<Vec<String>>) -> Self {
+        Permission(raw)
+    }
+}
+
+impl Permission {
+    // XXX In Deno, `Some(vec![])` actually means "allow all". We never
+    // want that, so we manually convert those instances into `None` in the
+    // getter methods below. We need to make sure to always go through these when
+    // constructing a `PermissionsOptions` object.
+    pub fn get(&self) -> Option<&Vec<String>> {
+        self.0.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
+    }
+
+    /// Check if access to resource is permitted.
+    pub fn validate(&self, resource: &String, resource_type: &str) -> Result<()> {
+        if self.get().map_or(false, |allowed| allowed.contains(resource)) {
+            Ok(())
+        } else {
+            Err(anyhow!("Requires {resource_type} access to {resource:?}"))
+        }
+    }
+}
+
 #[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
-    read: Option<Vec<String>>,
-    write: Option<Vec<String>>,
-    env: Option<Vec<String>>,
-    run: Option<Vec<String>>,
+    pub read: Permission,
+    pub write: Permission,
+    pub env: Permission,
+    pub run: Permission,
     #[serde(default, deserialize_with = "net_permission")]
-    net: Option<Vec<String>>,
+    pub net: Permission,
 }
 
 /// Deserialize network permissions.
-fn net_permission<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
+fn net_permission<'de, D>(deserializer: D) -> Result<Permission, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let mut permissions = Option::<Vec<String>>::deserialize(deserializer)?;
+    let mut permission = Permission::deserialize(deserializer)?;
 
-    let net = match permissions.as_mut() {
+    let net = match permission.0.as_mut() {
         Some(net) => net,
-        None => return Ok(permissions),
+        None => return Ok(permission),
     };
 
     // Error out if URL contains scheme or path segments.
@@ -36,54 +67,30 @@ where
         }
     }
 
-    Ok(permissions)
+    Ok(permission)
 }
 
-// XXX In Deno, `Some(vec![])` actually means "allow all". We never
-// want that, so we manually convert those instances into `None` in the
-// getter methods below. We need to make sure to always go through these when
-// constructing a `PermissionsOptions` object.
 impl Permissions {
-    pub fn read(&self) -> Option<&Vec<String>> {
-        self.read.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
-    }
-
-    pub fn write(&self) -> Option<&Vec<String>> {
-        self.write.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
-    }
-
-    pub fn env(&self) -> Option<&Vec<String>> {
-        self.env.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
-    }
-
-    pub fn run(&self) -> Option<&Vec<String>> {
-        self.run.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
-    }
-
-    pub fn net(&self) -> Option<&Vec<String>> {
-        self.net.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
-    }
-
     pub fn is_allow_none(&self) -> bool {
-        self.read().is_none()
-            && self.write().is_none()
-            && self.env().is_none()
-            && self.run().is_none()
-            && self.net().is_none()
+        self.read.get().is_none()
+            && self.write.get().is_none()
+            && self.env.get().is_none()
+            && self.run.get().is_none()
+            && self.net.get().is_none()
     }
 }
 
 impl From<&Permissions> for PermissionsOptions {
     fn from(value: &Permissions) -> Self {
         let allow_read =
-            value.read().map(|read| read.iter().map(PathBuf::from).collect::<Vec<_>>());
+            value.read.get().map(|read| read.iter().map(PathBuf::from).collect::<Vec<_>>());
 
         let allow_write =
-            value.write().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
+            value.write.get().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
 
-        let allow_env = value.env().cloned();
-        let allow_net = value.net().cloned();
-        let allow_run = value.run().cloned();
+        let allow_env = value.env.get().cloned();
+        let allow_net = value.net.get().cloned();
+        let allow_run = value.run.get().cloned();
 
         PermissionsOptions {
             allow_read,
@@ -105,11 +112,11 @@ mod tests {
     #[test]
     fn empty_vecs_are_turned_into_none() {
         let permissions = Permissions {
-            read: Some(vec![]),
-            write: Some(vec![]),
-            env: Some(vec![]),
-            run: Some(vec![]),
-            net: Some(vec![]),
+            read: Permission(Some(vec![])),
+            write: Permission(Some(vec![])),
+            env: Permission(Some(vec![])),
+            run: Permission(Some(vec![])),
+            net: Permission(Some(vec![])),
         };
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
@@ -128,7 +135,7 @@ mod tests {
 
         let permissions = toml::from_str::<Permissions>(valid_toml).unwrap();
 
-        assert_eq!(permissions.net, Some(vec!["api.phylum.io".into()]));
+        assert_eq!(permissions.net, Permission(Some(vec!["api.phylum.io".into()])));
     }
 
     #[test]

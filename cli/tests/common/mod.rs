@@ -1,10 +1,16 @@
 use std::ffi::OsStr;
+#[cfg(feature = "extensions")]
+use std::fs::File;
+#[cfg(feature = "extensions")]
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 pub use assert_cmd::assert::Assert;
 pub use assert_cmd::Command;
 use phylum_cli::api::{PhylumApi, PhylumApiError, ResponseError};
+#[cfg(feature = "extensions")]
+use phylum_cli::commands::extensions::permissions::Permissions;
 use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 use phylum_types::types::auth::RefreshToken;
 pub use predicates::prelude::*;
@@ -92,8 +98,9 @@ impl TestCli {
         self.run(&["extension", "install", "-y", &path.to_string_lossy()])
     }
 
-    pub fn create_extension(&'_ self, code: &str) -> TestExtension<'_> {
-        TestExtension::new(self, code)
+    #[cfg(feature = "extensions")]
+    pub fn extension<'a>(&'a self, code: &'a str) -> TestExtensionBuilder<'a> {
+        TestExtensionBuilder::new(self, code)
     }
 
     pub fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
@@ -114,13 +121,38 @@ impl TestCli {
     }
 }
 
+#[cfg(feature = "extensions")]
+pub struct TestExtensionBuilder<'a> {
+    permissions: Permissions,
+    test_cli: &'a TestCli,
+    code: &'a str,
+}
+
+#[cfg(feature = "extensions")]
+impl<'a> TestExtensionBuilder<'a> {
+    fn new(test_cli: &'a TestCli, code: &'a str) -> Self {
+        Self { test_cli, code, permissions: Default::default() }
+    }
+
+    pub fn build(&mut self) -> TestExtension<'a> {
+        TestExtension::new(self.test_cli, self.code, &self.permissions)
+    }
+
+    pub fn with_permissions(&mut self, permissions: Permissions) -> &mut Self {
+        self.permissions = permissions;
+        self
+    }
+}
+
+#[cfg(feature = "extensions")]
 pub struct TestExtension<'a> {
     test_cli: &'a TestCli,
     extension_path: PathBuf,
 }
 
+#[cfg(feature = "extensions")]
 impl<'a> TestExtension<'a> {
-    fn new(test_cli: &'a TestCli, code: &str) -> Self {
+    fn new(test_cli: &'a TestCli, code: &str, permissions: &Permissions) -> Self {
         let extension_path = test_cli.temp_path().to_owned().join("test-ext");
 
         // Create skeleton extension.
@@ -131,8 +163,14 @@ impl<'a> TestExtension<'a> {
         fs::write(main, format!("import {{ PhylumApi }} from 'phylum';\n{code}").as_bytes())
             .unwrap();
 
+        // Overwrite permissions.
+        let manifest_path = extension_path.join("PhylumExt.toml");
+        let mut manifest = File::options().append(true).open(&manifest_path).unwrap();
+        let permissions_str = toml::to_string(&permissions).unwrap();
+        write!(manifest, "[permissions]\n{permissions_str}").unwrap();
+
         // Install extension.
-        test_cli.run(&["extension", "install", &extension_path.to_string_lossy()]);
+        test_cli.run(&["extension", "install", "-y", &extension_path.to_string_lossy()]);
 
         Self { test_cli, extension_path }
     }
@@ -143,6 +181,7 @@ impl<'a> TestExtension<'a> {
     }
 }
 
+#[cfg(feature = "extensions")]
 impl<'a> Drop for TestExtension<'a> {
     fn drop(&mut self) {
         self.test_cli.run(&["extension", "uninstall", "test-ext"]).success();
