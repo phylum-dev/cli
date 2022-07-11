@@ -1,7 +1,7 @@
 #[path = "common/mod.rs"]
-mod common;
+pub mod common;
 
-#[cfg(feature = "end-to-end-tests")]
+#[cfg(all(feature = "end-to-end-tests", feature = "extensions"))]
 mod end_to_end;
 
 #[cfg(feature = "extensions")]
