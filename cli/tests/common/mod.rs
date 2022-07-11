@@ -11,7 +11,7 @@ pub use predicates::prelude::*;
 use reqwest::StatusCode;
 use tempfile::TempDir;
 
-const HEADER: &str = "import { PhylumApi } from 'phylum';";
+const TS_PHYLUM_IMPORT: &str = "import { PhylumApi } from 'phylum';";
 const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
@@ -129,7 +129,7 @@ impl<'a> TestExtension<'a> {
 
         // Overwrite skeleton code.
         let main = extension_path.join("main.ts");
-        fs::write(main, format!("{HEADER}\n{code}").as_bytes()).unwrap();
+        fs::write(main, format!("{TS_PHYLUM_IMPORT}\n{code}").as_bytes()).unwrap();
 
         // Install extension.
         test_cli.run(&["extension", "install", &extension_path.to_string_lossy()]);
