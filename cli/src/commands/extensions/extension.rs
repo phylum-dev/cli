@@ -157,7 +157,7 @@ impl Extension {
         log::set_max_level(LevelFilter::Off);
 
         // Execute Deno extension.
-        let err = match deno::run(ExtensionState::from(api), self, args).await {
+        let err = match deno::run(api, self, args).await {
             Ok(()) => return Ok(ExitCode::Ok.into()),
             Err(err) => err,
         };

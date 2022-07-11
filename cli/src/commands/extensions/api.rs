@@ -20,6 +20,7 @@ use tokio::sync::Mutex;
 
 use crate::api::PhylumApi;
 use crate::auth::UserInfo;
+use crate::commands::extensions::permissions::Permissions;
 use crate::commands::parse::{self, get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 
@@ -49,24 +50,26 @@ impl<T: Unpin> OnceFuture<T> {
     }
 }
 
-/// Opaquely encapsulates the extension state.
-pub struct ExtensionState(Mutex<OnceFuture<Result<Rc<PhylumApi>>>>);
-
-impl From<BoxFuture<'static, Result<PhylumApi>>> for ExtensionState {
-    fn from(extension_state_future: BoxFuture<'static, Result<PhylumApi>>) -> Self {
-        Self(Mutex::new(OnceFuture::new(Box::pin(async {
-            extension_state_future.await.map(Rc::new)
-        }))))
-    }
+/// Extension state the APIs have access to.
+pub struct ExtensionState {
+    api: Mutex<OnceFuture<Result<Rc<PhylumApi>>>>,
+    permissions: Permissions,
 }
 
 impl ExtensionState {
-    async fn get(&self) -> Result<Rc<PhylumApi>> {
+    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>, permissions: Permissions) -> Self {
+        Self {
+            permissions,
+            api: Mutex::new(OnceFuture::new(Box::pin(async { api.await.map(Rc::new) }))),
+        }
+    }
+
+    async fn api(&self) -> Result<Rc<PhylumApi>> {
         // The mutex guard is only useful for synchronizing internally mutable access to
         // the encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained,
         // the guard is dropped: subsequent awaits on `PhylumApi` methods are
         // not synchronized via this mutex, and can happen concurrently.
-        let mut guard = self.0.lock().await;
+        let mut guard = self.api.lock().await;
         Ok(Rc::clone(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?))
     }
 }
@@ -75,17 +78,17 @@ impl ExtensionState {
 ///
 /// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an
 /// immutable borrow, and then cloned via the `ExtensionState::get` method.
-struct ExtensionStateRef(Rc<PhylumApi>);
+struct ApiRef(Rc<PhylumApi>);
 
-impl ExtensionStateRef {
+impl ApiRef {
     // This can not be implemented as the `From<T>` trait because of `async`.
-    async fn from(state: Rc<RefCell<OpState>>) -> Result<ExtensionStateRef> {
+    async fn from(state: Rc<RefCell<OpState>>) -> Result<Self> {
         let state_ref = Pin::new(state.borrow());
-        Ok(ExtensionStateRef(state_ref.borrow::<ExtensionState>().get().await?))
+        Ok(Self(state_ref.borrow::<ExtensionState>().api().await?))
     }
 }
 
-impl Deref for ExtensionStateRef {
+impl Deref for ApiRef {
     type Target = PhylumApi;
 
     fn deref(&self) -> &Self::Target {
@@ -107,7 +110,13 @@ async fn analyze(
     project: Option<String>,
     group: Option<String>,
 ) -> Result<ProjectId> {
-    let api = ExtensionStateRef::from(state).await?;
+    // Ensure extension has file read-access.
+    let op_state = state.borrow();
+    let extension_state = op_state.borrow::<ExtensionState>();
+    extension_state.permissions.read.validate(&lockfile, "read")?;
+    drop(op_state);
+
+    let api = ApiRef::from(state).await?;
 
     let (packages, request_type) = get_packages_from_lockfile(Path::new(&lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
@@ -134,7 +143,7 @@ async fn analyze(
 /// Equivalent to `phylum auth status`.
 #[op]
 async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
 
     api.user_info().await.map_err(Error::from)
 }
@@ -144,7 +153,7 @@ async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
 #[op]
 async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Result<AccessToken> {
     let refresh_token = get_refresh_token::call(state.clone()).await?;
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
     let config = api.config();
 
     let access_token =
@@ -158,7 +167,7 @@ async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Re
 /// Equivalent to `phylum auth token`.
 #[op]
 async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
     let config = api.config();
 
     config
@@ -175,7 +184,7 @@ async fn get_job_status(
     state: Rc<RefCell<OpState>>,
     job_id: String,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
 
     let job_id = JobId::from_str(&job_id)?;
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
@@ -188,7 +197,7 @@ async fn get_project_details(
     state: Rc<RefCell<OpState>>,
     project_name: Option<String>,
 ) -> Result<ProjectDetailsResponse> {
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
 
     let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
         get_current_project()
@@ -207,7 +216,7 @@ async fn get_package_details(
     version: String,
     package_type: String,
 ) -> Result<Package> {
-    let api = ExtensionStateRef::from(state).await?;
+    let api = ApiRef::from(state).await?;
 
     let package_type = PackageType::from_str(&package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
@@ -224,9 +233,15 @@ async fn get_package_details(
 /// Equivalent to `phylum parse`.
 #[op]
 async fn parse_lockfile(
+    state: Rc<RefCell<OpState>>,
     lockfile: String,
     lockfile_type: Option<String>,
 ) -> Result<Vec<PackageDescriptor>> {
+    // Ensure extension has file read-access.
+    let op_state = state.borrow();
+    let state = op_state.borrow::<ExtensionState>();
+    state.permissions.read.validate(&lockfile, "read")?;
+
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {
         Some(lockfile_type) => lockfile_type,

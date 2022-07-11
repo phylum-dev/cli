@@ -167,10 +167,10 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
         }
     }
 
-    print_permissions_list("Read", "from the following paths:", permissions.read());
-    print_permissions_list("Write", "to the following paths:", permissions.write());
-    print_permissions_list("Run", "the following commands:", permissions.run());
-    print_permissions_list("Access", "the following domains:", permissions.net());
+    print_permissions_list("Read", "from the following paths:", permissions.read.get());
+    print_permissions_list("Write", "to the following paths:", permissions.write.get());
+    print_permissions_list("Run", "the following commands:", permissions.run.get());
+    print_permissions_list("Access", "the following domains:", permissions.net.get());
 
     if !Confirm::new().with_prompt("\nDo you accept?").default(false).interact()? {
         Err(anyhow!("permissions not granted, aborting"))
