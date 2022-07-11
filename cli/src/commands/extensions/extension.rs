@@ -6,6 +6,7 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
+use deno_runtime::deno_core::error::JsError;
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use log::{warn, LevelFilter};
@@ -155,9 +156,22 @@ impl Extension {
         // Disable logging for running extensions.
         log::set_max_level(LevelFilter::Off);
 
-        deno::run(ExtensionState::from(api), self, args).await?;
+        // Execute Deno extension.
+        let err = match deno::run(ExtensionState::from(api), self, args).await {
+            Ok(()) => return Ok(ExitCode::Ok.into()),
+            Err(err) => err,
+        };
 
-        Ok(ExitCode::Ok.into())
+        // Handle JS runtime errors.
+        let js_error = err.downcast_ref::<JsError>();
+        if let Some((message, _)) = js_error
+            .and_then(|err| err.message.as_ref())
+            .and_then(|message| message.split_once(", run again with the --allow"))
+        {
+            Err(anyhow!(message.to_owned()))
+        } else {
+            Err(err)
+        }
     }
 }
 

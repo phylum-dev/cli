@@ -213,13 +213,8 @@ When replacing the `console.log` with this function call and executing our
 extension, you'll run into the following error:
 
 ```
-❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt", run again with the --allow-write flag
+❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt"
 ```
-
-The error message comes directly from Deno and is misleading (see issue [#520]).
-The `--allow-write` flag is **not** supported for Phylum's CLI extensions.
-
-[#520]: https://github.com/phylum-dev/cli/issues/520
 
 This is exactly what should have happened, since Deno's sandbox doesn't allow us
 to interact with the outside world unless we've been granted permission to do
