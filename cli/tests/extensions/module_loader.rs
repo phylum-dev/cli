@@ -11,83 +11,50 @@
 //
 // These tests are based on the fixtures under
 // `fixtures/module-import-extension`.
-use super::*;
+use crate::common::*;
+use crate::extensions::fixtures_path;
 
 // The fixture for this test requires one local .ts file, one local .js file,
 // and one file from Deno's standard library.
 #[test]
 fn good_module_loads_successfully() {
-    let tempdir = TempDir::new().unwrap();
+    let test_cli = TestCli::builder().build();
 
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("extension")
-        .arg("install")
-        .arg(fixtures_path().join("module-import").join("successful"))
-        .assert()
-        .success();
+    test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
 
-    let cmd = Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("module-import-success")
-        .assert()
-        .success();
-
-    let stdout = std::str::from_utf8(&cmd.get_output().stdout).unwrap();
-    assert!(stdout.contains("I should contain 12345"));
+    test_cli
+        .run(&["module-import-success"])
+        .success()
+        .stdout(predicate::str::contains("I should contain 12345"));
 }
 
 // The fixture for this test attempts a directory traversal.
 #[test]
 fn module_with_traversal_fails_to_load() {
-    let tempdir = TempDir::new().unwrap();
+    let test_cli = TestCli::builder().build();
 
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("extension")
-        .arg("install")
-        .arg(fixtures_path().join("module-import").join("fail-local"))
-        .assert()
-        .success();
+    test_cli.install_extension(&fixtures_path().join("module-import").join("fail-local")).success();
 
-    let cmd = Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("module-import-fail-local")
-        .assert()
-        .failure();
-
-    let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    assert!(stderr.contains("importing from paths outside"));
+    test_cli
+        .run(&["module-import-fail-local"])
+        .failure()
+        .stderr(predicate::str::contains("importing from paths outside"));
 }
 
 // The fixture for this test attempts to load a module from a non-`deno.land`
 // URL.
 #[test]
 fn module_with_non_allowed_url_fails_to_load() {
-    let tempdir = TempDir::new().unwrap();
+    let test_cli = TestCli::builder().build();
 
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("extension")
-        .arg("install")
-        .arg(fixtures_path().join("module-import").join("fail-remote"))
-        .assert()
+    test_cli
+        .install_extension(&fixtures_path().join("module-import").join("fail-remote"))
         .success();
 
-    let cmd = Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("module-import-fail-remote")
-        .assert()
-        .failure();
-
-    let stderr = std::str::from_utf8(&cmd.get_output().stderr).unwrap();
-    assert!(stderr.contains("importing from domains other than"));
+    test_cli
+        .run(&["module-import-fail-remote"])
+        .failure()
+        .stderr(predicate::str::contains("importing from domains other than"));
 }
 
 // A symlink is directly created during the test, as no symlinks are committed
@@ -95,25 +62,17 @@ fn module_with_non_allowed_url_fails_to_load() {
 #[cfg(unix)]
 #[test]
 fn symlinks_are_rejected() {
-    let tempdir = TempDir::new().unwrap();
-    let ext_path = tempdir.path().join("phylum").join("extensions").join("symlink");
+    let test_cli = TestCli::builder().build();
+    let ext_path =
+        test_cli.temp_path().to_owned().join("phylum").join("extensions").join("symlink");
 
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .args(&["extension", "install"])
-        .arg(fixtures_path().join("symlink"))
-        .assert()
-        .success();
+    test_cli.install_extension(&fixtures_path().join("symlink")).success();
 
     std::os::unix::fs::symlink(ext_path.join("symlink_me.ts"), ext_path.join("symlink.ts"))
         .unwrap();
 
-    Command::cargo_bin("phylum")
-        .unwrap()
-        .env("XDG_DATA_HOME", tempdir.path())
-        .arg("symlink")
-        .assert()
+    test_cli
+        .run(&["symlink"])
         .failure()
         .stderr(predicate::str::contains("importing from symlinks is not allowed"));
 }

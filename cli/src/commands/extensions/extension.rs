@@ -205,7 +205,7 @@ impl TryFrom<PathBuf> for Extension {
 
 /// Check extension name for validity.
 pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
-    if EXTENSION_NAME_RE.is_match(&name) {
+    if EXTENSION_NAME_RE.is_match(name) {
         Ok(())
     } else {
         Err(anyhow!(

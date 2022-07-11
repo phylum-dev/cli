@@ -1,51 +1,9 @@
-use std::ffi::OsStr;
-
-use assert_cmd::assert::Assert;
-use predicates::prelude::*;
-
-use super::*;
-
-struct TestCli {
-    tempdir: TempDir,
-    cwd: Option<PathBuf>,
-}
-
-impl Default for TestCli {
-    fn default() -> Self {
-        Self { tempdir: TempDir::new().unwrap(), cwd: None }
-    }
-}
-
-impl TestCli {
-    fn new() -> Self {
-        Default::default()
-    }
-
-    fn cwd(mut self, cwd: PathBuf) -> Self {
-        self.cwd = Some(cwd);
-        self
-    }
-
-    fn install_extension(&self, path: &Path) -> Assert {
-        self.run(&["extension", "install", "-y", &path.to_string_lossy()])
-    }
-
-    fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
-        let mut cmd = Command::cargo_bin("phylum").unwrap();
-
-        cmd.env("XDG_DATA_HOME", self.tempdir.path()).args(args);
-
-        if let Some(cwd) = self.cwd.as_ref() {
-            cmd.current_dir(cwd);
-        }
-
-        cmd.assert()
-    }
-}
+use crate::common::*;
+use crate::extensions::fixtures_path;
 
 #[test]
 fn permission_dialog_is_shown_without_yes_flag() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .run(&[
@@ -59,7 +17,7 @@ fn permission_dialog_is_shown_without_yes_flag() {
 
 #[test]
 fn correct_read_permission_successful_install_and_run() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .install_extension(&fixtures_path().join("permissions").join("correct-read-perms"))
@@ -73,7 +31,7 @@ fn correct_read_permission_successful_install_and_run() {
 
 #[test]
 fn incorrect_read_permission_unsuccessful_run() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .install_extension(&fixtures_path().join("permissions").join("incorrect-read-perms"))
@@ -87,7 +45,7 @@ fn incorrect_read_permission_unsuccessful_run() {
 
 #[test]
 fn correct_net_permission_successful_install_and_run() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .install_extension(&fixtures_path().join("permissions").join("correct-net-perms"))
@@ -101,7 +59,7 @@ fn correct_net_permission_successful_install_and_run() {
 
 #[test]
 fn incorrect_net_permission_unsuccessful_run() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .install_extension(&fixtures_path().join("permissions").join("incorrect-net-perms"))
@@ -115,7 +73,7 @@ fn incorrect_net_permission_unsuccessful_run() {
 
 #[test]
 fn correct_run_permission_successful_install_and_run() {
-    let test_cli = TestCli::new().cwd(fixtures_path().join("permissions"));
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
         .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
