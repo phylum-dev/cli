@@ -146,11 +146,11 @@ where
             format!("{} UTC", date_time),
         ),
         ("Num Deps", resp.packages.len().to_string(), "Job ID", resp.job_id.to_string()),
-        ("User ID", resp.user_email.to_string(), "Ecosystem", ecosystem.render()),
     ];
-    let summary = details.iter().fold("".to_string(), |acc, x| {
+    let mut summary = details.iter().fold("".to_string(), |acc, x| {
         format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
     });
+    summary = format!("{}\n{:>16}: {}", summary, "Ecosystem", ecosystem.render());
 
     let status = if resp.num_incomplete > 0 {
         format!("{:>16}: {}", "Status", Color::Yellow.paint("INCOMPLETE"))
