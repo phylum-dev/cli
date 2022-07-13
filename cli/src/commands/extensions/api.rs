@@ -110,11 +110,15 @@ async fn analyze(
     project: Option<String>,
     group: Option<String>,
 ) -> Result<ProjectId> {
-    // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let extension_state = op_state.borrow::<ExtensionState>();
-    extension_state.permissions.read.validate(&lockfile, "read")?;
-    drop(op_state);
+    // The block ensures that `op_state` is not held across an await. This could
+    // also be handled with `drop(op_state);`, but that leads to a false
+    // positive clippy lint (see rust-lang/rust-clippy#6353)
+    {
+        // Ensure extension has file read-access.
+        let op_state = state.borrow();
+        let extension_state = op_state.borrow::<ExtensionState>();
+        extension_state.permissions.read.validate(&lockfile, "read")?;
+    }
 
     let api = ApiRef::from(state).await?;
 
@@ -237,10 +241,15 @@ async fn parse_lockfile(
     lockfile: String,
     lockfile_type: Option<String>,
 ) -> Result<Vec<PackageDescriptor>> {
-    // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let state = op_state.borrow::<ExtensionState>();
-    state.permissions.read.validate(&lockfile, "read")?;
+    // The block ensures that `op_state` is not held across an await. This could
+    // also be handled with `drop(op_state);`, but that leads to a false
+    // positive clippy lint (see rust-lang/rust-clippy#6353)
+    {
+        // Ensure extension has file read-access.
+        let op_state = state.borrow();
+        let state = op_state.borrow::<ExtensionState>();
+        state.permissions.read.validate(&lockfile, "read")?;
+    }
 
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {
