@@ -1,7 +1,6 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::ops::Deref;
 use std::path::Path;
-use std::pin::Pin;
 use std::rc::Rc;
 use std::str::FromStr;
 
@@ -50,6 +49,23 @@ impl<T: Unpin> OnceFuture<T> {
     }
 }
 
+// XXX: Holding a mutable reference to any field inside `ExtensionState` across
+// await points, will cause issues when that field is accessed from another
+// extension API method.
+//
+// Accessing the `ExtensionState` is only safe through `ExtensionStateRef`,
+// since that ensures that `OpState` is not accessed through a mutable reference
+// which could be held across await points.
+//
+// When making a field of `ExtensionState` mutably accessible, the mutation
+// should occur internally through SYNCHRONOUS methods (e.g. `with_x(|x| ...)`),
+// so holding a mutable reference is impossible.
+//
+// If a mutable reference MUST be held across await points, like `PhylumApi`,
+// its synchronization should force blocking through an async-safe `Mutex`. This
+// will stall all extension API methods trying to access this field, so ensure
+// the blocking duration is minimal.
+//
 /// Extension state the APIs have access to.
 pub struct ExtensionState {
     api: Mutex<OnceFuture<Result<Rc<PhylumApi>>>>,
@@ -74,22 +90,20 @@ impl ExtensionState {
     }
 }
 
-/// Wraps a shared, counted reference to the `PhylumApi` object.
+/// Extension state reference.
 ///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an
-/// immutable borrow, and then cloned via the `ExtensionState::get` method.
-struct ApiRef(Rc<PhylumApi>);
+/// This type allows easily getting an immutable reference to the extension
+/// state stored in deno's [`OpState`].
+struct ExtensionStateRef<'a>(Ref<'a, ExtensionState>);
 
-impl ApiRef {
-    // This can not be implemented as the `From<T>` trait because of `async`.
-    async fn from(state: Rc<RefCell<OpState>>) -> Result<Self> {
-        let state_ref = Pin::new(state.borrow());
-        Ok(Self(state_ref.borrow::<ExtensionState>().api().await?))
+impl<'a> ExtensionStateRef<'a> {
+    fn from_op(op_state: &'a Rc<RefCell<OpState>>) -> Self {
+        Self(Ref::map(op_state.borrow(), |op_state| op_state.borrow::<ExtensionState>()))
     }
 }
 
-impl Deref for ApiRef {
-    type Target = PhylumApi;
+impl<'a> Deref for ExtensionStateRef<'a> {
+    type Target = ExtensionState;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -105,18 +119,16 @@ impl Deref for ApiRef {
 /// Equivalent to `phylum analyze`.
 #[op]
 async fn analyze(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     project: Option<String>,
     group: Option<String>,
 ) -> Result<ProjectId> {
     // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let extension_state = op_state.borrow::<ExtensionState>();
-    extension_state.permissions.read.validate(&lockfile, "read")?;
-    drop(op_state);
+    let state = ExtensionStateRef::from_op(&op_state);
+    state.permissions.read.validate(&lockfile, "read")?;
 
-    let api = ApiRef::from(state).await?;
+    let api = state.api().await?;
 
     let (packages, request_type) = get_packages_from_lockfile(Path::new(&lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
@@ -142,8 +154,9 @@ async fn analyze(
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
 #[op]
-async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
-    let api = ApiRef::from(state).await?;
+async fn get_user_info(op_state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
 
     api.user_info().await.map_err(Error::from)
 }
@@ -151,9 +164,14 @@ async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
 #[op]
-async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Result<AccessToken> {
-    let refresh_token = get_refresh_token::call(state.clone()).await?;
-    let api = ApiRef::from(state).await?;
+async fn get_access_token(
+    op_state: Rc<RefCell<OpState>>,
+    ignore_certs: bool,
+) -> Result<AccessToken> {
+    let refresh_token = get_refresh_token::call(op_state.clone()).await?;
+
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
     let config = api.config();
 
     let access_token =
@@ -166,8 +184,9 @@ async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Re
 /// Retrieve the refresh token.
 /// Equivalent to `phylum auth token`.
 #[op]
-async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
-    let api = ApiRef::from(state).await?;
+async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
     let config = api.config();
 
     config
@@ -181,10 +200,11 @@ async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> 
 /// Equivalent to `phylum history job`.
 #[op]
 async fn get_job_status(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     job_id: String,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
 
     let job_id = JobId::from_str(&job_id)?;
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
@@ -194,10 +214,11 @@ async fn get_job_status(
 /// Equivalent to `phylum history project`.
 #[op]
 async fn get_project_details(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     project_name: Option<String>,
 ) -> Result<ProjectDetailsResponse> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
 
     let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
         get_current_project()
@@ -211,12 +232,13 @@ async fn get_project_details(
 /// Equivalent to `phylum package`.
 #[op]
 async fn get_package_details(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     name: String,
     version: String,
     package_type: String,
 ) -> Result<Package> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionStateRef::from_op(&op_state);
+    let api = state.api().await?;
 
     let package_type = PackageType::from_str(&package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
@@ -233,13 +255,12 @@ async fn get_package_details(
 /// Equivalent to `phylum parse`.
 #[op]
 async fn parse_lockfile(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     lockfile_type: Option<String>,
 ) -> Result<Vec<PackageDescriptor>> {
     // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let state = op_state.borrow::<ExtensionState>();
+    let state = ExtensionStateRef::from_op(&op_state);
     state.permissions.read.validate(&lockfile, "read")?;
 
     // Fallback to automatic parser without lockfile type specified.
