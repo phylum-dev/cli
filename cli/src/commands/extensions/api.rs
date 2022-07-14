@@ -33,7 +33,7 @@ async fn analyze(
 ) -> Result<ProjectId> {
     // Ensure extension has file read-access.
     let state = ExtensionState::from(op_state);
-    state.permissions().read.validate(&lockfile, "read")?;
+    state.permissions.read.validate(&lockfile, "read")?;
 
     let api = state.api().await?;
 
@@ -168,7 +168,7 @@ async fn parse_lockfile(
 ) -> Result<Vec<PackageDescriptor>> {
     // Ensure extension has file read-access.
     let state = ExtensionState::from(op_state);
-    state.permissions().read.validate(&lockfile, "read")?;
+    state.permissions.read.validate(&lockfile, "read")?;
 
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {

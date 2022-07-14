@@ -2,6 +2,7 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::ops::Deref;
 
 use anyhow::{anyhow, Result};
 use deno_runtime::deno_core::OpState;
@@ -55,9 +56,20 @@ impl<T: Unpin> OnceFuture<T> {
 // inner value only needs to be replaced.
 //
 /// Extension state the APIs have access to.
-struct ExtensionStateInner {
+pub struct ExtensionStateInner {
+    pub permissions: Permissions,
+
     api: Mutex<OnceFuture<Result<Rc<PhylumApi>>>>,
-    permissions: Permissions,
+}
+
+impl ExtensionStateInner {
+    pub async fn api(&self) -> Result<Rc<PhylumApi>> {
+        // This mutex guard is only useful for synchronizing mutable access while
+        // awaiting the PhylumApi future. Subsequent access to the API is
+        // immediate and will not hold the Mutex for extended periods of time.
+        let mut guard = self.api.lock().await;
+        Ok(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?.clone())
+    }
 }
 
 /// Extension state wrapper.
@@ -73,22 +85,18 @@ impl ExtensionState {
         let api = Mutex::new(OnceFuture::new(Box::pin(async { api.await.map(Rc::new) })));
         Self(Rc::new(ExtensionStateInner { permissions, api }))
     }
-
-    pub async fn api(&self) -> Result<Rc<PhylumApi>> {
-        // This mutex guard is only useful for synchronizing mutable access while
-        // awaiting the PhylumApi future. Subsequent access to the API is
-        // immediate and will not hold the Mutex for extended periods of time.
-        let mut guard = self.0.api.lock().await;
-        Ok(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?.clone())
-    }
-
-    pub fn permissions(&self) -> &Permissions {
-        &self.0.permissions
-    }
 }
 
 impl From<Rc<RefCell<OpState>>> for ExtensionState {
     fn from(op_state: Rc<RefCell<OpState>>) -> Self {
         op_state.borrow().borrow::<ExtensionState>().clone()
+    }
+}
+
+impl Deref for ExtensionState {
+    type Target = ExtensionStateInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
