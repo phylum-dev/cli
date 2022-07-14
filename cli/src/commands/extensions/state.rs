@@ -1,40 +1,37 @@
 //! Shared extension state.
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::cell::{Cell, RefCell};
 use std::ops::Deref;
+use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
 use deno_runtime::deno_core::OpState;
 use futures::future::BoxFuture;
-use tokio::sync::Mutex;
+use tokio::sync::OnceCell;
 
 use crate::commands::extensions::permissions::Permissions;
 use crate::commands::extensions::PhylumApi;
 
-/// Holds either an unawaited, boxed `Future`, or the result of awaiting the
-/// future.
-enum OnceFuture<T: Unpin> {
-    Future(BoxFuture<'static, T>),
-    Awaited(T),
+struct OnceFuture<T> {
+    future: Cell<Option<BoxFuture<'static, T>>>,
+    awaited: OnceCell<T>,
 }
 
 impl<T: Unpin> OnceFuture<T> {
     fn new(inner: BoxFuture<'static, T>) -> Self {
-        OnceFuture::Future(inner)
+        Self { future: Cell::new(Some(inner)), awaited: OnceCell::new() }
     }
 
-    async fn get(&mut self) -> &T {
-        match *self {
-            OnceFuture::Future(ref mut inner) => {
-                *self = OnceFuture::Awaited(inner.await);
-                match *self {
-                    OnceFuture::Future(..) => unreachable!(),
-                    OnceFuture::Awaited(ref mut inner) => inner,
-                }
-            },
-            OnceFuture::Awaited(ref mut inner) => inner,
-        }
+    /// # Panics
+    ///
+    /// This function is not cancellation safe and might panic when used with
+    /// [`tokio::select`].
+    ///
+    /// This is because `get_or_init`'s closure might get cancelled after
+    /// [`OnceFuture::future`] was cleared, leaving it empty the next time
+    /// someone attempts to initialize the [`OnceCell`].
+    async fn get(&self) -> &T {
+        self.awaited.get_or_init(|| self.future.take().unwrap()).await
     }
 }
 
@@ -59,16 +56,16 @@ impl<T: Unpin> OnceFuture<T> {
 pub struct ExtensionStateInner {
     pub permissions: Permissions,
 
-    api: Mutex<OnceFuture<Result<Rc<PhylumApi>>>>,
+    api: OnceFuture<Result<PhylumApi>>,
 }
 
 impl ExtensionStateInner {
-    pub async fn api(&self) -> Result<Rc<PhylumApi>> {
-        // This mutex guard is only useful for synchronizing mutable access while
-        // awaiting the PhylumApi future. Subsequent access to the API is
-        // immediate and will not hold the Mutex for extended periods of time.
-        let mut guard = self.api.lock().await;
-        Ok(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?.clone())
+    /// # Panics
+    ///
+    /// This function is not cancellation safe and might panic when used with
+    /// [`tokio::select`].
+    pub async fn api(&self) -> Result<&PhylumApi> {
+        self.api.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))
     }
 }
 
@@ -82,7 +79,7 @@ pub struct ExtensionState(Rc<ExtensionStateInner>);
 
 impl ExtensionState {
     pub fn new(api: BoxFuture<'static, Result<PhylumApi>>, permissions: Permissions) -> Self {
-        let api = Mutex::new(OnceFuture::new(Box::pin(async { api.await.map(Rc::new) })));
+        let api = OnceFuture::new(api);
         Self(Rc::new(ExtensionStateInner { permissions, api }))
     }
 }
