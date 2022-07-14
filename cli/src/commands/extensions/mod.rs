@@ -23,6 +23,7 @@ use crate::print_user_success;
 pub mod api;
 pub mod extension;
 pub mod permissions;
+pub mod state;
 
 const EXTENSION_SKELETON: &[u8] = b"\
 import { PhylumApi } from 'phylum';
