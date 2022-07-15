@@ -18,8 +18,8 @@ use tokio::fs;
 use url::{Host, Url};
 
 use crate::api::PhylumApi;
-use crate::commands::extensions::api;
-use crate::commands::extensions::extension::{self, ExtensionState};
+use crate::commands::extensions::state::ExtensionState;
+use crate::commands::extensions::{api, extension};
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
