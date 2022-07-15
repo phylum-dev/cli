@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "fixture"
+version = "0.1.0"
+description = ""
+authors = ["Andrea Venuta <andrea@phylum.io>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

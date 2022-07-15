@@ -1,0 +1,7 @@
+name = "poetry"
+description = "poetry package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+run = ["poetry"]
+read = ["./poetry.lock"]
