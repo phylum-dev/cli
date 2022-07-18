@@ -39,16 +39,16 @@ const phylum = new Phylum(await Deno.makeTempDir())
 beforeAll(async () => {
   await phylum.installExtension('./.')
   await copy('./fixtures',  phylum.fixturesPath)
-  await phylum.run(['project', 'create', 'poetry_test'], phylum.fixturesPath)
+  await phylum.run(['project', 'link', 'poetry_test'], phylum.fixturesPath)
 })
 
 afterAll(async () => {
   // await phylum.run(['project', 'delete', 'poetry_test'], phylum.fixturesPath)
-  // await phylum.cleanup()
+  await phylum.cleanup()
 })
 
 describe("Poetry extension", async () => {
-  it("", async () => {
+  it("correctly allows a valid package", async () => {
     await phylum.run(['poetry', 'add', 'pandas'], phylum.fixturesPath)
   })
 })
