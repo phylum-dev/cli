@@ -183,11 +183,11 @@ pub fn get_home_settings_path() -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use std::env::temp_dir;
+    use tempfile::NamedTempFile;
 
     use super::*;
 
-    fn write_test_config() {
+    fn write_test_config(path: &Path) {
         let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
 
         let auth = AuthInfo { offline_access: Some(RefreshToken::new("FAKE TOKEN")) };
@@ -199,22 +199,20 @@ mod tests {
             ignore_certs: false,
             last_update: None,
         };
-        let temp_dir = temp_dir();
-        let test_config_file = temp_dir.as_path().join("test_config");
-        save_config(&test_config_file, &config).unwrap();
+        save_config(path, &config).unwrap();
     }
 
     #[test]
     fn test_save_config() {
-        write_test_config();
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
     }
 
     #[test]
     fn test_parse_config() {
-        write_test_config();
-        let temp_dir = temp_dir();
-        let test_config_file = temp_dir.as_path().join("test_config");
-        let config: Config = parse_config(&test_config_file).unwrap();
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
+        let config: Config = parse_config(tempfile.path()).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
     }
 
@@ -222,12 +220,11 @@ mod tests {
     fn test_pass_api_key_through_env() {
         const ENV_TOKEN: &str = "ENV VARIABLE TOKEN";
 
-        write_test_config();
-        let temp_dir = temp_dir();
-        let test_config_file = temp_dir.as_path().join("test_config");
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
         env::set_var("PHYLUM_API_KEY", ENV_TOKEN);
 
-        let config: Config = read_configuration(&test_config_file).unwrap();
+        let config: Config = read_configuration(tempfile.path()).unwrap();
 
         assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
     }

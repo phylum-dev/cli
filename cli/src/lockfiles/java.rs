@@ -138,7 +138,7 @@ struct Workspace {
 }
 
 impl Parse for Pom {
-    /// Parses maven effecti-pom files into a vec of packages
+    /// Parses maven effective-pom files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
         // Parse effective-pom.xml.
         let pom: EffectivePom = serde_xml_rs::from_str(data)?;
@@ -210,7 +210,7 @@ mod tests {
     fn lock_parse_workspace_effective_pom() {
         let pkgs = Pom.parse_file("tests/fixtures/workspace-effective-pom.xml").unwrap();
 
-        assert_eq!(pkgs.len(), 17);
+        assert_eq!(pkgs.len(), 88);
 
         let additional_dependency = PackageDescriptor {
             name: "io.phylum:fake-dependency".into(),

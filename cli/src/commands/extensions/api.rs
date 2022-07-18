@@ -1,13 +1,12 @@
+//! Extension API functions.
+
 use std::cell::RefCell;
-use std::ops::Deref;
 use std::path::Path;
-use std::pin::Pin;
 use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
-use futures::future::BoxFuture;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::JobStatusResponse;
@@ -16,107 +15,27 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::project::ProjectDetailsResponse;
 use tokio::fs;
-use tokio::sync::Mutex;
 
-use crate::api::PhylumApi;
 use crate::auth::UserInfo;
-use crate::commands::extensions::permissions::Permissions;
+use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse::{self, get_packages_from_lockfile, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
 
-/// Holds either an unawaited, boxed `Future`, or the result of awaiting the
-/// future.
-enum OnceFuture<T: Unpin> {
-    Future(BoxFuture<'static, T>),
-    Awaited(T),
-}
-
-impl<T: Unpin> OnceFuture<T> {
-    fn new(inner: BoxFuture<'static, T>) -> Self {
-        OnceFuture::Future(inner)
-    }
-
-    async fn get(&mut self) -> &T {
-        match *self {
-            OnceFuture::Future(ref mut inner) => {
-                *self = OnceFuture::Awaited(inner.await);
-                match *self {
-                    OnceFuture::Future(..) => unreachable!(),
-                    OnceFuture::Awaited(ref mut inner) => inner,
-                }
-            },
-            OnceFuture::Awaited(ref mut inner) => inner,
-        }
-    }
-}
-
-/// Extension state the APIs have access to.
-pub struct ExtensionState {
-    api: Mutex<OnceFuture<Result<Rc<PhylumApi>>>>,
-    permissions: Permissions,
-}
-
-impl ExtensionState {
-    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>, permissions: Permissions) -> Self {
-        Self {
-            permissions,
-            api: Mutex::new(OnceFuture::new(Box::pin(async { api.await.map(Rc::new) }))),
-        }
-    }
-
-    async fn api(&self) -> Result<Rc<PhylumApi>> {
-        // The mutex guard is only useful for synchronizing internally mutable access to
-        // the encapsulated future. Once a `Result<Rc<PhylumApi>>` is obtained,
-        // the guard is dropped: subsequent awaits on `PhylumApi` methods are
-        // not synchronized via this mutex, and can happen concurrently.
-        let mut guard = self.api.lock().await;
-        Ok(Rc::clone(guard.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))?))
-    }
-}
-
-/// Wraps a shared, counted reference to the `PhylumApi` object.
-///
-/// The reference can be safely extracted from `Rc<RefCell<OpState>>` through an
-/// immutable borrow, and then cloned via the `ExtensionState::get` method.
-struct ApiRef(Rc<PhylumApi>);
-
-impl ApiRef {
-    // This can not be implemented as the `From<T>` trait because of `async`.
-    async fn from(state: Rc<RefCell<OpState>>) -> Result<Self> {
-        let state_ref = Pin::new(state.borrow());
-        Ok(Self(state_ref.borrow::<ExtensionState>().api().await?))
-    }
-}
-
-impl Deref for ApiRef {
-    type Target = PhylumApi;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-// Extension API functions
-// These functions need not be public, as Deno's declarations (`::decl()`) cloak
-// them in a data structure that is consumed by the runtime extension builder.
-//
-
 /// Analyze a lockfile.
+///
 /// Equivalent to `phylum analyze`.
 #[op]
 async fn analyze(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     project: Option<String>,
     group: Option<String>,
 ) -> Result<ProjectId> {
     // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let extension_state = op_state.borrow::<ExtensionState>();
-    extension_state.permissions.read.validate(&lockfile, "read")?;
-    drop(op_state);
+    let state = ExtensionState::from(op_state);
+    state.permissions.read.validate(&lockfile, "read")?;
 
-    let api = ApiRef::from(state).await?;
+    let api = state.api().await?;
 
     let (packages, request_type) = get_packages_from_lockfile(Path::new(&lockfile))
         .context("Unable to locate any valid package in package lockfile")?;
@@ -142,8 +61,9 @@ async fn analyze(
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
 #[op]
-async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
-    let api = ApiRef::from(state).await?;
+async fn get_user_info(op_state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
 
     api.user_info().await.map_err(Error::from)
 }
@@ -151,9 +71,14 @@ async fn get_user_info(state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
 #[op]
-async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Result<AccessToken> {
-    let refresh_token = get_refresh_token::call(state.clone()).await?;
-    let api = ApiRef::from(state).await?;
+async fn get_access_token(
+    op_state: Rc<RefCell<OpState>>,
+    ignore_certs: bool,
+) -> Result<AccessToken> {
+    let refresh_token = get_refresh_token::call(op_state.clone()).await?;
+
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
     let config = api.config();
 
     let access_token =
@@ -166,8 +91,9 @@ async fn get_access_token(state: Rc<RefCell<OpState>>, ignore_certs: bool) -> Re
 /// Retrieve the refresh token.
 /// Equivalent to `phylum auth token`.
 #[op]
-async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
-    let api = ApiRef::from(state).await?;
+async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
     let config = api.config();
 
     config
@@ -181,10 +107,11 @@ async fn get_refresh_token(state: Rc<RefCell<OpState>>) -> Result<RefreshToken> 
 /// Equivalent to `phylum history job`.
 #[op]
 async fn get_job_status(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     job_id: String,
 ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
 
     let job_id = JobId::from_str(&job_id)?;
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
@@ -194,10 +121,11 @@ async fn get_job_status(
 /// Equivalent to `phylum history project`.
 #[op]
 async fn get_project_details(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     project_name: Option<String>,
 ) -> Result<ProjectDetailsResponse> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
 
     let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
         get_current_project()
@@ -211,12 +139,13 @@ async fn get_project_details(
 /// Equivalent to `phylum package`.
 #[op]
 async fn get_package_details(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     name: String,
     version: String,
     package_type: String,
 ) -> Result<Package> {
-    let api = ApiRef::from(state).await?;
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
 
     let package_type = PackageType::from_str(&package_type)
         .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
@@ -233,13 +162,12 @@ async fn get_package_details(
 /// Equivalent to `phylum parse`.
 #[op]
 async fn parse_lockfile(
-    state: Rc<RefCell<OpState>>,
+    op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     lockfile_type: Option<String>,
 ) -> Result<Vec<PackageDescriptor>> {
     // Ensure extension has file read-access.
-    let op_state = state.borrow();
-    let state = op_state.borrow::<ExtensionState>();
+    let state = ExtensionState::from(op_state);
     state.permissions.read.validate(&lockfile, "read")?;
 
     // Fallback to automatic parser without lockfile type specified.

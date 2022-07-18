@@ -844,7 +844,7 @@ dependencies = [
  "async-trait",
  "deno_core",
  "tokio",
- "uuid 1.1.2",
+ "uuid",
 ]
 
 [[package]]
@@ -907,7 +907,7 @@ dependencies = [
  "sha2 0.9.9",
  "spki",
  "tokio",
- "uuid 1.1.2",
+ "uuid",
 ]
 
 [[package]]
@@ -1039,7 +1039,7 @@ dependencies = [
  "sys-info",
  "termcolor",
  "tokio",
- "uuid 1.1.2",
+ "uuid",
  "winapi",
  "winres",
 ]
@@ -1085,7 +1085,7 @@ dependencies = [
  "flate2",
  "serde",
  "tokio",
- "uuid 1.1.2",
+ "uuid",
 ]
 
 [[package]]
@@ -2792,7 +2792,7 @@ dependencies = [
 
 [[package]]
 name = "phylum-cli"
-version = "3.6.0"
+version = "3.7.1"
 dependencies = [
  "ansi_term",
  "anyhow",
@@ -2847,14 +2847,14 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#324715a21f3b677350c1631a46c732d93327fed5"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#aef4ec8d348aab3520c8b9ecf75cc7d5a3c6b8fa"
 dependencies = [
  "chrono",
  "log",
  "schemars",
  "serde",
  "serde_derive",
- "uuid 0.8.2",
+ "uuid",
 ]
 
 [[package]]
@@ -3455,7 +3455,7 @@ dependencies = [
  "schemars_derive",
  "serde",
  "serde_json",
- "uuid 0.8.2",
+ "uuid",
 ]
 
 [[package]]
@@ -4787,16 +4787,6 @@ name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
-
-[[package]]
-name = "uuid"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
-dependencies = [
- "getrandom 0.2.7",
- "serde",
-]
 
 [[package]]
 name = "uuid"

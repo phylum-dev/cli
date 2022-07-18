@@ -1,3 +1,5 @@
+* 3.7.1 - Support POM files with site information
+* 3.7.0 - ARM64 Linux support and Maven workspaces
 * 3.6.0 - Add support for gradle.lockfile
 * 3.5.0 - Automatically detect OIDC URL
 * 3.4.0 - Group account support
