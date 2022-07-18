@@ -5,12 +5,16 @@ import { parse } from "https://deno.land/std/flags/mod.ts"
 // Return `true` if the packages pass the project's thresholds.
 // Return `false` if the packages don't pass the thresholds, or the processing
 // job is not finished.
-async function poetryCheck(pkgs: string[]) {
+async function poetryCheck(args: string[]) {
     console.log("Updating package lock…")
-    await Deno.run({ cmd: ["poetry", "add", "--lock", ...pkgs] }).status()
-    console.log("Package lock updated.\n")
 
+    let process = Deno.run({ cmd: ["poetry", "add", '--lock', ...args] })
+    await process.status()
+    await process.close()
+
+    console.log("Package lock updated.\n")
     console.log("Analyzing packages…")
+
     const jobId = await PhylumApi.analyze("./poetry.lock")
     const jobStatus = await PhylumApi.getJobStatus(jobId)
 
@@ -27,26 +31,23 @@ async function poetryCheck(pkgs: string[]) {
     }
 }
 
-// Parse CLI args.
-const args = Deno.args;
-
-if (args.length >= 1 && args[0] === 'add') {
-  // Parse CLI arguments to extract added package names.
-  const parsedArgs = parse(args, {
-    string: ['python', 'platform', 'source', 'E'],
-    boolean: ['D', 'optional', 'allow-prereleases', 'dry-run', 'lock']
-  })
-
-  // Skip the `add` string.
-  const packages = parsedArgs._.slice(1).map(s => s.toString())
-  const analysisOutcome = await poetryCheck(packages)
+// If the subcommand is `add`, update the lockfile and process it through
+// Phylum. Otherwise, pass the arguments through to `poetry`.
+if (Deno.args.length >= 1 && Deno.args[0] === 'add') {
+  // Skip the `add` string. Pass the rest of the arguments as-is.
+  const addArgs = Deno.args.slice(1).map(s => s.toString())
+  const analysisOutcome = await poetryCheck(addArgs)
 
   // If the analysis failed, exit with an error.
   if (!analysisOutcome) {
     Deno.exit(1)
   }
-}
+} else {
+  let status = await Deno.run({
+    cmd: ['poetry', ...Deno.args],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).status()
 
-// If the analysis succeeded or the user passed an unsupported subcommand, pass
-// it through to Poetry.
-Deno.run({ cmd: ['poetry', ...args] })
+  Deno.exit(status.code)
+}
