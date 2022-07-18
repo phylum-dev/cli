@@ -11,6 +11,7 @@ use super::{CommandResult, ExitCode};
 use crate::lockfiles::{
     CSProj, GemLock, GradleLock, PackageLock, Parse, PipFile, Poetry, Pom, PyRequirements, YarnLock,
 };
+use crate::{print_user_success, print_user_warning};
 
 pub const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
     ("yarn", &YarnLock),
@@ -53,7 +54,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 }
 /// Attempt to get packages from an unknown lockfile type
 pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    log::warn!(
+    print_user_warning!(
         "Attempting to obtain packages from unrecognized lockfile type: {}",
         path.to_string_lossy()
     );
@@ -63,7 +64,7 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
     for (name, parser) in LOCKFILE_PARSERS.iter() {
         if let Ok(pkgs) = parser.parse(data.as_str()) {
             if !pkgs.is_empty() {
-                log::debug!("File detected as type: {}", name);
+                print_user_success!("Identified lockfile type: {}", name);
                 return Ok((pkgs, parser.package_type()));
             }
         }
