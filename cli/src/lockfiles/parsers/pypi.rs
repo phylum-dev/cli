@@ -94,7 +94,7 @@ fn package(input: &str) -> Option<PackageDescriptor> {
         None => match get_git_version(&version).ok() {
             Some((_, s)) => Some(s.to_string()),
             None => {
-                log::warn!("Could not determine version for package: {}", name);
+                log::debug!("Could not determine version for package: {}", name);
                 None
             },
         },
