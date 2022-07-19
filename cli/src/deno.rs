@@ -105,7 +105,6 @@ impl ExtensionsModuleLoader {
         let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
         if !path.starts_with(extension_path) {
-            eprintln!("{:?}", extension_path);
             return Err(anyhow!(
                 "`{}`: importing from paths outside of the extension's directory is not allowed",
                 path.to_string_lossy(),

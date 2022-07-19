@@ -138,8 +138,6 @@ pub async fn handle_run_local_extension(
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    println!("{:?}", extension);
-
     // Attempt to construct a `PermissionsOptions` from the `Permissions`
     // object in order to validate the permissions.
     let permissions = extension.permissions();
