@@ -254,7 +254,7 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
     print_user_success!(
         "\
         Extension created successfully
-        \nRun `phylum extension add {path}` to install it."
+        \nRun `phylum extension install {path}` to install it."
     );
 
     Ok(CommandValue::Code(ExitCode::Ok))

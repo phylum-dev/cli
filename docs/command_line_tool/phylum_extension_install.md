@@ -7,7 +7,7 @@ hidden: true
 Install an extension
 
 ```sh
-phylum extension add [OPTIONS] <PATH>
+phylum extension install [OPTIONS] <PATH>
 ```
 
 ### Options
