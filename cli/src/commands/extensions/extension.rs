@@ -141,8 +141,13 @@ impl Extension {
         Extension::try_from(extension_path(name)?)
     }
 
-    /// Return the path to this extension's entry point.
+    /// Return the path to this extension.
     pub fn path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
+    /// Return the path to this extension's entry point.
+    pub fn entry_point_path(&self) -> PathBuf {
         self.path.join(self.entry_point())
     }
 

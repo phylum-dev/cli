@@ -46,6 +46,13 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("new").about("Create a new extension").arg(arg!([PATH]).required(true)),
         )
+        .subcommand(
+            Command::new("run")
+                .about("Run an extension from a directory")
+                .arg(arg!(-y --yes "Automatically accept requested permissions"))
+                .arg(arg!([PATH]).required(true))
+                .arg(arg!([OPTIONS] ... "Extension parameters")),
+        )
         .subcommand(Command::new("list").about("List installed extensions"))
 }
 
@@ -82,7 +89,10 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 }
 
 /// Entry point for the `extensions` subcommand.
-pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
+pub async fn handle_extensions(
+    api: BoxFuture<'static, Result<PhylumApi>>,
+    matches: &ArgMatches,
+) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
             handle_install_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes"))
@@ -91,6 +101,7 @@ pub async fn handle_extensions(matches: &ArgMatches) -> CommandResult {
         Some(("uninstall", matches)) => {
             handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
         },
+        Some(("run", matches)) => handle_run_local_extension(api, matches).await,
         Some(("new", matches)) => handle_create_extension(matches.value_of("PATH").unwrap()).await,
         Some(("list", _)) | None => handle_list_extensions().await,
         _ => unreachable!(),
@@ -108,6 +119,35 @@ pub async fn handle_run_extension(
     let options = args.get_many("OPTIONS").map(|options| options.cloned().collect());
 
     let extension = Extension::load(name)?;
+
+    extension.run(api, options.unwrap_or_default()).await?;
+
+    Ok(CommandValue::Code(ExitCode::Ok))
+}
+
+/// Handle the `extension run <PATH>` command path.
+///
+/// Run the extension located at the given path.
+pub async fn handle_run_local_extension(
+    api: BoxFuture<'static, Result<PhylumApi>>,
+    matches: &ArgMatches,
+) -> CommandResult {
+    let path = matches.value_of("PATH").unwrap();
+    let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
+
+    let extension_path = PathBuf::from(path);
+    let extension = Extension::try_from(extension_path)?;
+
+    println!("{:?}", extension);
+
+    // Attempt to construct a `PermissionsOptions` from the `Permissions`
+    // object in order to validate the permissions.
+    let permissions = extension.permissions();
+    let _ = PermissionsOptions::try_from(permissions.borrow())?;
+
+    if !matches.is_present("yes") && !extension.permissions().is_allow_none() {
+        ask_permissions(&extension)?;
+    }
 
     extension.run(api, options.unwrap_or_default()).await?;
 

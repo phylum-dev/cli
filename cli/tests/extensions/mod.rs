@@ -193,6 +193,16 @@ fn conflicting_extension_name_is_filtered() {
         .stderr(predicate::str::contains("extension was filtered out"));
 }
 
+#[test]
+fn extension_is_locally_run_correctly() {
+    let test_cli = TestCli::builder().build();
+
+    test_cli
+        .run(&["extension", "run", &fixtures_path().join("sample").to_string_lossy()])
+        .success()
+        .stdout(predicate::str::contains("Hello, World!"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
