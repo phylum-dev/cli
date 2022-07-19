@@ -60,22 +60,21 @@ afterAll(async () => {
 })
 
 describe("Poetry extension", async () => {
+  // These tests may fail if the packages aren't processed on staging.
+
   it("correctly handles the `--dry-run` argument", async () => {
-    // At this stage, we expect a return code of 1 since the packages aren't analyzed in staging.
     let status = await phylum.run(['poetry', 'add', '--dry-run', 'pandas'], phylum.fixturesPath)
-    assert(status.code === 1)
+    assert(status.code === 0)
   })
 
   it("correctly allows a valid package", async () => {
-    // At this stage, we expect a return code of 1 since the packages aren't analyzed in staging.
     let status = await phylum.run(['poetry', 'add', 'pandas'], phylum.fixturesPath)
-    assert(status.code === 1)
+    assert(status.code === 0)
   })
 
   it("allows duplicating the `--lock` flag", async () => {
-    // At this stage, we expect a return code of 1 since the packages aren't analyzed in staging.
     let status = await phylum.run(['poetry', 'add', '--lock', 'numpy'], phylum.fixturesPath)
-    assert(status.code === 1)
+    assert(status.code === 0)
   })
 
   it("correctly passes through other commands", async () => {
