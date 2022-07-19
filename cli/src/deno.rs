@@ -1,5 +1,6 @@
 //! Deno runtime for extensions.
 
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -32,7 +33,7 @@ pub async fn run(
 ) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-    let main_module = deno_core::resolve_path(&extension.path().to_string_lossy())?;
+    let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
 
     let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
 
@@ -54,7 +55,7 @@ pub async fn run(
         bootstrap,
         web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
-        module_loader: Rc::new(ExtensionsModuleLoader),
+        module_loader: Rc::new(ExtensionsModuleLoader::new(extension.path())),
         extensions: vec![phylum_api],
         seed: None,
         unsafely_ignore_certificate_errors: Default::default(),
@@ -91,14 +92,19 @@ pub async fn run(
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
-struct ExtensionsModuleLoader;
+struct ExtensionsModuleLoader {
+    extension_path: Rc<PathBuf>,
+}
 
 impl ExtensionsModuleLoader {
-    async fn load_from_filesystem(path: &Url) -> Result<String> {
+    fn new(extension_path: PathBuf) -> Self {
+        Self { extension_path: Rc::new(extension_path) }
+    }
+
+    async fn load_from_filesystem(extension_path: &Path, path: &Url) -> Result<String> {
         let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
-        let extensions_path = extension::extensions_path()?;
-        if !path.starts_with(&extensions_path) {
+        if !path.starts_with(extension_path) {
             return Err(anyhow!(
                 "`{}`: importing from paths outside of the extension's directory is not allowed",
                 path.to_string_lossy(),
@@ -144,6 +150,8 @@ impl ModuleLoader for ExtensionsModuleLoader {
         _is_dyn_import: bool,
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
+        let extension_path = self.extension_path.clone();
+
         Box::pin(async move {
             // Inject Phylum API module.
             if module_specifier.as_str() == "deno:phylum" {
@@ -175,7 +183,10 @@ impl ModuleLoader for ExtensionsModuleLoader {
             // library module. Reject all URLs that do not fit these two use
             // cases.
             let mut code = match module_specifier.scheme() {
-                "file" => ExtensionsModuleLoader::load_from_filesystem(&module_specifier).await?,
+                "file" => {
+                    ExtensionsModuleLoader::load_from_filesystem(&extension_path, &module_specifier)
+                        .await?
+                },
                 "https" => ExtensionsModuleLoader::load_from_deno_std(&module_specifier).await?,
                 _ => return Err(anyhow!("Unsupported module specifier: {}", module_specifier)),
             };
