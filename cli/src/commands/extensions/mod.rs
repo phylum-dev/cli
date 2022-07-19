@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fmt::Display;
@@ -9,7 +8,6 @@ use std::path::PathBuf;
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
 use clap::{arg, ArgMatches, Command, ValueHint};
-use deno_runtime::permissions::PermissionsOptions;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
 use futures::future::BoxFuture;

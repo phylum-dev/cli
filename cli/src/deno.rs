@@ -33,7 +33,7 @@ pub async fn run(
 ) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
-    let main_module = deno_core::resolve_path(&extension.entry_point_path().to_string_lossy())?;
+    let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
 
     let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
 

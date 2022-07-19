@@ -63,10 +63,6 @@ impl Extension {
         self.manifest.description.as_deref()
     }
 
-    pub fn entry_point(&self) -> &str {
-        self.manifest.entry_point()
-    }
-
     pub fn permissions(&self) -> Cow<'_, Permissions> {
         match self.manifest.permissions.as_ref() {
             Some(permissions) => Cow::Borrowed(permissions),
@@ -147,8 +143,8 @@ impl Extension {
     }
 
     /// Return the path to this extension's entry point.
-    pub fn entry_point_path(&self) -> PathBuf {
-        self.path.join(self.entry_point())
+    pub fn entry_point(&self) -> PathBuf {
+        self.path.join(self.manifest.entry_point())
     }
 
     /// Execute an extension subcommand.
