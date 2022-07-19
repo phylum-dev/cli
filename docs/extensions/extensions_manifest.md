@@ -22,11 +22,11 @@ format. Every manifest file consists of the following sections:
 [`name`]: https://docs.phylum.io/docs/extensions_manifest#name
 [`entry_point`]: https://docs.phylum.io/docs/extensions_manifest#entry-point
 [`permissions`]: https://docs.phylum.io/docs/extensions_manifest#permissions
-[read]: <https://docs.phylum.io/docs/extensions_manifest#read>
-[write]: <https://docs.phylum.io/docs/extensions_manifest#write>
-[env]: <https://docs.phylum.io/docs/extensions_manifest#env>
-[run]: <https://docs.phylum.io/docs/extensions_manifest#run>
-[net]: <https://docs.phylum.io/docs/extensions_manifest#net>
+[read]: https://docs.phylum.io/docs/extensions_manifest#read
+[write]: https://docs.phylum.io/docs/extensions_manifest#write
+[env]: https://docs.phylum.io/docs/extensions_manifest#env
+[run]: https://docs.phylum.io/docs/extensions_manifest#run
+[net]: https://docs.phylum.io/docs/extensions_manifest#net
 
 ## Name
 
