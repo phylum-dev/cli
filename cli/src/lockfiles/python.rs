@@ -74,7 +74,7 @@ impl Parse for PipFile {
                         })
                     }),
                     None => {
-                        log::warn!("Could not determine version for package: {}", k);
+                        log::debug!("Could not determine version for package: {}", k);
                         None
                     },
                 }
@@ -94,9 +94,8 @@ impl Parse for Poetry {
 
         // Warn if the version of this lockfile might not be supported.
         if !lock.metadata.lock_version.starts_with("1.") {
-            log::warn!(
-                "Expected poetry lockfile version ^1.0.0, found {}. Attempting to continue, but \
-                 results might be inaccurate.",
+            log::debug!(
+                "Expected poetry lockfile version ^1.0.0, found {}.",
                 lock.metadata.lock_version
             );
         }
