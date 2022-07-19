@@ -31,7 +31,6 @@ class Phylum {
       stderr: 'inherit',
     })
 
-
     const status = await process.status()
     await process.close()
 
