@@ -4,13 +4,17 @@ category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
 
+## Overview
+
 Phylum CLI extensions are optional plugins for the CLI which provide additional
 functionality in a modular fashion.
 
-Extensions are executed in a Deno JavaScript runtime and have access to Phylum's
-API for commonly used operations. The capability-based permission system,
-together with Deno's sandbox, ensures that extensions can only do what they're
-supposed to.
+Extensions are executed in a [Deno] JavaScript runtime and have access to
+Phylum's API for commonly used operations. The capability-based permission
+system, together with Deno's sandbox, ensures that extensions can only do what
+they're supposed to.
+
+[Deno]: https://deno.land/
 
 ## Usage
 
@@ -23,5 +27,5 @@ look at the [CLI's extension documentation].
 
 * [Quickstart](https://docs.phylum.io/docs/extensions_quickstart)
 * [Manifest Format](https://docs.phylum.io/docs/extensions_manifest)
-* [Extension API](https://docs.phylum.io/docs/extensions_api)
+* [Extensions API](https://docs.phylum.io/docs/extensions_api)
 * [Example](https://docs.phylum.io/docs/extensions_example)

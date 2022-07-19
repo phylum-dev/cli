@@ -1,8 +1,10 @@
 ---
-title: Extension API
+title: Extensions API
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
+
+## Overview
 
 Since CLI extensions are built on top of the Deno runtime, they have access to
 two different APIs; the Deno API and the Phylum API.
@@ -19,13 +21,13 @@ utility functions for several commonly used structures like collections, http,
 and async. These modules can be imported using the URLs documented in Deno's
 standard library documentation or by downloading them and including individual
 modules as files. All standard library functionality is documented in [Deno's
-standard library docs]
+standard library docs].
 
 [Deno's API docs]: https://doc.deno.land/deno/stable
 [Deno's standard library docs]: https://deno.land/std
 
 ## Phylum API
 
-The Phylum extension API is documented in the [TypeScript module file].
+The Phylum extensions API is documented in the [TypeScript module file][api].
 
-[TypeScript module file]: ./cli/src/extension_api.ts
+[api]: https://github.com/phylum-dev/cli/blob/main/cli/src/extension_api.ts

@@ -1,5 +1,5 @@
 ---
-title: Quickstart
+title: Extensions Quickstart
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
@@ -43,7 +43,7 @@ phylum extension install ./my-extension
 Once successfully installed, our extension can be executed by using its name as
 a subcommand for the phylum CLI:
 
-```
+```console
 $ phylum my-extension
 Hello, World!
 ```

@@ -1,37 +1,40 @@
 ---
-title: Manifest Format
+title: Extensions Manifest Format
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
 
+## Overview
+
 Extension metadata is defined in the `PhylumExt.toml` file, using the [TOML]
 format. Every manifest file consists of the following sections:
 
- - [`name`] — Extension name
- - [`entry_point`] — Execution entry point
- - [`permissions`] — Permissions required for execution
-     - [`[[read]]`] — Required read path permissions
-     - [`[[write]]`] — Required write path permissions
-     - [`[[env]]`] — Required environment variable permissions
-     - [`[[run]]`] — Required process execution permissions
-     - [`[[net]]`] — Required network domain permissions
+- [`name`] — Extension name
+- [`entry_point`] — Execution entry point
+- [`permissions`] — Permissions required for execution
+  - [`[[read]]`][read] — Required read path permissions
+  - [`[[write]]`][write] — Required write path permissions
+  - [`[[env]]`][env] — Required environment variable permissions
+  - [`[[run]]`][run] — Required process execution permissions
+  - [`[[net]]`][net] — Required network domain permissions
 
 [TOML]: https://toml.io
 [`name`]: https://docs.phylum.io/docs/extensions_manifest#name
 [`entry_point`]: https://docs.phylum.io/docs/extensions_manifest#entry-point
 [`permissions`]: https://docs.phylum.io/docs/extensions_manifest#permissions
-[`[[read]]`]: https://docs.phylum.io/docs/extensions_manifest#read
-[`[[write]]`]: https://docs.phylum.io/docs/extensions_manifest#write
-[`[[env]]`]: https://docs.phylum.io/docs/extensions_manifest#env
-[`[[run]]`]: https://docs.phylum.io/docs/extensions_manifest#run
-[`[[net]]`]: https://docs.phylum.io/docs/extensions_manifest#net
+[read]: <https://docs.phylum.io/docs/extensions_manifest#read>
+[write]: <https://docs.phylum.io/docs/extensions_manifest#write>
+[env]: <https://docs.phylum.io/docs/extensions_manifest#env>
+[run]: <https://docs.phylum.io/docs/extensions_manifest#run>
+[net]: <https://docs.phylum.io/docs/extensions_manifest#net>
 
 ## Name
 
 The extension name is used as the subcommand for executing the extension and
 acts as an identifier when referring to it.
 
-The name must use only lowercase alphanumeric characters, `-` or `_`.
+The name must use only lowercase alphanumeric characters, hyphens (`-`), or
+underscores (`_`).
 
 ## Entry Point
 
