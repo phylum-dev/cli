@@ -47,6 +47,8 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("run")
                 .about("Run an extension from a directory")
+                .allow_hyphen_values(true)
+                .disable_help_flag(true)
                 .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true))
                 .arg(arg!([OPTIONS] ... "Extension parameters")),

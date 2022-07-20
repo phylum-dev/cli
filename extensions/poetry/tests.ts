@@ -14,18 +14,20 @@ import { copy } from "https://deno.land/std@0.148.0/fs/mod.ts"
 import { assert } from "https://deno.land/std@0.148.0/testing/asserts.ts"
 
 class Phylum {
-  readonly xdgDataHome: string
-  readonly fixturesPath: string
+  readonly tempDir: string
+  readonly fixturesDir: string
+  readonly extDir: string
 
-  constructor (tempDir: string) {
-    this.xdgDataHome = tempDir
-    this.fixturesPath = tempDir + '/fixtures'
+  constructor (tempDir: string, extDir: string) {
+    this.tempDir = tempDir
+    this.fixturesDir = tempDir + '/fixtures'
+    this.extDir = extDir
   }
 
   async run (args: string[], cwd?: string) {
     let process = Deno.run({
       cmd: ['phylum', ...args],
-      env: { 'XDG_DATA_HOME': await this.xdgDataHome },
+      env: { 'XDG_DATA_HOME': await this.tempDir },
       cwd,
       stdout: 'inherit',
       stderr: 'inherit',
@@ -37,22 +39,21 @@ class Phylum {
     return status
   }
 
-  async installExtension (extension: string) {
-    await this.run(['extension', 'install', '-y', extension])
+  async runExt (args: string[], cwd?: string) {
+    return await this.run(['extension', 'run', '-y', this.extDir, ...args], cwd)
   }
 
   async cleanup () {
-    await Deno.remove(this.xdgDataHome, { recursive: true })
+    await Deno.remove(this.tempDir, { recursive: true })
   }
 }
 
-const phylum = new Phylum(await Deno.makeTempDir())
+const phylum = new Phylum(await Deno.makeTempDir(), Deno.cwd())
 
 beforeAll(async () => {
-  await phylum.installExtension('./.')
-  await copy('./fixtures',  phylum.fixturesPath)
+  await copy('./fixtures',  phylum.fixturesDir)
   // The `poetry_test` project should be pre-existing.
-  await phylum.run(['project', 'link', 'poetry_test'], phylum.fixturesPath)
+  await phylum.run(['project', 'link', 'poetry_test'], phylum.fixturesDir)
 })
 
 afterAll(async () => {
@@ -63,30 +64,30 @@ describe("Poetry extension", async () => {
   // These tests may fail if the packages aren't processed on staging.
 
   it("correctly handles the `--dry-run` argument", async () => {
-    let status = await phylum.run(['poetry', 'add', '--dry-run', 'pandas'], phylum.fixturesPath)
+    let status = await phylum.runExt(['add', '--dry-run', 'pandas'], phylum.fixturesDir)
     assert(status.code === 0)
   })
 
   it("correctly allows a valid package", async () => {
-    let status = await phylum.run(['poetry', 'add', 'pandas'], phylum.fixturesPath)
+    let status = await phylum.runExt(['add', 'pandas'], phylum.fixturesDir)
     assert(status.code === 0)
   })
 
   it("allows duplicating the `--lock` flag", async () => {
-    let status = await phylum.run(['poetry', 'add', '--lock', 'numpy'], phylum.fixturesPath)
+    let status = await phylum.runExt(['add', '--lock', 'numpy'], phylum.fixturesDir)
     assert(status.code === 0)
   })
 
   it("correctly passes through other commands", async () => {
     let status
 
-    status = await phylum.run(['poetry', 'check'], phylum.fixturesPath)
+    status = await phylum.runExt(['check'], phylum.fixturesDir)
     assert(status.code === 0)
 
-    status = await phylum.run(['poetry', 'help'], phylum.fixturesPath)
+    status = await phylum.runExt(['help'], phylum.fixturesDir)
     assert(status.code === 0)
 
-    status = await phylum.run(['poetry', 'version'], phylum.fixturesPath)
+    status = await phylum.runExt(['version'], phylum.fixturesDir)
     assert(status.code === 0)
   })
 })
