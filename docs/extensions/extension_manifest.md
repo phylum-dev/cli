@@ -7,21 +7,23 @@ hidden: true
 ## Overview
 
 Extension metadata is defined in the `PhylumExt.toml` file, using the [TOML]
-format. Every manifest file consists of the following sections:
+format. Manifest files consist of the following sections:
 
 - [`name`] — Extension name
+- [`description`] - Description of the extension
 - [`entry_point`] — Execution entry point
-- [`permissions`] — Permissions required for execution
-  - [`[[read]]`][read] — Required read path permissions
-  - [`[[write]]`][write] — Required write path permissions
-  - [`[[env]]`][env] — Required environment variable permissions
-  - [`[[run]]`][run] — Required process execution permissions
-  - [`[[net]]`][net] — Required network domain permissions
+- [`[permissions]`][perms] — Permissions required for execution
+  - [`read`][read] — Required read path permissions
+  - [`write`][write] — Required write path permissions
+  - [`env`][env] — Required environment variable permissions
+  - [`run`][run] — Required process execution permissions
+  - [`net`][net] — Required network domain permissions
 
 [TOML]: https://toml.io
 [`name`]: https://docs.phylum.io/docs/extension_manifest#name
+[`description`]: https://docs.phylum.io/docs/extension_manifest#description
 [`entry_point`]: https://docs.phylum.io/docs/extension_manifest#entry-point
-[`permissions`]: https://docs.phylum.io/docs/extension_manifest#permissions
+[perms]: https://docs.phylum.io/docs/extension_manifest#permissions
 [read]: https://docs.phylum.io/docs/extension_manifest#read
 [write]: https://docs.phylum.io/docs/extension_manifest#write
 [env]: https://docs.phylum.io/docs/extension_manifest#env
@@ -35,6 +37,11 @@ acts as an identifier when referring to it.
 
 The name must use only lowercase alphanumeric characters, hyphens (`-`), or
 underscores (`_`).
+
+## Description
+
+The description is an optional short blurb about the extension. This should be
+plain text (not Markdown).
 
 ## Entry Point
 
@@ -95,3 +102,27 @@ If the requested domain requests a redirect, you'll also require permissions to
 access the redirect target. It's easiest to just specify the redirect target
 directly when making requests, otherwise you'll have to request permissions for
 both domains.
+
+## Example Manifest
+
+The following is an example extension manifest, with each of the possible
+sections populated to show the expected format:
+
+```toml
+name = "example"
+description = "Make extension manifest formats more clear"
+entry_point = "main.ts"
+
+# Each entry in the `permissions` table is a key-value pair
+# where the value is an array containing one or more strings.
+[permissions]
+read = [
+    "./path/to/file.txt",
+    "./path/to/directory",
+    "./config_file.yaml",
+]
+write = ["./output_file.txt"]
+env = ["PHYLUM_API_KEY"]
+run = ["npm", "yarn"]
+net = ["www.phylum.io", "phylum.io"]
+```
