@@ -111,7 +111,7 @@ function is asynchronous, we need to `await` it.
 
 The list of packages will look something like this:
 
-```json
+```text
 [
   { name: "accepts", version: "1.3.8", type: "npm" },
   { name: "array-flatten", version: "1.1.1", type: "npm" },
@@ -131,9 +131,9 @@ tell it which field to group by using `dep => dep.name`.
 
 This will transform our package list into the following:
 
-```json
+```text
 {
-  "accepts": [
+  accepts: [
       { name: "accepts", version: "1.3.8", type: "npm" },
       { name: "accepts", version: "1.0.0", type: "npm" }
   ],
@@ -152,9 +152,9 @@ for each dependency.
 
 This results in a simple array with all dependencies and their versions:
 
-```json
+```text
 {
-  "accepts": ["1.3.8", "1.0.0"],
+  accepts: ["1.3.8", "1.0.0"],
   "array-flatten": ["1.1.1"]
 }
 ```
@@ -188,7 +188,7 @@ more than one version in our lockfile.
 
 For our example, the output looks like this:
 
-```console
+```text
 accepts: [ "1.3.8", "1.0.0" ]
 ```
 

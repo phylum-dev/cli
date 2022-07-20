@@ -17,7 +17,7 @@ phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 
 ### Details
 
-The extension will be run without it having been installed first.
+The extension will be run without prior installation.
 
 The first set of options are for the `run` command. The second set of options
 are for the extension.
