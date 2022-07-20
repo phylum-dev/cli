@@ -13,7 +13,7 @@ phylum extension new <PATH>
 ### Details
 
 This command will create a "Hello, World!" extension skeleton that can be
-modified for a specific use. See the [Extensions Quickstart] guide for more
+modified for a specific use. See the [Extension Quickstart] guide for more
 detail.
 
-[Extensions Quickstart]: https://docs.phylum.io/docs/extensions_quickstart
+[Extension Quickstart]: https://docs.phylum.io/docs/extension_quickstart

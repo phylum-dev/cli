@@ -25,7 +25,7 @@ look at the [CLI's extension documentation].
 
 ## Writing Extensions
 
-* [Quickstart](https://docs.phylum.io/docs/extensions_quickstart)
-* [Manifest Format](https://docs.phylum.io/docs/extensions_manifest)
-* [Extensions API](https://docs.phylum.io/docs/extensions_api)
-* [Example](https://docs.phylum.io/docs/extensions_example)
+* [Quickstart](https://docs.phylum.io/docs/extension_quickstart)
+* [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
+* [Extension API](https://docs.phylum.io/docs/extension_api)
+* [Example](https://docs.phylum.io/docs/extension_example)

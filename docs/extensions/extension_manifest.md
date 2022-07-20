@@ -1,5 +1,5 @@
 ---
-title: Extensions Manifest Format
+title: Extension Manifest Format
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
@@ -19,14 +19,14 @@ format. Every manifest file consists of the following sections:
   - [`[[net]]`][net] — Required network domain permissions
 
 [TOML]: https://toml.io
-[`name`]: https://docs.phylum.io/docs/extensions_manifest#name
-[`entry_point`]: https://docs.phylum.io/docs/extensions_manifest#entry-point
-[`permissions`]: https://docs.phylum.io/docs/extensions_manifest#permissions
-[read]: https://docs.phylum.io/docs/extensions_manifest#read
-[write]: https://docs.phylum.io/docs/extensions_manifest#write
-[env]: https://docs.phylum.io/docs/extensions_manifest#env
-[run]: https://docs.phylum.io/docs/extensions_manifest#run
-[net]: https://docs.phylum.io/docs/extensions_manifest#net
+[`name`]: https://docs.phylum.io/docs/extension_manifest#name
+[`entry_point`]: https://docs.phylum.io/docs/extension_manifest#entry-point
+[`permissions`]: https://docs.phylum.io/docs/extension_manifest#permissions
+[read]: https://docs.phylum.io/docs/extension_manifest#read
+[write]: https://docs.phylum.io/docs/extension_manifest#write
+[env]: https://docs.phylum.io/docs/extension_manifest#env
+[run]: https://docs.phylum.io/docs/extension_manifest#run
+[net]: https://docs.phylum.io/docs/extension_manifest#net
 
 ## Name
 

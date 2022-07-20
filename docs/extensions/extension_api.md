@@ -1,5 +1,5 @@
 ---
-title: Extensions API
+title: Extension API
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
@@ -28,6 +28,6 @@ standard library docs].
 
 ## Phylum API
 
-The Phylum extensions API is documented in the [TypeScript module file][api].
+The Phylum extension API is documented in the [TypeScript module file][api].
 
 [api]: https://github.com/phylum-dev/cli/blob/main/cli/src/extension_api.ts
