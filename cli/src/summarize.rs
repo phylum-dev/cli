@@ -10,7 +10,6 @@ use phylum_types::types::job::{
 use phylum_types::types::package::{
     Issue, IssuesListItem, Package, PackageStatus, PackageStatusExtended, PackageType, RiskLevel,
 };
-use phylum_types::types::project::ProjectDetailsResponse;
 use prettytable::format::Alignment;
 use prettytable::{cell, color as table_color, row, table, Attr, Cell, Row, Table};
 
@@ -386,7 +385,6 @@ impl<T> Summarize for Vec<T> where T: Renderable {}
 
 impl Summarize for String {}
 impl Summarize for PackageStatus {}
-impl Summarize for ProjectDetailsResponse {}
 impl Summarize for AllJobsStatusResponse {}
 impl Summarize for CancelJobResponse {}
 impl Summarize for ListUserGroupsResponse {}

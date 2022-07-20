@@ -9,9 +9,7 @@ use phylum_types::types::job::{
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
 };
-use phylum_types::types::project::{
-    ProjectDetailsResponse, ProjectSummaryResponse, ProjectThresholds,
-};
+use phylum_types::types::project::{ProjectSummaryResponse, ProjectThresholds};
 use prettytable::{cell, row, table};
 
 use crate::print::{self, table_format};
@@ -51,103 +49,6 @@ impl Renderable for ProjectSummaryResponse {
 impl Renderable for PackageDescriptor {
     fn render(&self) -> String {
         format!("{:<48}{:20}", self.name, self.version)
-    }
-}
-
-/// Convert the given threshold float value into a string. If no value is
-/// returned, i.e. a value of 0, returns a placehold to indicate that this
-/// value is unset.
-fn threshold_to_str(n: f32) -> String {
-    let threshold = (n * 100.0) as u32;
-
-    if threshold == 0 {
-        return String::from("Not Set");
-    }
-
-    format!("{}", threshold)
-}
-
-impl Renderable for ProjectDetailsResponse {
-    fn render(&self) -> String {
-        let title_score = format!("{}", Blue.paint("Score"));
-        let title_passfail = format!("{}", Blue.paint("P/F"));
-        let title_label = format!("{}", Blue.paint("Label"));
-        let title_job_id = format!("{}", Blue.paint("Job ID"));
-        let title_datetime = format!("{}", Blue.paint("Datetime"));
-
-        let threshold_total = threshold_to_str(self.thresholds.total);
-        let threshold_malicious = threshold_to_str(self.thresholds.malicious);
-        let threshold_vulnerability = threshold_to_str(self.thresholds.vulnerability);
-        let threshold_engineering = threshold_to_str(self.thresholds.engineering);
-        let threshold_author = threshold_to_str(self.thresholds.author);
-        let threshold_license = threshold_to_str(self.thresholds.license);
-
-        let mut renderer = String::new();
-        renderer.push_str(
-            format!("{:>15} {:<50} Project ID: {}\n", "Project Name:", self.name, self.id).as_str(),
-        );
-        renderer.push_str(format!("{:>15} {}\n\n", "Ecosystem:", self.ecosystem).as_str());
-        renderer.push_str(
-            format!(
-                "{:>15} {}\n",
-                "Thresholds:",
-                "Score requirements to PASS or FAIL a run. Runs that have a score below the \
-                 threshold value will FAIL."
-            )
-            .as_str(),
-        );
-        renderer.push_str(format!("{:>24}: {}\n", "Project Score", threshold_total).as_str());
-        renderer.push_str(
-            format!("{:>20} {}: {}\n", "Malicious Code Risk", "MAL", threshold_malicious).as_str(),
-        );
-        renderer.push_str(
-            format!("{:>20} {}: {}\n", "Vulnerability Risk", "VLN", threshold_vulnerability)
-                .as_str(),
-        );
-        renderer.push_str(
-            format!("{:>20} {}: {}\n", "Engineering Risk", "ENG", threshold_engineering).as_str(),
-        );
-        renderer
-            .push_str(format!("{:>20} {}: {}\n", "Author Risk", "AUT", threshold_author).as_str());
-        renderer.push_str(
-            format!("{:>20} {}: {}\n\n", "License Risk", "LIC", threshold_license).as_str(),
-        );
-        renderer.push_str(format!("Last {} jobs from project history\n", self.jobs.len()).as_str());
-        renderer.push_str(
-            format!(
-                "{:<16}{:<20}{:<50}{:<45}   {}\n",
-                title_score, title_passfail, title_label, title_job_id, title_datetime
-            )
-            .as_str(),
-        );
-
-        for job in self.jobs.iter() {
-            let score = format!("{}", (job.score * 100.0) as u32);
-            let mut colored_score = format!("{}", Green.paint(&score));
-            let mut msg = format!("{}", Green.paint("PASS"));
-
-            if job.num_incomplete > 0 {
-                msg = format!("{}", Yellow.paint("INCOMPLETE"));
-                colored_score = format!("{}", Red.paint(&score));
-            } else if !job.pass {
-                msg = format!("{}", Red.paint("FAIL"));
-                colored_score = format!("{}", Red.paint(&score));
-            }
-
-            renderer.push_str(
-                format!(
-                    // Differs from the title format slightly. The colored values
-                    // add control characters, which introduce a base offset of 9
-                    // zero-width chracters.
-                    "{:<16}{:<20}{:<41}{:<40}   {}\n",
-                    colored_score, msg, job.label, job.job_id, job.date,
-                )
-                .as_str(),
-            );
-        }
-
-        renderer.push('\n');
-        renderer
     }
 }
 

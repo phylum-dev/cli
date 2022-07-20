@@ -10,7 +10,6 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use super::project::get_project_list;
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::parse::get_packages_from_lockfile;
 use crate::commands::{CommandResult, CommandValue};
@@ -76,38 +75,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     let mut action = Action::None;
     let display_filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
 
-    if let Some(matches) = matches.subcommand_matches("project") {
-        let project_name = matches.value_of("project_name");
-        let project_job_id = matches.value_of("job_id");
-
-        if let Some(project_name) = project_name {
-            if project_job_id.is_none() {
-                print_user_warning!(
-                    "`phylum history project <PROJECT>` is deprecated, use `phylum history \
-                     --project <PROJECT>` instead"
-                );
-
-                let resp = api.get_project_details(project_name).await;
-                print_response(&resp, pretty_print, None);
-            } else {
-                print_user_warning!(
-                    "`phylum history project <PROJECT> <JOB_ID>` is deprecated, use `phylum \
-                     history <JOB_ID>` instead"
-                );
-
-                // TODO The original code had unwrap in it above. This needs to
-                // be refactored in general for better flow
-                let job_id = JobId::from_str(project_job_id.expect("No job id found"))?;
-                action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await
-            }
-        } else {
-            print_user_warning!(
-                "`phylum history project` is deprecated, use `phylum project` instead"
-            );
-
-            get_project_list(api, pretty_print, None).await;
-        }
-    } else if matches.is_present("JOB_ID") {
+    if matches.is_present("JOB_ID") {
         let job_id = JobId::from_str(matches.value_of("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else if let Some(project) = matches.value_of("project") {
