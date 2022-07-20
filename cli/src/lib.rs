@@ -9,12 +9,12 @@ pub mod config;
 pub mod deno;
 pub mod dirs;
 pub mod filter;
+pub mod format;
+pub mod histogram;
 pub mod lockfiles;
 pub mod print;
 pub mod prompt;
-pub mod render;
 pub mod spinner;
-pub mod summarize;
 #[cfg(test)]
 mod test;
 pub mod types;

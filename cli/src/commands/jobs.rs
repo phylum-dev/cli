@@ -8,43 +8,39 @@ use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::{Action, JobStatusResponse};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
-use serde::Serialize;
 
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::parse::get_packages_from_lockfile;
-use crate::commands::{CommandResult, CommandValue};
+use crate::commands::{CommandResult, CommandValue, ExitCode};
 use crate::config::{get_current_project, ProjectConfig};
-use crate::filter::Filter;
-use crate::print::print_response;
-use crate::summarize::Summarize;
+use crate::filter::{Filter, FilterIssues};
+use crate::format::Format;
 use crate::{print_user_success, print_user_warning};
 
-fn handle_status<T>(
-    resp: Result<JobStatusResponse<T>, PhylumApiError>,
-    pretty: bool,
-    filter: Option<Filter>,
-) -> Action
+fn handle_status<T>(resp: Result<JobStatusResponse<T>, PhylumApiError>, pretty: bool) -> Action
 where
-    T: std::fmt::Debug + Serialize + Summarize,
-    JobStatusResponse<T>: Summarize,
+    JobStatusResponse<T>: Format,
 {
-    let mut action = Action::None;
-
-    if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
-        print_user_warning!(
-            "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-            Blue.paint("phylum analyze <lock_file>")
-        );
-    } else {
-        if let Ok(ref resp) = resp {
-            if !resp.pass {
-                action = resp.action.to_owned();
+    let resp = match resp {
+        Ok(resp) => resp,
+        Err(err) => {
+            if err.status() == Some(StatusCode::NOT_FOUND) {
+                print_user_warning!(
+                    "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                    Blue.paint("phylum analyze <lock_file>")
+                );
             }
-        }
-        print_response(&resp, pretty, filter);
-    }
+            return Action::None;
+        },
+    };
 
-    action
+    resp.write_stdout(pretty);
+
+    if !resp.pass {
+        resp.action
+    } else {
+        Action::None
+    }
 }
 
 /// Display user-friendly overview of a job
@@ -56,11 +52,16 @@ pub async fn get_job_status(
     filter: Option<Filter>,
 ) -> Action {
     if verbose {
-        let resp = api.get_job_status_ext(job_id).await;
-        handle_status(resp, pretty, filter)
+        let mut resp = api.get_job_status_ext(job_id).await;
+
+        if let (Ok(resp), Some(filter)) = (&mut resp, filter) {
+            resp.filter(&filter);
+        }
+
+        handle_status(resp, pretty)
     } else {
         let resp = api.get_job_status(job_id).await;
-        handle_status(resp, pretty, filter)
+        handle_status(resp, pretty)
     }
 }
 
@@ -79,23 +80,22 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let job_id = JobId::from_str(matches.value_of("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
     } else if let Some(project) = matches.value_of("project") {
-        let resp = api.get_project_details(project).await.map(|r| r.jobs);
-        print_response(&resp, pretty_print, None);
+        let resp = api.get_project_details(project).await?.jobs;
+        resp.write_stdout(pretty_print);
     } else {
-        let resp = api.get_status().await;
+        let resp = match api.get_status().await {
+            Ok(resp) => resp,
+            Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
+                print_user_warning!(
+                    "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                    Blue.paint("phylum analyze <lock_file>")
+                );
+                return Ok(ExitCode::NoHistoryFound.into());
+            },
+            Err(err) => return Err(err.into()),
+        };
 
-        if let Err(Some(StatusCode::NOT_FOUND)) = resp.as_ref().map_err(|e| e.status()) {
-            print_user_warning!(
-                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                Blue.paint("phylum analyze <lock_file>")
-            );
-        } else {
-            if pretty_print {
-                println!("Projects and most recent runs\n",);
-            }
-
-            print_response(&resp, pretty_print, None);
-        }
+        resp.write_stdout(pretty_print);
     }
 
     Ok(CommandValue::Action(action))

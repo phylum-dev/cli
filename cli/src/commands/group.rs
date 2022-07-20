@@ -5,7 +5,8 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{CommandResult, ExitCode};
-use crate::{print, print_user_failure, print_user_success};
+use crate::format::Format;
+use crate::{print_user_failure, print_user_success};
 
 /// Handle `phylum group` subcommand.
 pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> CommandResult {
@@ -25,10 +26,10 @@ pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> Comm
     } else {
         matches = matches.subcommand_matches("list").unwrap_or(matches);
 
-        let response = api.get_groups_list().await;
+        let response = api.get_groups_list().await?;
 
-        let pretty_print = !matches.is_present("json");
-        print::print_response(&response, pretty_print, None);
+        let pretty = !matches.is_present("json");
+        response.write_stdout(pretty);
 
         Ok(ExitCode::Ok.into())
     }

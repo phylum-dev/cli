@@ -1,0 +1,85 @@
+use std::fmt;
+
+#[derive(Debug)]
+pub struct Histogram {
+    min: f64,
+    max: f64,
+    bins: usize,
+    values: Vec<usize>,
+}
+
+impl Histogram {
+    pub fn new(data: &[f64], min: f64, max: f64, bins: usize) -> Histogram {
+        let mut values: Vec<usize> = vec![0; bins];
+
+        let step = (max - min) / bins as f64;
+        let scale = 100.0;
+
+        for &y in data.iter() {
+            if y < min || y > max {
+                continue;
+            }
+
+            let mut bucket_id = ((y * scale).floor() / (step * scale)) as usize;
+
+            // Account for packages with a "perfect" (i.e. 1.0) score
+            // This is generally unlikely but possible with packages that have
+            //  not yet had analytics run on them
+            // Also account for scores on the edge 10, 20, 30...
+            if y != 0.0 && (y * 100.0) % 10.0 == 0.0 {
+                bucket_id -= 1;
+            }
+
+            if bucket_id < values.len() {
+                values[bucket_id as usize] += 1;
+            }
+        }
+        Histogram { min, max, bins, values }
+    }
+
+    fn buckets(&self) -> Vec<(f64, f64)> {
+        let step = (self.max - self.min) / self.bins as f64;
+        let mut buckets: Vec<(f64, f64)> = Vec::new();
+
+        let mut acc = self.min;
+        while acc < self.max {
+            buckets.push((acc, acc + step));
+            acc += step;
+        }
+        buckets.pop();
+        buckets
+    }
+}
+
+impl fmt::Display for Histogram {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let scale = |s| {
+            let max = *self.values.iter().max().unwrap_or(&1) as f32;
+            56.0 * f32::log2(s) / f32::log2(max)
+        };
+
+        let output = self.values.iter().rev().zip(self.buckets().iter().rev()).fold(
+            "".to_string(),
+            |acc, x| {
+                let min = (100.0 * x.1 .0).round() as u32;
+                vec![
+                    acc,
+                    format!(
+                        "{:>4} - {:<4} [{:>5}] {}",
+                        match min {
+                            0 => min,
+                            _ => min + 1,
+                        },
+                        (100.0 * x.1 .1).round() as u32,
+                        x.0,
+                        "█".repeat(scale(*x.0 as f32) as usize)
+                    ),
+                ]
+                .join("\n")
+            },
+        );
+
+        write!(f, "{:^10} {:>8}", "Score", "Count")?;
+        write!(f, "{}", output)
+    }
+}

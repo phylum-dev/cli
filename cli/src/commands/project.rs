@@ -1,29 +1,28 @@
 use std::path::Path;
 
-use ansi_term::Color::{Blue, White};
-use anyhow::{anyhow, Context};
+use ansi_term::Color::White;
+use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use reqwest::StatusCode;
 
 use super::{CommandResult, ExitCode};
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
+use crate::format::Format;
 use crate::prompt::prompt_threshold;
-use crate::{print, print_user_failure, print_user_success};
+use crate::{print_user_failure, print_user_success};
 
 /// List the projects in this account.
-pub async fn get_project_list(api: &mut PhylumApi, pretty_print: bool, group: Option<&str>) {
-    let resp = api.get_projects(group).await;
+pub async fn get_project_list(
+    api: &mut PhylumApi,
+    pretty_print: bool,
+    group: Option<&str>,
+) -> Result<()> {
+    let resp = api.get_projects(group).await?;
 
-    // Print table header when we're not outputting in JSON format.
-    if pretty_print {
-        let proj_title = format!("{}", Blue.paint("Project Name"));
-        let id_title = format!("{}", Blue.paint("Project ID"));
-        println!("{:<38}{}", proj_title, id_title);
-    }
+    resp.write_stdout(pretty_print);
 
-    print::print_response(&resp, pretty_print, None);
-    println!();
+    Ok(())
 }
 
 /// Handle the project subcommand. Provides facilities for creating a new
@@ -74,7 +73,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let group = matches.value_of("group");
         let pretty_print = pretty_print && !matches.is_present("json");
-        get_project_list(api, pretty_print, group).await;
+        get_project_list(api, pretty_print, group).await?;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.value_of("name").unwrap();
         let group_name = matches.value_of("group");
@@ -200,7 +199,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         }
     } else {
         let group = matches.value_of("group");
-        get_project_list(api, pretty_print, group).await;
+        get_project_list(api, pretty_print, group).await?;
     }
 
     Ok(ExitCode::Ok.into())

@@ -173,8 +173,7 @@ async fn handle_commands() -> CommandResult {
 }
 
 async fn handle_ping(api: PhylumApi) -> CommandResult {
-    let resp = api.ping().await;
-    print::print_response(&resp, true, None);
+    print_user_success!("{}", api.ping().await?);
     Ok(ExitCode::Ok.into())
 }
 
