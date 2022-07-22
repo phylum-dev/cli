@@ -28,6 +28,6 @@ standard library docs].
 
 ## Phylum API
 
-The Phylum extension API is documented in the [TypeScript module file][api].
+The Phylum extension API is documented in the [TypeScript module file].
 
-[api]: https://github.com/phylum-dev/cli/blob/main/cli/src/extension_api.ts
+[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/cli/src/extension_api.ts

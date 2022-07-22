@@ -35,13 +35,22 @@ format. Manifest files consist of the following sections:
 The extension name is used as the subcommand for executing the extension and
 acts as an identifier when referring to it.
 
-The name must use only lowercase alphanumeric characters, hyphens (`-`), or
-underscores (`_`).
+The name is required and must use only lowercase alphanumeric characters,
+hyphens (`-`), or underscores (`_`).
+
+```toml
+name = "hello-world_1"
+```
 
 ## Description
 
 The description is an optional short blurb about the extension. This should be
 plain text (not Markdown).
+
+```toml
+name = "hello-world_1"
+description = "Example extension that greets the world"
+```
 
 ## Entry Point
 
@@ -52,6 +61,11 @@ root directory.
 Phylum CLI extensions support both JavaScript and TypeScript out of the box,
 transpiling TypeScript automatically before execution.
 
+```toml
+name = "hello-world_1"
+entry_point = "main.ts"
+```
+
 ## Permissions
 
 Since extensions are executed inside Deno's JavaScript sandbox, no external
@@ -61,12 +75,28 @@ Users will be prompted to agree to these permissions during install, they are
 later validated during execution relative to the active working directory when
 running it.
 
+`[permissions]` is an optional table of key-value pairs where each key is a type
+of permission.
+
 ### Read
 
 Read permissions list file paths which can be read from by the extension.
 
 Granting permissions to a directory will also allow the extension to access any
 child directories and files inside them.
+
+This is an optional key-value pair where the value is an array containing one
+or more strings.
+
+```toml
+[permissions]
+# ...
+read = [
+    "./path/to/file.txt",
+    "./path/to/directory",
+    "./config_file.yaml",
+]
+```
 
 ### Write
 
@@ -75,9 +105,27 @@ Write permissions list file paths which can be written to by the extension.
 Granting permissions to a directory will also allow the extension to access any
 child directories and files inside them.
 
+This is an optional key-value pair where the value is an array containing one
+or more strings.
+
+```toml
+[permissions]
+# ...
+write = ["./output_file.txt"]
+```
+
 ### Env
 
 Env permissions list environment variables which can be read by the extension.
+
+This is an optional key-value pair where the value is an array containing one
+or more strings.
+
+```toml
+[permissions]
+# ...
+env = ["PHYLUM_API_KEY"]
+```
 
 ### Run
 
@@ -89,6 +137,15 @@ using absolute paths to improve portability.
 The paths also need to match **exactly** with the process executed by the
 extension. `/usr/bin/curl` cannot be executed when `curl` was requested as
 permission and vice versa.
+
+This is an optional key-value pair where the value is an array containing one
+or more strings.
+
+```toml
+[permissions]
+# ...
+run = ["npm", "yarn"]
+```
 
 ### Net
 
@@ -103,26 +160,11 @@ access the redirect target. It's easiest to just specify the redirect target
 directly when making requests, otherwise you'll have to request permissions for
 both domains.
 
-## Example Manifest
-
-The following is an example extension manifest, with each of the possible
-sections populated to show the expected format:
+This is an optional key-value pair where the value is an array containing one
+or more strings.
 
 ```toml
-name = "example"
-description = "Make extension manifest formats more clear"
-entry_point = "main.ts"
-
-# Each entry in the `permissions` table is a key-value pair
-# where the value is an array containing one or more strings.
 [permissions]
-read = [
-    "./path/to/file.txt",
-    "./path/to/directory",
-    "./config_file.yaml",
-]
-write = ["./output_file.txt"]
-env = ["PHYLUM_API_KEY"]
-run = ["npm", "yarn"]
+# ...
 net = ["www.phylum.io", "phylum.io"]
 ```

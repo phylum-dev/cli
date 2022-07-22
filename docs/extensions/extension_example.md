@@ -215,7 +215,7 @@ await Deno.writeTextFile(
 When replacing the `console.log` with this function call and executing our
 extension, you'll run into the following error:
 
-```console
+```text
 ❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt"
 ```
 
