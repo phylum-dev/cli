@@ -55,36 +55,25 @@ pub fn app<'a>() -> clap::Command<'a> {
                 ),
         )
         .subcommand(
-            Command::new("history")
-                .about("Return information about historical jobs")
-                .args(&[
-                    Arg::new("JOB_ID")
-                        .value_name("JOB_ID")
-                        .help("The job id to query (or `current` for the most recent job)"),
-                    Arg::new("verbose")
-                        .short('v')
-                        .long("verbose")
-                        .help("Increase verbosity of api response."),
-                    Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
-                    Arg::new("json")
-                        .short('j')
-                        .long("json")
-                        .help("Produce output in json format (default: false)"),
-                    Arg::new("project")
-                        .short('p')
-                        .long("project")
-                        .value_name("project_name")
-                        .help("Project name used to filter jobs"),
-                ])
-                .subcommand(
-                    Command::new("project")
-                        .about("Show jobs for a specific project (deprecated)")
-                        .args(&[
-                            Arg::new("project_name").value_name("project_name"),
-                            Arg::new("job_id").value_name("job_id").hide(true),
-                        ])
-                        .hide(true),
-                ),
+            Command::new("history").about("Return information about historical jobs").args(&[
+                Arg::new("JOB_ID")
+                    .value_name("JOB_ID")
+                    .help("The job id to query (or `current` for the most recent job)"),
+                Arg::new("verbose")
+                    .short('v')
+                    .long("verbose")
+                    .help("Increase verbosity of api response."),
+                Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
+                Arg::new("json")
+                    .short('j')
+                    .long("json")
+                    .help("Produce output in json format (default: false)"),
+                Arg::new("project")
+                    .short('p')
+                    .long("project")
+                    .value_name("project_name")
+                    .help("Project name used to filter jobs"),
+            ]),
         )
         .subcommand(
             Command::new("project")
