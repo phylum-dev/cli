@@ -23,7 +23,7 @@ lazy_static! {
 // Acceptance criteria tests
 ////////////////////////////////////////////////////////////////////////////////
 
-// When a user runs `phylum extension add .`, the extension in the current
+// When a user runs `phylum extension install .`, the extension in the current
 // working directory should be installed.
 #[test]
 fn extension_is_installed_correctly() {

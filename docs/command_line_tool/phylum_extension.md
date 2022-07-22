@@ -6,13 +6,14 @@ hidden: true
 
 Manage extensions
 
-```
+```sh
 phylum extension [SUBCOMMAND]
 ```
 
 ### Subcommands
 
+* [install](https://docs.phylum.io/docs/phylum_extension_install)
 * [list](https://docs.phylum.io/docs/phylum_extension_list)
 * [new](https://docs.phylum.io/docs/phylum_extension_new)
-* [install](https://docs.phylum.io/docs/phylum_extension_install)
+* [run](https://docs.phylum.io/docs/phylum_extension_run)
 * [uninstall](https://docs.phylum.io/docs/phylum_extension_uninstall)

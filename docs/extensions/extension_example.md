@@ -52,7 +52,7 @@ Now there's a lot to unpack here, so we'll go through things one by one:
 Before we can start writing our extension code, we need to create our new
 extension:
 
-```
+```sh
 phylum extension new duplicates
 ```
 
@@ -61,12 +61,15 @@ our example code:
 
 ```ts
 import { mapValues } from "https://deno.land/std@0.146.0/collections/map_values.ts";
+import { distinct } from "https://deno.land/std@0.146.0/collections/distinct.ts";
 import { groupBy } from "https://deno.land/std@0.146.0/collections/group_by.ts";
 ```
 
-These are the Deno API imports, we use version `0.146.0` of Deno's STD here and
-import the two required functions by loading them as remote ES modules. We'll go
-into more detail on what we need these for later.
+These are the Deno API imports. We use version `0.146.0` of [Deno's STD][deno_std]
+here and import the required functions by loading them as remote ES modules.
+We'll go into more detail on what we need these for later.
+
+[deno_std]: https://deno.land/std
 
 ```ts
 import { PhylumApi } from "phylum";
@@ -86,7 +89,7 @@ The `Deno.args` variable contains an array with all CLI arguments passed after
 our extension name, so for `phylum my-extension one two` that would be `["one",
 "two"]`.
 
-Here we make sure that we get at least one parameter and print a useful help
+Here we make sure that we get exactly one parameter and print a useful help
 message to the terminal if no parameter was provided.
 
 ```ts
@@ -108,7 +111,7 @@ function is asynchronous, we need to `await` it.
 
 The list of packages will look something like this:
 
-```
+```text
 [
   { name: "accepts", version: "1.3.8", type: "npm" },
   { name: "array-flatten", version: "1.1.1", type: "npm" },
@@ -128,7 +131,7 @@ tell it which field to group by using `dep => dep.name`.
 
 This will transform our package list into the following:
 
-```
+```text
 {
   accepts: [
       { name: "accepts", version: "1.3.8", type: "npm" },
@@ -149,7 +152,7 @@ for each dependency.
 
 This results in a simple array with all dependencies and their versions:
 
-```
+```text
 {
   accepts: ["1.3.8", "1.0.0"],
   "array-flatten": ["1.1.1"]
@@ -185,14 +188,14 @@ more than one version in our lockfile.
 
 For our example, the output looks like this:
 
-```
+```text
 accepts: [ "1.3.8", "1.0.0" ]
 ```
 
 And that's all the code we need to check for duplicates. Now we only need to
 install it and we can use it for any lockfile we encounter in the future:
 
-```
+```sh
 phylum extension install ./duplicates
 phylum duplicates ./package-lock.json
 ```
@@ -212,7 +215,7 @@ await Deno.writeTextFile(
 When replacing the `console.log` with this function call and executing our
 extension, you'll run into the following error:
 
-```
+```text
 ❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt"
 ```
 
@@ -221,7 +224,7 @@ to interact with the outside world unless we've been granted permission to do
 so. To request permissions, you'll have to edit the `PhylumExt.toml` manifest
 and add the following:
 
-```
+```toml
 [permissions]
 write = ["./duplicates.txt"]
 ```

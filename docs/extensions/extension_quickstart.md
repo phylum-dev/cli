@@ -1,5 +1,5 @@
 ---
-title: Quickstart
+title: Extension Quickstart
 category: 62c5cb137dbdad00536291a6
 hidden: true
 ---
@@ -27,7 +27,7 @@ directory and imported from the entrypoint.
 The manifest file contains metadata about the extension beyond its executable
 source code. All available options can be found in [the manifest format].
 
-[the manifest format]: https://docs.phylum.io/docs/extensions_manifest
+[the manifest format]: https://docs.phylum.io/docs/extension_manifest
 
 ## Installation
 
@@ -43,7 +43,7 @@ phylum extension install ./my-extension
 Once successfully installed, our extension can be executed by using its name as
 a subcommand for the phylum CLI:
 
-```
+```console
 $ phylum my-extension
 Hello, World!
 ```
