@@ -48,7 +48,6 @@ The description is an optional short blurb about the extension. This should be
 plain text (not Markdown).
 
 ```toml
-name = "hello-world_1"
 description = "Example extension that greets the world"
 ```
 
@@ -62,7 +61,6 @@ Phylum CLI extensions support both JavaScript and TypeScript out of the box,
 transpiling TypeScript automatically before execution.
 
 ```toml
-name = "hello-world_1"
 entry_point = "main.ts"
 ```
 
