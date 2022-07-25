@@ -14,14 +14,6 @@ phylum package [OPTIONS] <name> <version>
 `--filter`
 &emsp; Provide a filter used to limit the issues displayed
 
-EXAMPLES
-# Show only issues with severity of at least 'high'
-    --filter=high
-
-# Show issues with severity of 'critical' in the 'author'
-and 'engineering' domains
-    --filter=crit,aut,eng
-
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
