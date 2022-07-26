@@ -13,6 +13,8 @@ import { describe, afterAll, beforeAll, it, } from "https://deno.land/std@0.148.
 import { copy } from "https://deno.land/std@0.148.0/fs/mod.ts"
 import { assert } from "https://deno.land/std@0.148.0/testing/asserts.ts"
 
+import * as Functions from './functions.ts'
+
 class Phylum {
   readonly tempDir: string
   readonly fixturesDir: string
@@ -58,6 +60,30 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await phylum.cleanup()
+})
+
+describe("Unit tests", async () => {
+  it("correctly parses installed packages", async () => {
+    const fixture = `
+      • Installing six (1.16.0)
+      • Installing six (1.16.0)
+      • Installing numpy (1.23.1)
+      • Installing numpy (1.23.1)
+      • Installing python-dateutil (2.8.2)
+      • Installing python-dateutil (2.8.2)
+      • Installing pytz (2022.1)
+      • Installing pytz (2022.1)
+      • Installing pandas (1.4.3)
+      • Installing pandas (1.4.3)
+    `
+
+    const parsed = Functions.parseDryRun(fixture)
+
+    assert(parsed.find(c => c.name === 'six' && c.version == '1.16.0'))
+    assert(parsed.find(c => c.name === 'numpy' && c.version == '1.23.1'))
+    assert(parsed.find(c => c.name === 'pytz' && c.version == '2022.1'))
+    assert(parsed.find(c => c.name === 'pandas' && c.version == '1.4.3'))
+  })
 })
 
 describe("Poetry extension", async () => {

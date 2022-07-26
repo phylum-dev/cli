@@ -135,7 +135,7 @@ pub async fn handle_run_extension_from_path(
     let path = matches.value_of("PATH").unwrap();
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
-    let extension_path = PathBuf::from(path);
+    let extension_path = PathBuf::from(path).canonicalize()?;
     let extension = Extension::try_from(extension_path)?;
 
     if !matches.is_present("yes") && !extension.permissions().is_allow_none() {
