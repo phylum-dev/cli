@@ -1,4 +1,5 @@
-use std::{cmp, fmt};
+use std::cmp;
+use std::fmt::{self, Write};
 
 #[derive(Debug)]
 pub struct Histogram {
@@ -74,7 +75,7 @@ impl fmt::Display for Histogram {
 
             let bar = "█".repeat(scale(*count));
 
-            histogram += &format!("\n{:>4} - {:<4} [{:>5}] {}", bar_min, bar_max, count, bar);
+            let _ = write!(histogram, "\n{:>4} - {:<4} [{:>5}] {}", bar_min, bar_max, count, bar);
         }
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
