@@ -79,8 +79,8 @@ pub async fn parse_lockfile() {
         Permissions { read: Some(vec![lockfile_str]).into(), ..Permissions::default() };
 
     let parse_lockfile = format!(
-        "const packages = await PhylumApi.parseLockfile({lockfile:?}, 'yarn');
-             console.log(packages);",
+        "const lockfile = await PhylumApi.parseLockfile({lockfile:?}, 'yarn');
+         console.log(lockfile);",
     );
     test_cli
         .extension(&parse_lockfile)
@@ -89,7 +89,7 @@ pub async fn parse_lockfile() {
         .run()
         .success()
         .stdout(predicates::str::contains(
-            r#"[ { name: "accepts", version: "1.3.8", type: "npm" } ]"#,
+            r#"{ packages: [ { name: "accepts", version: "1.3.8" } ], package_type: "npm" }"#,
         ));
 }
 
@@ -97,23 +97,20 @@ pub async fn parse_lockfile() {
 pub async fn get_job_status() {
     let test_cli = TestCli::builder().with_config(true).build();
 
-    let lockfile = create_lockfile(test_cli.temp_path());
     let project = create_project().await;
-    let lockfile_str = lockfile.to_string_lossy().into_owned();
-    let permissions =
-        Permissions { read: Some(vec![lockfile_str]).into(), ..Permissions::default() };
-
     let analyze = format!(
-        "const jobId = await PhylumApi.analyze({lockfile:?}, {project:?});
-             console.log(await PhylumApi.getJobStatus(jobId));"
+        "
+        const pkg = {{ name: 'typescript', version: '4.7.4'}};
+        const jobId = await PhylumApi.analyze('npm', [pkg], {project:?});
+        console.log(await PhylumApi.getJobStatus(jobId));"
     );
+
     test_cli
         .extension(&analyze)
-        .with_permissions(permissions)
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains(r#"name: "accepts""#));
+        .stdout(predicates::str::contains(r#"name: "typescript""#));
 }
 
 /// Ensure shared state is async and thread safe.

@@ -49,7 +49,7 @@ struct PackageLock {
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
     package_type: PackageType,
-    mut packages: Vec<Package>,
+    mut packages: Vec<PackageSpecifier>,
     project: Option<String>,
     group: Option<String>,
 ) -> Result<JobId> {
