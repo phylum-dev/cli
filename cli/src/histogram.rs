@@ -1,4 +1,3 @@
-use std::cmp;
 use std::fmt::{self, Write};
 
 #[derive(Debug)]
@@ -56,17 +55,7 @@ impl fmt::Display for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Scale package count to cell width for the histogram's bar.
         let max = *self.values.iter().max().unwrap_or(&1) as f32;
-        let scale = |count| {
-            // Show no bar for zero packages.
-            if count == 0 {
-                return 0;
-            }
-
-            let scaled = 56.0 * f32::log2(count as f32) / f32::log2(max);
-
-            // Ensure non-zero package counts ALWAYS show at least one bar.
-            cmp::max(scaled as usize, 1)
-        };
+        let scale = |count| (56.0 * f32::log2(count as f32 * 2.) / f32::log2(max * 2.)) as usize;
 
         let mut histogram = String::new();
         for (count, (min, max)) in self.values.iter().rev().zip(self.buckets().iter().rev()) {
