@@ -76,6 +76,9 @@ The command line interface (CLI) allows users to submit their project package de
  
 
 ---
+## Slack
+
+Join us on the [Phylum Community Slack](https://join.slack.com/t/phylumio/shared_invite/zt-1cbgl6qjp-C_mkSFibEA9DyDxjYHbttQ)!
 
 ## Questions/Issues
 
