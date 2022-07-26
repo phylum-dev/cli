@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{cmp, fmt};
 
 #[derive(Debug)]
 pub struct Histogram {
@@ -53,33 +53,31 @@ impl Histogram {
 
 impl fmt::Display for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let scale = |s| {
-            let max = *self.values.iter().max().unwrap_or(&1) as f32;
-            56.0 * f32::log2(s) / f32::log2(max)
+        // Scale package count to cell width for the histogram's bar.
+        let max = *self.values.iter().max().unwrap_or(&1) as f32;
+        let scale = |count| {
+            // Show no bar for zero packages.
+            if count == 0 {
+                return 0;
+            }
+
+            let scaled = 56.0 * f32::log2(count as f32) / f32::log2(max);
+
+            // Ensure non-zero package counts ALWAYS show at least one bar.
+            cmp::max(scaled as usize, 1)
         };
 
-        let output = self.values.iter().rev().zip(self.buckets().iter().rev()).fold(
-            "".to_string(),
-            |acc, x| {
-                let min = (100.0 * x.1 .0).round() as u32;
-                vec![
-                    acc,
-                    format!(
-                        "{:>4} - {:<4} [{:>5}] {}",
-                        match min {
-                            0 => min,
-                            _ => min + 1,
-                        },
-                        (100.0 * x.1 .1).round() as u32,
-                        x.0,
-                        "█".repeat(scale(*x.0 as f32) as usize)
-                    ),
-                ]
-                .join("\n")
-            },
-        );
+        let mut histogram = String::new();
+        for (count, (min, max)) in self.values.iter().rev().zip(self.buckets().iter().rev()) {
+            let bar_min = if *min < f64::EPSILON { 0 } else { (100. * min).round() as u32 + 1 };
+            let bar_max = (100. * max).round() as u32;
+
+            let bar = "█".repeat(scale(*count));
+
+            histogram += &format!("\n{:>4} - {:<4} [{:>5}] {}", bar_min, bar_max, count, bar);
+        }
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
-        write!(f, "{}", output)
+        write!(f, "{}", histogram)
     }
 }
