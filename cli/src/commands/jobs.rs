@@ -17,29 +17,31 @@ use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
 use crate::{print_user_success, print_user_warning};
 
-fn handle_status<T>(resp: Result<JobStatusResponse<T>, PhylumApiError>, pretty: bool) -> Action
+fn handle_status<T>(
+    resp: Result<JobStatusResponse<T>, PhylumApiError>,
+    pretty: bool,
+) -> Result<Action>
 where
     JobStatusResponse<T>: Format,
 {
     let resp = match resp {
         Ok(resp) => resp,
-        Err(err) => {
-            if err.status() == Some(StatusCode::NOT_FOUND) {
-                print_user_warning!(
-                    "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                    Blue.paint("phylum analyze <lock_file>")
-                );
-            }
-            return Action::None;
+        Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
+            print_user_warning!(
+                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
+                Blue.paint("phylum analyze <lock_file>")
+            );
+            return Ok(Action::None);
         },
+        Err(err) => return Err(err.into()),
     };
 
     resp.write_stdout(pretty);
 
     if !resp.pass {
-        resp.action
+        Ok(resp.action)
     } else {
-        Action::None
+        Ok(Action::None)
     }
 }
 
@@ -50,7 +52,7 @@ pub async fn get_job_status(
     verbose: bool,
     pretty: bool,
     filter: Option<Filter>,
-) -> Action {
+) -> Result<Action> {
     if verbose {
         let mut resp = api.get_job_status_ext(job_id).await;
 
@@ -78,7 +80,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
     if matches.is_present("JOB_ID") {
         let job_id = JobId::from_str(matches.value_of("JOB_ID").expect("No job id found"))?;
-        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
+        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
     } else if let Some(project) = matches.value_of("project") {
         let resp = api.get_project_details(project).await?.jobs;
         resp.write_stdout(pretty_print);
@@ -202,7 +204,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
     if synch {
         log::debug!("Requesting status...");
-        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await;
+        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
     }
     Ok(CommandValue::Action(action))
 }
