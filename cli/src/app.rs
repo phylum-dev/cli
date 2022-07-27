@@ -174,6 +174,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     .short('j')
                     .long("json")
                     .help("Produce output in json format (default: false)"),
+                Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
             ]),
         )
         .subcommand(

@@ -2,7 +2,50 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::FromStr;
 
-use phylum_types::types::package::{RiskLevel, RiskType};
+use phylum_types::types::job::JobStatusResponse;
+use phylum_types::types::package::{Package, PackageStatusExtended, RiskLevel, RiskType};
+
+/// Remove issues based on a filter.
+pub trait FilterIssues {
+    fn filter(&mut self, filter: &Filter);
+}
+
+impl FilterIssues for Package {
+    fn filter(&mut self, filter: &Filter) {
+        self.issues.retain(|issue| !should_filter_issue(filter, issue.impact, issue.risk_type));
+    }
+}
+
+impl<T: FilterIssues> FilterIssues for JobStatusResponse<T> {
+    fn filter(&mut self, filter: &Filter) {
+        for package in &mut self.packages {
+            package.filter(filter);
+        }
+    }
+}
+
+impl FilterIssues for PackageStatusExtended {
+    fn filter(&mut self, filter: &Filter) {
+        self.issues.retain(|issue| !should_filter_issue(filter, issue.severity, issue.domain));
+    }
+}
+
+/// Check if a package should be filtered out.
+fn should_filter_issue(filter: &Filter, level: RiskLevel, risk_type: impl Into<RiskType>) -> bool {
+    if let Some(filter_level) = filter.level {
+        if level < filter_level {
+            return true;
+        }
+    }
+
+    if let Some(domains) = &filter.domains {
+        if !domains.contains(&risk_type.into()) {
+            return true;
+        }
+    }
+
+    false
+}
 
 pub struct Filter {
     pub level: Option<RiskLevel>,
@@ -71,6 +114,8 @@ impl FromStr for Filter {
 
 #[cfg(test)]
 mod tests {
+    use phylum_types::types::package::Issue;
+
     use super::*;
 
     #[test]
@@ -110,5 +155,27 @@ mod tests {
         assert!(domains.contains(&RiskType::AuthorsRisk));
         assert!(domains.contains(&RiskType::EngineeringRisk));
         assert!(domains.contains(&RiskType::Vulnerabilities));
+    }
+
+    #[test]
+    fn test_filter_check() {
+        let filter_string = "lic";
+        let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
+
+        let issue = r#"{
+                    "title": "Commercial license risk in xmlrpc@0.3.0",
+                    "description": "license is medium risk",
+                    "severity": "medium",
+                    "domain": "license"
+                    }"#;
+        let issue: Issue = serde_json::from_str(issue).unwrap();
+
+        let should_filter = should_filter_issue(&filter, issue.severity, issue.domain);
+        assert!(!should_filter);
+
+        let filter_string = "mal";
+        let filter = Filter::from_str(filter_string).expect("Failed to parse filter string: {}");
+        let should_filter = should_filter_issue(&filter, issue.severity, issue.domain);
+        assert!(should_filter);
     }
 }
