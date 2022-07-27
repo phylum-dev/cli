@@ -49,7 +49,7 @@ struct PackageLock {
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
     package_type: PackageType,
-    mut packages: Vec<PackageSpecifier>,
+    packages: Vec<PackageSpecifier>,
     project: Option<String>,
     group: Option<String>,
 ) -> Result<JobId> {
@@ -68,7 +68,7 @@ async fn analyze(
     };
 
     let packages = packages
-        .drain(..)
+        .into_iter()
         .map(|package| PackageDescriptor {
             package_type,
             version: package.version,
@@ -199,11 +199,11 @@ async fn parse_lockfile(
     let lockfile_type = match lockfile_type {
         Some(lockfile_type) => lockfile_type,
         None => {
-            let (mut packages, package_type) =
+            let (packages, package_type) =
                 parse::get_packages_from_lockfile(Path::new(&lockfile))?;
             return Ok(PackageLock {
                 package_type,
-                packages: packages.drain(..).map(PackageSpecifier::from).collect(),
+                packages: packages.into_iter().map(PackageSpecifier::from).collect(),
             });
         },
     };
@@ -218,11 +218,11 @@ async fn parse_lockfile(
     let lockfile_data = fs::read_to_string(&lockfile)
         .await
         .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
-    let mut packages = parser.parse(&lockfile_data)?;
+    let packages = parser.parse(&lockfile_data)?;
 
     Ok(PackageLock {
         package_type: parser.package_type(),
-        packages: packages.drain(..).map(PackageSpecifier::from).collect(),
+        packages: packages.into_iter().map(PackageSpecifier::from).collect(),
     })
 }
 
