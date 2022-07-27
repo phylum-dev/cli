@@ -4,11 +4,31 @@ export class PhylumApi {
     /// This expects a `.phylum_project` file to be present if the `project`
     /// parameter is undefined.
     ///
+    /// # Parameters
+    ///
+    /// Accepted package types are "npm", "pypi", "maven", "rubygems", and "nuget".
+    ///
+    /// Packages are expected in the following format:
+    ///
+    /// ```
+    /// [
+    ///   { name: "accepts", version: "1.3.8" },
+    ///   { name: "ms", version: "2.0.0" },
+    ///   { name: "negotiator", version: "0.6.3" },
+    ///   { name: "ms", version: "2.1.3" }
+    /// ]
+    /// ```
+    ///
     /// # Returns
     ///
     /// Analyze Job ID, which can later be queried with `getJobStatus`.
-    static async analyze(lockfile: string, project?: string, group?: string): string {
-        return await Deno.core.opAsync('analyze', lockfile, project, group);
+    static async analyze(
+        package_type: string,
+        packages: [object],
+        project?: string,
+        group?: string,
+    ): string {
+        return await Deno.core.opAsync('analyze', package_type, packages, project, group);
     }
 
     /// Get info about the logged in user.
@@ -179,14 +199,17 @@ export class PhylumApi {
     /// List of dependencies:
     ///
     /// ```
-    /// [
-    ///   { name: "accepts", version: "1.3.8", type: "npm" },
-    ///   { name: "ms", version: "2.0.0", type: "npm" },
-    ///   { name: "negotiator", version: "0.6.3", type: "npm" },
-    ///   { name: "ms", version: "2.1.3", type: "npm" }
-    /// ]
+    /// {
+    ///   package_type: "npm",
+    ///   packages: [
+    ///     { name: "accepts", version: "1.3.8" },
+    ///     { name: "ms", version: "2.0.0" },
+    ///     { name: "negotiator", version: "0.6.3" },
+    ///     { name: "ms", version: "2.1.3" }
+    ///   ]
+    /// }
     /// ```
-    static async parseLockfile(lockfile: string, lockfileType?: string): [object] {
+    static async parseLockfile(lockfile: string, lockfileType?: string): object {
         return await Deno.core.opAsync('parse_lockfile', lockfile, lockfileType);
     }
 }

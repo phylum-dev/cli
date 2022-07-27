@@ -8,18 +8,39 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use phylum_types::types::auth::{AccessToken, RefreshToken};
-use phylum_types::types::common::{JobId, ProjectId};
+use phylum_types::types::common::JobId;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectDetailsResponse;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::auth::UserInfo;
 use crate::commands::extensions::state::ExtensionState;
-use crate::commands::parse::{self, get_packages_from_lockfile, LOCKFILE_PARSERS};
+use crate::commands::parse::{self, LOCKFILE_PARSERS};
 use crate::config::get_current_project;
+
+/// Package descriptor for any ecosystem.
+#[derive(Serialize, Deserialize, Debug)]
+struct PackageSpecifier {
+    name: String,
+    version: String,
+}
+
+impl From<PackageDescriptor> for PackageSpecifier {
+    fn from(descriptor: PackageDescriptor) -> Self {
+        Self { name: descriptor.name, version: descriptor.version }
+    }
+}
+
+/// Parsed lockfile content.
+#[derive(Serialize, Deserialize, Debug)]
+struct PackageLock {
+    packages: Vec<PackageSpecifier>,
+    package_type: PackageType,
+}
 
 /// Analyze a lockfile.
 ///
@@ -27,18 +48,13 @@ use crate::config::get_current_project;
 #[op]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    lockfile: String,
+    package_type: PackageType,
+    packages: Vec<PackageSpecifier>,
     project: Option<String>,
     group: Option<String>,
-) -> Result<ProjectId> {
-    // Ensure extension has file read-access.
+) -> Result<JobId> {
     let state = ExtensionState::from(op_state);
-    state.permissions.read.validate(&lockfile, "read")?;
-
     let api = state.api().await?;
-
-    let (packages, request_type) = get_packages_from_lockfile(Path::new(&lockfile))
-        .context("Unable to locate any valid package in package lockfile")?;
 
     let (project, group) = match (project, group) {
         (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
@@ -51,8 +67,17 @@ async fn analyze(
         },
     };
 
+    let packages = packages
+        .into_iter()
+        .map(|package| PackageDescriptor {
+            package_type,
+            version: package.version,
+            name: package.name,
+        })
+        .collect::<Vec<_>>();
+
     let job_id = api
-        .submit_request(&request_type, &packages, false, project, None, group.map(String::from))
+        .submit_request(&package_type, &packages, false, project, None, group.map(String::from))
         .await?;
 
     Ok(job_id)
@@ -165,7 +190,7 @@ async fn parse_lockfile(
     op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     lockfile_type: Option<String>,
-) -> Result<Vec<PackageDescriptor>> {
+) -> Result<PackageLock> {
     // Ensure extension has file read-access.
     let state = ExtensionState::from(op_state);
     state.permissions.read.validate(&lockfile, "read")?;
@@ -173,7 +198,13 @@ async fn parse_lockfile(
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {
         Some(lockfile_type) => lockfile_type,
-        None => return Ok(parse::get_packages_from_lockfile(Path::new(&lockfile))?.0),
+        None => {
+            let (packages, package_type) = parse::get_packages_from_lockfile(Path::new(&lockfile))?;
+            return Ok(PackageLock {
+                package_type,
+                packages: packages.into_iter().map(PackageSpecifier::from).collect(),
+            });
+        },
     };
 
     // Attempt to parse as requested lockfile type.
@@ -186,7 +217,12 @@ async fn parse_lockfile(
     let lockfile_data = fs::read_to_string(&lockfile)
         .await
         .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
-    parser.parse(&lockfile_data)
+    let packages = parser.parse(&lockfile_data)?;
+
+    Ok(PackageLock {
+        package_type: parser.package_type(),
+        packages: packages.into_iter().map(PackageSpecifier::from).collect(),
+    })
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {
