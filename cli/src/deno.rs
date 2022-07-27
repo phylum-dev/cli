@@ -23,6 +23,7 @@ use url::{Host, Url};
 use crate::api::PhylumApi;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
+use crate::commands::{CommandResult, ExitCode};
 use crate::fmt_deno_error;
 
 /// Load Phylum API for module injection.
@@ -33,7 +34,7 @@ pub async fn run(
     api: BoxFuture<'static, Result<PhylumApi>>,
     extension: &extension::Extension,
     args: Vec<String>,
-) -> Result<()> {
+) -> CommandResult {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
     let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
@@ -91,18 +92,27 @@ pub async fn run(
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {
-        print_js_error(error)?;
+        return print_js_error(error);
     }
     if let Err(error) = worker.run_event_loop(false).await {
-        print_js_error(error)?;
+        return print_js_error(error);
     }
 
-    Ok(())
+    Ok(ExitCode::Ok.into())
 }
 
 /// Pretty-print an anyhow error as Deno JS error.
-fn print_js_error(error: Error) -> Result<()> {
+fn print_js_error(error: Error) -> CommandResult {
     let js_error: JsError = error.downcast::<JsError>()?;
+
+    // Remove flag from permission errors.
+    if let Some((message, _)) = js_error
+        .message
+        .as_ref()
+        .and_then(|message| message.split_once(", run again with the --allow"))
+    {
+        return Err(anyhow!(message.to_owned()));
+    }
 
     println!(
         "{}: {}",
@@ -110,7 +120,7 @@ fn print_js_error(error: Error) -> Result<()> {
         fmt_deno_error::format_js_error(&js_error)
     );
 
-    Ok(())
+    Ok(ExitCode::JsError.into())
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
