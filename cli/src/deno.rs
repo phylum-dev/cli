@@ -11,7 +11,7 @@ use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::{
     self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
 };
-use deno_runtime::permissions::{Permissions, PermissionsOptions};
+use deno_runtime::permissions::Permissions;
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, BootstrapOptions};
 use futures::future::BoxFuture;
@@ -29,6 +29,7 @@ const EXTENSION_API: &str = include_str!("./extension_api.ts");
 pub async fn run(
     api: BoxFuture<'static, Result<PhylumApi>>,
     extension: &extension::Extension,
+    permissions: Permissions,
     args: Vec<String>,
 ) -> Result<()> {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
@@ -73,17 +74,11 @@ pub async fn run(
         stdio: Default::default(),
     };
 
-    // Build permissions object from extension's requested permissions.
-    let permissions = extension.permissions().into_owned();
-    let permissions_options = PermissionsOptions::try_from(&permissions)?;
-    let worker_permissions = Permissions::from_options(&permissions_options);
-
     // Initialize Deno runtime.
-    let mut worker =
-        MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
+    let mut worker = MainWorker::bootstrap_from_options(main_module.clone(), permissions, options);
 
     // Export shared state.
-    let state = ExtensionState::new(api, permissions);
+    let state = ExtensionState::new(api);
     worker.js_runtime.op_state().borrow_mut().put(state);
 
     // Execute extension code.

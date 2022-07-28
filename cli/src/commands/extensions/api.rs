@@ -187,13 +187,14 @@ async fn get_package_details(
 /// Equivalent to `phylum parse`.
 #[op]
 async fn parse_lockfile(
-    op_state: Rc<RefCell<OpState>>,
+    _op_state: Rc<RefCell<OpState>>,
     lockfile: String,
     lockfile_type: Option<String>,
 ) -> Result<PackageLock> {
+    // TODO: Validate read permissions
     // Ensure extension has file read-access.
-    let state = ExtensionState::from(op_state);
-    state.permissions.read.validate(&lockfile, "read")?;
+    // let state = ExtensionState::from(op_state);
+    // state.permissions.read.validate(&lockfile, "read")?;
 
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {

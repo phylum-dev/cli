@@ -1,10 +1,10 @@
-use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fs::{self, DirBuilder};
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
+use deno_runtime::permissions::Permissions;
 use anyhow::{anyhow, Result};
 use deno_runtime::deno_core::error::JsError;
 use futures::future::BoxFuture;
@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 use crate::api::PhylumApi;
-use crate::commands::extensions::permissions::Permissions;
 use crate::commands::{CommandResult, ExitCode};
 use crate::{deno, dirs};
 
@@ -30,17 +29,11 @@ pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
     entry_point: Option<String>,
-    permissions: Option<Permissions>,
 }
 
 impl ExtensionManifest {
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            description: Default::default(),
-            entry_point: Default::default(),
-            permissions: Default::default(),
-        }
+        Self { name: name.into(), description: Default::default(), entry_point: Default::default() }
     }
 
     fn entry_point(&self) -> &str {
@@ -61,13 +54,6 @@ impl Extension {
 
     pub fn description(&self) -> Option<&str> {
         self.manifest.description.as_deref()
-    }
-
-    pub fn permissions(&self) -> Cow<'_, Permissions> {
-        match self.manifest.permissions.as_ref() {
-            Some(permissions) => Cow::Borrowed(permissions),
-            None => Cow::Owned(Permissions::default()),
-        }
     }
 
     /// Install the extension in the default path.
@@ -151,13 +137,14 @@ impl Extension {
     pub async fn run(
         &self,
         api: BoxFuture<'static, Result<PhylumApi>>,
+        permissions: Permissions,
         args: Vec<String>,
     ) -> CommandResult {
         // Disable logging for running extensions.
         log::set_max_level(LevelFilter::Off);
 
         // Execute Deno extension.
-        let err = match deno::run(api, self, args).await {
+        let err = match deno::run(api, self, permissions, args).await {
             Ok(()) => return Ok(ExitCode::Ok.into()),
             Err(err) => err,
         };

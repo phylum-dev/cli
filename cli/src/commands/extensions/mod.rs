@@ -1,15 +1,13 @@
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::fmt::Display;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, ArgMatches, Command, ValueHint};
-use dialoguer::console::Term;
-use dialoguer::Confirm;
+use clap::{arg, Arg, ArgMatches, Command, ValueHint};
+use deno_runtime::permissions::Permissions;
 use futures::future::BoxFuture;
 use log::{error, warn};
 
@@ -20,7 +18,6 @@ use crate::print_user_success;
 
 pub mod api;
 pub mod extension;
-pub mod permissions;
 pub mod state;
 
 const EXTENSION_SKELETON: &[u8] = b"\
@@ -35,7 +32,6 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("install")
                 .about("Install extension")
-                .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -44,14 +40,65 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("new").about("Create a new extension").arg(arg!([PATH]).required(true)),
         )
-        .subcommand(
+        .subcommand(permission_args(
             Command::new("run")
                 .about("Run an extension from a directory")
-                .arg(arg!(-y --yes "Automatically accept requested permissions"))
                 .arg(arg!([PATH]).required(true))
                 .arg(arg!([OPTIONS] ... "Extension parameters")),
-        )
+        ))
         .subcommand(Command::new("list").about("List installed extensions"))
+}
+
+/// Add Deno permission arguments.
+fn permission_args(app: Command) -> Command {
+    app.arg(Arg::new("allow-all").long("allow-all").help("Allow all permissions"))
+        .arg(
+            Arg::new("allow-read")
+                .long("allow-read")
+                .min_values(0)
+                .takes_value(true)
+                .use_value_delimiter(true)
+                .require_equals(true)
+                .value_hint(ValueHint::AnyPath)
+                .help("Allow read access"),
+        )
+        .arg(
+            Arg::new("allow-write")
+                .long("allow-write")
+                .min_values(0)
+                .takes_value(true)
+                .use_value_delimiter(true)
+                .require_equals(true)
+                .value_hint(ValueHint::AnyPath)
+                .help("Allow write access"),
+        )
+        .arg(
+            Arg::new("allow-net")
+                .long("allow-net")
+                .min_values(0)
+                .takes_value(true)
+                .use_value_delimiter(true)
+                .require_equals(true)
+                .help("Allow network access"),
+        )
+        .arg(
+            Arg::new("allow-env")
+                .long("allow-env")
+                .min_values(0)
+                .takes_value(true)
+                .use_value_delimiter(true)
+                .require_equals(true)
+                .help("Allow environment access"),
+        )
+        .arg(
+            Arg::new("allow-run")
+                .long("allow-run")
+                .min_values(0)
+                .takes_value(true)
+                .use_value_delimiter(true)
+                .require_equals(true)
+                .help("Allow running executables"),
+        )
 }
 
 /// Generate the subcommands for each extension.
@@ -77,12 +124,12 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
             }
         })
         .fold(command, |command, ext| {
-            command.subcommand(
+            command.subcommand(permission_args(
                 Command::new(ext.name())
                     .allow_hyphen_values(true)
                     .disable_help_flag(true)
                     .arg(arg!([OPTIONS] ... "Extension parameters")),
-            )
+            ))
         })
 }
 
@@ -93,8 +140,7 @@ pub async fn handle_extensions(
 ) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
-            handle_install_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes"))
-                .await
+            handle_install_extension(matches.value_of("PATH").unwrap()).await
         },
         Some(("uninstall", matches)) => {
             handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
@@ -112,13 +158,15 @@ pub async fn handle_extensions(
 pub async fn handle_run_extension(
     api: BoxFuture<'static, Result<PhylumApi>>,
     name: &str,
-    args: &ArgMatches,
+    matches: &ArgMatches,
 ) -> CommandResult {
-    let options = args.get_many("OPTIONS").map(|options| options.cloned().collect());
+    let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
     let extension = Extension::load(name)?;
 
-    extension.run(api, options.unwrap_or_default()).await?;
+    let permissions = permissions_from_matches(matches);
+
+    extension.run(api, permissions, options.unwrap_or_default()).await?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
@@ -136,11 +184,9 @@ pub async fn handle_run_extension_from_path(
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    if !matches.is_present("yes") && !extension.permissions().is_allow_none() {
-        ask_permissions(&extension)?;
-    }
+    let permissions = permissions_from_matches(matches);
 
-    extension.run(api, options.unwrap_or_default()).await?;
+    extension.run(api, permissions, options.unwrap_or_default()).await?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
@@ -148,7 +194,7 @@ pub async fn handle_run_extension_from_path(
 /// Handle the `extension install` subcommand path.
 ///
 /// Install the extension from the specified path.
-async fn handle_install_extension(path: &str, accept_permissions: bool) -> CommandResult {
+async fn handle_install_extension(path: &str) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
@@ -157,53 +203,9 @@ async fn handle_install_extension(path: &str, accept_permissions: bool) -> Comma
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    if !accept_permissions && !extension.permissions().is_allow_none() {
-        ask_permissions(&extension)?;
-    }
-
     extension.install()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
-}
-
-fn ask_permissions(extension: &Extension) -> Result<()> {
-    if !Term::stdout().is_term() {
-        return Err(anyhow!(
-            "Can't ask for permissions: not a terminal. For unsupervised usage, consider using \
-             the -y / --yes flag."
-        ));
-    }
-
-    let permissions = extension.permissions();
-
-    println!("The `{}` extension requires the following permissions:", extension.name());
-
-    fn print_permissions_list<S: Display>(key: &str, detail: &str, items: Option<&Vec<S>>) {
-        // Don't prompt if no permissions are requested.
-        let permissions = match items {
-            Some(permissions) => permissions,
-            None => return,
-        };
-
-        // It should be impossible to create an empty permissions vector.
-        assert!(!permissions.is_empty(), "unexpected permissions value");
-
-        println!("\n  {} {detail}", Color::Blue.bold().paint(key));
-        for permission in permissions {
-            println!("    '{permission}'");
-        }
-    }
-
-    print_permissions_list("Read", "from the following paths:", permissions.read.get());
-    print_permissions_list("Write", "to the following paths:", permissions.write.get());
-    print_permissions_list("Run", "the following commands:", permissions.run.get());
-    print_permissions_list("Access", "the following domains:", permissions.net.get());
-
-    if !Confirm::new().with_prompt("\nDo you accept?").default(false).interact()? {
-        Err(anyhow!("permissions not granted, aborting"))
-    } else {
-        Ok(())
-    }
 }
 
 /// Handle the `extension uninstall` subcommand path.
@@ -310,4 +312,37 @@ pub fn installed_extensions() -> Result<Vec<Extension>> {
             }
         })
         .collect::<Vec<_>>())
+}
+
+/// Get permissions based on CLI parameters.
+fn permissions_from_matches(matches: &ArgMatches) -> Permissions {
+    if matches.is_present("allow-all") {
+        return Permissions {
+            read: Permissions::new_read(&Some(Vec::new()), true),
+            write: Permissions::new_write(&Some(Vec::new()), true),
+            net: Permissions::new_net(&Some(Vec::new()), true),
+            env: Permissions::new_env(&Some(Vec::new()), true),
+            run: Permissions::new_run(&Some(Vec::new()), true),
+            ffi: Permissions::new_ffi(&None, false),
+            hrtime: Permissions::new_hrtime(false),
+        };
+    }
+
+    let read =
+        matches.get_many::<PathBuf>("allow-read").map(|net| net.cloned().collect::<Vec<_>>());
+    let write =
+        matches.get_many::<PathBuf>("allow-write").map(|net| net.cloned().collect::<Vec<_>>());
+    let net = matches.get_many::<String>("allow-net").map(|net| net.cloned().collect::<Vec<_>>());
+    let env = matches.get_many::<String>("allow-env").map(|net| net.cloned().collect::<Vec<_>>());
+    let run = matches.get_many::<String>("allow-run").map(|net| net.cloned().collect::<Vec<_>>());
+
+    Permissions {
+        read: Permissions::new_read(&read, true),
+        write: Permissions::new_write(&write, true),
+        net: Permissions::new_net(&net, true),
+        env: Permissions::new_env(&env, true),
+        run: Permissions::new_run(&run, true),
+        ffi: Permissions::new_ffi(&None, false),
+        hrtime: Permissions::new_hrtime(false),
+    }
 }
