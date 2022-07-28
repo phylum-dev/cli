@@ -40,6 +40,7 @@ pub enum ExitCode {
     PackageNotFound = 12,
     SetThresholdsFailure = 13,
     AlreadyExists = 14,
+    NoHistoryFound = 15,
     FailedThresholds = 100,
 }
 
