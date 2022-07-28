@@ -13,7 +13,7 @@ import { describe, afterAll, beforeAll, it, } from "https://deno.land/std@0.148.
 import { copy } from "https://deno.land/std@0.148.0/fs/mod.ts"
 import { assert } from "https://deno.land/std@0.148.0/testing/asserts.ts"
 
-import * as Functions from './functions.ts'
+import * as Functions from './parse.ts'
 
 class Phylum {
   readonly tempDir: string
@@ -65,16 +65,37 @@ afterAll(async () => {
 describe("Unit tests", async () => {
   it("correctly parses installed packages", async () => {
     const fixture = `
-      • Installing six (1.16.0)
-      • Installing six (1.16.0)
-      • Installing numpy (1.23.1)
-      • Installing numpy (1.23.1)
-      • Installing python-dateutil (2.8.2)
-      • Installing python-dateutil (2.8.2)
-      • Installing pytz (2022.1)
-      • Installing pytz (2022.1)
-      • Installing pandas (1.4.3)
-      • Installing pandas (1.4.3)
+      Updating dependencies
+      Resolving dependencies...
+         1: fact: fixture is 0.1.0
+         1: derived: fixture
+         1: fact: fixture depends on pandas (^1.4.3)
+         1: selecting fixture (0.1.0)
+         1: derived: pandas (>=1.4.3,<2.0.0)
+      PyPI: 1 packages found for pandas >=1.4.3,<2.0.0
+         1: fact: pandas (1.4.3) depends on python-dateutil (>=2.8.1)
+         1: fact: pandas (1.4.3) depends on pytz (>=2020.1)
+         1: fact: pandas (1.4.3) depends on numpy (>=1.21.0)
+         1: selecting pandas (1.4.3)
+         1: derived: numpy (>=1.21.0)
+         1: derived: pytz (>=2020.1)
+         1: derived: python-dateutil (>=2.8.1)
+      PyPI: No release information found for numpy-0.9.6, skipping
+      PyPI: No release information found for numpy-1.4.0, skipping
+      PyPI: 14 packages found for numpy >=1.21.0
+      PyPI: 6 packages found for pytz >=2020.1
+      PyPI: No release information found for python-dateutil-0.1, skipping
+      PyPI: No release information found for python-dateutil-2.0, skipping
+      PyPI: 2 packages found for python-dateutil >=2.8.1
+         1: fact: python-dateutil (2.8.2) depends on six (>=1.5)
+         1: selecting python-dateutil (2.8.2)
+         1: derived: six (>=1.5)
+      PyPI: 18 packages found for six >=1.5
+         1: selecting pytz (2022.1)
+         1: selecting six (1.16.0)
+         1: selecting numpy (1.23.1)
+         1: Version solving took 0.038 seconds.
+         1: Tried 1 solutions.
     `
 
     const parsed = Functions.parseDryRun(fixture)
@@ -96,6 +117,18 @@ describe("Poetry extension", async () => {
 
   it("correctly allows a valid package", async () => {
     let status = await phylum.runExt(['add', 'pandas'], phylum.fixturesDir)
+    assert(status.code === 0)
+  })
+
+  // TODO tqdm is artificially marked as not passing; replace with an actual
+  // known-bad package.
+  it("correctly denies an invalid package", async () => {
+    let status = await phylum.runExt(['add', 'tqdm'], phylum.fixturesDir)
+    assert(status.code === 1)
+  })
+
+  it("allows duplicating the `--dry-run` flag", async () => {
+    let status = await phylum.runExt(['add', '--dry-run', 'numpy'], phylum.fixturesDir)
     assert(status.code === 0)
   })
 
