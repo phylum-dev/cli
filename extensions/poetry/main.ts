@@ -1,5 +1,32 @@
 import { PhylumApi } from "phylum"
 import { parseDryRun } from "./parse.ts"
+import { red, green, yellow } from "https://deno.land/std@0.150.0/fmt/colors.ts";
+
+class FileBackup {
+  readonly fileName: string
+  readonly fileContent: string | null
+
+  constructor(fileName: string) {
+    this.fileName = fileName
+    this.fileContent = null
+  }
+
+  async backup() {
+    try {
+      this.fileContent = await Deno.readTextFile(this.fileName)
+    } catch (e) { }
+  }
+
+  async restoreOrDelete() {
+    try {
+      if (this.fileContent != null) {
+        await Deno.writeTextFile(this.fileName, this.fileContent)
+      } else {
+        await Deno.remove(this.fileName)
+      }
+    } catch (e) { }
+  }
+}
 
 // Parse the output of `poetry` subcommands that support the `--dry-run` flag,
 // and submit the packages.
@@ -9,7 +36,12 @@ import { parseDryRun } from "./parse.ts"
 // `--dry-run` only would not output anything in combination with flags such
 // as `--lock` that do not perform the actual operations.
 async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
-  console.log("Retrieving changes...")
+  // Read and backup the current poetry lockfile contents.
+  const lockfileBackup = new FileBackup('poetry.lock')
+  const manifestBackup = new FileBackup('pyproject.toml')
+
+  await lockfileBackup.backup()
+  await manifestBackup.backup()
 
   let process = Deno.run({
     cmd: ['poetry', subcommand, '-vvv', '-n', '--dry-run', ...args.map(s => s.toString())],
@@ -20,10 +52,20 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   await process.status()
   await process.close()
 
+  // If it existed before, restore the previous contents of the lockfile;
+  // otherwise, delete it. This is a workaround to the fact that in poetry
+  // 1.1.x, the `--dry-run` argument does not prevent the lockfile from 
+  // being modified. This is not fixed as of poetry 1.1.14.
+  // Prudently, do the same for the manifest (pyproject.toml).
+  //
+  // See: https://github.com/python-poetry/poetry/pull/5718
+  await lockfileBackup.restoreOrDelete()
+  await manifestBackup.restoreOrDelete()
+
   const output = new TextDecoder().decode(await process.output())
   const packages = parseDryRun(output)
 
-  console.log("Analyzing packages:")
+  console.log(`Analyzing packages:`)
   for (const { name, version } of packages) {
     console.log(`  - ${name} ${version}`)
   }
@@ -33,13 +75,13 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   const jobStatus = await PhylumApi.getJobStatus(jobId)
 
   if (jobStatus.pass && jobStatus.status === "complete") {
-    console.log("All packages pass project thresholds.")
+    console.log(`[${green("phylum")}] All packages pass project thresholds.\n`)
     return true
   } else if (jobStatus.pass) {
-    console.warn("Unknown packages were submitted for analysis, please check again later.")
-    return true
+    console.warn(`[${yellow("phylum")}] Unknown packages were submitted for analysis, please check again later.\n`)
+    return false
   } else {
-    console.error('The operation caused a threshold failure.')
+    console.error(`[${red("phylum")}] The operation caused a threshold failure.\n`)
     return false
   }
 }
