@@ -6,13 +6,16 @@ use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// Resource permissions.
-#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct Permission(Option<Vec<String>>);
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum Permission {
+    List(Vec<String>),
+    Boolean(bool),
+}
 
-impl From<Option<Vec<String>>> for Permission {
-    fn from(raw: Option<Vec<String>>) -> Self {
-        Permission(raw)
+impl Default for Permission {
+    fn default() -> Self {
+        Self::Boolean(false)
     }
 }
 
@@ -22,7 +25,13 @@ impl Permission {
     // getter methods below. We need to make sure to always go through these when
     // constructing a `PermissionsOptions` object.
     pub fn get(&self) -> Option<&Vec<String>> {
-        self.0.as_ref().and_then(|v| if v.is_empty() { None } else { Some(v) })
+        const EMPTY_VEC: &Vec<String> = &Vec::new();
+        match &self {
+            Self::List(list) if list.is_empty() => None,
+            Self::List(list) => Some(list),
+            Self::Boolean(true) => Some(EMPTY_VEC),
+            Self::Boolean(false) => None,
+        }
     }
 
     /// Check if access to resource is permitted.
@@ -37,9 +46,13 @@ impl Permission {
 
 #[derive(Clone, Default, Deserialize, Debug, Serialize)]
 pub struct Permissions {
+    #[serde(default)]
     pub read: Permission,
+    #[serde(default)]
     pub write: Permission,
+    #[serde(default)]
     pub env: Permission,
+    #[serde(default)]
     pub run: Permission,
     #[serde(default, deserialize_with = "net_permission")]
     pub net: Permission,
@@ -50,11 +63,11 @@ fn net_permission<'de, D>(deserializer: D) -> Result<Permission, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let mut permission = Permission::deserialize(deserializer)?;
+    let permission = Permission::deserialize(deserializer)?;
 
-    let net = match permission.0.as_mut() {
-        Some(net) => net,
-        None => return Ok(permission),
+    let net = match &permission {
+        Permission::List(net) => net,
+        _ => return Ok(permission),
     };
 
     // Error out if URL contains scheme or path segments.
@@ -112,11 +125,11 @@ mod tests {
     #[test]
     fn empty_vecs_are_turned_into_none() {
         let permissions = Permissions {
-            read: Permission(Some(vec![])),
-            write: Permission(Some(vec![])),
-            env: Permission(Some(vec![])),
-            run: Permission(Some(vec![])),
-            net: Permission(Some(vec![])),
+            read: Permission::List(vec![]),
+            write: Permission::List(vec![]),
+            env: Permission::List(vec![]),
+            run: Permission::List(vec![]),
+            net: Permission::List(vec![]),
         };
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
@@ -135,7 +148,7 @@ mod tests {
 
         let permissions = toml::from_str::<Permissions>(valid_toml).unwrap();
 
-        assert_eq!(permissions.net, Permission(Some(vec!["api.phylum.io".into()])));
+        assert_eq!(permissions.net, Permission::List(vec!["api.phylum.io".into()]));
     }
 
     #[test]
@@ -145,5 +158,15 @@ mod tests {
         let result = toml::from_str::<Permissions>(invalid_toml);
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn deserialize_bool_permissions() {
+        let toml = "read = true\nnet = false";
+
+        let permissions = toml::from_str::<Permissions>(toml).unwrap();
+
+        assert_eq!(permissions.read.get(), Some(&Vec::new()));
+        assert_eq!(permissions.net.get(), None);
     }
 }
