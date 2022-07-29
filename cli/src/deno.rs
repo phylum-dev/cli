@@ -40,7 +40,8 @@ pub async fn run(
             "op_request_permission" => op.disable(),
             _ => op,
         })
-        .ops(api::api_decls()).build();
+        .ops(api::api_decls())
+        .build();
 
     let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
 

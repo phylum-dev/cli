@@ -87,10 +87,12 @@ pub async fn get_package_details() {
     let test_cli = TestCli::builder().with_config(true).build();
 
     test_cli
-        .extension("\
+        .extension(
+            "\
         await Deno.permissions.request({ name: 'net' });
-        await fetch('https://phylum.io');
-        ")
+        await fetch('https://phylum.io');\
+             ",
+        )
         .build()
         .run()
         .failure()
