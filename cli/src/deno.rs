@@ -6,8 +6,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;
 
-use anyhow::{anyhow, Result};
+use ansi_term::Color;
+use anyhow::{anyhow, Error, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
+use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
     self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
 };
@@ -21,6 +23,8 @@ use url::{Host, Url};
 use crate::api::PhylumApi;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
+use crate::commands::{CommandResult, ExitCode};
+use crate::fmt_deno_error;
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
@@ -30,7 +34,7 @@ pub async fn run(
     api: BoxFuture<'static, Result<PhylumApi>>,
     extension: &extension::Extension,
     args: Vec<String>,
-) -> Result<()> {
+) -> CommandResult {
     let phylum_api = Extension::builder().ops(api::api_decls()).build();
 
     let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
@@ -75,7 +79,7 @@ pub async fn run(
 
     // Build permissions object from extension's requested permissions.
     let permissions = extension.permissions().into_owned();
-    let permissions_options = PermissionsOptions::try_from(&permissions)?;
+    let permissions_options = PermissionsOptions::from(&permissions);
     let worker_permissions = Permissions::from_options(&permissions_options);
 
     // Initialize Deno runtime.
@@ -87,8 +91,36 @@ pub async fn run(
     worker.js_runtime.op_state().borrow_mut().put(state);
 
     // Execute extension code.
-    worker.execute_main_module(&main_module).await?;
-    worker.run_event_loop(false).await
+    if let Err(error) = worker.execute_main_module(&main_module).await {
+        return print_js_error(error);
+    }
+    if let Err(error) = worker.run_event_loop(false).await {
+        return print_js_error(error);
+    }
+
+    Ok(ExitCode::Ok.into())
+}
+
+/// Pretty-print an anyhow error as Deno JS error.
+fn print_js_error(error: Error) -> CommandResult {
+    let js_error: JsError = error.downcast::<JsError>()?;
+
+    // Remove flag from permission errors.
+    if let Some((message, _)) = js_error
+        .message
+        .as_ref()
+        .and_then(|message| message.split_once(", run again with the --allow"))
+    {
+        return Err(anyhow!(message.to_owned()));
+    }
+
+    println!(
+        "{}: {}",
+        Color::Red.paint("Extension error"),
+        fmt_deno_error::format_js_error(&js_error)
+    );
+
+    Ok(ExitCode::JsError.into())
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
