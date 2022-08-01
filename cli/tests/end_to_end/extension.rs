@@ -1,4 +1,4 @@
-use phylum_cli::commands::extensions::permissions::Permissions;
+use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
 
 use crate::common::{create_lockfile, create_project, TestCli};
 
@@ -57,7 +57,7 @@ pub async fn get_project_details() {
 
     let project = create_project().await;
     let permissions =
-        Permissions { net: Some(vec![String::from("123")]).into(), ..Permissions::default() };
+        Permissions { net: Permission::List(vec![String::from("123")]), ..Permissions::default() };
 
     let project_details = format!("console.log(await PhylumApi.getProjectDetails({project:?}))");
     test_cli
@@ -76,7 +76,7 @@ pub async fn parse_lockfile() {
     let lockfile = create_lockfile(test_cli.temp_path());
     let lockfile_str = lockfile.to_string_lossy().into_owned();
     let permissions =
-        Permissions { read: Some(vec![lockfile_str]).into(), ..Permissions::default() };
+        Permissions { read: Permission::List(vec![lockfile_str]), ..Permissions::default() };
 
     let parse_lockfile = format!(
         "const lockfile = await PhylumApi.parseLockfile({lockfile:?}, 'yarn');
