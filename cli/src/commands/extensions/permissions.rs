@@ -20,9 +20,9 @@ impl Default for Permission {
 }
 
 impl Permission {
-    // XXX In Deno, `Some(vec![])` actually means "allow all". We don't want empty `Vec<String>`
-    // permissions to allow access to all resources, so we manually convert these instances into
-    // `None`.
+    // XXX In Deno, `Some(vec![])` actually means "allow all". We don't want empty
+    // `Vec<String>` permissions to allow access to all resources, so we
+    // manually convert these instances into `None`.
     pub fn get(&self) -> Option<&Vec<String>> {
         const EMPTY_VEC: &Vec<String> = &Vec::new();
         match &self {
