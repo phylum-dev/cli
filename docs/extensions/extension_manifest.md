@@ -83,8 +83,8 @@ Read permissions list file paths which can be read from by the extension.
 Granting permissions to a directory will also allow the extension to access any
 child directories and files inside them.
 
-This is an optional key-value pair where the value is an array containing one
-or more strings.
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed directories.
 
 ```toml
 [permissions]
@@ -96,6 +96,12 @@ read = [
 ]
 ```
 
+```toml
+[permissions]
+# ...
+read = true
+```
+
 ### Write
 
 Write permissions list file paths which can be written to by the extension.
@@ -103,8 +109,8 @@ Write permissions list file paths which can be written to by the extension.
 Granting permissions to a directory will also allow the extension to access any
 child directories and files inside them.
 
-This is an optional key-value pair where the value is an array containing one
-or more strings.
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed directories.
 
 ```toml
 [permissions]
@@ -112,17 +118,29 @@ or more strings.
 write = ["./output_file.txt"]
 ```
 
+```toml
+[permissions]
+# ...
+write = true
+```
+
 ### Env
 
 Env permissions list environment variables which can be read by the extension.
 
-This is an optional key-value pair where the value is an array containing one
-or more strings.
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed environment variables.
 
 ```toml
 [permissions]
 # ...
 env = ["PHYLUM_API_KEY"]
+```
+
+```toml
+[permissions]
+# ...
+env = true
 ```
 
 ### Run
@@ -136,13 +154,19 @@ The paths also need to match **exactly** with the process executed by the
 extension. `/usr/bin/curl` cannot be executed when `curl` was requested as
 permission and vice versa.
 
-This is an optional key-value pair where the value is an array containing one
-or more strings.
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed executables.
 
 ```toml
 [permissions]
 # ...
 run = ["npm", "yarn"]
+```
+
+```toml
+[permissions]
+# ...
+run = true
 ```
 
 ### Net
@@ -158,11 +182,17 @@ access the redirect target. It's easiest to just specify the redirect target
 directly when making requests, otherwise you'll have to request permissions for
 both domains.
 
-This is an optional key-value pair where the value is an array containing one
-or more strings.
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed domains.
 
 ```toml
 [permissions]
 # ...
 net = ["www.phylum.io", "phylum.io"]
+```
+
+```toml
+[permissions]
+# ...
+net = true
 ```
