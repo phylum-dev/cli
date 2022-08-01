@@ -84,8 +84,7 @@ pub async fn run(
     };
 
     // Build permissions object from extension's requested permissions.
-    let permissions = extension.permissions().into_owned();
-    let permissions_options = PermissionsOptions::from(&permissions);
+    let permissions_options = PermissionsOptions::from(&*extension.permissions());
     let worker_permissions = Permissions::from_options(&permissions_options);
 
     // Initialize Deno runtime.
@@ -93,7 +92,7 @@ pub async fn run(
         MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
 
     // Export shared state.
-    let state = ExtensionState::new(api, permissions);
+    let state = ExtensionState::new(api);
     worker.js_runtime.op_state().borrow_mut().put(state);
 
     // Execute extension code.

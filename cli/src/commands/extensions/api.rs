@@ -7,6 +7,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
+use deno_runtime::permissions::Permissions;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::JobId;
 use phylum_types::types::job::JobStatusResponse;
@@ -192,8 +193,11 @@ async fn parse_lockfile(
     lockfile_type: Option<String>,
 ) -> Result<PackageLock> {
     // Ensure extension has file read-access.
-    let state = ExtensionState::from(op_state);
-    state.permissions.read.validate(&lockfile, "read")?;
+    {
+        let mut state = op_state.borrow_mut();
+        let permissions = state.borrow_mut::<Permissions>();
+        permissions.read.check(Path::new(&lockfile))?;
+    }
 
     // Fallback to automatic parser without lockfile type specified.
     let lockfile_type = match lockfile_type {
