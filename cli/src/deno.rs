@@ -35,7 +35,13 @@ pub async fn run(
     extension: &extension::Extension,
     args: Vec<String>,
 ) -> CommandResult {
-    let phylum_api = Extension::builder().ops(api::api_decls()).build();
+    let phylum_api = Extension::builder()
+        .middleware(|op| match op.name {
+            "op_request_permission" => op.disable(),
+            _ => op,
+        })
+        .ops(api::api_decls())
+        .build();
 
     let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
 
