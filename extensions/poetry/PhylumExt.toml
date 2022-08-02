@@ -1,5 +1,5 @@
 name = "poetry"
-description = "poetry package manager hooks"
+description = "Poetry package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
