@@ -136,6 +136,12 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
         Err(VarError::NotPresent) => {},
     }
 
+    // The code that checks if we have a token expects `Some(token)` to always be a
+    // usable token.
+    if config.auth_info.offline_access.as_ref().map(|t| t.as_str().is_empty()).unwrap_or_default() {
+        config.auth_info.offline_access = None;
+    }
+
     Ok(config)
 }
 
@@ -197,10 +203,12 @@ mod tests {
 
     use super::*;
 
+    const CONFIG_TOKEN: &str = "FAKE TOKEN";
+
     fn write_test_config(path: &Path) {
         let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
 
-        let auth = AuthInfo { offline_access: Some(RefreshToken::new("FAKE TOKEN")) };
+        let auth = AuthInfo { offline_access: Some(RefreshToken::new(CONFIG_TOKEN)) };
 
         let config = Config {
             connection: con,
@@ -247,6 +255,6 @@ mod tests {
 
         let config: Config = read_configuration(tempfile.path()).unwrap();
 
-        assert_eq!(config.auth_info.offline_access, None);
+        assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(CONFIG_TOKEN)));
     }
 }
