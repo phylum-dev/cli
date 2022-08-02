@@ -126,6 +126,10 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
         config.auth_info.offline_access = Some(RefreshToken::new(key));
     }
 
+    if config.auth_info.offline_access.as_ref().map(|t| t.as_str().is_empty()).unwrap_or_default() {
+        config.auth_info.offline_access = None;
+    }
+
     Ok(config)
 }
 
@@ -227,5 +231,16 @@ mod tests {
         let config: Config = read_configuration(tempfile.path()).unwrap();
 
         assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
+    }
+
+    #[test]
+    fn test_ignore_empty_token() {
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
+        env::set_var("PHYLUM_API_KEY", "");
+
+        let config: Config = read_configuration(tempfile.path()).unwrap();
+
+        assert_eq!(config.auth_info.offline_access, None);
     }
 }
