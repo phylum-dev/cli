@@ -141,16 +141,12 @@ impl ExtensionsModuleLoader {
     async fn load_from_filesystem(extension_path: &Path, path: &Url) -> Result<String> {
         let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
+        let extension_path = fs::canonicalize(extension_path).await?;
+        let path = fs::canonicalize(path).await?;
+
         if !path.starts_with(extension_path) {
             return Err(anyhow!(
                 "`{}`: importing from paths outside of the extension's directory is not allowed",
-                path.to_string_lossy(),
-            ));
-        }
-
-        if path.is_symlink() {
-            return Err(anyhow!(
-                "`{}`: importing from symlinks is not allowed",
                 path.to_string_lossy(),
             ));
         }
