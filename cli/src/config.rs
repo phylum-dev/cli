@@ -1,3 +1,4 @@
+use std::env::VarError;
 #[cfg(unix)]
 use std::fs::{DirBuilder, Permissions};
 use std::io::{self, Write};
@@ -13,7 +14,7 @@ use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::dirs;
+use crate::{dirs, print_user_warning};
 
 pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
@@ -122,8 +123,23 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
     };
 
     // If an api token has been set in the environment, prefer that
-    if let Ok(key) = env::var("PHYLUM_API_KEY") {
-        config.auth_info.offline_access = Some(RefreshToken::new(key));
+    match env::var("PHYLUM_API_KEY") {
+        Ok(key) if !key.is_empty() => {
+            config.auth_info.offline_access = Some(RefreshToken::new(key));
+        },
+        Ok(_) => {
+            print_user_warning!("Ignoring empty PHYLUM_API_KEY");
+        },
+        Err(VarError::NotUnicode(_)) => {
+            print_user_warning!("Ignoring invalid PHYLUM_API_KEY");
+        },
+        Err(VarError::NotPresent) => {},
+    }
+
+    // The code that checks if we have a token expects `Some(token)` to always be a
+    // usable token.
+    if config.auth_info.offline_access.as_ref().map(|t| t.as_str()) == Some("") {
+        config.auth_info.offline_access = None;
     }
 
     Ok(config)
@@ -187,10 +203,12 @@ mod tests {
 
     use super::*;
 
+    const CONFIG_TOKEN: &str = "FAKE TOKEN";
+
     fn write_test_config(path: &Path) {
         let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
 
-        let auth = AuthInfo { offline_access: Some(RefreshToken::new("FAKE TOKEN")) };
+        let auth = AuthInfo { offline_access: Some(RefreshToken::new(CONFIG_TOKEN)) };
 
         let config = Config {
             connection: con,
@@ -227,5 +245,16 @@ mod tests {
         let config: Config = read_configuration(tempfile.path()).unwrap();
 
         assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
+    }
+
+    #[test]
+    fn test_ignore_empty_token() {
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
+        env::set_var("PHYLUM_API_KEY", "");
+
+        let config: Config = read_configuration(tempfile.path()).unwrap();
+
+        assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(CONFIG_TOKEN)));
     }
 }
