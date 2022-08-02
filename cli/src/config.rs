@@ -138,7 +138,7 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
 
     // The code that checks if we have a token expects `Some(token)` to always be a
     // usable token.
-    if config.auth_info.offline_access.as_ref().map(|t| t.as_str().is_empty()).unwrap_or_default() {
+    if config.auth_info.offline_access.as_ref().map(|t| t.as_str()) == Some("") {
         config.auth_info.offline_access = None;
     }
 
