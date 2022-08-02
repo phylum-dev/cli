@@ -1,3 +1,4 @@
+use std::env::VarError;
 #[cfg(unix)]
 use std::fs::{DirBuilder, Permissions};
 use std::io::{self, Write};
@@ -13,7 +14,7 @@ use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::dirs;
+use crate::{dirs, print_user_warning};
 
 pub const PROJ_CONF_FILE: &str = ".phylum_project";
 
@@ -122,12 +123,17 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
     };
 
     // If an api token has been set in the environment, prefer that
-    if let Ok(key) = env::var("PHYLUM_API_KEY") {
-        config.auth_info.offline_access = Some(RefreshToken::new(key));
-    }
-
-    if config.auth_info.offline_access.as_ref().map(|t| t.as_str().is_empty()).unwrap_or_default() {
-        config.auth_info.offline_access = None;
+    match env::var("PHYLUM_API_KEY") {
+        Ok(key) if !key.is_empty() => {
+            config.auth_info.offline_access = Some(RefreshToken::new(key));
+        },
+        Ok(_) => {
+            print_user_warning!("Ignoring empty PHYLUM_API_KEY");
+        },
+        Err(VarError::NotUnicode(_)) => {
+            print_user_warning!("Ignoring invalid PHYLUM_API_KEY");
+        },
+        Err(VarError::NotPresent) => {},
     }
 
     Ok(config)
