@@ -9,7 +9,6 @@ use deno_runtime::deno_core::OpState;
 use futures::future::BoxFuture;
 use tokio::sync::OnceCell;
 
-use crate::commands::extensions::permissions::Permissions;
 use crate::commands::extensions::PhylumApi;
 
 struct OnceFuture<T> {
@@ -54,8 +53,6 @@ impl<T: Unpin> OnceFuture<T> {
 //
 /// Extension state the APIs have access to.
 pub struct ExtensionStateInner {
-    pub permissions: Permissions,
-
     api: OnceFuture<Result<PhylumApi>>,
 }
 
@@ -78,9 +75,9 @@ impl ExtensionStateInner {
 pub struct ExtensionState(Rc<ExtensionStateInner>);
 
 impl ExtensionState {
-    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>, permissions: Permissions) -> Self {
+    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>) -> Self {
         let api = OnceFuture::new(api);
-        Self(Rc::new(ExtensionStateInner { permissions, api }))
+        Self(Rc::new(ExtensionStateInner { api }))
     }
 }
 

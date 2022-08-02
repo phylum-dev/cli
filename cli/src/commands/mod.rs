@@ -41,6 +41,7 @@ pub enum ExitCode {
     SetThresholdsFailure = 13,
     AlreadyExists = 14,
     NoHistoryFound = 15,
+    JsError = 16,
     FailedThresholds = 100,
 }
 

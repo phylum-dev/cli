@@ -81,3 +81,20 @@ fn correct_run_permission_successful_install_and_run() {
 
     test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("install"));
 }
+
+#[tokio::test]
+pub async fn get_package_details() {
+    let test_cli = TestCli::builder().with_config(true).build();
+
+    test_cli
+        .extension(
+            "\
+        await Deno.permissions.request({ name: 'net' });
+        await fetch('https://phylum.io');\
+             ",
+        )
+        .build()
+        .run()
+        .failure()
+        .stderr("❗ Error: Execution failed caused by: Requires net access to \"phylum.io\"\n");
+}
