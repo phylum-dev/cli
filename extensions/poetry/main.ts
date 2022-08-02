@@ -1,5 +1,4 @@
 import { PhylumApi } from "phylum"
-import { parseDryRun } from "./parse.ts"
 import { red, green, yellow } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
 class FileBackup {
@@ -52,6 +51,8 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   await process.status()
   await process.close()
 
+  const lockfileData = await PhylumApi.parseLockfile('./poetry.lock', 'poetry')
+
   // If it existed before, restore the previous contents of the lockfile;
   // otherwise, delete it. This is a workaround to the fact that in poetry
   // 1.1.x, the `--dry-run` argument does not prevent the lockfile from 
@@ -62,16 +63,17 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   await lockfileBackup.restoreOrDelete()
   await manifestBackup.restoreOrDelete()
 
-  const output = new TextDecoder().decode(await process.output())
-  const packages = parseDryRun(output)
-
   console.log(`Analyzing packages:`)
-  for (const { name, version } of packages) {
+  for (const { name, version } of lockfileData.packages.slice(0, 10)) {
     console.log(`  - ${name} ${version}`)
+  }
+  const remainder = lockfileData.packages.slice(10).length
+  if (remainder > 0) {
+    console.log(`  ...and ${remainder} more`)
   }
   console.log()
 
-  const jobId = await PhylumApi.analyze("pypi", packages)
+  const jobId = await PhylumApi.analyze(lockfileData['package_type'], lockfileData['packages'])
   const jobStatus = await PhylumApi.getJobStatus(jobId)
 
   if (jobStatus.pass && jobStatus.status === "complete") {
