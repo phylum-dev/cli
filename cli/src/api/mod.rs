@@ -17,7 +17,7 @@ use phylum_types::types::user_settings::UserSettings;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::{DeserializeOwned, IgnoredAny};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
 use self::endpoints::BaseUriError;
@@ -63,10 +63,23 @@ impl PhylumApiError {
 
 /// Non-successful request response.
 #[derive(ThisError, Debug)]
-#[error("HTTP request error ({code}):\n{body}")]
+#[error("HTTP request error ({code}):\n\n{details}")]
 pub struct ResponseError {
     pub code: StatusCode,
-    pub body: String,
+    pub details: String,
+}
+
+/// The guts of an API JSON error
+#[derive(Deserialize)]
+struct ApiJsonErrorInner {
+    error_id: String,
+    description: String,
+}
+
+/// A JSON error returned by the Phylum API
+#[derive(Deserialize)]
+struct ApiJsonError {
+    error: ApiJsonErrorInner,
 }
 
 impl PhylumApi {
@@ -110,7 +123,14 @@ impl PhylumApi {
         let body = response.text().await?;
 
         if !status_code.is_success() {
-            let err = ResponseError { body, code: status_code };
+            let details = if let Ok(err) = serde_json::from_str::<ApiJsonError>(&body) {
+                log::debug!("Error ID: {}", err.error.error_id);
+                err.error.description
+            } else {
+                body
+            };
+            let err = ResponseError { details, code: status_code };
+
             return Err(err.into());
         }
 
