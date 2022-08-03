@@ -215,7 +215,7 @@ the [extension manifest documentation].
 
 While it would be possible to request read access to just `./package-lock.json`,
 this would only work for `package-lock.json` files defeating the purpose of
-passing the lockfile as a paramater. Instead, we request read access to all
+passing the lockfile as a parameter. Instead, we request read access to all
 files in the working directory:
 
 ```toml
