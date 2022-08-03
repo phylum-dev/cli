@@ -49,7 +49,7 @@ fn can_run_installed_extension() {
     let test_cli = TestCli::builder().build();
 
     test_cli.install_extension(&fixtures_path().join("sample")).success();
-    test_cli.run(&["sample"]).success().stdout("Hello, World!\n");
+    test_cli.cmd().args(&["sample"]).assert().success().stdout("Hello, World!\n");
 }
 
 // When a user installs a valid extension it should print a message indicating
@@ -103,7 +103,7 @@ fn extension_is_uninstalled_correctly() {
 
     assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 
-    test_cli.run(&["extension", "uninstall", "sample"]).success();
+    test_cli.cmd().args(&["extension", "uninstall", "sample"]).assert().success();
 
     assert!(!extension_path.exists());
 }
@@ -116,13 +116,18 @@ fn extension_list_should_emit_output() {
     let test_cli = TestCli::builder().build();
 
     // Output that no extension is installed when that is the case.
-    test_cli.run(&["extension", "list"]).success().stdout(predicate::str::contains("No extension"));
+    test_cli
+        .cmd()
+        .args(&["extension", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("No extension"));
 
     // Install one extension.
     test_cli.install_extension(&fixtures_path().join("sample")).success();
 
     // Output name and description of the extension when one is installed
-    test_cli.run(&["extension", "list"]).success().stdout(
+    test_cli.cmd().args(&["extension", "list"]).assert().success().stdout(
         predicate::str::contains("sample")
             .and(predicate::str::contains("This extension does a thing")),
     );
@@ -134,7 +139,7 @@ fn injected_api() {
     let test_cli = TestCli::builder().build();
 
     test_cli.install_extension(&fixtures_path().join("api")).success();
-    test_cli.run(&["api"]).success().stdout("44\n");
+    test_cli.cmd().args(&["api"]).assert().success().stdout("44\n");
 }
 
 // Extensions can access CLI arguments.
@@ -144,7 +149,9 @@ fn arg_access() {
 
     test_cli.install_extension(&fixtures_path().join("args")).success();
     test_cli
-        .run(&["args", "--test", "-x", "a"])
+        .cmd()
+        .args(&["args", "--test", "-x", "a"])
+        .assert()
         .success()
         .stdout(predicate::str::contains(r#"[ "--test", "-x", "a" ]"#));
 }
@@ -155,7 +162,9 @@ fn create_extension() {
     let test_cli = TestCli::builder().cwd_temp().build();
 
     test_cli
-        .run(&["extension", "new", "my-ext"])
+        .cmd()
+        .args(&["extension", "new", "my-ext"])
+        .assert()
         .success()
         .stderr(predicates::str::contains("✅ Extension created successfully"));
 }
@@ -166,7 +175,9 @@ fn create_incorrect_name() {
     let test_cli = TestCli::builder().cwd_temp().build();
 
     test_cli
-        .run(&["extension", "new", "@@@"])
+        .cmd()
+        .args(&["extension", "new", "@@@"])
+        .assert()
         .failure()
         .stderr(predicates::str::contains("invalid extension name"));
 }
@@ -188,7 +199,9 @@ fn conflicting_extension_name_is_filtered() {
 
     test_cli.install_extension(&fixtures_path().join("ping")).success();
     test_cli
-        .run(&["extension", "list"])
+        .cmd()
+        .args(&["extension", "list"])
+        .assert()
         .success()
         .stderr(predicate::str::contains("extension was filtered out"));
 }
@@ -198,7 +211,9 @@ fn extension_is_locally_run_correctly() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(&["extension", "run", &fixtures_path().join("sample").to_string_lossy()])
+        .cmd()
+        .args(&["extension", "run", &fixtures_path().join("sample").to_string_lossy()])
+        .assert()
         .success()
         .stdout(predicate::str::contains("Hello, World!"));
 }

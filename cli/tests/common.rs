@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 #[cfg(feature = "extensions")]
 use std::fs::File;
 #[cfg(feature = "extensions")]
@@ -17,7 +16,7 @@ pub use predicates::prelude::*;
 use reqwest::StatusCode;
 use tempfile::TempDir;
 
-const API_URL: &str = "https://api.staging.phylum.io";
+pub const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
 enum Cwd {
@@ -34,14 +33,14 @@ impl Default for Cwd {
 
 #[derive(Default)]
 pub struct TestCliBuilder {
+    config: Option<Config>,
     cwd: Cwd,
-    with_config: bool,
 }
 
 impl TestCliBuilder {
     pub fn build(self) -> TestCli {
         let tempdir = TempDir::new().unwrap();
-        let config_path = if self.with_config { Some(create_config(tempdir.path())) } else { None };
+        let config_path = self.config.map(|config| create_config(tempdir.path(), config));
 
         let cwd = match self.cwd {
             Cwd::Path(p) => Some(p),
@@ -54,8 +53,11 @@ impl TestCliBuilder {
 
     /// If true, a configuration will be generated, stored and passed as an
     /// option.
-    pub fn with_config(mut self, with_config: bool) -> Self {
-        self.with_config = with_config;
+    pub fn with_config(mut self, config: impl Into<Option<Config>>) -> Self {
+        self.config = Some(config.into().unwrap_or_else(|| Config {
+            connection: ConnectionInfo { uri: API_URL.into() },
+            ..Config::default()
+        }));
         self
     }
 
@@ -95,7 +97,7 @@ impl TestCli {
     }
 
     pub fn install_extension(&self, path: &Path) -> Assert {
-        self.run(&["extension", "install", "-y", &path.to_string_lossy()])
+        self.cmd().args(&["extension", "install", "-y", &path.to_string_lossy()]).assert()
     }
 
     #[cfg(feature = "extensions")]
@@ -103,7 +105,7 @@ impl TestCli {
         TestExtensionBuilder::new(self, code)
     }
 
-    pub fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
+    pub fn cmd(&self) -> Command {
         let mut cmd = Command::cargo_bin("phylum").unwrap();
 
         cmd.env("XDG_DATA_HOME", self.tempdir.path());
@@ -116,8 +118,7 @@ impl TestCli {
             cmd.arg("--config").arg(&config_path);
         }
 
-        cmd.args(args);
-        cmd.assert()
+        cmd
     }
 }
 
@@ -156,7 +157,11 @@ impl<'a> TestExtension<'a> {
         let extension_path = test_cli.temp_path().to_owned().join("test-ext");
 
         // Create skeleton extension.
-        test_cli.run(&["extension", "new", &extension_path.to_string_lossy()]).success();
+        test_cli
+            .cmd()
+            .args(&["extension", "new", &extension_path.to_string_lossy()])
+            .assert()
+            .success();
 
         // Overwrite skeleton code.
         let main = extension_path.join("main.ts");
@@ -170,29 +175,30 @@ impl<'a> TestExtension<'a> {
         write!(manifest, "[permissions]\n{permissions_str}").unwrap();
 
         // Install extension.
-        test_cli.run(&["extension", "install", "-y", &extension_path.to_string_lossy()]);
+        test_cli
+            .cmd()
+            .args(&["extension", "install", "-y", &extension_path.to_string_lossy()])
+            .assert();
 
         Self { test_cli, extension_path }
     }
 
     pub fn run(&self) -> Assert {
         // Execute extension.
-        self.test_cli.run(&["test-ext"])
+        self.test_cli.cmd().args(&["test-ext"]).assert()
     }
 }
 
 #[cfg(feature = "extensions")]
 impl<'a> Drop for TestExtension<'a> {
     fn drop(&mut self) {
-        self.test_cli.run(&["extension", "uninstall", "test-ext"]).success();
+        self.test_cli.cmd().args(&["extension", "uninstall", "test-ext"]).assert().success();
         fs::remove_dir_all(&self.extension_path).unwrap();
     }
 }
 
 /// Create config file for the desired environment.
-pub fn create_config(dir: &Path) -> PathBuf {
-    let config = Config { connection: ConnectionInfo { uri: API_URL.into() }, ..Config::default() };
-
+pub fn create_config(dir: &Path, config: Config) -> PathBuf {
     let config_path = dir.join("settings.yml");
     let config_yaml = serde_yaml::to_string(&config).expect("serialize config");
     fs::write(&config_path, config_yaml.as_bytes()).expect("writing config");
