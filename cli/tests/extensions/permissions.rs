@@ -40,7 +40,7 @@ fn incorrect_read_permission_unsuccessful_run() {
     test_cli
         .run(&["incorrect-read-perms"])
         .failure()
-        .stderr("❗ Error: Execution failed caused by: Requires read access to \"/tmp/passwd\"\n");
+        .stderr("❗ Error: Requires read access to \"/tmp/passwd\"\n");
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn incorrect_net_permission_unsuccessful_run() {
     test_cli
         .run(&["incorrect-net-perms"])
         .failure()
-        .stderr("❗ Error: Execution failed caused by: Requires net access to \"phylum.io\"\n");
+        .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
 }
 
 #[test]
@@ -96,5 +96,5 @@ pub async fn get_package_details() {
         .build()
         .run()
         .failure()
-        .stderr("❗ Error: Execution failed caused by: Requires net access to \"phylum.io\"\n");
+        .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
 }
