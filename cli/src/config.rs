@@ -245,12 +245,8 @@ mod tests {
         let config: Config = read_configuration(tempfile.path()).unwrap();
 
         assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
-    }
 
-    #[test]
-    fn test_ignore_empty_token() {
-        let tempfile = NamedTempFile::new().unwrap();
-        write_test_config(tempfile.path());
+        // Empty string should be ignored (and the config file token will be used)
         env::set_var("PHYLUM_API_KEY", "");
 
         let config: Config = read_configuration(tempfile.path()).unwrap();
