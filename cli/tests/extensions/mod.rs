@@ -38,7 +38,7 @@ fn extension_is_installed_correctly() {
     assert_eq!(installed_ext.name(), "sample");
 
     let not_installed_ext = Extension::load("sample-other");
-    assert!(not_installed_ext.is_err());
+    not_installed_ext.unwrap_err();
 }
 
 // After a user installs a new extension, foobar, it should become available to
