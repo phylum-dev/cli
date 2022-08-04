@@ -35,18 +35,20 @@ class FileBackup {
 // `--dry-run` only would not output anything in combination with flags such
 // as `--lock` that do not perform the actual operations.
 async function poetryCheckDryRun(subcommand: string, args: string[]): number {
+  try {
+    await Deno.stat('pyproject.toml')
+  } catch (e) {
+    console.error(`\`pyproject.toml\` was not found in the current directory.`)
+    console.error(`Please move to the Poetry project's top level directory and try again.`)
+    return 127
+  }
+
   // Read and backup the current poetry lockfile contents.
   const lockfileBackup = new FileBackup('poetry.lock')
   const manifestBackup = new FileBackup('pyproject.toml')
 
   await lockfileBackup.backup()
   await manifestBackup.backup()
-
-  if (manifestBackup.fileContent === null) {
-    console.log(`\`pyproject.toml\` was not found in the current directory.`)
-    console.log(`Please move to the Poetry project's top level directory and try again.`)
-    return 127
-  }
 
   let process = Deno.run({
     cmd: ['poetry', subcommand, '-vvv', '-n', '--dry-run', ...args.map(s => s.toString())],
