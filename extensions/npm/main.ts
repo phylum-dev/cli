@@ -33,6 +33,7 @@ if (Deno.args.length >= 1
         'install'.startsWith(Deno.args[0])
         || 'isntall'.startsWith(Deno.args[0])
         || 'update'.startsWith(Deno.args[0])
+        || 'udpate'.startsWith(Deno.args[0])
     )) {
     await checkDryRun(Deno.args[0], Deno.args.slice(1));
 }
