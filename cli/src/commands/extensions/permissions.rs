@@ -156,7 +156,7 @@ mod tests {
 
         let result = toml::from_str::<Permissions>(invalid_toml);
 
-        assert!(result.is_err());
+        result.unwrap_err();
     }
 
     #[test]
