@@ -247,7 +247,6 @@ mod tests {
         assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
     }
 
-    #[ignore]
     #[test]
     fn test_ignore_empty_token() {
         let tempfile = NamedTempFile::new().unwrap();
