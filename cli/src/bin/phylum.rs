@@ -1,10 +1,10 @@
+use std::fmt::Display;
 use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use env_logger::Env;
-use log::{error, warn};
 use phylum_cli::api::PhylumApi;
 #[cfg(feature = "extensions")]
 use phylum_cli::commands::extensions;
@@ -20,24 +20,14 @@ use phylum_types::types::job::Action;
 
 /// Print a warning message to the user before exiting with exit code 0.
 pub fn exit_warn(message: impl AsRef<str>) -> ! {
-    warn!("{}", message.as_ref());
     print_user_warning!("Warning: {}", message.as_ref());
     ExitCode::Ok.exit()
 }
 
 /// Print an error to the user before exiting with the passed exit code.
-pub fn exit_fail(message: impl AsRef<str>, exit_code: ExitCode) -> ! {
-    error!("{}", message.as_ref());
-    print_user_failure!("Error: {}", message.as_ref());
+pub fn exit_fail(message: impl Display, exit_code: ExitCode) -> ! {
+    print_user_failure!("Error: {}", message);
     exit_code.exit()
-}
-
-/// Exit with status code 1, and optionally print a message to the user and
-/// print error information.
-pub fn exit_error(error: Box<dyn std::error::Error>, message: impl AsRef<str>) -> ! {
-    error!("{}: {:?}", message.as_ref(), error);
-    print_user_failure!("Error: {} caused by: {}", message.as_ref(), error);
-    ExitCode::Generic.exit()
 }
 
 /// Construct an instance of `PhylumApi` given configuration, optional timeout,
@@ -203,6 +193,6 @@ async fn main() {
             ),
         },
         Ok(CommandValue::Code(code)) => code.exit(),
-        Err(error) => exit_error(error.into(), "Execution failed"),
+        Err(error) => exit_fail(error, ExitCode::Generic),
     }
 }

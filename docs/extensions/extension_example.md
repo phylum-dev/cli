@@ -13,36 +13,34 @@ than one version present in our lockfile.
 The full example looks like this:
 
 ```ts
-import { mapValues } from "https://deno.land/std@0.146.0/collections/map_values.ts";
-import { distinct } from "https://deno.land/std@0.146.0/collections/distinct.ts";
-import { groupBy } from "https://deno.land/std@0.146.0/collections/group_by.ts";
+import { mapValues } from "https://deno.land/std@0.150.0/collections/map_values.ts";
+import { distinct } from "https://deno.land/std@0.150.0/collections/distinct.ts";
+import { groupBy } from "https://deno.land/std@0.150.0/collections/group_by.ts";
 
 import { PhylumApi } from "phylum";
 
 // Ensure lockfile argument is present.
 if (Deno.args.length != 1) {
     console.error("Usage: phylum duplicates <LOCKFILE>");
-} else {
-    // Use first CLI parameter as our lockfile.
-    const lockfile = Deno.args[0];
+    Deno.exit(1);
+}
 
-    // Parse lockfile using Phylum's API.
-    const deps = await PhylumApi.parseLockfile(lockfile);
+// Parse lockfile using Phylum's API.
+const lockfile = await PhylumApi.parseLockfile(Deno.args[0]);
 
-    // Group all versions for the same dependency together.
-    const groupedDeps = groupBy(deps, dep => dep.name);
+// Group all versions for the same dependency together.
+const groupedDeps = groupBy(lockfile.packages, dep => dep.name);
 
-    // Reduce each dependency to a list of its versions.
-    const reducedDeps = mapValues(groupedDeps, deps => deps.map(dep => dep.version));
+// Reduce each dependency to a list of its versions.
+const reducedDeps = mapValues(groupedDeps, deps => deps.map(dep => dep.version));
 
-    for (const [dep, versions] of Object.entries(reducedDeps)) {
-        // Deduplicate identical versions.
-        const distinctVersions = distinct(versions);
+for (const [dep, versions] of Object.entries(reducedDeps)) {
+    // Deduplicate identical versions.
+    const distinctVersions = distinct(versions);
 
-        // Print all dependencies with more than one version.
-        if (distinctVersions.length > 1) {
-            console.log(`${dep}: `, distinctVersions);
-        }
+    // Print all dependencies with more than one version.
+    if (distinctVersions.length > 1) {
+        console.log(`${dep}:`, distinctVersions);
     }
 }
 ```
@@ -60,12 +58,12 @@ We can then start writing the extension by replacing `./duplicates/main.ts` with
 our example code:
 
 ```ts
-import { mapValues } from "https://deno.land/std@0.146.0/collections/map_values.ts";
-import { distinct } from "https://deno.land/std@0.146.0/collections/distinct.ts";
-import { groupBy } from "https://deno.land/std@0.146.0/collections/group_by.ts";
+import { mapValues } from "https://deno.land/std@0.150.0/collections/map_values.ts";
+import { distinct } from "https://deno.land/std@0.150.0/collections/distinct.ts";
+import { groupBy } from "https://deno.land/std@0.150.0/collections/group_by.ts";
 ```
 
-These are the Deno API imports. We use version `0.146.0` of [Deno's STD][deno_std]
+These are the Deno API imports. We use version `0.150.0` of [Deno's STD][deno_std]
 here and import the required functions by loading them as remote ES modules.
 We'll go into more detail on what we need these for later.
 
@@ -83,6 +81,8 @@ Phylum's API.
 // Ensure lockfile argument is present.
 if (Deno.args.length != 1) {
     console.error("Usage: phylum duplicates <LOCKFILE>");
+    Deno.exit(1);
+}
 ```
 
 The `Deno.args` variable contains an array with all CLI arguments passed after
@@ -92,36 +92,33 @@ our extension name, so for `phylum my-extension one two` that would be `["one",
 Here we make sure that we get exactly one parameter and print a useful help
 message to the terminal if no parameter was provided.
 
-```ts
-// Use first CLI parameter as our lockfile.
-const lockfile = Deno.args[0];
-```
-
-Now we just need to store the first element in a properly named variable and we
-have access to the file path passed as first argument.
+The `Deno.exit` function will terminate the extension and return the provided
+error code.
 
 ```ts
 // Parse lockfile using Phylum's API.
-const deps = await PhylumApi.parseLockfile(lockfile);
+const lockfile = await PhylumApi.parseLockfile(Deno.args[0]);
 ```
 
 The `parseLockfile` method reads the lockfile path passed as an argument and
-returns a list with all dependencies and their respective versions. Since this
-function is asynchronous, we need to `await` it.
+returns an object containing all dependencies and the package ecosystem. Since
+this function is asynchronous, we need to `await` it.
 
-The list of packages will look something like this:
+The lockfile object will look something like this:
 
 ```text
-[
-  { name: "accepts", version: "1.3.8", type: "npm" },
-  { name: "array-flatten", version: "1.1.1", type: "npm" },
-  { name: "accepts", version: "1.0.0", type: "npm" }
-]
+  packages: [
+    { name: "accepts", version: "1.3.8" },
+    { name: "array-flatten", version: "1.1.1" },
+    { name: "accepts", version: "1.0.0" }
+  ],
+  package_type: "npm"
+}
 ```
 
 ```ts
 // Group all versions for the same dependency together.
-const groupedDeps = groupBy(deps, dep => dep.name);
+const groupedDeps = groupBy(lockfile.packages, dep => dep.name);
 ```
 
 Since our package list contains multiple instances of the same dependency, we
@@ -134,10 +131,10 @@ This will transform our package list into the following:
 ```text
 {
   accepts: [
-      { name: "accepts", version: "1.3.8", type: "npm" },
-      { name: "accepts", version: "1.0.0", type: "npm" }
+      { name: "accepts", version: "1.3.8" },
+      { name: "accepts", version: "1.0.0" }
   ],
-  "array-flatten": [ { name: "array-flatten", version: "1.1.1", type: "npm" } ]
+  "array-flatten": [ { name: "array-flatten", version: "1.1.1" } ]
 }
 ```
 
@@ -168,8 +165,8 @@ versions, we can iterate over all fields in this object to check the number of
 versions it has.
 
 ```ts
-// Deduplicate identical versions.
-const distinctVersions = distinct(versions);
+    // Deduplicate identical versions.
+    const distinctVersions = distinct(versions);
 ```
 
 But before we can check the versions themselves, we need to make sure all the
@@ -177,9 +174,10 @@ versions are actually unique. Some lockfiles might specify the same version
 multiple times, so we need to ensure we filter duplicate versions.
 
 ```ts
-// Print all dependencies with more than one version.
-if (distinctVersions.length > 1) {
-    console.log(`${dep}: `, distinctVersions);
+    // Print all dependencies with more than one version.
+    if (distinctVersions.length > 1) {
+        console.log(`${dep}: `, distinctVersions);
+    }
 }
 ```
 
@@ -192,43 +190,48 @@ For our example, the output looks like this:
 accepts: [ "1.3.8", "1.0.0" ]
 ```
 
-And that's all the code we need to check for duplicates. Now we only need to
-install it and we can use it for any lockfile we encounter in the future:
+And that's all the code we need to check for duplicates. Now we can use the
+`phylum extension run` subcommand to test the extension without installing it:
+
+```sh
+phylum extension run ./duplicates ./package-lock.json
+```
+
+This should then print the following error:
+
+```text
+Extension error: Uncaught (in promise) Error: Requires read access to "./package-lock.json"
+    at async Function.parseLockfile (deno:phylum:201:16)
+    at async file:///tmp/duplicates/main.ts:12:14
+```
+
+Phylum's extensions are executed in a sandbox with restricted access to
+operating system APIs. Since we want to read the lockfile from
+`./package-lock.json` with the `parseLockfile` method, we need to request read
+access to this file ahead of time. All available permissions are documented in
+the [extension manifest documentation].
+
+[extension manifest documentation]: https://docs.phylum.io/docs/extension_manifest#permissions
+
+While it would be possible to request read access to just `./package-lock.json`,
+this would only work for `package-lock.json` files defeating the purpose of
+passing the lockfile as a parameter. Instead, we request read access to all
+files in the working directory:
+
+```toml
+[permissions]
+read = ["./"]
+```
+
+Alternatively if you wanted to allow read access to any file, so lockfiles
+outside of the working directory are supported, you could use `read = true`
+instead.
+
+Now `phylum extension run` should prompt for these permissions and complete
+without any errors if they have been granted. Then we can install and run our
+extension:
 
 ```sh
 phylum extension install ./duplicates
 phylum duplicates ./package-lock.json
 ```
-
-Currently none of our code does any external I/O, we're completely contained
-within the Deno sandbox. Let's change that. Instead of the `console.log`, we'll
-now write our output to a file instead:
-
-```ts
-await Deno.writeTextFile(
-    "./duplicates.txt",
-    `${dep}: ${distinctVersions}\n`,
-    { append: true }
-);
-```
-
-When replacing the `console.log` with this function call and executing our
-extension, you'll run into the following error:
-
-```text
-❗ Error: Execution failed caused by: Error: Requires write access to "./duplicates.txt"
-```
-
-This is exactly what should have happened, since Deno's sandbox doesn't allow us
-to interact with the outside world unless we've been granted permission to do
-so. To request permissions, you'll have to edit the `PhylumExt.toml` manifest
-and add the following:
-
-```toml
-[permissions]
-write = ["./duplicates.txt"]
-```
-
-With the permissions added, you'll get prompted during install if you want to
-accept the requested permissions. Once you do, the file will be written to
-properly during execution.
