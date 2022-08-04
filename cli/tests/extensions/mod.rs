@@ -203,6 +203,16 @@ fn extension_is_locally_run_correctly() {
         .stdout(predicate::str::contains("Hello, World!"));
 }
 
+#[test]
+fn extension_run_relative() {
+    let test_cli = TestCli::builder().build();
+
+    test_cli
+        .run(&["extension", "run", "../cli/tests/fixtures/extensions/sample"])
+        .success()
+        .stdout(predicate::str::contains("Hello, World!"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
