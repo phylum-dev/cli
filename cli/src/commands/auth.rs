@@ -35,7 +35,7 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
     }
 
     // Create a client with our auth token attached.
-    let api = PhylumApi::new(config, timeout).await.context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout).await?;
 
     let user_info = api.user_info().await;
 

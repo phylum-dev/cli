@@ -37,7 +37,7 @@ async fn api_factory(
     config_path: PathBuf,
     timeout: Option<u64>,
 ) -> Result<PhylumApi> {
-    let api = PhylumApi::new(config, timeout).await.context("Error creating client")?;
+    let api = PhylumApi::new(config, timeout).await?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save
     // the config
