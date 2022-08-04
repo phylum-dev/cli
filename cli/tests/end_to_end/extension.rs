@@ -5,7 +5,7 @@ use crate::common::{create_lockfile, create_project, TestCli};
 /// Test Phylum API functions.
 #[tokio::test]
 pub async fn get_user_info() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension("console.log(await PhylumApi.getUserInfo())")
@@ -17,7 +17,7 @@ pub async fn get_user_info() {
 
 #[tokio::test]
 pub async fn get_access_token() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension("console.log(await PhylumApi.getAccessToken())")
@@ -29,7 +29,7 @@ pub async fn get_access_token() {
 
 #[tokio::test]
 pub async fn get_refresh_token() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension("console.log(await PhylumApi.getRefreshToken())")
@@ -41,7 +41,7 @@ pub async fn get_refresh_token() {
 
 #[tokio::test]
 pub async fn get_package_details() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension("console.log(await PhylumApi.getPackageDetails('express', '4.18.1', 'npm'))")
@@ -53,7 +53,7 @@ pub async fn get_package_details() {
 
 #[tokio::test]
 pub async fn get_project_details() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     let project = create_project().await;
     let permissions =
@@ -71,7 +71,7 @@ pub async fn get_project_details() {
 
 #[tokio::test]
 pub async fn parse_lockfile() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     let lockfile = create_lockfile(test_cli.temp_path());
     let lockfile_str = lockfile.to_string_lossy().into_owned();
@@ -95,7 +95,7 @@ pub async fn parse_lockfile() {
 
 #[tokio::test]
 pub async fn get_job_status() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     let project = create_project().await;
     let analyze = format!(
@@ -116,7 +116,7 @@ pub async fn get_job_status() {
 /// Ensure shared state is async and thread safe.
 #[test]
 pub fn async_state() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension(

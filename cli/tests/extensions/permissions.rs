@@ -84,7 +84,7 @@ fn correct_run_permission_successful_install_and_run() {
 
 #[tokio::test]
 pub async fn get_package_details() {
-    let test_cli = TestCli::builder().with_config(true).build();
+    let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension(

@@ -4,14 +4,17 @@ version = "3.7.2"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"
 rust-version = "1.60"
+autotests = false
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
 
 [features]
 default = ["selfmanage"]
 selfmanage = []
 end-to-end-tests = []
 extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ansi_term = "0.12.1"
