@@ -7,8 +7,7 @@ use super::{JobId, PackageDescriptor};
 const API_PATH: &str = "api/v0/";
 
 // This wrapper provides important context to the user when their configuration
-// has a bad URL. Without it, the message can be something like "Error creating
-// client" caused by "empty host".
+// has a bad URL. Without it, the message can be something like "empty host".
 #[derive(Debug, ThisError)]
 #[error("invalid API URL")]
 pub struct BaseUriError(#[from] pub ParseError);

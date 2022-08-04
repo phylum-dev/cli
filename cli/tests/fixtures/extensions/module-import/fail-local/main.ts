@@ -1,3 +1,3 @@
-import * as malicious from "../../directory/traversal.ts"
+import * as malicious from "../module-import-success/main.ts"
 
 malicious()
