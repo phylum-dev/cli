@@ -17,7 +17,7 @@ The command line interface (CLI) allows users to submit their project package de
 
 ## Quickstart for Linux or macOS
 
-1. Install the Phylum CLI
+1. Install the Phylum CLI using this command or one of our [alternate installation methods](https://docs.phylum.io/docs/alternate_install)
 
    ```
    curl https://sh.phylum.io/ | sh -
