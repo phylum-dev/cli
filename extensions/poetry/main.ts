@@ -42,6 +42,12 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   await lockfileBackup.backup()
   await manifestBackup.backup()
 
+  if (manifestBackup.fileContent === null) {
+    console.log(`\`pyproject.toml\` was not found in the current directory.`)
+    console.log(`Please move to the Poetry project's top level directory and try again.`)
+    return 127
+  }
+
   let process = Deno.run({
     cmd: ['poetry', subcommand, '-vvv', '-n', '--dry-run', ...args.map(s => s.toString())],
     stdout: 'piped',
