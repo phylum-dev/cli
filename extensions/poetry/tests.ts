@@ -75,7 +75,7 @@ describe("Poetry extension", async () => {
 
   // TODO tqdm is artificially marked as not passing; replace with an actual
   // known-bad package.
-  it("correctly denies an invalid package", async () => {
+  it("correctly denies a known bad package", async () => {
     let status = await phylum.runExt(['add', 'cffi==1.15.0'], phylum.fixturesDir)
     assert(status.code === 1)
   })
