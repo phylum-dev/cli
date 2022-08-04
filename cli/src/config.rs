@@ -233,28 +233,4 @@ mod tests {
         let config: Config = parse_config(tempfile.path()).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
     }
-
-    #[test]
-    fn test_pass_api_key_through_env() {
-        const ENV_TOKEN: &str = "ENV VARIABLE TOKEN";
-
-        let tempfile = NamedTempFile::new().unwrap();
-        write_test_config(tempfile.path());
-        env::set_var("PHYLUM_API_KEY", ENV_TOKEN);
-
-        let config: Config = read_configuration(tempfile.path()).unwrap();
-
-        assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(ENV_TOKEN)));
-    }
-
-    #[test]
-    fn test_ignore_empty_token() {
-        let tempfile = NamedTempFile::new().unwrap();
-        write_test_config(tempfile.path());
-        env::set_var("PHYLUM_API_KEY", "");
-
-        let config: Config = read_configuration(tempfile.path()).unwrap();
-
-        assert_eq!(config.auth_info.offline_access, Some(RefreshToken::new(CONFIG_TOKEN)));
-    }
 }
