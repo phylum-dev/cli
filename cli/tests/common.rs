@@ -17,7 +17,7 @@ pub use predicates::prelude::*;
 use reqwest::StatusCode;
 use tempfile::TempDir;
 
-const API_URL: &str = "https://api.staging.phylum.io";
+pub const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
 enum Cwd {
@@ -34,14 +34,14 @@ impl Default for Cwd {
 
 #[derive(Default)]
 pub struct TestCliBuilder {
+    config: Option<Config>,
     cwd: Cwd,
-    with_config: bool,
 }
 
 impl TestCliBuilder {
     pub fn build(self) -> TestCli {
         let tempdir = TempDir::new().unwrap();
-        let config_path = if self.with_config { Some(create_config(tempdir.path())) } else { None };
+        let config_path = self.config.map(|config| create_config(tempdir.path(), config));
 
         let cwd = match self.cwd {
             Cwd::Path(p) => Some(p),
@@ -54,8 +54,11 @@ impl TestCliBuilder {
 
     /// If true, a configuration will be generated, stored and passed as an
     /// option.
-    pub fn with_config(mut self, with_config: bool) -> Self {
-        self.with_config = with_config;
+    pub fn with_config(mut self, config: impl Into<Option<Config>>) -> Self {
+        self.config = Some(config.into().unwrap_or_else(|| Config {
+            connection: ConnectionInfo { uri: API_URL.into() },
+            ..Config::default()
+        }));
         self
     }
 
@@ -103,7 +106,7 @@ impl TestCli {
         TestExtensionBuilder::new(self, code)
     }
 
-    pub fn run<S: AsRef<str> + AsRef<OsStr>>(&self, args: &[S]) -> Assert {
+    pub fn cmd(&self) -> Command {
         let mut cmd = Command::cargo_bin("phylum").unwrap();
 
         cmd.env("XDG_DATA_HOME", self.tempdir.path());
@@ -116,8 +119,11 @@ impl TestCli {
             cmd.arg("--config").arg(&config_path);
         }
 
-        cmd.args(args);
-        cmd.assert()
+        cmd
+    }
+
+    pub fn run(&self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Assert {
+        self.cmd().args(args).assert()
     }
 }
 
@@ -190,9 +196,7 @@ impl<'a> Drop for TestExtension<'a> {
 }
 
 /// Create config file for the desired environment.
-pub fn create_config(dir: &Path) -> PathBuf {
-    let config = Config { connection: ConnectionInfo { uri: API_URL.into() }, ..Config::default() };
-
+pub fn create_config(dir: &Path, config: Config) -> PathBuf {
     let config_path = dir.join("settings.yml");
     let config_yaml = serde_yaml::to_string(&config).expect("serialize config");
     fs::write(&config_path, config_yaml.as_bytes()).expect("writing config");
