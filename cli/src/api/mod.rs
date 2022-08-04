@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use phylum_types::types::auth::TokenResponse;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
@@ -149,11 +149,13 @@ impl PhylumApi {
         let tokens: TokenResponse = match &config.auth_info.offline_access {
             Some(refresh_token) => {
                 handle_refresh_tokens(refresh_token, config.ignore_certs, &config.connection.uri)
-                    .await?
+                    .await
+                    .context("Token refresh failed")?
             },
             None => {
                 handle_auth_flow(&AuthAction::Login, config.ignore_certs, &config.connection.uri)
-                    .await?
+                    .await
+                    .context("User login failed")?
             },
         };
 
