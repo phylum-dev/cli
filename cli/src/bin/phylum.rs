@@ -193,6 +193,6 @@ async fn main() {
             ),
         },
         Ok(CommandValue::Code(code)) => code.exit(),
-        Err(error) => exit_fail(error, ExitCode::Generic),
+        Err(error) => exit_fail(format!("{:?}", error), ExitCode::Generic),
     }
 }
