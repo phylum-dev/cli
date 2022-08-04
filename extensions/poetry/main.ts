@@ -34,7 +34,7 @@ class FileBackup {
 // process. This way, we can track the actual lockfile changes, as specifying
 // `--dry-run` only would not output anything in combination with flags such
 // as `--lock` that do not perform the actual operations.
-async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
+async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   // Read and backup the current poetry lockfile contents.
   const lockfileBackup = new FileBackup('poetry.lock')
   const manifestBackup = new FileBackup('pyproject.toml')
@@ -49,7 +49,6 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   })
 
   await process.status()
-  await process.close()
 
   const lockfileData = await PhylumApi.parseLockfile('./poetry.lock', 'poetry')
 
@@ -68,13 +67,13 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
 
   if (jobStatus.pass && jobStatus.status === "complete") {
     console.log(`[${green("phylum")}] All packages pass project thresholds.\n`)
-    return true
+    return 0
   } else if (jobStatus.pass) {
     console.warn(`[${yellow("phylum")}] Unknown packages were submitted for analysis, please check again later.\n`)
-    return false
+    return 126
   } else {
     console.error(`[${red("phylum")}] The operation caused a threshold failure.\n`)
-    return false
+    return 127
   }
 }
 
@@ -83,8 +82,8 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
   const analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1))
 
   // If the analysis failed, exit with an error.
-  if (!analysisOutcome) {
-    Deno.exit(1)
+  if (analysisOutcome !== 0) {
+    Deno.exit(analysisOutcome)
   }
 }
 

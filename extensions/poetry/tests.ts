@@ -75,7 +75,7 @@ describe("Poetry extension", async () => {
 
   it("correctly denies a known bad package", async () => {
     let status = await phylum.runExt(['add', 'cffi==1.15.0'], phylum.fixturesDir)
-    assert(status.code === 1)
+    assert(status.code === 127)
   })
 
   it("allows duplicating the `--dry-run` flag", async () => {
