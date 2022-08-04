@@ -88,8 +88,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   }
 }
 
-// If the subcommand is `add`, update the lockfile and process it through
-// Phylum. Otherwise, pass the arguments through to `poetry`.
+// If the subcommand modifies the lockfile, process it through Phylum.
 if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])) {
   // Skip the `add` string. Pass the rest of the arguments as-is.
   const analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1))
