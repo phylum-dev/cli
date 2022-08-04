@@ -63,16 +63,6 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
   await lockfileBackup.restoreOrDelete()
   await manifestBackup.restoreOrDelete()
 
-  console.log(`Analyzing packages:`)
-  for (const { name, version } of lockfileData.packages.slice(0, 10)) {
-    console.log(`  - ${name} ${version}`)
-  }
-  const remainder = lockfileData.packages.slice(10).length
-  if (remainder > 0) {
-    console.log(`  ...and ${remainder} more`)
-  }
-  console.log()
-
   const jobId = await PhylumApi.analyze(lockfileData['package_type'], lockfileData['packages'])
   const jobStatus = await PhylumApi.getJobStatus(jobId)
 
@@ -90,7 +80,6 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): boolean {
 
 // If the subcommand modifies the lockfile, process it through Phylum.
 if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])) {
-  // Skip the `add` string. Pass the rest of the arguments as-is.
   const analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1))
 
   // If the analysis failed, exit with an error.
