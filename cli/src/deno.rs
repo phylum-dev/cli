@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::thread;
 
 use ansi_term::Color;
-use anyhow::{anyhow, Error, Result};
+use anyhow::{anyhow, Context, Error, Result};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
@@ -141,16 +141,16 @@ impl ExtensionsModuleLoader {
     async fn load_from_filesystem(extension_path: &Path, path: &Url) -> Result<String> {
         let path = path.to_file_path().map_err(|_| anyhow!("{path:?}: is not a path"))?;
 
+        let extension_path = fs::canonicalize(&extension_path)
+            .await
+            .with_context(|| anyhow!("Invalid extension directory: {extension_path:?}"))?;
+        let path = fs::canonicalize(&path)
+            .await
+            .with_context(|| anyhow!("Invalid extension module: {path:?}"))?;
+
         if !path.starts_with(extension_path) {
             return Err(anyhow!(
                 "`{}`: importing from paths outside of the extension's directory is not allowed",
-                path.to_string_lossy(),
-            ));
-        }
-
-        if path.is_symlink() {
-            return Err(anyhow!(
-                "`{}`: importing from symlinks is not allowed",
                 path.to_string_lossy(),
             ));
         }

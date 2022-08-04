@@ -33,6 +33,7 @@ fn good_module_loads_successfully() {
 fn module_with_traversal_fails_to_load() {
     let test_cli = TestCli::builder().build();
 
+    test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
     test_cli.install_extension(&fixtures_path().join("module-import").join("fail-local")).success();
 
     test_cli
@@ -61,7 +62,7 @@ fn module_with_non_allowed_url_fails_to_load() {
 // to the repo.
 #[cfg(unix)]
 #[test]
-fn symlinks_are_rejected() {
+fn symlinks_are_resolved() {
     let test_cli = TestCli::builder().build();
     let ext_path =
         test_cli.temp_path().to_owned().join("phylum").join("extensions").join("symlink");
@@ -71,8 +72,29 @@ fn symlinks_are_rejected() {
     std::os::unix::fs::symlink(ext_path.join("symlink_me.ts"), ext_path.join("symlink.ts"))
         .unwrap();
 
+    test_cli.run(&["symlink"]).success().stdout("I am symlinked\n");
+}
+
+// A symlink is directly created during the test, as no symlinks are committed
+// to the repo.
+#[cfg(unix)]
+#[test]
+fn symlinks_with_traversal_fail() {
+    let test_cli = TestCli::builder().build();
+    let ext_path =
+        test_cli.temp_path().to_owned().join("phylum").join("extensions").join("symlink");
+
+    test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
+    test_cli.install_extension(&fixtures_path().join("symlink")).success();
+
+    std::os::unix::fs::symlink(
+        ext_path.join("../module-import-success/main.ts"),
+        ext_path.join("symlink.ts"),
+    )
+    .unwrap();
+
     test_cli
         .run(&["symlink"])
         .failure()
-        .stderr(predicate::str::contains("importing from symlinks is not allowed"));
+        .stderr(predicate::str::contains("importing from paths outside"));
 }
