@@ -23,9 +23,7 @@ fn good_module_loads_successfully() {
     test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
 
     test_cli
-        .cmd()
-        .args(&["module-import-success"])
-        .assert()
+        .run(&["module-import-success"])
         .success()
         .stdout(predicate::str::contains("I should contain 12345"));
 }
@@ -38,9 +36,7 @@ fn module_with_traversal_fails_to_load() {
     test_cli.install_extension(&fixtures_path().join("module-import").join("fail-local")).success();
 
     test_cli
-        .cmd()
-        .args(&["module-import-fail-local"])
-        .assert()
+        .run(&["module-import-fail-local"])
         .failure()
         .stderr(predicate::str::contains("importing from paths outside"));
 }
@@ -56,9 +52,7 @@ fn module_with_non_allowed_url_fails_to_load() {
         .success();
 
     test_cli
-        .cmd()
-        .args(&["module-import-fail-remote"])
-        .assert()
+        .run(&["module-import-fail-remote"])
         .failure()
         .stderr(predicate::str::contains("importing from domains other than"));
 }
@@ -78,9 +72,7 @@ fn symlinks_are_rejected() {
         .unwrap();
 
     test_cli
-        .cmd()
-        .args(&["symlink"])
-        .assert()
+        .run(&["symlink"])
         .failure()
         .stderr(predicate::str::contains("importing from symlinks is not allowed"));
 }

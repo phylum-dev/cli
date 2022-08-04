@@ -6,13 +6,11 @@ fn permission_dialog_is_shown_without_yes_flag() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
-        .cmd()
-        .args(&[
+        .run(&[
             "extension",
             "install",
             &fixtures_path().join("permissions").join("correct-read-perms").to_string_lossy(),
         ])
-        .assert()
         .failure()
         .stderr(predicate::str::contains("Can't ask for permissions"));
 }
@@ -26,9 +24,7 @@ fn correct_read_permission_successful_install_and_run() {
         .success();
 
     test_cli
-        .cmd()
-        .args(&["correct-read-perms"])
-        .assert()
+        .run(&["correct-read-perms"])
         .success()
         .stdout(predicate::str::contains("await Deno.readFile"));
 }
@@ -42,9 +38,7 @@ fn incorrect_read_permission_unsuccessful_run() {
         .success();
 
     test_cli
-        .cmd()
-        .args(&["incorrect-read-perms"])
-        .assert()
+        .run(&["incorrect-read-perms"])
         .failure()
         .stderr("❗ Error: Requires read access to \"/tmp/passwd\"\n");
 }
@@ -58,9 +52,7 @@ fn correct_net_permission_successful_install_and_run() {
         .success();
 
     test_cli
-        .cmd()
-        .args(&["correct-net-perms"])
-        .assert()
+        .run(&["correct-net-perms"])
         .success()
         .stdout(predicate::str::contains("<!doctype html>"));
 }
@@ -74,9 +66,7 @@ fn incorrect_net_permission_unsuccessful_run() {
         .success();
 
     test_cli
-        .cmd()
-        .args(&["incorrect-net-perms"])
-        .assert()
+        .run(&["incorrect-net-perms"])
         .failure()
         .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
 }
@@ -89,12 +79,7 @@ fn correct_run_permission_successful_install_and_run() {
         .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
         .success();
 
-    test_cli
-        .cmd()
-        .args(&["correct-run-perms"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("install"));
+    test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("install"));
 }
 
 #[tokio::test]

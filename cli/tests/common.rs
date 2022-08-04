@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 #[cfg(feature = "extensions")]
 use std::fs::File;
 #[cfg(feature = "extensions")]
@@ -97,7 +98,7 @@ impl TestCli {
     }
 
     pub fn install_extension(&self, path: &Path) -> Assert {
-        self.cmd().args(&["extension", "install", "-y", &path.to_string_lossy()]).assert()
+        self.run(&["extension", "install", "-y", &path.to_string_lossy()])
     }
 
     #[cfg(feature = "extensions")]
@@ -119,6 +120,10 @@ impl TestCli {
         }
 
         cmd
+    }
+
+    pub fn run(&self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Assert {
+        self.cmd().args(args).assert()
     }
 }
 
@@ -157,11 +162,7 @@ impl<'a> TestExtension<'a> {
         let extension_path = test_cli.temp_path().to_owned().join("test-ext");
 
         // Create skeleton extension.
-        test_cli
-            .cmd()
-            .args(&["extension", "new", &extension_path.to_string_lossy()])
-            .assert()
-            .success();
+        test_cli.run(&["extension", "new", &extension_path.to_string_lossy()]).success();
 
         // Overwrite skeleton code.
         let main = extension_path.join("main.ts");
@@ -175,24 +176,21 @@ impl<'a> TestExtension<'a> {
         write!(manifest, "[permissions]\n{permissions_str}").unwrap();
 
         // Install extension.
-        test_cli
-            .cmd()
-            .args(&["extension", "install", "-y", &extension_path.to_string_lossy()])
-            .assert();
+        test_cli.run(&["extension", "install", "-y", &extension_path.to_string_lossy()]);
 
         Self { test_cli, extension_path }
     }
 
     pub fn run(&self) -> Assert {
         // Execute extension.
-        self.test_cli.cmd().args(&["test-ext"]).assert()
+        self.test_cli.run(&["test-ext"])
     }
 }
 
 #[cfg(feature = "extensions")]
 impl<'a> Drop for TestExtension<'a> {
     fn drop(&mut self) {
-        self.test_cli.cmd().args(&["extension", "uninstall", "test-ext"]).assert().success();
+        self.test_cli.run(&["extension", "uninstall", "test-ext"]).success();
         fs::remove_dir_all(&self.extension_path).unwrap();
     }
 }
