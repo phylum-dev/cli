@@ -32,8 +32,8 @@ async function checkDryRun(subcommand: string, args: string[]) {
     try {
         await Deno.stat('package.json');
     } catch (e) {
-        console.error(`\`package.json\` was not found in the current directory.`);
-        console.error(`Please move to the yarn project's top level directory and try again.`);
+        console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
+        console.error(`[${red("phylum")}] Please move to the yarn project's top level directory and try again.`);
         return 125;
     }
 
