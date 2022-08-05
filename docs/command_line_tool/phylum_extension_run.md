@@ -1,7 +1,7 @@
 ---
 title: phylum extension run
 category: 6255e67693d5200013b1fa3e
-hidden: true
+hidden: false
 ---
 
 Run an extension from a directory
