@@ -49,6 +49,14 @@ The command line interface (CLI) allows users to submit their project package de
 
  1. (Optional) View the analysis results in the [Phylum UI](https://app.phylum.io/auth/login)
 
+## Extensions
+
+Phylum CLI extensions allow you to extend the existing CLI functionality with
+new features. You can start exploring by taking a look at the official Phylum
+extensions:
+
+https://github.com/phylum-dev/cli/tree/main/extensions
+
 ---
 ## Slack
 
