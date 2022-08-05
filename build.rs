@@ -214,13 +214,14 @@ fn build_v8() {
 }
 
 fn print_gn_args(gn_out_dir: &Path) {
-  assert!(Command::new(gn())
+  let cmd = Command::new(gn())
     .arg("args")
     .arg(&gn_out_dir)
     .arg("--list")
-    .status()
-    .unwrap()
-    .success());
+    .output()
+    .unwrap();
+  println!("STDOUT: {}", String::from_utf8_lossy(&cmd.stdout));
+  println!("STDERR: {}", String::from_utf8_lossy(&cmd.stderr));
 }
 
 fn maybe_clone_repo(dest: &str, repo: &str) {
