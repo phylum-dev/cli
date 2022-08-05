@@ -83,7 +83,20 @@ jobs:
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
   musl-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, amd64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Sccache cache
+        id: cache-sccache
+        uses: actions/cache@v3
+        with:
+          path: ./sccache
+          key: sccache-key
+      - name: Build
+        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 ./entrypoint.sh
+
+  musl-test-arm:
+    runs-on: [self-hosted, arm64]
     steps:
       - uses: actions/checkout@v3
       - name: Sccache cache
