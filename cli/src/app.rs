@@ -308,9 +308,9 @@ pub fn app<'a>() -> clap::Command<'a> {
                             .required(true),
                     ),
                 ),
-        );
+        )
+        .subcommand(extensions::command());
 
-    app = app.subcommand(extensions::command());
     app = extensions::add_extensions_subcommands(app);
 
     #[cfg(feature = "selfmanage")]
