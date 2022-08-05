@@ -1,7 +1,7 @@
 # Phylum Poetry extension
 
-A [Phylum CLI](phylum-cli) extension that checks your [Poetry][poetry] packages
-through [Phylum][phylum] before installing them.
+A [Phylum CLI](phylum-cli) extension that checks your [Poetry][poetry]
+dependencies through [Phylum][phylum] before installing them.
 
 ## Installation and basic usage
 
