@@ -14,7 +14,6 @@ path = "tests/integration.rs"
 default = ["selfmanage"]
 selfmanage = []
 end-to-end-tests = []
-extensions = ["dep:deno_runtime", "dep:deno_core", "dep:deno_ast"]
 
 [dependencies]
 ansi_term = "0.12.1"
@@ -59,9 +58,9 @@ zip = { version = "0.6.2", default-features = false, features = [] }
 walkdir = "2.3.2"
 regex = "1.5.5"
 once_cell = "1.12.0"
-deno_runtime = { version = "0.71.0", optional = true }
-deno_core = { version = "0.145.0", optional = true }
-deno_ast = { version = "0.17.0", features = ["transpiling"], optional = true }
+deno_runtime = { version = "0.71.0" }
+deno_core = { version = "0.145.0" }
+deno_ast = { version = "0.17.0", features = ["transpiling"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"

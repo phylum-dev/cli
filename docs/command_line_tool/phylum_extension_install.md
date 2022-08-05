@@ -1,7 +1,7 @@
 ---
 title: phylum extension install
 category: 6255e67693d5200013b1fa3e
-hidden: true
+hidden: false
 ---
 
 Install an extension

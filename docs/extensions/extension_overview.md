@@ -1,7 +1,7 @@
 ---
 title: Phylum CLI Extensions
 category: 62c5cb137dbdad00536291a6
-hidden: true
+hidden: false
 ---
 
 ## Overview
