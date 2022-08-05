@@ -93,7 +93,7 @@ jobs:
           path: ./sccache
           key: sccache-key
       - name: Build
-        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 entrypoint.sh
+        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 ./entrypoint.sh
 
   # This job reports the results of the test matrix above
   test:
