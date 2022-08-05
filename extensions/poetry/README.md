@@ -35,7 +35,8 @@ When invoking `phylum poetry`, subcommands that would modify the
   meet the required project thresholds, the command will exit with the error code
   127.
 - If the analysis is waiting for Phylum to process one or more of the submitted
-  packages, the command will exit with the error code 126.
+  packages, the command will exit with the error code 126 and the changes will
+  _not_ be applied.
 - Commands that modify neither `pyproject.toml` nor `poetry.lock` will be passed
   through to `poetry` directly.
 
