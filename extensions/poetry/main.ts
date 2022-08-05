@@ -38,9 +38,9 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   try {
     await Deno.stat('pyproject.toml')
   } catch (e) {
-    console.error(`\`pyproject.toml\` was not found in the current directory.`)
-    console.error(`Please move to the Poetry project's top level directory and try again.`)
-    return 127
+    console.error(`[${red("phylum")}] \`pyproject.toml\` was not found in the current directory.`)
+    console.error(`[${red("phylum")}] Please move to the Poetry project's top level directory and try again.`)
+    return 125
   }
 
   // Read and backup the current poetry lockfile contents.
@@ -62,7 +62,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 
   // If it existed before, restore the previous contents of the lockfile;
   // otherwise, delete it. This is a workaround to the fact that in poetry
-  // 1.1.x, the `--dry-run` argument does not prevent the lockfile from 
+  // 1.1.x, the `--dry-run` argument does not prevent the lockfile from
   // being modified. This is not fixed as of poetry 1.1.14.
   // Prudently, do the same for the manifest (pyproject.toml).
   //

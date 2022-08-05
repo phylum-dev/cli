@@ -29,6 +29,14 @@ class FileBackup {
 
 // Analyze new packages.
 async function checkDryRun(subcommand: string, args: string[]) {
+    try {
+        await Deno.stat('package.json');
+    } catch (e) {
+        console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
+        console.error(`[${red("phylum")}] Please move to the npm project's top level directory and try again.`);
+        return 125;
+    }
+
     // Backup package/lock files.
     const packageLockBackup = new FileBackup('./package-lock.json');
     await packageLockBackup.backup();
@@ -47,7 +55,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     await packageLockBackup.restoreOrDelete();
     await packageBackup.restoreOrDelete();
 
-    console.log('Analyzing packages…');
+    console.log(`[${green("phylum")}] Analyzing packages…`);
 
     if (lockfile.packages.length === 0) {
         console.log(`[${green("phylum")}] No packages found in lockfile.\n`)
@@ -80,6 +88,6 @@ if (Deno.args.length >= 1
 }
 
 // Run the command with side effects.
-console.log('Applying changes…');
+console.log(`[${green("phylum")}] Applying changes…`);
 let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
 Deno.exit(status.code);
