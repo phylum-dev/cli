@@ -29,3 +29,10 @@ look at the [CLI's extension documentation].
 * [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
 * [Extension API](https://docs.phylum.io/docs/extension_api)
 * [Example](https://docs.phylum.io/docs/extension_example)
+
+## Official Extensions
+
+Official Phylum CLI extensions can be found [on GitHub]. These are a great place
+to get started if you want to try out some CLI extensions or write your own.
+
+[on GitHub]: https://github.com/phylum-dev/cli/tree/main/extensions
