@@ -5,11 +5,9 @@ pub mod app;
 pub mod auth;
 pub mod commands;
 pub mod config;
-#[cfg(feature = "extensions")]
 pub mod deno;
 pub mod dirs;
 pub mod filter;
-#[cfg(feature = "extensions")]
 pub mod fmt_deno_error;
 pub mod format;
 pub mod histogram;

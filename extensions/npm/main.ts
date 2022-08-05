@@ -1,32 +1,93 @@
-import { PhylumApi } from "phylum";
+import { red, green, yellow } from 'https://deno.land/std@0.150.0/fmt/colors.ts';
+import { PhylumApi } from 'phylum';
 
-// Parse CLI args.
-const args = Deno.args;
-if (args.length != 2 || args[0] !== "install") {
-    console.error("Usage: phylum npm install <PKG>");
-} else {
-    await install(args[1]);
+class FileBackup {
+  readonly fileName: string
+  readonly fileContent: string | null
+
+  constructor(fileName: string) {
+    this.fileName = fileName
+    this.fileContent = null
+  }
+
+  async backup() {
+    try {
+      this.fileContent = await Deno.readTextFile(this.fileName)
+    } catch (e) {}
+  }
+
+  async restoreOrDelete() {
+    try {
+      if (this.fileContent != null) {
+        await Deno.writeTextFile(this.fileName, this.fileContent)
+      } else {
+        await Deno.remove(this.fileName)
+      }
+    } catch (e) {}
+  }
 }
 
-// Analyze and install package.
-async function install(pkg: string) {
-    console.log("Updating package lock…");
-    await Deno.run({ cmd: ["npm", "i", "--package-lock-only", pkg] }).status();
-    console.log("Package lock updated.\n");
+// Analyze new packages.
+async function checkDryRun(subcommand: string, args: string[]) {
+    try {
+        await Deno.stat('package.json');
+    } catch (e) {
+        console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
+        console.error(`[${red("phylum")}] Please move to the npm project's top level directory and try again.`);
+        return 125;
+    }
 
-    console.log("Analyzing packages…");
-    const jobId = await PhylumApi.analyze("./package-lock.json");
+    // Backup package/lock files.
+    const packageLockBackup = new FileBackup('./package-lock.json');
+    await packageLockBackup.backup();
+    const packageBackup = new FileBackup('./package.json');
+    await packageBackup.backup();
+
+    await Deno.run({
+        cmd: ['npm', subcommand, '--package-lock-only', ...args],
+        stdout: 'piped',
+        stderr: 'piped',
+    }).status();
+
+    const lockfile = await PhylumApi.parseLockfile('./package-lock.json', 'npm');
+
+    // Restore package/lock files.
+    await packageLockBackup.restoreOrDelete();
+    await packageBackup.restoreOrDelete();
+
+    console.log(`[${green("phylum")}] Analyzing packages…`);
+
+    if (lockfile.packages.length === 0) {
+        console.log(`[${green("phylum")}] No packages found in lockfile.\n`)
+        return;
+    }
+
+    const jobId = await PhylumApi.analyze('npm', lockfile.packages);
     const jobStatus = await PhylumApi.getJobStatus(jobId);
 
-    if (jobStatus.pass && jobStatus.status === "complete") {
-        console.log("All packages pass project thresholds.\n");
-
-        console.log(`Installing '${pkg}'…`);
-        await Deno.run({ cmd: ["npm", "i", pkg] }).status();
-        console.log("Package install complete.");
+    if (jobStatus.pass && jobStatus.status === 'complete') {
+        console.log(`[${green("phylum")}] All packages pass project thresholds.\n`)
     } else if (jobStatus.pass) {
-        console.warn("Unknown packages were submitted for analysis, please check again later.");
+        console.warn(`[${yellow("phylum")}] Unknown packages were submitted for analysis, please check again later.\n`);
+        Deno.exit(126);
     } else {
-        console.error(`Installing '${pkg}' caused threshold failure.`);
+        console.error(`[${red("phylum")}] The operation caused a threshold failure.\n`);
+        Deno.exit(127);
     }
 }
+
+// Analyze new dependencies with phylum before install/update.
+if (Deno.args.length >= 1
+    && (
+        'install'.startsWith(Deno.args[0])
+        || 'isntall'.startsWith(Deno.args[0])
+        || 'update'.startsWith(Deno.args[0])
+        || 'udpate'.startsWith(Deno.args[0])
+    )) {
+    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+}
+
+// Run the command with side effects.
+console.log(`[${green("phylum")}] Applying changes…`);
+let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
+Deno.exit(status.code);
