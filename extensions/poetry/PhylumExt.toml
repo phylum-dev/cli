@@ -1,0 +1,8 @@
+name = "poetry"
+description = "Poetry package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+run = ["poetry"]
+read = ["./poetry.lock", "./pyproject.toml"]
+write = ["./poetry.lock", "./pyproject.toml"]
