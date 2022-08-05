@@ -27,22 +27,6 @@ class FileBackup {
   }
 }
 
-// Analyze new dependencies with phylum before install/update.
-if (Deno.args.length >= 1
-    && (
-        'install'.startsWith(Deno.args[0])
-        || 'isntall'.startsWith(Deno.args[0])
-        || 'update'.startsWith(Deno.args[0])
-        || 'udpate'.startsWith(Deno.args[0])
-    )) {
-    await checkDryRun(Deno.args[0], Deno.args.slice(1));
-}
-
-// Run the command with side effects.
-console.log('Applying changes…');
-let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
-Deno.exit(status.code);
-
 // Analyze new packages.
 async function checkDryRun(subcommand: string, args: string[]) {
     // Backup package/lock files.
@@ -83,3 +67,19 @@ async function checkDryRun(subcommand: string, args: string[]) {
         Deno.exit(127);
     }
 }
+
+// Analyze new dependencies with phylum before install/update.
+if (Deno.args.length >= 1
+    && (
+        'install'.startsWith(Deno.args[0])
+        || 'isntall'.startsWith(Deno.args[0])
+        || 'update'.startsWith(Deno.args[0])
+        || 'udpate'.startsWith(Deno.args[0])
+    )) {
+    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+}
+
+// Run the command with side effects.
+console.log('Applying changes…');
+let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
+Deno.exit(status.code);
