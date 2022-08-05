@@ -1,6 +1,7 @@
 #!/bin/sh
 
 apk add git \
+    make \
     gcc \
     ninja \
     python3 \
