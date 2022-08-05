@@ -4,3 +4,6 @@ members = [
   "cli",
   "xtask",
 ]
+
+[patch.crates-io]
+v8 = { git = "https://github.com/cd-work/rusty_v8", branch = "extralog" }
