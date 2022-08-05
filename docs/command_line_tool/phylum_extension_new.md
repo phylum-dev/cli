@@ -1,7 +1,7 @@
 ---
 title: phylum extension new
 category: 6255e67693d5200013b1fa3e
-hidden: true
+hidden: false
 ---
 
 Create a new extension

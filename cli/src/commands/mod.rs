@@ -3,7 +3,6 @@ use std::process;
 use phylum_types::types::job::Action;
 
 pub mod auth;
-#[cfg(feature = "extensions")]
 pub mod extensions;
 pub mod group;
 pub mod jobs;

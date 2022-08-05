@@ -6,12 +6,10 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use env_logger::Env;
 use phylum_cli::api::PhylumApi;
-#[cfg(feature = "extensions")]
-use phylum_cli::commands::extensions;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, group, jobs, packages, parse, project, CommandResult, CommandValue, ExitCode,
+    auth, extensions, group, jobs, packages, parse, project, CommandResult, CommandValue, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -149,16 +147,10 @@ async fn handle_commands() -> CommandResult {
         #[cfg(feature = "selfmanage")]
         "uninstall" => uninstall::handle_uninstall(sub_matches),
 
-        #[cfg(feature = "extensions")]
         "extension" => extensions::handle_extensions(Box::pin(api), sub_matches).await,
-
-        #[cfg(feature = "extensions")]
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },
-
-        #[cfg(not(feature = "extensions"))]
-        _ => unreachable!(),
     }
 }
 
