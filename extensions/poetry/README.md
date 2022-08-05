@@ -8,20 +8,21 @@ dependencies through [Phylum][phylum] before installing them.
 Clone the repository and install the extension via the Phylum CLI.
 
 ```console
-$ git clone https://github.com/phylum-dev/cli
-$ phylum extension install cli/extensions/poetry
+git clone https://github.com/phylum-dev/cli
+phylum extension install cli/extensions/poetry
 ```
 
-Prepend `phylum` to your `poetry` command invocations, or set up an alias in
-your shell to make it transparent.
+Prepend `phylum` to your `poetry` command invocations:
 
 ```console
-$ phylum poetry add my-package  # This will be checked by Phylum!
+phylum poetry add my-package  # This will be checked by Phylum!
 ```
 
+Or set up an alias in your shell to make it transparent:
+
 ```console
-$ alias poetry="phylum poetry"
-$ poetry add my-package  # This will be checked by Phylum!
+alias poetry="phylum poetry"
+poetry add my-package  # This will be checked by Phylum!
 ```
 
 ## How it works
