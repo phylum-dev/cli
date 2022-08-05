@@ -1,7 +1,7 @@
 # Phylum Poetry extension
 
-A [Phylum CLI](phylum-cli) that checks your [Poetry][poetry] packages through
-[Phylum][phylum] before installing them.
+A [Phylum CLI](phylum-cli) extension that checks your [Poetry][poetry] packages
+through [Phylum][phylum] before installing them.
 
 ## Installation and basic usage
 
@@ -12,8 +12,8 @@ $ git clone https://github.com/phylum-dev/cli
 $ phylum extension install cli/extensions/poetry
 ```
 
-Prepend `phylum` to your `poetry` command invocations, or set up an alias to
-make this transparent.
+Prepend `phylum` to your `poetry` command invocations, or set up an alias in
+your shell to make it transparent.
 
 ```console
 $ phylum poetry add my-package  # This will be checked by Phylum!
@@ -24,14 +24,19 @@ $ alias poetry="phylum poetry"
 $ poetry add my-package  # This will be checked by Phylum!
 ```
 
-Commands that modify `pyproject.toml` and/or the `poetry.lock` will trigger a
-Phylum analysis. If the analysis is successful, the corresponding actions will
-be carried through. If the analysis is unsuccessful, the command will exit with
-the error code 127. If the analysis is waiting for Phylum to process one or more
-of the submitted packages, the command will exit with the error code 126.
+## How it works
 
-Commands that do not modify the manifest or the lockfile will be passed through
-to `poetry`.
+When invoking `phylum poetry`, subcommands that would modify the
+`pyproject.toml` or `poetry.lock` files will trigger a Phylum analysis.
+
+- If the analysis is successful, the corresponding changes will be applied.
+- If the analysis is unsuccessful because some of the new dependencies don't
+  meet the required project thresholds, the command will exit with the error code
+  127.
+- If the analysis is waiting for Phylum to process one or more of the submitted
+  packages, the command will exit with the error code 126.
+- Commands that modify neither `pyproject.toml` nor `poetry.lock` will be passed
+  through to `poetry` directly.
 
 ## Caveats
 
