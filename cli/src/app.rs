@@ -1,9 +1,7 @@
 use clap::{Arg, Command, ValueHint};
 use git_version::git_version;
 
-#[cfg(feature = "extensions")]
-use crate::commands::extensions;
-use crate::commands::parse;
+use crate::commands::{extensions, parse};
 
 const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_prefix = "cargo:");
 
@@ -312,11 +310,8 @@ pub fn app<'a>() -> clap::Command<'a> {
                 ),
         );
 
-    #[cfg(feature = "extensions")]
-    {
-        app = app.subcommand(extensions::command());
-        app = extensions::add_extensions_subcommands(app);
-    }
+    app = app.subcommand(extensions::command());
+    app = extensions::add_extensions_subcommands(app);
 
     #[cfg(feature = "selfmanage")]
     {

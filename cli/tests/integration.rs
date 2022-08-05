@@ -1,9 +1,7 @@
 pub mod common;
 
-#[cfg(all(feature = "end-to-end-tests", feature = "extensions"))]
+#[cfg(all(feature = "end-to-end-tests"))]
 mod end_to_end;
 
-#[cfg(feature = "extensions")]
-mod extensions;
-
 mod config;
+mod extensions;

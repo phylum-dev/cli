@@ -1,7 +1,5 @@
 use std::ffi::OsStr;
-#[cfg(feature = "extensions")]
 use std::fs::File;
-#[cfg(feature = "extensions")]
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
@@ -9,7 +7,6 @@ use std::{env, fs};
 pub use assert_cmd::assert::Assert;
 pub use assert_cmd::Command;
 use phylum_cli::api::{PhylumApi, PhylumApiError, ResponseError};
-#[cfg(feature = "extensions")]
 use phylum_cli::commands::extensions::permissions::Permissions;
 use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 use phylum_types::types::auth::RefreshToken;
@@ -101,7 +98,6 @@ impl TestCli {
         self.run(&["extension", "install", "-y", &path.to_string_lossy()])
     }
 
-    #[cfg(feature = "extensions")]
     pub fn extension<'a>(&'a self, code: &'a str) -> TestExtensionBuilder<'a> {
         TestExtensionBuilder::new(self, code)
     }
@@ -127,14 +123,12 @@ impl TestCli {
     }
 }
 
-#[cfg(feature = "extensions")]
 pub struct TestExtensionBuilder<'a> {
     permissions: Permissions,
     test_cli: &'a TestCli,
     code: &'a str,
 }
 
-#[cfg(feature = "extensions")]
 impl<'a> TestExtensionBuilder<'a> {
     fn new(test_cli: &'a TestCli, code: &'a str) -> Self {
         Self { test_cli, code, permissions: Default::default() }
@@ -150,13 +144,11 @@ impl<'a> TestExtensionBuilder<'a> {
     }
 }
 
-#[cfg(feature = "extensions")]
 pub struct TestExtension<'a> {
     test_cli: &'a TestCli,
     extension_path: PathBuf,
 }
 
-#[cfg(feature = "extensions")]
 impl<'a> TestExtension<'a> {
     fn new(test_cli: &'a TestCli, code: &str, permissions: &Permissions) -> Self {
         let extension_path = test_cli.temp_path().to_owned().join("test-ext");
@@ -187,7 +179,6 @@ impl<'a> TestExtension<'a> {
     }
 }
 
-#[cfg(feature = "extensions")]
 impl<'a> Drop for TestExtension<'a> {
     fn drop(&mut self) {
         self.test_cli.run(&["extension", "uninstall", "test-ext"]).success();
