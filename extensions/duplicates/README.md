@@ -3,6 +3,8 @@
 A [Phylum CLI][phylum-cli] extension that checks for duplicates in your
 dependency graph.
 
+[phylum-cli]: https://github.com/phylum-dev/cli
+
 This extension serves as a simple example and has its source code fully
 explained in our [extension example documentation].
 
