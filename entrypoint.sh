@@ -33,4 +33,4 @@ if [ ! -d "./gn" ]; then
     )
 fi
 
-cargo build
+cargo build --release
