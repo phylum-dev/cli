@@ -18,7 +18,6 @@ GN="$(pwd)/gn/out/gn"
 export GN
 export CLANG_BASE_PATH=/usr
 export GN_ARGS='use_custom_libcxx=false use_lld=false v8_enable_backtrace=false v8_enable_debugging_features=false'
-# TODO
 
 # Bulid GN
 if [ ! -d "./gn" ]; then
@@ -30,4 +29,4 @@ if [ ! -d "./gn" ]; then
     )
 fi
 
-cargo build --release
+cargo build --release --all-features
