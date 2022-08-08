@@ -4771,6 +4771,7 @@ dependencies = [
 [[package]]
 name = "v8"
 version = "0.47.1"
+source = "git+https://github.com/cd-work/rusty_v8?branch=extralog#7a65f0f00dbe97b8d76a3ef9973d2717687412a6"
 dependencies = [
  "bitflags",
  "fslock",

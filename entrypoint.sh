@@ -29,4 +29,4 @@ if [ ! -d "./gn" ]; then
     )
 fi
 
-cargo build --release --all-features
+cargo build --release
