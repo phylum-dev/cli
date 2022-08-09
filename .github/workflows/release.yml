@@ -141,7 +141,7 @@ jobs:
           echo -e $MINISIGN_KEY > minisign.key
           for archive in phylum-*.zip;
           do
-            echo $MINISIGN_PASSWORD | minisign -Sm ${archive} -s minisign.key -t 'Phylum - the future of software supply chain security'
+            echo $MINISIGN_PASSWORD | minisign -Sm ${archive} -s minisign.key -t 'Phylum - The Software Supply Chain Company'
           done
         env:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}

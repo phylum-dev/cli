@@ -13,7 +13,7 @@ hidden: false
    ```sh
    $ minisign -Vm phylum-*.zip -P RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf
    Signature and comment signature verified
-   Trusted comment: Phylum - the future of software supply chain security
+   Trusted comment: Phylum - The Software Supply Chain Company
    ```
 
 1. Unzip the archive
@@ -23,10 +23,10 @@ hidden: false
    ```
 
 1. Run the installer script for installation
- 
-    ```
+
+   ```sh
    ./install.sh
-    ```
+   ```
 
 ## Build from source
 
