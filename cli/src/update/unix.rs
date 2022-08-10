@@ -80,37 +80,23 @@ async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<by
     Ok(r.bytes().await?)
 }
 
-const SUPPORTED_PLATFORMS: &[&str] = &[
-    "x86_64-unknown-linux-musl",
-    "aarch64-unknown-linux-musl",
-    "x86_64-apple-darwin",
-    "aarch64-apple-darwin",
-];
+const SUPPORTED_PLATFORMS: &[&str] =
+    &["x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl", "apple-darwin"];
 
 /// Determine the current platform. Error if unsupported.
 fn current_platform() -> anyhow::Result<String> {
-    let arch = if cfg!(target_arch = "x86_64") {
-        "x86_64"
-    } else if cfg!(target_arch = "aarch64") {
-        "aarch64"
-    } else {
-        "unsupported"
-    };
-    let os = if cfg!(target_os = "linux") {
-        // We could check cfg!(target_env = "musl") here, but I think that's
-        // unnecessary. If a user compiles the CLI for x86_64-unknown-linux-gnu
-        // and then runs `phylum update`, we should be able to upgrade them to a
-        // x86_64-unknown-linux-musl binary without breaking anything.
-        "unknown-linux-musl"
-    } else if cfg!(target_os = "macos") {
+    let platform = if cfg!(target_os = "macos") {
         "apple-darwin"
+    } else if cfg!(target_arch = "x86_64") {
+        "x86_64-unknown-linux-musl"
+    } else if cfg!(target_arch = "aarch64") {
+        "aarch64-unknown-linux-musl"
     } else {
         "unsupported"
     };
 
-    let platform = format!("{}-{}", arch, os);
-    if SUPPORTED_PLATFORMS.contains(&platform.as_str()) {
-        Ok(platform)
+    if SUPPORTED_PLATFORMS.contains(&platform) {
+        Ok(platform.into())
     } else {
         Err(anyhow::anyhow!("unsupported platform: {}", platform))
     }
