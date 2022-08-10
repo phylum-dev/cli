@@ -86,7 +86,7 @@ jobs:
   Build-Release-Artifacts:
     name: Build the release artifacts
     needs: [Generate-Completion-Files, Build-CLI]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Install host dependencies
         run: sudo apt install -yq zip
@@ -98,6 +98,19 @@ jobs:
 
       - name: Download release artifacts
         uses: actions/download-artifact@v3
+
+      - name: Create macOS universal binary
+        run: |
+          # Create output directory.
+          mkdir ./phylum-apple-darwin
+
+          # Create universal binary.
+          lipo ./phylum-x86_64-apple-darwin/phylum ./phylum-aarch64-apple-darwin/phylum \
+            -create -output ./phylum-apple-darwin/phylum
+
+          # Remove non-universal binaries.
+          rm -rf ./phylum-x86_64-apple-darwin
+          rm -rf ./phylum-aarch64-apple-darwin
 
       - name: Prep archives
         run: |
