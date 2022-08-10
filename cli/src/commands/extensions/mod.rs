@@ -216,7 +216,10 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
 ///
 /// Uninstall the extension named as specified.
 async fn handle_uninstall_extension(name: &str) -> CommandResult {
-    let extension = Extension::load(name)?;
+    let extension = match Extension::load(name) {
+        Ok(extension) => extension,
+        Err(_) => return Err(anyhow!("No extension with name {name:?} installed")),
+    };
 
     extension.uninstall()?;
 

@@ -108,6 +108,15 @@ fn extension_is_uninstalled_correctly() {
     assert!(!extension_path.exists());
 }
 
+#[test]
+fn uninstall_missing_error() {
+    let test_cli = TestCli::builder().build();
+    test_cli
+        .run(&["extension", "uninstall", "missing"])
+        .failure()
+        .stderr("❗ Error: No extension with name \"missing\" installed\n");
+}
+
 // When a user runs phylum extension or phylum extension list a list of
 // currently installed extensions, their versions and a short one sentence blurb
 // on what the extension does should be shown in a table format.
