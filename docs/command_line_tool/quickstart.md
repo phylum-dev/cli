@@ -13,16 +13,39 @@ hidden: false
 
 # Introduction
 
-The command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. For other platforms (e.g., Windows), binaries can easily be [built](https://docs.phylum.io/docs/alternate_install).
+The command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. For other platforms (e.g., Windows), binaries can easily be [built](https://docs.phylum.io/docs/building).
 
 [![asciicast](https://asciinema.org/a/431262.svg)](https://asciinema.org/a/431262)
 
 ## Quickstart for Linux or macOS
 
-1. Install the Phylum CLI using this command or one of our [alternate installation methods](https://docs.phylum.io/docs/alternate_install)
+1. Download the latest release package for your target:
 
+   | Target | Package |
+   | --- | --- |
+   | x86_64-unknown-linux-musl | [phylum-x86_64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip) |
+   | aarch64-unknown-linux-musl | [phylum-aarch64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip) |
+   | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) |
+   | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) |
+
+1. Confirm the signature of the archive with [minisign](https://jedisct1.github.io/minisign/) and the public key for Phylum
+
+   ```sh
+   $ minisign -Vm phylum-*.zip -P RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf
+   Signature and comment signature verified
+   Trusted comment: Phylum - The Software Supply Chain Company
    ```
-   curl https://sh.phylum.io/ | sh -
+
+1. Unzip the archive
+
+   ```sh
+   unzip phylum-*.zip
+   ```
+
+1. Run the installer script for installation
+
+   ```sh
+   ./install.sh
    ```
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
