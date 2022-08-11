@@ -21,8 +21,8 @@ The command line interface (CLI) allows users to submit their project package de
 
    | Target | Package |
    | --- | --- |
-   | x86_64-unknown-linux-musl | [phylum-x86_64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip) <br /> [phylum-x86_64-unknown-linux-musl.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip.minisig) |
-   | aarch64-unknown-linux-musl | [phylum-aarch64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip) <br /> [phylum-aarch64-unknown-linux-musl.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip.minisig) |
+   | x86_64-unknown-linux-gnu | [phylum-x86_64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip) <br /> [phylum-x86_64-unknown-linux-gnu.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip.minisig) |
+   | aarch64-unknown-linux-gnu | [phylum-aarch64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip) <br /> [phylum-aarch64-unknown-linux-gnu.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip.minisig) |
    | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) <br /> [phylum-x86_64-apple-darwin.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip.minisig) |
    | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) <br /> [phylum-aarch64-apple-darwin.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip.minisig) |
 
@@ -79,6 +79,16 @@ new features. You can start exploring by taking a look at the official Phylum
 extensions:
 
 https://github.com/phylum-dev/cli/tree/main/extensions
+
+### musl support
+
+Following the release of the extensions feature, as of version 3.8.0, Phylum CLI
+has a dependency on `glibc` and thus can no longer support `musl` compilation targets.
+
+This means that `phylum` won't be executable in environments such as Alpine Linux.
+
+If your use case requires a lightweight Docker base image, consider using
+[Debian slim](https://hub.docker.com/_/debian).
 
 ---
 ## Slack
