@@ -16,30 +16,65 @@ impl Parse for PackageLock {
     fn parse(&self, data: &str) -> ParseResult {
         let parsed: JsonValue = serde_json::from_str(data)?;
 
-        let into_descriptor = |(name, v): (String, &JsonValue)| {
-            let version = v
+        // Get a field as string from a JSON object.
+        let get_field = |value: &JsonValue, key| {
+            value
                 .as_object()
-                .and_then(|x| x.get("version"))
-                .and_then(|v| v.as_str())
-                .map(|x| x.to_string())
-                .ok_or_else(|| anyhow!("Failed to parse version for '{}' dependency", name))?;
-            let pkg = PackageDescriptor { name, version, package_type: self.package_type() };
-            Ok(pkg)
+                .and_then(|keys| keys.get(key))
+                .and_then(|value| value.as_str())
+                .map(|value| value.to_string())
+        };
+
+        // Get version field from JSON object.
+        let get_version = |value, name| {
+            get_field(value, "version")
+                .ok_or_else(|| anyhow!("Failed to parse version for '{name}' dependency"))
         };
 
         if let Some(deps) = parsed.get("packages").and_then(|v| v.as_object()) {
-            deps.into_iter()
-                // Ignore empty reference to package itself.
-                .filter(|(k, _v)| !k.is_empty())
-                // Get module name from path.
-                .map(|(k, v)| {
-                    let module = k.rsplit_once("node_modules/").map(|(_, k)| k).unwrap_or(k);
-                    (module.to_owned(), v)
-                })
-                .map(into_descriptor)
-                .collect()
+            // Parser for package-lock.json >= v7.
+
+            let mut packages = Vec::new();
+            for (name, keys) in deps {
+                // Ignore local filesystem dependencies.
+                let name = match name.strip_prefix("node_modules/") {
+                    Some(name) => name,
+                    None => continue,
+                };
+
+                // Get dependency type.
+                let resolved = get_field(keys, "resolved")
+                    .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
+
+                // Get dependency version.
+                let version = if resolved.starts_with("https://registry.npmjs.org") {
+                    get_version(keys, name)?
+                } else if resolved.starts_with("git+") {
+                    resolved["git+".len()..].to_owned()
+                } else {
+                    // Filter filesystem dependencies.
+                    continue;
+                };
+
+                packages.push(PackageDescriptor {
+                    version,
+                    package_type: self.package_type(),
+                    name: name.into(),
+                });
+            }
+            Ok(packages)
         } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
-            deps.into_iter().map(|(k, v)| (k.to_string(), v)).map(into_descriptor).collect()
+            // Parser for package-lock.json <= v6.
+
+            deps.into_iter()
+                .map(|(name, keys)| {
+                    Ok(PackageDescriptor {
+                        package_type: self.package_type(),
+                        version: get_version(keys, name)?,
+                        name: name.into(),
+                    })
+                })
+                .collect()
         } else {
             Err(anyhow!("Failed to find dependencies"))
         }
@@ -182,7 +217,7 @@ mod tests {
     fn lock_parse_package_v7() {
         let pkgs = PackageLock.parse_file("tests/fixtures/package-lock.json").unwrap();
 
-        assert_eq!(pkgs.len(), 50);
+        assert_eq!(pkgs.len(), 51);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -193,6 +228,13 @@ mod tests {
             PackageDescriptor {
                 name: "vary".into(),
                 version: "1.1.2".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "typescript".into(),
+                version: "ssh://git@github.com/Microsoft/TypeScript.git#\
+                          9189e42b1c8b1a91906a245a24697da5e0c11a08"
+                    .into(),
                 package_type: PackageType::Npm,
             },
         ];
