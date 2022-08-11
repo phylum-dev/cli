@@ -1,6 +1,6 @@
 ---
 title: Alternate Installation Methods
-category: 6255e67693d5200013b1fa41
+category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
@@ -26,12 +26,13 @@ Phylum is written in Rust, so you'll need a recent Rust installation to build it
    cargo install --path cli
    ```
 
-## Install with phylum-ci
+## Install with Python
 
-See the [phylum-ci](https://github.com/phylum-dev/phylum-ci) project for details.
+The [`phylum` Python package](https://pypi.org/project/phylum/) provides a script entry point, `phylum-init`, for bootstrapping the Phylum CLI.
+See the [phylum-ci](https://github.com/phylum-dev/phylum-ci) project for full detail.
 
 ```sh
-pipx install phylum-ci
+pipx install phylum
 phylum-init
 ```
 
