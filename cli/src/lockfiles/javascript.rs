@@ -120,7 +120,9 @@ impl Parse for YarnLock {
                 resolver = resolver.replace("%25", "%");
             }
 
-            let (name, version) = if resolver.starts_with("workspace:") {
+            let (name, version) = if resolver.starts_with("workspace:")
+                || resolver.starts_with("link:")
+            {
                 // Ignore filesystem dependencies like the project ("project@workspace:.").
                 continue;
             } else if resolver.starts_with("npm:") {
