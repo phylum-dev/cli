@@ -484,3 +484,9 @@ __metadata:
   checksum: ae0123222c6df65b437669d63dfa8c36cee20a504101b2fcd97b8bf76f91259c17f9f2b4d70a1e3c6bbcee7f51b28392833adb6b2770b23b01abec84e369660b
   languageName: node
   linkType: hard
+
+"~@link:./src::locator=consumer-native-app%40workspace%3Aapp":
+  version: 0.0.0-use.local
+  resolution: "~@link:./src::locator=consumer-native-app%40workspace%3Aapp"
+  languageName: node
+  linkType: soft
