@@ -49,8 +49,8 @@ impl Parse for PackageLock {
                 // Get dependency version.
                 let version = if resolved.starts_with("https://registry.npmjs.org") {
                     get_version(keys, name)?
-                } else if resolved.starts_with("git+") {
-                    resolved["git+".len()..].to_owned()
+                } else if let Some(git_url) = resolved.strip_prefix("git+") {
+                    git_url.to_owned()
                 } else {
                     // Filter filesystem dependencies.
                     continue;
