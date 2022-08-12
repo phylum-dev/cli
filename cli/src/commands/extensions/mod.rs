@@ -137,10 +137,7 @@ pub async fn handle_run_extension_from_path(
     let path = matches.value_of("PATH").unwrap();
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
-    if path == "--help" {
-        app.print_long_help()?;
-        return Ok(CommandValue::Code(ExitCode::Ok));
-    } else if path == "-h" {
+    if ["--help", "-h", "help"].contains(&path) {
         app.print_help()?;
         return Ok(CommandValue::Code(ExitCode::Ok));
     }
