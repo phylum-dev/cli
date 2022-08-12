@@ -147,7 +147,7 @@ async fn handle_commands() -> CommandResult {
         #[cfg(feature = "selfmanage")]
         "uninstall" => uninstall::handle_uninstall(sub_matches),
 
-        "extension" => extensions::handle_extensions(app_helper, Box::pin(api), sub_matches).await,
+        "extension" => extensions::handle_extensions(Box::pin(api), sub_matches, app_helper).await,
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },

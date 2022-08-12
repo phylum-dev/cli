@@ -90,9 +90,9 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(
-    app: &mut Command<'_>,
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
+    app: &mut Command<'_>,
 ) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
