@@ -96,12 +96,17 @@ source ${completions_dir}/phylum.bash" \
 }
 
 check_glibc() {
+    # Skip check on non-Linux systems.
+    if [ $(uname) != "Linux" ]; then
+        return 0
+    fi
+
     # On systems with musl libc, running ldd on phylum will exit with an error.
     # If that happens, report an explanation and exit.
-    ldd phylum >/dev/null 2>&1
-    if [ $? != 0 ]; then
+    if ! ldd phylum >/dev/null 2>&1; then
         error "The current operating system does not support running Phylum. Please use a system with glibc."
         error "See: https://github.com/phylum-dev/cli#musl-support"
+        echo
         exit 1
     fi
 }
