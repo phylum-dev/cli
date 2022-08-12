@@ -90,6 +90,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 
 /// Entry point for the `extensions` subcommand.
 pub async fn handle_extensions(
+    app: &mut Command<'_>,
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
 ) -> CommandResult {
@@ -101,7 +102,7 @@ pub async fn handle_extensions(
         Some(("uninstall", matches)) => {
             handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
         },
-        Some(("run", matches)) => handle_run_extension_from_path(api, matches).await,
+        Some(("run", matches)) => handle_run_extension_from_path(app, api, matches).await,
         Some(("new", matches)) => handle_create_extension(matches.value_of("PATH").unwrap()).await,
         Some(("list", _)) | None => handle_list_extensions().await,
         _ => unreachable!(),
@@ -129,11 +130,20 @@ pub async fn handle_run_extension(
 ///
 /// Run the extension located at the given path.
 pub async fn handle_run_extension_from_path(
+    app: &mut Command<'_>,
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
 ) -> CommandResult {
     let path = matches.value_of("PATH").unwrap();
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
+
+    if path == "--help" {
+        app.print_long_help()?;
+        return Ok(CommandValue::Code(ExitCode::Ok));
+    } else if path == "-h" {
+        app.print_help()?;
+        return Ok(CommandValue::Code(ExitCode::Ok));
+    }
 
     let extension_path =
         fs::canonicalize(path).with_context(|| anyhow!("Invalid extension path: {path:?}"))?;
