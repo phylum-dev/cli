@@ -97,7 +97,7 @@ source ${completions_dir}/phylum.bash" \
 
 check_glibc() {
     # Skip check on non-Linux systems.
-    if [ $(uname) != "Linux" ]; then
+    if [ "$(uname)" != "Linux" ]; then
         return 0
     fi
 
