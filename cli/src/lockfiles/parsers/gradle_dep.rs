@@ -13,7 +13,7 @@ fn group_id(input: &str) -> Result<&str, &str> {
 
 fn artifact_id_version(input: &str) -> Result<&str, &str> {
     let (input, artifact_id) = delimited(tag(":"), take_until(":"), tag(":"))(input)?;
-    let (_, version) = take_until("=")(input)?;
+    let (_, version) = take_until::<_, _, ()>("=")(input).unwrap_or(("", input));
     Ok((artifact_id, version))
 }
 

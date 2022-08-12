@@ -175,7 +175,7 @@ mod tests {
     fn lock_parse_gradle() {
         let pkgs = GradleLock.parse_file("tests/fixtures/gradle.lockfile").unwrap();
 
-        assert_eq!(pkgs.len(), 5);
+        assert_eq!(pkgs.len(), 6);
 
         assert_eq!(pkgs[0].name, "com.google.code.findbugs:jsr305");
         assert_eq!(pkgs[0].version, "1.3.9");
@@ -184,6 +184,10 @@ mod tests {
         assert_eq!(pkgs[2].name, "com.google.guava:guava");
         assert_eq!(pkgs[2].version, "23.3-jre");
         assert_eq!(pkgs[2].package_type, PackageType::Maven);
+
+        assert_eq!(pkgs[5].name, "org.springframework:spring-core");
+        assert_eq!(pkgs[5].version, "5.2.15.RELEASE");
+        assert_eq!(pkgs[5].package_type, PackageType::Maven);
     }
 
     #[test]
