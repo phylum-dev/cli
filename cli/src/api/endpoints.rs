@@ -81,16 +81,6 @@ pub fn delete_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriErr
     Ok(url)
 }
 
-/// GET /settings/current-user
-pub(crate) fn get_user_settings(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("settings/current-user")?)
-}
-
-/// PUT /settings/current-user
-pub(crate) fn put_user_settings(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("settings/current-user")?)
-}
-
 /// GET /groups
 pub(crate) fn group_list(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("groups")?)
@@ -111,6 +101,11 @@ pub fn group_project_summary(api_uri: &str, group: &str) -> Result<Url, BaseUriE
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
+}
+
+/// GET/PUT /preferences/project/<project_id>
+pub fn project_preferences(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("preferences/project/")?.join(project_id)?)
 }
 
 fn parse_base_url(api_uri: &str) -> Result<Url, BaseUriError> {
@@ -239,22 +234,6 @@ mod test {
         assert_eq!(
             delete_project(API_URI, "12345678-90ab-cdef-1234-567890abcdef").unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/projects/12345678-90ab-cdef-1234-567890abcdef"),
-        );
-    }
-
-    #[test]
-    fn get_user_settings_is_correct() {
-        assert_eq!(
-            get_user_settings(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}settings/current-user"),
-        );
-    }
-
-    #[test]
-    fn put_user_settings_is_correct() {
-        assert_eq!(
-            get_user_settings(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}settings/current-user"),
         );
     }
 
