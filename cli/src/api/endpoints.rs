@@ -12,8 +12,8 @@ const API_PATH: &str = "api/v0/";
 #[error("invalid API URL")]
 pub struct BaseUriError(#[from] pub ParseError);
 
-/// PUT /data/jobs
-pub fn put_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
+/// POST /data/jobs
+pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/jobs")?)
 }
 
@@ -164,7 +164,7 @@ mod test {
     #[test]
     fn put_submit_package_is_correct() {
         assert_eq!(
-            put_submit_package(API_URI).unwrap().as_str(),
+            post_submit_package(API_URI).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/jobs"),
         );
     }
