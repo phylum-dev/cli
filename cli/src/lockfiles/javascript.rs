@@ -18,11 +18,7 @@ impl Parse for PackageLock {
 
         // Get a field as string from a JSON object.
         let get_field = |value: &JsonValue, key| {
-            value
-                .as_object()
-                .and_then(|keys| keys.get(key))
-                .and_then(|value| value.as_str())
-                .map(|value| value.to_string())
+            value.get(key).and_then(|value| value.as_str()).map(|value| value.to_string())
         };
 
         // Get version field from JSON object.
