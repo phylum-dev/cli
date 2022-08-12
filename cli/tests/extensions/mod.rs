@@ -222,6 +222,26 @@ fn extension_run_relative() {
         .stdout(predicate::str::contains("Hello, World!"));
 }
 
+#[test]
+fn extension_run_help_flags() {
+    let test_cli = TestCli::builder().build();
+
+    test_cli
+        .run(&["extension", "run", "help", "help subcommand"])
+        .success()
+        .stdout(predicate::str::contains("USAGE"));
+
+    test_cli
+        .run(&["extension", "run", "--help", "long help"])
+        .success()
+        .stdout(predicate::str::contains("USAGE"));
+
+    test_cli
+        .run(&["extension", "run", "-h", "short help"])
+        .success()
+        .stdout(predicate::str::contains("USAGE"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
