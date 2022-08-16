@@ -29,7 +29,7 @@ async fn handle_auth_login(mut config: Config, config_path: &Path) -> Result<()>
 
 /// Display the current authentication status to the user.
 pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> CommandResult {
-    if config.auth_info.offline_access.is_none() {
+    if config.auth_info.offline_access().is_none() {
         print_user_warning!("User is not currently authenticated");
         return Ok(ExitCode::NotAuthenticated.into());
     }
@@ -56,7 +56,7 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
 
 /// Display the current authentication token to the user, if one exists.
 pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> CommandResult {
-    let refresh_token = match &config.auth_info.offline_access {
+    let refresh_token = match config.auth_info.offline_access() {
         Some(refresh_token) => refresh_token,
         None => {
             print_user_warning!(

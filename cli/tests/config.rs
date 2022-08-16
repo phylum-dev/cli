@@ -4,7 +4,7 @@ use phylum_types::types::auth::RefreshToken;
 use crate::common::{TestCli, API_URL};
 
 #[test]
-fn test_pass_api_key_through_env() {
+fn pass_api_key_through_env() {
     const ENV_TOKEN: &str = "ENV VARIABLE TOKEN";
 
     TestCli::builder()
@@ -19,12 +19,12 @@ fn test_pass_api_key_through_env() {
 }
 
 #[test]
-fn test_ignore_empty_token() {
+fn ignore_empty_token() {
     const CONFIG_TOKEN: &str = "CONFIGTOKEN";
 
     let config = Config {
         connection: ConnectionInfo { uri: API_URL.into() },
-        auth_info: AuthInfo { offline_access: Some(RefreshToken::new(CONFIG_TOKEN)) },
+        auth_info: AuthInfo::new(Some(RefreshToken::new(CONFIG_TOKEN))),
         ..Config::default()
     };
 

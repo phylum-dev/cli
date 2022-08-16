@@ -23,9 +23,27 @@ pub struct ConnectionInfo {
     pub uri: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AuthInfo {
-    pub offline_access: Option<RefreshToken>,
+    offline_access: Option<RefreshToken>,
+    #[serde(skip)]
+    env_token: Option<RefreshToken>,
+}
+
+impl AuthInfo {
+    pub fn new(offline_access: Option<RefreshToken>) -> Self {
+        Self { offline_access, env_token: None }
+    }
+
+    pub fn offline_access(&self) -> Option<&RefreshToken> {
+        let env_token = self.env_token.as_ref().filter(|token| !token.as_str().is_empty());
+        let token = self.offline_access.as_ref().filter(|token| !token.as_str().is_empty());
+        env_token.or(token)
+    }
+
+    pub fn set_offline_access(&mut self, offline_access: RefreshToken) {
+        self.offline_access = Some(offline_access);
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,7 +75,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
-            auth_info: AuthInfo { offline_access: None },
+            auth_info: AuthInfo::default(),
             request_type: PackageType::Npm,
             ignore_certs: false,
             last_update: None,
@@ -122,24 +140,14 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
         },
     };
 
-    // If an api token has been set in the environment, prefer that
+    // Store API token set in environment.
     match env::var("PHYLUM_API_KEY") {
         Ok(key) if !key.is_empty() => {
-            config.auth_info.offline_access = Some(RefreshToken::new(key));
+            config.auth_info.env_token = Some(RefreshToken::new(key));
         },
-        Ok(_) => {
-            print_user_warning!("Ignoring empty PHYLUM_API_KEY");
-        },
-        Err(VarError::NotUnicode(_)) => {
-            print_user_warning!("Ignoring invalid PHYLUM_API_KEY");
-        },
-        Err(VarError::NotPresent) => {},
-    }
-
-    // The code that checks if we have a token expects `Some(token)` to always be a
-    // usable token.
-    if config.auth_info.offline_access.as_ref().map(|t| t.as_str()) == Some("") {
-        config.auth_info.offline_access = None;
+        Ok(_) => print_user_warning!("Ignoring empty PHYLUM_API_KEY"),
+        Err(VarError::NotUnicode(_)) => print_user_warning!("Ignoring invalid PHYLUM_API_KEY"),
+        Err(VarError::NotPresent) => (),
     }
 
     Ok(config)
@@ -204,11 +212,15 @@ mod tests {
     use super::*;
 
     const CONFIG_TOKEN: &str = "FAKE TOKEN";
+    const ENV_TOKEN: &str = "ENV TOKEN";
 
     fn write_test_config(path: &Path) {
         let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
 
-        let auth = AuthInfo { offline_access: Some(RefreshToken::new(CONFIG_TOKEN)) };
+        let auth = AuthInfo {
+            offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
+            env_token: Some(RefreshToken::new(ENV_TOKEN)),
+        };
 
         let config = Config {
             connection: con,
@@ -221,16 +233,34 @@ mod tests {
     }
 
     #[test]
-    fn test_save_config() {
+    fn write_config_works() {
         let tempfile = NamedTempFile::new().unwrap();
         write_test_config(tempfile.path());
     }
 
     #[test]
-    fn test_parse_config() {
+    fn write_parses_identical() {
         let tempfile = NamedTempFile::new().unwrap();
         write_test_config(tempfile.path());
         let config: Config = parse_config(tempfile.path()).unwrap();
         assert_eq!(config.request_type, PackageType::Npm);
+    }
+
+    #[test]
+    fn write_ignores_env() {
+        let tempfile = NamedTempFile::new().unwrap();
+        write_test_config(tempfile.path());
+        let config: Config = parse_config(tempfile.path()).unwrap();
+        assert_eq!(config.auth_info.offline_access(), Some(&RefreshToken::new(CONFIG_TOKEN)));
+        assert_eq!(config.auth_info.env_token, None);
+    }
+
+    #[test]
+    fn prefer_env_token() {
+        let auth = AuthInfo {
+            offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
+            env_token: Some(RefreshToken::new(ENV_TOKEN)),
+        };
+        assert_eq!(auth.offline_access(), Some(&RefreshToken::new(ENV_TOKEN)));
     }
 }
