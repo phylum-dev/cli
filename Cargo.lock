@@ -2794,7 +2794,7 @@ dependencies = [
 
 [[package]]
 name = "phylum-cli"
-version = "3.7.3"
+version = "3.7.4"
 dependencies = [
  "ansi_term",
  "anyhow",
