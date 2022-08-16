@@ -124,8 +124,8 @@ async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToke
 
     config
         .auth_info
-        .offline_access
-        .clone()
+        .offline_access()
+        .cloned()
         .ok_or_else(|| anyhow!("User is not currently authenticated"))
 }
 
