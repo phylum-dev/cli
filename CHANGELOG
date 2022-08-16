@@ -1,3 +1,4 @@
+* 3.7.4 - Fix lockfile parser issues
 * 3.7.3 - Fix `phylum update` zip decompression errors
 * 3.7.2 - Improved error messages and output formatting
 * 3.7.1 - Support POM files with site information

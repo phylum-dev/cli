@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "3.7.3"
+version = "3.7.4"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"
 rust-version = "1.60"
