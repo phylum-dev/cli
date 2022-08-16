@@ -146,7 +146,7 @@ impl PhylumApi {
     /// any changes
     pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
         // Do we have a refresh token?
-        let tokens: TokenResponse = match &config.auth_info.offline_access {
+        let tokens: TokenResponse = match &config.auth_info.offline_access() {
             Some(refresh_token) => {
                 handle_refresh_tokens(refresh_token, config.ignore_certs, &config.connection.uri)
                     .await
@@ -159,7 +159,7 @@ impl PhylumApi {
             },
         };
 
-        config.auth_info.offline_access = Some(tokens.refresh_token.clone());
+        config.auth_info.set_offline_access(tokens.refresh_token.clone());
 
         let version = env!("CARGO_PKG_VERSION");
         let mut headers = HeaderMap::new();
@@ -191,7 +191,7 @@ impl PhylumApi {
         api_uri: &str,
     ) -> Result<AuthInfo> {
         let tokens = handle_auth_flow(&AuthAction::Login, ignore_certs, api_uri).await?;
-        auth_info.offline_access = Some(tokens.refresh_token);
+        auth_info.set_offline_access(tokens.refresh_token);
         Ok(auth_info)
     }
 
@@ -204,7 +204,7 @@ impl PhylumApi {
         api_uri: &str,
     ) -> Result<AuthInfo> {
         let tokens = handle_auth_flow(&AuthAction::Register, ignore_certs, api_uri).await?;
-        auth_info.offline_access = Some(tokens.refresh_token);
+        auth_info.set_offline_access(tokens.refresh_token);
         Ok(auth_info)
     }
 
@@ -390,7 +390,7 @@ mod tests {
         let api = PhylumApi::new(config, None).await?;
         // After auth, auth_info should have a offline access token
         assert!(
-            api.config().auth_info.offline_access.is_some(),
+            api.config().auth_info.offline_access().is_some(),
             "Offline access token was not set"
         );
 

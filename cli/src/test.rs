@@ -123,11 +123,11 @@ pub mod mockito {
     }
 
     pub fn build_authenticated_auth_info() -> AuthInfo {
-        AuthInfo { offline_access: Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)) }
+        AuthInfo::new(Some(RefreshToken::new(DUMMY_REFRESH_TOKEN)))
     }
 
     pub fn build_unauthenticated_auth_info() -> AuthInfo {
-        AuthInfo { offline_access: None }
+        AuthInfo::default()
     }
 
     pub async fn build_phylum_api(mock_server: &MockServer) -> Result<PhylumApi, PhylumApiError> {
