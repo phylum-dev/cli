@@ -226,7 +226,7 @@ pub async fn create_project() -> &'static str {
     let offline_access = Some(RefreshToken::new(env::var("PHYLUM_API_KEY").unwrap()));
     let config = Config {
         connection: ConnectionInfo { uri: API_URL.into() },
-        auth_info: AuthInfo { offline_access },
+        auth_info: AuthInfo::new(offline_access),
         ..Config::default()
     };
 
