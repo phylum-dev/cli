@@ -73,7 +73,6 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.target }}
-          use-cross: ${{ matrix.os == 'ubuntu-latest' }}
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
