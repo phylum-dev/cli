@@ -1,0 +1,6 @@
+name = "build-gradle"
+description = "Parse build.gradle files for submission to Phylum"
+entry_point = "main.ts"
+
+[permissions]
+run = ["gradle"]
