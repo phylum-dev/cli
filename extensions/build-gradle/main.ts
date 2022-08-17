@@ -93,15 +93,9 @@ function parseOutTestRuntimeClasspathSection(gradleDependencies: string) {
  *  failure.
  */
 async function generateGradleDeps() {
-    let gradleResp = null;
+    let gradleResp = await invokeGradle();
 
-    try {
-        gradleResp = await Deno.run({
-            cmd: ["gradle", "-q", "dependencies"],
-            stdout: "piped"
-        }).output();
-    } catch(e) {
-        console.error("It doesn't look like you have `gradle` installed");
+    if (!gradleResp) {
         return;
     }
 
@@ -115,10 +109,44 @@ async function generateGradleDeps() {
     return ret;
 }
 
+async function invokeGradle() {
+    //Try our directory
+    try {
+        return await Deno.run({
+            cmd: ["./gradlew", "-q", "dependencies"],
+            stdout: "piped"
+        }).output();
+    } catch(e) {
+        //doNothing()
+    }
+
+    //Try single parent directory
+    try {
+        return await Deno.run({
+            cmd: ["../gradlew", "-q", "dependencies"],
+            stdout: "piped"
+        }).output();
+    } catch(e) {
+        //doNothing()
+    }
+
+    //Lastly try using gradle directly
+    try {
+        return await Deno.run({
+            cmd: ["gradle", "-q", "dependencies"],
+            stdout: "piped"
+        }).output();
+    } catch(e) {
+        //doNothing()
+    }
+
+    console.error("It doesn't look like you have `gradle` installed or gradle wrapper in the current or parent directories");
+}
+
 /**
  *  Parse a `build.gradle` file and returned the identified dependencies. 
  */
-async function getBuildGradleDeps(path: string, project: string, group: string) {
+async function getBuildGradleDeps() {
     console.log("[*] Parsing dependencies from `build.gradle`");
     console.warn("[!] WARNING: You should consider locking your dependencies and " +
                  "using `phylum analyze` instead.");

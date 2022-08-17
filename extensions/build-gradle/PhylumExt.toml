@@ -3,4 +3,4 @@ description = "Parse build.gradle files for submission to Phylum"
 entry_point = "main.ts"
 
 [permissions]
-run = ["gradle"]
+run = ["gradle", "./gradlew", "../gradlew"]
