@@ -80,20 +80,17 @@ extensions:
 
 https://github.com/phylum-dev/cli/tree/main/extensions
 
-### musl support
+### musl binaries
 
 As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on
 `glibc`. We no longer provide binaries that are statically compiled with the
 `musl` libc.
 
 This means the provided binaries won't be executable in environments such as
-Alpine Linux.
-
-If your use case requires a lightweight Docker base image, consider using
-[Debian slim](debian-slim) or [building from source](build-src).
+Alpine Linux. If your use case requires a lightweight Docker base image,
+consider using [Debian slim](debian-slim) instead.
 
 [debian-slim]: https://hub.docker.com/_/debian
-[build-src]: https://docs.phylum.io/docs/alternate_install
 
 ---
 ## Slack
