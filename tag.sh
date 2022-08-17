@@ -28,7 +28,7 @@ fi
 TAG=$(git log --pretty="format:%(trailers:key=release-version,valueonly)" -1 "${TAG_COMMIT}")
 SUMMARY=$(git log --pretty="format:%(trailers:key=release-summary,valueonly)" -1 "${TAG_COMMIT}")
 
-if git rev-list "${TAG}" >/dev/null 2>&1; then
+if git show "tags/${TAG}" > /dev/null 2>&1; then
     echo "Tag ${TAG} already exists!" >&2
     exit 1
 fi
