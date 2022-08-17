@@ -1,3 +1,4 @@
+* 3.8.0-rc2 - Phylum CLI extensions
 * 3.7.2 - Improved error messages and output formatting
 * 3.7.1 - Support POM files with site information
 * 3.7.0 - ARM64 Linux support and Maven workspaces
