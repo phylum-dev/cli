@@ -147,13 +147,11 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             .await
             .context("Could not get project ID")?;
 
-        let mut user_settings = match api.get_user_settings().await {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!("Failed to get user settings: {}", e);
-                return Err(anyhow!("Could not get user settings"));
-            },
-        };
+        let mut preferences = api
+            .get_project_preferences(project_id)
+            .await
+            .with_context(|| anyhow!("Could not get project preferences"))?
+            .preferences;
 
         for threshold_name in &[
             "total project",
@@ -172,16 +170,18 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             };
 
             // API expects slight key change for specific fields.
-            let name = match *threshold_name {
-                "total project" => String::from("total"),
-                "malicious code" => String::from("maliciousCode"),
-                x => x.to_string(),
-            };
-
-            user_settings.set_threshold(project_id.to_string(), name, threshold);
+            *match *threshold_name {
+                "total project" => &mut preferences.thresholds.total,
+                "author" => &mut preferences.thresholds.author,
+                "engineering" => &mut preferences.thresholds.engineering,
+                "license" => &mut preferences.thresholds.license,
+                "malicious code" => &mut preferences.thresholds.malicious_code,
+                "vulnerability" => &mut preferences.thresholds.vulnerability,
+                _ => unreachable!(),
+            } = threshold;
         }
 
-        let resp = api.put_user_settings(&user_settings).await;
+        let resp = api.put_project_preferences(project_id, preferences).await;
         match resp {
             Ok(_) => {
                 print_user_success!(
@@ -189,10 +189,10 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                     White.paint(project_name)
                 );
             },
-            _ => {
+            Err(err) => {
                 print_user_failure!(
-                    "Failed to set thresholds for the {} project",
-                    White.paint(project_name)
+                    "Failed to set thresholds for the {} project: {err}",
+                    White.paint(project_name),
                 );
                 return Ok(ExitCode::SetThresholdsFailure.into());
             },
