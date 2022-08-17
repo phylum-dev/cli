@@ -140,7 +140,7 @@ async function invokeGradle() {
         //doNothing()
     }
 
-    console.error("It doesn't look like you have `gradle` installed or gradle wrapper in the current or parent directories");
+    console.error("[!] ERROR: It doesn't look like you have `gradle` installed or gradle wrapper in the current or parent directories");
 }
 
 /**
