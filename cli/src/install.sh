@@ -108,7 +108,6 @@ check_glibc() {
     if ! ldd phylum >/dev/null 2>&1; then
         error "The current operating system does not support running Phylum. Please use a system with glibc."
         error "See: https://github.com/phylum-dev/cli#musl-support"
-        echo
         exit 1
     fi
 }
