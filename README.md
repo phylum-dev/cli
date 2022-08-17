@@ -88,7 +88,7 @@ As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on
 
 This means the provided binaries won't be executable in environments such as
 Alpine Linux. If your use case requires a lightweight Docker base image,
-consider using [Debian slim](debian-slim) instead.
+consider using [Debian slim][debian-slim] instead.
 
 [debian-slim]: https://hub.docker.com/_/debian
 
