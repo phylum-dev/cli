@@ -95,6 +95,23 @@ source ${completions_dir}/phylum.bash" \
     success "Completions are enabled for bash."
 }
 
+check_glibc() {
+    platform_str=$(uname)
+
+    # Skip check on non-Linux systems.
+    if [ "${platform_str}" != "Linux" ]; then
+        return 0
+    fi
+
+    # On systems with musl libc, running ldd on phylum will exit with an error.
+    # If that happens, report an explanation and exit.
+    if ! ldd phylum >/dev/null 2>&1; then
+        error "The current operating system does not support running Phylum. Please use a system with glibc."
+        error "See: https://github.com/phylum-dev/cli#musl-binaries"
+        exit 1
+    fi
+}
+
 copy_files() {
     # Copy the specific platform binary.
     platform=$(set -e; get_platform)
@@ -141,6 +158,7 @@ cleanup_pre_xdg() {
 
 cd "$(dirname "$0")"
 banner
+check_glibc
 cleanup_pre_xdg
 copy_files
 patch_bashrc

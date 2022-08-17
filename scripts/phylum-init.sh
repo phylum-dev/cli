@@ -2,7 +2,7 @@
 
 set -eu
 
-SUPPORTED_TARGETS="aarch64-apple-darwin x86_64-apple-darwin aarch64-unknown-linux-musl x86_64-unknown-linux-musl"
+SUPPORTED_TARGETS="aarch64-apple-darwin x86_64-apple-darwin aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu"
 BASE_URL="https://github.com/phylum-dev/cli/releases/latest/download"
 MINISIG_PUBKEY="RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf"
 
@@ -11,7 +11,7 @@ get_platform() {
     platform=$(uname -s | tr '[:upper:]' '[:lower:]')
 
     case "${platform}" in
-        linux) platform="unknown-linux-musl" ;;
+        linux) platform="unknown-linux-gnu" ;;
         darwin) platform="apple-darwin" ;;
         *) ;;
     esac
