@@ -10,10 +10,10 @@ use phylum_types::types::job::{
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
 };
+use phylum_types::types::preferences::{CorePreferences, ProjectPreferences};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectDetailsResponse, ProjectSummaryResponse,
 };
-use phylum_types::types::user_settings::UserSettings;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::{DeserializeOwned, IgnoredAny};
@@ -256,19 +256,25 @@ impl PhylumApi {
         self.get(uri).await
     }
 
-    /// Get user settings
-    pub async fn get_user_settings(&self) -> Result<UserSettings> {
-        self.get(endpoints::get_user_settings(&self.config.connection.uri)?).await
+    /// Get project thresholds.
+    pub async fn get_project_preferences(
+        &self,
+        project_id: ProjectId,
+    ) -> Result<ProjectPreferences> {
+        let uri =
+            endpoints::project_preferences(&self.config.connection.uri, &project_id.to_string())?;
+        self.get(uri).await
     }
 
-    /// Put updated user settings
-    pub async fn put_user_settings(&self, settings: &UserSettings) -> Result<bool> {
-        self.put::<UserSettings, _, _>(
-            endpoints::put_user_settings(&self.config.connection.uri)?,
-            &settings,
-        )
-        .await?;
-        Ok(true)
+    /// Put project thresholds.
+    pub async fn put_project_preferences(
+        &self,
+        project_id: ProjectId,
+        preferences: CorePreferences,
+    ) -> Result<ProjectPreferences> {
+        let uri =
+            endpoints::project_preferences(&self.config.connection.uri, &project_id.to_string())?;
+        self.put(uri, preferences).await
     }
 
     /// Submit a new request to the system
