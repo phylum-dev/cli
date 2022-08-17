@@ -82,25 +82,39 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
-  musl-test:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build
-        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 ./entrypoint.sh
-
-  musl-test-arm:
+  linux-arm64:
     runs-on: [self-hosted, arm64]
     steps:
       - uses: actions/checkout@v3
-      - name: Sccache cache
-        id: cache-sccache
-        uses: actions/cache@v3
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          path: ./sccache
-          key: sccache-key
-      - name: Build
-        run: docker run -v "$PWD":/usr/src/cli -w /usr/src/cli rust:alpine3.16 ./entrypoint.sh
+          toolchain: stable
+          profile: minimal
+      - name: All Features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --all-features
+        env:
+          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+
+  macos-arm64:
+    runs-on: [self-hosted, macos, arm64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: All Features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --all-features
+        env:
+          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
 
   # This job reports the results of the test matrix above
   test:
