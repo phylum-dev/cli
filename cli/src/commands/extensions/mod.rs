@@ -139,7 +139,7 @@ pub async fn handle_run_extension_from_path(
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
     if ["--help", "-h", "help"].contains(&path) {
-        print_sc_help(app, &["extension", "run"]);
+        print_sc_help(app, &["extension", "run"])?;
         return Ok(CommandValue::Code(ExitCode::Ok));
     }
 

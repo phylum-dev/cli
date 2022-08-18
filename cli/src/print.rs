@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use ansi_term::Color::{Blue, Cyan};
+use anyhow::{anyhow, Result};
 use clap::Command;
 use prettytable::format;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
@@ -37,16 +38,18 @@ pub fn print_update_message() {
     eprintln!("{:-^50}\n\n", "");
 }
 
-pub fn print_sc_help(mut app: &mut Command, subcommands: &[&str]) {
+pub fn print_sc_help(mut app: &mut Command, subcommands: &[&str]) -> Result<()> {
     for subcommand in subcommands {
-        match app.get_subcommands_mut().find(|sc| &sc.get_name() == subcommand) {
+        match app.find_subcommand_mut(*subcommand) {
             Some(subcommand) => app = subcommand,
             // Subcommand doesn't exist; don't print anything.
-            None => return,
+            None => return Err(anyhow!("Subcommand '{subcommand}' does not exist")),
         }
     }
 
-    let _ = app.print_help();
+    app.print_help()?;
+
+    Ok(())
 }
 
 /// Limit a string to a specific length, using an ellipsis to indicate
