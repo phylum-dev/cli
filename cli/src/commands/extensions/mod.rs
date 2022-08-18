@@ -16,6 +16,7 @@ use log::{error, warn};
 use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
 use crate::commands::{CommandResult, CommandValue, ExitCode};
+use crate::print::print_sc_help;
 use crate::print_user_success;
 
 pub mod api;
@@ -138,7 +139,7 @@ pub async fn handle_run_extension_from_path(
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
     if ["--help", "-h", "help"].contains(&path) {
-        app.print_help()?;
+        print_sc_help(app, &["extension", "run"]);
         return Ok(CommandValue::Code(ExitCode::Ok));
     }
 
