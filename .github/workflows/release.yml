@@ -146,6 +146,16 @@ jobs:
           MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
+      # Temporarily provide glibc binaries as *-unknown-linux-musl, to allow
+      # upgrading to the new archive names.
+      - name: Create update compatability files
+        run: |
+          cp phylum-x86_64-unknown-linux-gnu.zip.minisig phylum-x86_64-unknown-linux-musl.zip.minisig
+          cp phylum-x86_64-unknown-linux-gnu.zip phylum-x86_64-unknown-linux-musl.zip
+
+          cp phylum-aarch64-unknown-linux-gnu.zip.minisig phylum-aarch64-unknown-linux-musl.zip.minisig
+          cp phylum-aarch64-unknown-linux-gnu.zip phylum-aarch64-unknown-linux-musl.zip
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
