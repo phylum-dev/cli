@@ -102,23 +102,6 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    // Subcommands with precedence
-    //
-
-    // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied.
-    if let Some(matches) = matches.subcommand_matches("analyze") {
-        if !matches.is_present("LOCKFILE") {
-            print::print_sc_help(app_helper, "analyze");
-            return Ok(ExitCode::Ok.into());
-        }
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        if !(matches.is_present("name") && matches.is_present("version")) {
-            print::print_sc_help(app_helper, "package");
-            return Ok(ExitCode::Ok.into());
-        }
-    }
-
     // Get the future, but don't await. Commands that require access to the API will
     // await on this, so that the API is not instantiated ahead of time for
     // subcommands that don't require it.
