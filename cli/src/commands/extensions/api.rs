@@ -14,7 +14,6 @@ use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
-use phylum_types::types::project::ProjectDetailsResponse;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
