@@ -52,24 +52,6 @@ pub async fn get_package_details() {
 }
 
 #[tokio::test]
-pub async fn get_project_details() {
-    let test_cli = TestCli::builder().with_config(None).build();
-
-    let project = create_project().await;
-    let permissions =
-        Permissions { net: Permission::List(vec![String::from("123")]), ..Permissions::default() };
-
-    let project_details = format!("console.log(await PhylumApi.getProjectDetails({project:?}))");
-    test_cli
-        .extension(&project_details)
-        .with_permissions(permissions)
-        .build()
-        .run()
-        .success()
-        .stdout(predicates::str::contains(r#"name: "integration-tests""#));
-}
-
-#[tokio::test]
 pub async fn parse_lockfile() {
     let test_cli = TestCli::builder().with_config(None).build();
 

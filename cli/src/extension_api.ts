@@ -115,28 +115,6 @@ export class PhylumApi {
         return await Deno.core.opAsync('get_job_status', jobId);
     }
 
-    /// Get project info.
-    ///
-    /// This expects a `.phylum_project` file to be present if the `project`
-    /// parameter is undefined.
-    ///
-    /// # Returns
-    ///
-    /// Project details:
-    ///
-    /// ```
-    /// {
-    ///   name: "integration-tests",
-    ///   id: "c61344f2-b9c9-44c6-adbb-f4b33dd890bd",
-    ///   ecosystem: "npm",
-    ///   thresholds: { author: 0, engineering: 0, license: 0, malicious: 0, total: 0, vulnerability: 0 },
-    ///   jobs: []
-    /// }
-    /// ```
-    static async getProjectDetails(projectName?: string): object {
-        return await Deno.core.opAsync('get_project_details', projectName);
-    }
-
     /// Get analysis results for a single package.
     ///
     /// This will not start a new package analysis, but only retrieve previous
