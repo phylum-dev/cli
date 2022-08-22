@@ -14,7 +14,6 @@ use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
-use phylum_types::types::project::ProjectDetailsResponse;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
@@ -143,24 +142,6 @@ async fn get_job_status(
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
 }
 
-/// Retrieve a project's details.
-/// Equivalent to `phylum history project`.
-#[op]
-async fn get_project_details(
-    op_state: Rc<RefCell<OpState>>,
-    project_name: Option<String>,
-) -> Result<ProjectDetailsResponse> {
-    let state = ExtensionState::from(op_state);
-    let api = state.api().await?;
-
-    let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
-        get_current_project()
-            .map(|p| p.name)
-            .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))
-    })?;
-    api.get_project_details(&project_name).await.map_err(Error::from)
-}
-
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
 #[op]
@@ -236,7 +217,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_access_token::decl(),
         get_refresh_token::decl(),
         get_job_status::decl(),
-        get_project_details::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
     ]
