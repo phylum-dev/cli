@@ -195,6 +195,8 @@ jobs:
   Update-Documentation:
     name: Update the documentation
     needs: Release
+    # Don't trigger for pre-releases
+    if: ${{ !contains(github.ref, 'rc') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
