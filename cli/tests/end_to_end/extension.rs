@@ -51,6 +51,42 @@ pub async fn get_package_details() {
         .stdout(predicates::str::contains("vulnerability: 1"));
 }
 
+#[test]
+pub fn get_current_project() {
+    let test_cli = TestCli::builder().cwd_temp().with_config(None).build();
+
+    test_cli
+        .extension("console.log(PhylumApi.getCurrentProject())")
+        .build()
+        .run()
+        .success()
+        .stdout("null\n");
+}
+
+#[tokio::test]
+pub async fn get_groups() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension("console.log(await PhylumApi.getGroups())")
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("groups"));
+}
+
+#[tokio::test]
+pub async fn get_projects() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension("console.log(await PhylumApi.getProjects())")
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("["));
+}
+
 #[tokio::test]
 pub async fn parse_lockfile() {
     let test_cli = TestCli::builder().with_config(None).build();
