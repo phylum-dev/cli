@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Error as AnyhowError};
 use phylum_types::types::auth::TokenResponse;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
@@ -226,13 +226,21 @@ impl PhylumApi {
 
     /// Create a new project
     pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
-        let response: CreateProjectResponse = self
+        let result: Result<CreateProjectResponse> = self
             .post(
                 endpoints::post_create_project(&self.config.connection.uri)?,
                 CreateProjectRequest { name: name.to_owned(), group_name: group.map(String::from) },
             )
-            .await?;
-        Ok(response.id)
+            .await;
+
+        result
+            .map_err(|err| match err {
+                PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. }) => {
+                    AnyhowError::new(err).context(format!("Project '{name}' already exists")).into()
+                },
+                err => err,
+            })
+            .map(|response| response.id)
     }
 
     /// Delete a project
@@ -352,7 +360,15 @@ impl PhylumApi {
     /// Get all groups the user is part of.
     pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
         let group = CreateGroupRequest { group_name: group_name.into() };
-        self.post(endpoints::group_create(&self.config.connection.uri)?, group).await
+        let uri = endpoints::group_create(&self.config.connection.uri)?;
+        let result = self.post(uri, group).await;
+
+        result.map_err(|err| match err {
+            PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. }) => {
+                AnyhowError::new(err).context(format!("Group '{group_name}' already exists")).into()
+            },
+            err => err,
+        })
     }
 
     pub fn config(&self) -> &Config {

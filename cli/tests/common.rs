@@ -6,12 +6,11 @@ use std::{env, fs};
 
 pub use assert_cmd::assert::Assert;
 pub use assert_cmd::Command;
-use phylum_cli::api::{PhylumApi, PhylumApiError, ResponseError};
+use phylum_cli::api::{PhylumApi, PhylumApiError};
 use phylum_cli::commands::extensions::permissions::Permissions;
 use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 use phylum_types::types::auth::RefreshToken;
 pub use predicates::prelude::*;
-use reqwest::StatusCode;
 use tempfile::TempDir;
 
 pub const API_URL: &str = "https://api.staging.phylum.io";
@@ -228,10 +227,9 @@ pub async fn create_project() -> &'static str {
     // Attempt to create the project, ignoring conflicts.
     let mut api = PhylumApi::new(config, None).await.unwrap();
     match api.create_project(PROJECT_NAME, None).await {
-        Ok(_) | Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-        },
+        Ok(_) | Err(PhylumApiError::Other(_)) => (),
         err @ Err(_) => {
-            err.unwrap();
+            let _ = err.unwrap();
         },
     }
 
