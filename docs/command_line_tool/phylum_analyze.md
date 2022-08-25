@@ -39,7 +39,7 @@ phylum analyze [OPTIONS] <lockfile>
 $ phylum analyze package-lock.json
 
 # Analyze a Maven lock file with a verbose json response
-$ phylum analyze --json --verbose pom.xml
+$ phylum analyze --json --verbose effective-pom.xml
 
 # Analyze a PyPI lock file and apply a label
 $ phylum analyze -l test_branch requirements.txt
