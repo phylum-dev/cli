@@ -1,4 +1,9 @@
 import { PhylumApi } from "phylum";
+import { red, green, yellow } from 'https://deno.land/std@0.150.0/fmt/colors.ts';
+
+function logSuccess(msg: string) { console.log(`${green("[*]")} ${msg}`); }
+function logError(msg: string) { console.error(`${red("[!]")} ${msg}`); }
+function logWarning(msg: string) { console.warn(`${yellow("[-]")} ${msg}`); }
 
 /**
  *  Parses a string representing a package version tuple. The format of this
@@ -9,7 +14,7 @@ function parsePackagTuple(s: string) {
     let parts = s.split(":");
 
     if(parts.length < 2) {
-        console.error(`Invalid package string \`${s}\``);
+        logError(`Invalid package string \`${s}\``);
         return;
     }
 
@@ -86,20 +91,50 @@ function parseOutTestRuntimeClasspathSection(gradleDependencies: string) {
 }
 
 /**
+ *  Get a list of subprojects in Gradle.
+ */
+async function getGradleProjects() {
+    let gradleResp = await invokeGradle(["projects"])
+
+    if(!gradleResp) {
+        return;
+    }
+
+    // Convert the Uint8 array to ascii
+    const ret = new TextDecoder().decode(gradleResp);
+
+    // TODO: Check for failure?
+
+    return ret.split(/\r?\n/)
+              .map(line => line.match(/^[\+\\-]{2,}\sProject\s'(:.*)'$/))
+              .filter(line => line && line.length > 0)
+              .map(line => line[1]);
+}
+
+/**
  *  Runs the `gradle` binary to produce the `gradle-dependencies.txt` file. This
  *  should do the dependency resolution for this machine.
  *
  *  We perform a rudimentary check to make sure there wasn't an outright build
  *  failure.
+ *
+ *  If a `subproject` is provided, attempts to resolve the dependencies for the
+ *  specified subproject.
  */
-async function generateGradleDeps() {
-    let gradleResp = await invokeGradle();
+async function generateGradleDeps(subproject: string) {
+    let cmd = "dependencies";
+
+    if(subproject) {
+        cmd = subproject + ":dependencies";
+    }
+
+    let gradleResp = await invokeGradle(["-q", cmd]);
 
     if (!gradleResp) {
         return;
     }
 
-    // Conver the Uint8 array to ascii
+    // Convert the Uint8 array to ascii
     const ret = new TextDecoder().decode(gradleResp);
 
     if(ret.indexOf("BUILD FAILED") > 0) {
@@ -109,11 +144,11 @@ async function generateGradleDeps() {
     return ret;
 }
 
-async function invokeGradle() {
+async function invokeGradle(cmd) {
     //Try our directory
     try {
         return await Deno.run({
-            cmd: ["./gradlew", "-q", "dependencies"],
+            cmd: ["./gradlew"].concat(cmd),
             stdout: "piped"
         }).output();
     } catch(e) {
@@ -123,7 +158,7 @@ async function invokeGradle() {
     //Try single parent directory
     try {
         return await Deno.run({
-            cmd: ["../gradlew", "-q", "dependencies"],
+            cmd: ["../gradlew"].concat(cmd),
             stdout: "piped"
         }).output();
     } catch(e) {
@@ -133,40 +168,31 @@ async function invokeGradle() {
     //Lastly try using gradle directly
     try {
         return await Deno.run({
-            cmd: ["gradle", "-q", "dependencies"],
+            cmd: ["gradle"].concat(cmd),
             stdout: "piped"
         }).output();
     } catch(e) {
         //doNothing()
     }
 
-    console.error("[!] ERROR: It doesn't look like you have `gradle` installed or gradle wrapper in the current or parent directories");
+    logError("[!] ERROR: It doesn't look like you have `gradle` installed or " +
+             "gradle wrapper in the current or parent directories");
 }
 
 /**
  *  Parse a `build.gradle` file and returned the identified dependencies. 
  */
-async function getBuildGradleDeps() {
-    console.log("[*] Parsing dependencies from `build.gradle`");
-    console.warn("[!] WARNING: You should consider locking your dependencies and " +
-                 "using `phylum analyze` instead.");
-    console.warn("");
-    console.warn("    See: https://docs.gradle.org/current/userguide/dependency_locking.html");
-
-    const gradleDeps = await generateGradleDeps();
+async function getBuildGradleDeps(subproject: string) {
+    const gradleDeps = await generateGradleDeps(subproject);
 
     if(!gradleDeps) {
-        console.error("[!] ERROR: Failed to parse dependencies. Check your " +
+        logError("[!] ERROR: Failed to parse dependencies. Check your " +
                       "`build.gradle` file."); 
         return;
     }
 
     // Parse the dependencies from this file.
     let foundDeps = parseGradleFile(gradleDeps); 
-
-    console.log(`\n[*] Found ${foundDeps.length} dependencies in \`build.gradle\``);
-    console.log(foundDeps);
-    console.log("");
 
     return foundDeps;
 }
@@ -175,41 +201,87 @@ async function getBuildGradleDeps() {
  *  Submit the provided dependencies to Phylum for analysis.
  */
 async function submit(pkgs: object[], project: string, group: string) {
-    console.log("[*] Submitting to Phylum for analysis...");
-
-    // If we don't have a specified group/project from the command line arguments,
-    // attempt to parse from our Phylum project file.
-    if(!group && !project) {
-        console.log("[*] Using details from `.phylum_project` file");
-        const projectFile = await PhylumApi.getProjectDetails();
-        project = projectFile.name;
-        group = projectFile.group;
+    logSuccess("Submitting to Phylum for analysis...");
+        
+    if(!project) {
+        logSuccess("Please specify a project with --project <projectName>");
     }
 
     if(group && !project) {
-        console.error("[!] ERROR: You cannot specify a group without a project.");
+        logError("[!] ERROR: You cannot specify a group without a project.");
         return;
     }
 
     if(project) {
-        console.log(`\t --> Project: ${project}`)
+        logSuccess(`\t --> Project: ${project}`)
     }
 
     if(group) {
-        console.log(`\t --> Group: ${group}`)
+        logSuccess(`\t --> Group: ${group}`)
     }
 
     if(!group && !project) {
-        console.error("[!] ERROR: You must specify a project (and optionally a group).");
+        logError("[!] ERROR: You must specify a project (and optionally a group).");
         return;
     }
 
     if(pkgs.length) {
         const jobId = await PhylumApi.analyze("maven", pkgs, project, group);
-        console.log(`[*] Job submitted for analysis with job ID:\n\n\t${jobId}`);
+        logSuccess(`Job submitted for analysis with job ID: ${jobId}`);
     } else {
-        console.info("[*] No packages to submit");
+        logSuccess("No packages to submit");
     }
+}
+
+/**
+ *  The extension API does not currently provide facilities for creating a project.
+ *  Shim out to the Phylum CLI to handle this (inception!).
+ */
+async function attemptCreateProject(projectName: string, group?: string) {
+    projectName = projectName.replace(/[ &;:]/, "");
+    let cmd = ["phylum", "projects", "create", projectName];
+
+    if(group) {
+        group = group.replace(/[ &;:]/, "");
+        cmd = cmd.concat(["--group", group]);
+    }
+
+    // Attempts to create the project.
+    let resp = await Deno.run({
+        cmd: cmd,
+        stdout: "piped",
+        stderr: "piped",
+    }).output();
+
+    // Attempt to determine if the project was created.
+    const ret = new TextDecoder().decode(resp);
+    if(ret.indexOf("already exists") || ret.indexOf("Successfully created")) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ *
+ */
+async function getSubprojectDependencies(rootProject?: string) {
+    if(!rootProject) {
+        logError("You must specify a root project for subprojects");
+        return;
+    }
+
+    let projects = await getGradleProjects();
+
+    let ret = {};
+
+    for(let proj in projects) {
+        let subproj = projects[proj]; 
+        const projName = `${rootProject}/${subproj.replace(":","")}`;
+        ret[projName] = await getBuildGradleDeps(subproj)
+    };
+
+    return ret;
 }
 
 /**
@@ -235,8 +307,34 @@ const args = Deno.args;
 let group = parseArg("group", args);
 let project = parseArg("project", args);
 
-let gradleDependencies = await getBuildGradleDeps();
+if(!project) {
+    logError(`${red("[!]")} You must specify a project with --project <projectName>`);
+} else {
+    logSuccess(`Parsing dependencies from 'build.gradle'`);
+    logWarning(`${yellow("[!] WARNING:")} You should consider locking your ` +
+               "dependencies and using `phylum analyze` instead.");
+    logWarning("");
+    logWarning("    See: https://docs.gradle.org/current/userguide/dependency_locking.html");
+    logWarning("");
 
-if(gradleDependencies) {
-    submit(gradleDependencies, project, group);
+    let rootDeps = await getBuildGradleDeps();
+
+    if(rootDeps) {
+        logSuccess(`Submitting ${rootDeps.length} packages to the root project`);
+        submit(rootDeps, project, group);
+
+        // Get all subproject dependencies.
+        let subprojects = await getSubprojectDependencies(project);
+
+        for(let proj in subprojects) {
+            let deps = subprojects[proj];
+            logSuccess(`Submitting ${deps.length} packages to subproject ${proj}`);
+
+            // Attempt to create the project if it doesn't exist.
+            let projectExists = await attemptCreateProject(proj, group);
+
+            // Submit packages to the sub project
+            submit(deps, proj, group);
+        }
+    }
 }
