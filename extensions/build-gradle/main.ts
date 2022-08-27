@@ -1,5 +1,5 @@
 import { PhylumApi } from "phylum";
-import { red, green, yellow } from 'https://deno.land/std@0.150.0/fmt/colors.ts';
+import { red, green, yellow, blue } from 'https://deno.land/std@0.150.0/fmt/colors.ts';
 
 function logSuccess(msg: string) { console.log(`${green("[*]")} ${msg}`); }
 function logError(msg: string) { console.error(`${red("[!]")} ${msg}`); }
@@ -94,21 +94,24 @@ function parseOutTestRuntimeClasspathSection(gradleDependencies: string) {
  *  Get a list of subprojects in Gradle.
  */
 async function getGradleProjects() {
-    let gradleResp = await invokeGradle(["projects"])
+    let gradleResp = await invokeGradle(["projects"]);
 
     if(!gradleResp) {
         return;
     }
 
     // Convert the Uint8 array to ascii
-    const ret = new TextDecoder().decode(gradleResp);
+    let ret = new TextDecoder().decode(gradleResp);
 
     // TODO: Check for failure?
 
-    return ret.split(/\r?\n/)
-              .map(line => line.match(/^[\+\\-]{2,}\sProject\s'(:.*)'$/))
+    ret = ret.split(/\r?\n/)
+              .map(line => line.match(/^[\+\\-]{2,}\sProject\s'(:.*)'/))
               .filter(line => line && line.length > 0)
               .map(line => line[1]);
+
+    logSuccess(`Found ${ret.length} additional subprojects`);
+    return ret;
 }
 
 /**
@@ -175,7 +178,7 @@ async function invokeGradle(cmd) {
         //doNothing()
     }
 
-    logError("[!] ERROR: It doesn't look like you have `gradle` installed or " +
+    logError("ERROR: It doesn't look like you have `gradle` installed or " +
              "gradle wrapper in the current or parent directories");
 }
 
@@ -186,7 +189,7 @@ async function getBuildGradleDeps(subproject: string) {
     const gradleDeps = await generateGradleDeps(subproject);
 
     if(!gradleDeps) {
-        logError("[!] ERROR: Failed to parse dependencies. Check your " +
+        logError("ERROR: Failed to parse dependencies. Check your " +
                       "`build.gradle` file."); 
         return;
     }
@@ -208,7 +211,7 @@ async function submit(pkgs: object[], project: string, group: string) {
     }
 
     if(group && !project) {
-        logError("[!] ERROR: You cannot specify a group without a project.");
+        logError("ERROR: You cannot specify a group without a project.");
         return;
     }
 
@@ -221,7 +224,7 @@ async function submit(pkgs: object[], project: string, group: string) {
     }
 
     if(!group && !project) {
-        logError("[!] ERROR: You must specify a project (and optionally a group).");
+        logError("ERROR: You must specify a project (and optionally a group).");
         return;
     }
 
@@ -308,7 +311,7 @@ let group = parseArg("group", args);
 let project = parseArg("project", args);
 
 if(!project) {
-    logError(`${red("[!]")} You must specify a project with --project <projectName>`);
+    logError(`You must specify a project with --project <projectName>`);
 } else {
     logSuccess(`Parsing dependencies from 'build.gradle'`);
     logWarning(`${yellow("[!] WARNING:")} You should consider locking your ` +
@@ -324,11 +327,13 @@ if(!project) {
         submit(rootDeps, project, group);
 
         // Get all subproject dependencies.
+        logSuccess(`Searching for subprojects, this might take a second...`);
         let subprojects = await getSubprojectDependencies(project);
 
         for(let proj in subprojects) {
+            logSuccess(`Scanning for packages in subproject: ${proj}`);
             let deps = subprojects[proj];
-            logSuccess(`Submitting ${deps.length} packages to subproject ${proj}`);
+            logSuccess(`\tSubmitting ${deps.length} packages to subproject ${proj}`);
 
             // Attempt to create the project if it doesn't exist.
             let projectExists = await attemptCreateProject(proj, group);
