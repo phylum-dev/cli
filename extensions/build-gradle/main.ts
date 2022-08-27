@@ -1,5 +1,7 @@
 import { PhylumApi } from "phylum";
 import { red, green, yellow, blue } from 'https://deno.land/std@0.150.0/fmt/colors.ts';
+import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
+
 
 function logSuccess(msg: string) { console.log(`${green("[*]")} ${msg}`); }
 function logError(msg: string) { console.error(`${red("[!]")} ${msg}`); }
@@ -314,36 +316,44 @@ const args = Deno.args;
 let group = parseArg("group", args);
 let project = parseArg("project", args);
 
+// If no project name is specified, take the root directory name.
 if(!project) {
-    logError(`You must specify a project with --project <projectName>`);
-} else {
-    logSuccess(`Parsing dependencies from 'build.gradle'`);
-    logWarning(`${yellow("[!] WARNING:")} You should consider locking your ` +
-               "dependencies and using `phylum analyze` instead.");
-    logWarning("");
-    logWarning("    See: https://docs.gradle.org/current/userguide/dependency_locking.html");
-    logWarning("");
+    let ret = await Deno.run({
+            cmd: ["pwd"],
+            stdout: "piped"
+    }).output();
 
-    let rootDeps = await getBuildGradleDeps();
+    ret = new TextDecoder().decode(ret).replace(/(\r\n|\n|\r)/gm, "");
+    project = path.basename(ret);
+    logWarning(`No project name specified, using the root directory: ${project}`);
+} 
 
-    if(rootDeps) {
-        logSuccess(`Submitting ${rootDeps.length} packages to the root project`);
-        submit(rootDeps, project, group);
+logSuccess(`Parsing dependencies from 'build.gradle'`);
+logWarning(`${yellow("[!] WARNING:")} You should consider locking your ` +
+           "dependencies and using `phylum analyze` instead.");
+logWarning("");
+logWarning("    See: https://docs.gradle.org/current/userguide/dependency_locking.html");
+logWarning("");
 
-        // Get all subproject dependencies.
-        logSuccess(`Searching for subprojects, this might take a second...`);
-        let subprojects = await getSubprojectDependencies(project);
+let rootDeps = await getBuildGradleDeps();
 
-        for(let proj in subprojects) {
-            logSuccess(`Scanning for packages in subproject: ${proj}`);
-            let deps = subprojects[proj];
-            logSuccess(`\tSubmitting ${deps.length} packages to subproject ${proj}`);
+if(rootDeps) {
+    logSuccess(`Submitting ${rootDeps.length} packages to the root project`);
+    submit(rootDeps, project, group);
 
-            // Attempt to create the project if it doesn't exist.
-            let projectExists = await attemptCreateProject(proj, group);
+    // Get all subproject dependencies.
+    logSuccess(`Searching for subprojects, this might take a second...`);
+    let subprojects = await getSubprojectDependencies(project);
 
-            // Submit packages to the sub project
-            submit(deps, proj, group);
-        }
+    for(let proj in subprojects) {
+        logSuccess(`Scanning for packages in subproject: ${proj}`);
+        let deps = subprojects[proj];
+        logSuccess(`\tSubmitting ${deps.length} packages to subproject ${proj}`);
+
+        // Attempt to create the project if it doesn't exist.
+        let projectExists = await attemptCreateProject(proj, group);
+
+        // Submit packages to the sub project
+        submit(deps, proj, group);
     }
 }
