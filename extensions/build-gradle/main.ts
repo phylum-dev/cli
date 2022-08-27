@@ -204,6 +204,10 @@ async function getBuildGradleDeps(subproject: string) {
  *  Submit the provided dependencies to Phylum for analysis.
  */
 async function submit(pkgs: object[], project: string, group: string) {
+    if(!pkgs.length) {
+        return;
+    }
+
     logSuccess("Submitting to Phylum for analysis...");
         
     if(!project) {
