@@ -326,6 +326,13 @@ if(!project) {
     ret = new TextDecoder().decode(ret).replace(/(\r\n|\n|\r)/gm, "");
     project = path.basename(ret);
     logWarning(`No project name specified, using the root directory: ${project}`);
+
+    // Attempt to create the project if it doesn't exist.
+    let projectExists = await attemptCreateProject(project, group);
+
+    if(!projectExists) {
+        console.log("Project did not exist, so we created it");
+    }
 } 
 
 logSuccess(`Parsing dependencies from 'build.gradle'`);
