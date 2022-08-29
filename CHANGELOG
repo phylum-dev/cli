@@ -1,3 +1,4 @@
+* 3.9.0 - Add support for native certificate store
 * 3.8.0 - CLI extensions
 * 3.7.2 - Improved error messages and output formatting
 * 3.7.1 - Support POM files with site information
