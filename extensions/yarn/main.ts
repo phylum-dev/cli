@@ -34,7 +34,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     } catch (e) {
         console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
         console.error(`[${red("phylum")}] Please move to the yarn project's top level directory and try again.`);
-        return 125;
+        Deno.exit(125);
     }
 
     // Backup package/lock files.
