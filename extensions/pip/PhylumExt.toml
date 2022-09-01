@@ -2,4 +2,5 @@ name = "pip"
 description = "PyPI package manager hooks"
 entry_point = "pip.ts"
 [permissions]
+  env = ["PHYLUM_PIP_PATH"]
   run = true
