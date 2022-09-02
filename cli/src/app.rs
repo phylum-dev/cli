@@ -1,9 +1,14 @@
 use clap::{Arg, Command, ValueHint};
 use git_version::git_version;
+use lazy_static::lazy_static;
 
 use crate::commands::{extensions, parse};
 
 const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_prefix = "cargo:");
+
+lazy_static! {
+    pub static ref USER_AGENT: String = format!("{}/{}", env!("CARGO_PKG_NAME"), VERSION);
+}
 
 const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displayed
 

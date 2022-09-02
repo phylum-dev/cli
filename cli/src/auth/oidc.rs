@@ -17,6 +17,7 @@ use sha2::{Digest, Sha256};
 
 use super::ip_addr_ext::IpAddrExt;
 use crate::api::endpoints;
+use crate::app::USER_AGENT;
 
 pub const OIDC_SCOPES: [&str; 4] = ["openid", "offline_access", "profile", "email"];
 
@@ -149,7 +150,10 @@ pub async fn fetch_oidc_server_settings(
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<OidcServerSettings> {
-    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT.as_str())
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .get(endpoints::oidc_discovery(api_uri)?)
         .header("Accept", "application/json")
@@ -206,7 +210,10 @@ pub async fn acquire_tokens(
     let body =
         build_grant_type_auth_code_post_body(redirect_url, authorization_code, code_verifier)?;
 
-    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT.as_str())
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")
@@ -245,7 +252,10 @@ pub async fn refresh_tokens(
 
     let body = build_grant_type_refresh_token_post_body(refresh_token)?;
 
-    let client = reqwest::Client::builder().danger_accept_invalid_certs(ignore_certs).build()?;
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT.as_str())
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
     let response = client
         .post(token_url)
         .header("Content-Type", "application/json")

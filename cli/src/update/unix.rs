@@ -11,6 +11,7 @@ use serde::de::DeserializeOwned;
 use wiremock::MockServer;
 use zip::ZipArchive;
 
+use crate::app::USER_AGENT;
 use crate::spinner::Spinner;
 use crate::types::{GithubRelease, GithubReleaseAsset};
 
@@ -57,7 +58,7 @@ impl Default for ApplicationUpdater {
 
 /// Generic function for fetching data via HTTP GET.
 async fn http_get(url: &str) -> anyhow::Result<reqwest::Response> {
-    let client = Client::builder().user_agent("phylum-cli").build()?;
+    let client = Client::builder().user_agent(USER_AGENT.as_str()).build()?;
     let response = client.get(url).send().await?;
     Ok(response)
 }
