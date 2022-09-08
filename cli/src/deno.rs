@@ -8,6 +8,7 @@ use std::thread;
 
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Error, Result};
+use birdcage::{Exception, Sandbox};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
@@ -84,7 +85,8 @@ pub async fn run(
     };
 
     // Build permissions object from extension's requested permissions.
-    let permissions_options = PermissionsOptions::from(&*extension.permissions());
+    let permissions = extension.permissions();
+    let permissions_options = PermissionsOptions::from(&*permissions);
     let worker_permissions = Permissions::from_options(&permissions_options);
 
     // Initialize Deno runtime.
@@ -94,6 +96,15 @@ pub async fn run(
     // Export shared state.
     let state = ExtensionState::new(api);
     worker.js_runtime.op_state().borrow_mut().put(state);
+
+    // Create sandbox allowing the extension's requested permissions.
+    let mut sandbox = permissions.build_sandbox()?;
+
+    // Always allow read access to the extension's directory.
+    sandbox.add_exception(Exception::Read(extension.path()))?;
+
+    // Activate sandbox.
+    sandbox.lock()?;
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {

@@ -256,4 +256,68 @@ export class PhylumApi {
     static async parseLockfile(lockfile: string, lockfileType?: string): object {
         return await Deno.core.opAsync('parse_lockfile', lockfile, lockfileType);
     }
+
+    /// Run a command inside a more restrictive sandbox.
+    ///
+    /// While all extensions are already sandboxed, it can be useful to further
+    /// restrict this execution environment when dealing with external commands
+    /// that could potentially misbehave. This API allows restricting
+    /// filesystem and network access for those processes.
+    ///
+    /// # Parameters
+    ///
+    /// The `process` parameter contains the command which shall be executed
+    /// and its restrictions:
+    ///
+    /// ```
+    /// {
+    ///   cmd: "ls",
+    ///   args: ["-lah"],
+    ///   stdin: "null",
+    ///   stdout: "piped",
+    ///   stderr: "inherit",
+    ///   exceptions: {
+    ///     read: ["~/"],
+    ///     write: false,
+    ///     run: ["ls"],
+    ///     net: false,
+    ///   }
+    /// }
+    /// ```
+    ///
+    /// The `read`/`write`/`run` permissions accept either an array of paths,
+    /// or a boolean. Paths must either be absolute or start with `~/`.
+    ///
+    /// For `run` the executables will be resolved from `$PATH` when they are
+    /// neither absolute nor start with `~/`.
+    ///
+    /// The `net` permission accepts only boolean values.
+    ///
+    /// # Returns
+    ///
+    /// Process status and output:
+    ///
+    /// ```
+    /// {
+    ///   stdout: "Hello, World!",
+    ///   stderr: "",
+    ///   success: true,
+    ///   code: 0,
+    /// }
+    /// ```
+    ///
+    /// If the process got killed by a signal, it will contain a `signal` field
+    /// instead of `code`:
+    ///
+    /// ```
+    /// {
+    ///   stdout: "",
+    ///   stderr: "Getting killed by signal...",
+    ///   success: false,
+    ///   signal: 31,
+    /// }
+    /// ```
+    static runSandboxed(process: object): object {
+        return Deno.core.opSync('run_sandboxed', process);
+    }
 }

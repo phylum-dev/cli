@@ -1,14 +1,21 @@
+use std::borrow::Cow;
 use std::path::PathBuf;
+use std::{env, fs};
 
 use anyhow::{anyhow, Result};
+use birdcage::error::Error as SandboxError;
+use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
+
+use crate::dirs;
 
 /// Resource permissions.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum Permission {
+    #[serde(deserialize_with = "deserialize_permission_paths")]
     List(Vec<String>),
     Boolean(bool),
 }
@@ -33,6 +40,15 @@ impl Permission {
         }
     }
 
+    /// Get Birdcage sandbox exception resource paths.
+    pub fn sandbox_paths(&self) -> Cow<'_, Vec<String>> {
+        match self {
+            Permission::List(paths) => Cow::Borrowed(paths),
+            Permission::Boolean(true) => Cow::Owned(vec!["/".into()]),
+            Permission::Boolean(false) => Cow::Owned(Vec::new()),
+        }
+    }
+
     /// Check if access to resource is permitted.
     pub fn validate(&self, resource: &String, resource_type: &str) -> Result<()> {
         if self.get().map_or(false, |allowed| allowed.contains(resource)) {
@@ -43,7 +59,26 @@ impl Permission {
     }
 }
 
-#[derive(Clone, Default, Deserialize, Debug, Serialize)]
+/// Deserializer for automatically resolving `~/` path prefix.
+pub fn deserialize_permission_paths<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    // Ensure field is a valid string.
+    let mut paths = Vec::<String>::deserialize(deserializer)?;
+
+    // Resolve `~/` home prefix.
+    let home = dirs::home_dir().map_err(D::Error::custom)?;
+    for path in &mut paths {
+        if let Some(suffix) = path.strip_prefix("~/") {
+            *path = home.join(suffix).display().to_string();
+        }
+    }
+
+    Ok(paths)
+}
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct Permissions {
     #[serde(default)]
     pub read: Permission,
@@ -53,12 +88,12 @@ pub struct Permissions {
     pub env: Permission,
     #[serde(default)]
     pub run: Permission,
-    #[serde(default, deserialize_with = "net_permission")]
+    #[serde(default, deserialize_with = "deserialize_net_permission")]
     pub net: Permission,
 }
 
 /// Deserialize network permissions.
-fn net_permission<'de, D>(deserializer: D) -> Result<Permission, D::Error>
+fn deserialize_net_permission<'de, D>(deserializer: D) -> Result<Permission, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -90,6 +125,28 @@ impl Permissions {
             && self.run.get().is_none()
             && self.net.get().is_none()
     }
+
+    /// Build a sandbox matching the requested permissions.
+    pub fn build_sandbox(&self) -> Result<Birdcage> {
+        let mut birdcage = default_sandbox()?;
+
+        for path in self.read.sandbox_paths().iter().map(PathBuf::from) {
+            add_exception(&mut birdcage, Exception::Read(path))?;
+        }
+        for path in self.write.sandbox_paths().iter().map(PathBuf::from) {
+            add_exception(&mut birdcage, Exception::Write(path))?;
+        }
+        for path in self.run.sandbox_paths().iter() {
+            let absolute_path = resolve_bin_path(path);
+            add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
+        }
+
+        if self.net.get().is_some() {
+            birdcage.add_exception(Exception::Networking)?;
+        }
+
+        Ok(birdcage)
+    }
 }
 
 impl From<&Permissions> for PermissionsOptions {
@@ -115,6 +172,89 @@ impl From<&Permissions> for PermissionsOptions {
             prompt: false,
         }
     }
+}
+
+/// Construct sandbox with a set of pre-defined acceptable exceptions.
+pub fn default_sandbox() -> Result<Birdcage> {
+    let mut birdcage = Birdcage::new()?;
+
+    // Permit read access to lib for dynamic linking.
+    add_exception(&mut birdcage, Exception::Read("/usr/lib".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/usr/lib32".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/usr/libx32".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/usr/lib64".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/lib".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/lib32".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/libx32".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/lib64".into()))?;
+
+    // Allow `env` exec to resolve binary paths.
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
+
+    // Allow access to ld-linux, since it is required to run dynamic executables.
+    if let Some(ld_linux_path) = ld_linux_path() {
+        add_exception(&mut birdcage, Exception::ExecuteAndRead(ld_linux_path))?;
+    }
+
+    // Allow access to DNS list.
+    //
+    // While this is required to send DNS requests for network queries, this does
+    // not automatically allow any network access.
+    add_exception(&mut birdcage, Exception::Read("/etc/resolv.conf".into()))?;
+
+    // Allow reading SSL certificates.
+    add_exception(&mut birdcage, Exception::Read("/etc/ca-certificates".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/etc/ssl".into()))?;
+
+    // TODO: I really don't like this
+    if let Ok(config_dir) = dirs::config_dir() {
+        add_exception(&mut birdcage, Exception::Write(config_dir.join("phylum/settings.yaml")))?;
+    }
+
+    Ok(birdcage)
+}
+
+/// Add an execption to the sandbox, ignoring invalid path errors.
+pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> Result<()> {
+    match birdcage.add_exception(exception) {
+        Ok(_) => Ok(()),
+        // Ignore invalid path errors.
+        Err(SandboxError::InvalidPath(_)) => Ok(()),
+        Err(err) => Err(err.into()),
+    }
+}
+
+/// Resolve non-absolute bin paths from `$PATH`.
+pub fn resolve_bin_path(bin: &str) -> PathBuf {
+    // Do not transform absolute paths.
+    if bin.starts_with('/') {
+        return PathBuf::from(bin);
+    }
+
+    // Try to read `$PATH`.
+    let path = match env::var("PATH") {
+        Ok(path) => path,
+        Err(_) => return PathBuf::from(bin),
+    };
+
+    // Return first path in `$PATH` that contains `bin`.
+    for path in path.split(':') {
+        let combined = PathBuf::from(path).join(&bin);
+        if combined.exists() {
+            return combined;
+        }
+    }
+
+    PathBuf::from(bin)
+}
+
+/// Find `ld-linux.so.*`.
+fn ld_linux_path() -> Option<PathBuf> {
+    fs::read_dir("/usr/lib")
+        .ok()?
+        .filter_map(|entry| entry.ok())
+        .find(|entry| entry.file_name().to_string_lossy().starts_with("ld-linux"))
+        .map(|entry| entry.path())
 }
 
 #[cfg(test)]

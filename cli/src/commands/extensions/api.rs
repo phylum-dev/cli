@@ -1,11 +1,16 @@
 //! Extension API functions.
 
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
+use std::thread;
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
 
 use anyhow::{anyhow, Context, Error, Result};
+use birdcage::{Exception, Sandbox};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
@@ -21,6 +26,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::auth::UserInfo;
+use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
@@ -43,6 +49,72 @@ impl From<PackageDescriptor> for PackageSpecifier {
 struct PackageLock {
     packages: Vec<PackageSpecifier>,
     package_type: PackageType,
+}
+
+/// New process to be launched.
+#[derive(Serialize, Deserialize, Debug)]
+struct Process {
+    cmd: String,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    stdin: ProcessStdio,
+    #[serde(default)]
+    stdout: ProcessStdio,
+    #[serde(default)]
+    stderr: ProcessStdio,
+    #[serde(default)]
+    exceptions: ProcessException,
+}
+
+/// Sandboxing exceptions.
+#[derive(Serialize, Deserialize, Debug, Default)]
+struct ProcessException {
+    #[serde(default)]
+    read: Permission,
+    #[serde(default)]
+    write: Permission,
+    #[serde(default)]
+    run: Permission,
+    #[serde(default)]
+    net: bool,
+}
+
+/// Standard I/O behavior.
+#[derive(Serialize, Deserialize, Debug)]
+enum ProcessStdio {
+    #[serde(rename = "inherit")]
+    Inherit,
+    #[serde(rename = "piped")]
+    Piped,
+    #[serde(rename = "null")]
+    Null,
+}
+
+impl Default for ProcessStdio {
+    fn default() -> Self {
+        Self::Inherit
+    }
+}
+
+impl From<ProcessStdio> for Stdio {
+    fn from(stdio: ProcessStdio) -> Self {
+        match stdio {
+            ProcessStdio::Piped => Self::piped(),
+            ProcessStdio::Inherit => Self::inherit(),
+            ProcessStdio::Null => Self::null(),
+        }
+    }
+}
+
+/// Subprocess output.
+#[derive(Serialize, Deserialize, Debug)]
+struct ProcessOutput {
+    stdout: String,
+    stderr: String,
+    success: bool,
+    signal: Option<i32>,
+    code: Option<i32>,
 }
 
 /// Analyze a lockfile.
@@ -240,6 +312,55 @@ async fn parse_lockfile(
     })
 }
 
+/// Run a command inside a sandbox.
+///
+/// This runs the supplied command in a sandbox, without restricting the
+/// permissions of the sandbox itself. As a result more privileged access is
+/// possible even after the command has been spawned.
+#[op]
+fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+    // Spawn thread so only the executed command is sandboxed.
+    let thread_handle = thread::spawn(move || -> Result<_> {
+        // Lock down process permissions.
+        let mut birdcage = permissions::default_sandbox()?;
+        for path in process.exceptions.read.sandbox_paths().iter() {
+            permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))?;
+        }
+        for path in process.exceptions.write.sandbox_paths().iter() {
+            permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))?;
+        }
+        for path in process.exceptions.run.sandbox_paths().iter() {
+            let absolute_path = permissions::resolve_bin_path(path);
+            permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
+        }
+        if process.exceptions.net {
+            birdcage.add_exception(Exception::Networking)?;
+        }
+        birdcage.lock()?;
+
+        // Spawn the new command.
+        let mut command = Command::new(process.cmd);
+        command.args(&process.args);
+        command.stdin(process.stdin);
+        command.stdout(process.stdout);
+        command.stderr(process.stderr);
+        Ok(command.output()?)
+    });
+
+    let output = thread_handle.join().map_err(|_| anyhow!("sandbox worker thread error"))??;
+
+    Ok(ProcessOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        success: output.status.success(),
+        code: output.status.code(),
+        #[cfg(unix)]
+        signal: output.status.signal(),
+        #[cfg(not(unix))]
+        signal: None,
+    })
+}
+
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
@@ -252,5 +373,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_projects::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
+        run_sandboxed::decl(),
     ]
 }
