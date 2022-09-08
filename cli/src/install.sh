@@ -23,6 +23,19 @@ banner() {
     printf "\n    %bphylum-cli%b installer\n\n" "${GREEN}" "${NC}"
 }
 
+usage() {
+    cat 1>&2 <<EOF
+install.sh [options]
+
+Install the phylum CLI.
+
+Options
+    -b <BINDIR>, --bin-dir <BINDIR>     Specify the install directory
+    --no-data-files                     Do not install data files (e.g., completion files)
+    -h, --help                          Show this help message
+EOF
+}
+
 # Get the platform name.
 get_platform() {
     platform_str=$(uname)
@@ -112,7 +125,7 @@ check_glibc() {
     fi
 }
 
-copy_files() {
+copy_bin() {
     # Copy the specific platform binary.
     platform=$(set -e; get_platform)
     bin_name="phylum"
@@ -126,7 +139,9 @@ copy_files() {
         # but there might be others or there might be none. `xattr -c` works in all of those cases.
         xattr -c "${bin_dir}/${bin_name}"
     fi
+}
 
+copy_data_files() {
     # Copy completions over
     (umask 077; mkdir -p "${data_dir}")
     cp -a "completions" "${data_dir}/"
@@ -156,19 +171,48 @@ cleanup_pre_xdg() {
     rm -rf "${HOME}/.phylum/completions"
 }
 
+# Parse command line arguments
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -b | --bin-dir)
+            bin_dir=$2
+            shift 2
+            ;;
+        --no-data-files)
+            NO_DATA_FILES=1
+            shift 1
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            printf "Unsupported option: %s\n\n" "$1" >&2
+            usage
+            exit 1
+            ;;
+    esac
+done
+
 cd "$(dirname "$0")"
 banner
 check_glibc
 cleanup_pre_xdg
-copy_files
-patch_bashrc
-patch_zshrc
+copy_bin
+if [ -z "${NO_DATA_FILES:}" ]; then
+    copy_data_files
+    patch_bashrc
+    patch_zshrc
+fi
 
 success "Successfully installed phylum."
-rc_file=$(get_rc_file)
-cat << __instructions__
+
+if [ -z "${NO_DATA_FILES:}" ]; then
+    rc_file=$(get_rc_file)
+    cat << __instructions__
 
     Source your ${rc_file} file, add ${bin_dir} to your \$PATH variable, or
     log in to a new terminal in order to make \`phylum\` available.
 
 __instructions__
+fi
