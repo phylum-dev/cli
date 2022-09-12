@@ -80,7 +80,11 @@ extensions:
 
 https://github.com/phylum-dev/cli/tree/main/extensions
 
-### musl binaries
+### How-tos
+
+How-to articles for the extension framework can be found [here](https://dev.to/phylum).
+
+## musl binaries
 
 As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on
 `glibc`. We no longer provide binaries that are statically compiled with the
