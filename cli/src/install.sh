@@ -133,33 +133,9 @@ copy_files() {
     success "Copied completions to ${completions_dir}"
 }
 
-# Remove old files and entries added before XDG directories conformity.
-cleanup_pre_xdg() {
-    if [ -f "${HOME}/.bashrc" ]; then
-        # Remove old entries from bashrc.
-        perl -i -n -e 'print unless /^source \$HOME\/.phylum\/completions\/phylum.bash$/' "${HOME}/.bashrc"
-        perl -i -n -e 'print unless /^export PATH="\$HOME\/.phylum:\$PATH"$/' "${HOME}/.bashrc"
-        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.bashrc"
-    fi
-
-    if [ -f "${HOME}/.zshrc" ]; then
-        # Remove old entries from zshrc.
-        perl -i -n -e 'print unless /^fpath\+=\("\$HOME\/.phylum\/completions"\)$/' "${HOME}/.zshrc"
-        perl -i -n -e 'print unless /^export PATH="\$HOME\/\.phylum:\$PATH"$/' "${HOME}/.zshrc"
-        perl -i -n -e "print unless /^alias ph='phylum'$/" "${HOME}/.zshrc"
-    fi
-
-    # Remove old phylum executable.
-    rm -f "${HOME}/.phylum/phylum"
-
-    # Remove old completions directory.
-    rm -rf "${HOME}/.phylum/completions"
-}
-
 cd "$(dirname "$0")"
 banner
 check_glibc
-cleanup_pre_xdg
 copy_files
 patch_bashrc
 patch_zshrc
