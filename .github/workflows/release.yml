@@ -112,6 +112,11 @@ jobs:
           do
             archive=$(echo ${archive} | sed -e "s/\/$//")
             cp -R shell-completions ${archive}/completions
+            mkdir ${archive}/extensions
+            for extension in npm poetry yarn
+            do
+              cp -R cli/extensions/${extension} ${archive}/extensions/${extension}
+            done
             cp cli/cli/src/install.sh ${archive}/install.sh
             chmod a+x ${archive}/phylum
             zip -r ${archive}.zip ${archive}
