@@ -302,7 +302,7 @@ async fn handle_list_extensions() -> CommandResult {
 pub fn installed_extensions() -> Result<Vec<Extension>> {
     let extensions_paths = extension::extensions_paths()?;
 
-    let mut dir_entries = Vec::new();
+    let mut extensions = Vec::new();
     for extensions_path in extensions_paths {
         let dir_entry = match fs::read_dir(extensions_path) {
             Ok(d) => d,
@@ -314,23 +314,27 @@ pub fn installed_extensions() -> Result<Vec<Extension>> {
                 }
             },
         };
-        dir_entries.push(dir_entry)
-    }
 
-    Ok(dir_entries
-        .into_iter()
-        .flatten()
-        .filter_map(|dir_entry| {
-            match dir_entry
+        for entry in dir_entry {
+            let ext = match entry
                 .map_err(|e| e.into())
                 .and_then(|dir_entry| Extension::try_from(dir_entry.path()))
             {
-                Ok(ext) => Some(ext),
+                Ok(ext) => ext,
                 Err(e) => {
                     error!("{e}");
-                    None
+                    continue;
                 },
+            };
+
+            if !extensions.iter().any(|e: &Extension| e.name() == ext.name()) {
+                extensions.push(ext);
             }
-        })
-        .collect::<Vec<_>>())
+        }
+    }
+
+    // Sort by name
+    extensions.sort_by(|a, b| a.name().partial_cmp(b.name()).unwrap());
+
+    Ok(extensions)
 }
