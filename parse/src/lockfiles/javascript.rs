@@ -1,3 +1,6 @@
+use std::ffi::OsStr;
+use std::path::Path;
+
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -6,7 +9,7 @@ use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
-use crate::lockfiles::{Parse, ParseResult};
+use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
 
 pub struct PackageLock;
 pub struct YarnLock;
@@ -76,8 +79,16 @@ impl Parse for PackageLock {
         }
     }
 
+    fn format(&self) -> LockFileFormat {
+        LockFileFormat::Npm
+    }
+
     fn package_type(&self) -> PackageType {
         PackageType::Npm
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package-lock.json"))
     }
 }
 
@@ -185,8 +196,16 @@ impl Parse for YarnLock {
         Ok(packages)
     }
 
+    fn format(&self) -> LockFileFormat {
+        LockFileFormat::Yarn
+    }
+
     fn package_type(&self) -> PackageType {
         PackageType::Npm
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("yarn.lock"))
     }
 }
 
@@ -196,7 +215,9 @@ mod tests {
 
     #[test]
     fn lock_parse_package() {
-        let pkgs = PackageLock.parse_file("tests/fixtures/package-lock-v6.json").unwrap();
+        let pkgs = PackageLock
+            .parse(include_str!("../../../tests/fixtures/package-lock-v6.json"))
+            .unwrap();
 
         assert_eq!(pkgs.len(), 17);
         assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
@@ -211,7 +232,8 @@ mod tests {
 
     #[test]
     fn lock_parse_package_v7() {
-        let pkgs = PackageLock.parse_file("tests/fixtures/package-lock.json").unwrap();
+        let pkgs =
+            PackageLock.parse(include_str!("../../../tests/fixtures/package-lock.json")).unwrap();
 
         assert_eq!(pkgs.len(), 52);
 
@@ -252,7 +274,8 @@ mod tests {
         // We need to make sure we don't take the v2 lockfile code path because this is
         // not a v2 lockfile and parsing it as one will produce incorrect
         // results.
-        let pkgs = YarnLock.parse_file("tests/fixtures/yarn-v1.simple.lock").unwrap();
+        let pkgs =
+            YarnLock.parse(include_str!("../../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
         assert_eq!(pkgs, vec![PackageDescriptor {
             name: "@yarnpkg/lockfile".to_string(),
@@ -263,8 +286,11 @@ mod tests {
 
     #[test]
     fn lock_parse_yarn_v1() {
-        for p in &["tests/fixtures/yarn-v1.lock", "tests/fixtures/yarn-v1.trailing_newlines.lock"] {
-            let pkgs = YarnLock.parse_file(p).unwrap();
+        for p in [
+            include_str!("../../../tests/fixtures/yarn-v1.lock"),
+            include_str!("../../../tests/fixtures/yarn-v1.trailing_newlines.lock"),
+        ] {
+            let pkgs = YarnLock.parse(p).unwrap();
 
             assert_eq!(pkgs.len(), 17);
 
@@ -286,12 +312,12 @@ mod tests {
     #[should_panic]
     #[test]
     fn lock_parse_yarn_v1_malformed_fails() {
-        YarnLock.parse_file("tests/fixtures/yarn-v1.lock.bad").unwrap();
+        YarnLock.parse(include_str!("../../../tests/fixtures/yarn-v1.lock.bad")).unwrap();
     }
 
     #[test]
     fn lock_parse_yarn() {
-        let pkgs = YarnLock.parse_file("tests/fixtures/yarn.lock").unwrap();
+        let pkgs = YarnLock.parse(include_str!("../../../tests/fixtures/yarn.lock")).unwrap();
 
         assert_eq!(pkgs.len(), 53);
 

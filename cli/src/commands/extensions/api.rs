@@ -8,6 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
+use phylum_parse::lockfiles::LockFileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::JobId;
 use phylum_types::types::group::ListUserGroupsResponse;
@@ -21,7 +22,7 @@ use tokio::fs;
 
 use crate::auth::UserInfo;
 use crate::commands::extensions::state::ExtensionState;
-use crate::commands::parse::{self, LOCKFILE_PARSERS};
+use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
 
 /// Package descriptor for any ecosystem.
@@ -223,10 +224,10 @@ async fn parse_lockfile(
 
     // Attempt to parse as requested lockfile type.
 
-    let parser = LOCKFILE_PARSERS
-        .iter()
-        .find_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
-        .ok_or_else(|| anyhow!("Unrecognized lockfile type: `{lockfile_type}`"))?;
+    let parser = lockfile_type
+        .parse::<LockFileFormat>()
+        .with_context(|| format!("Unrecognized lockfile type: `{lockfile_type}`"))?
+        .parser();
 
     let lockfile_data = fs::read_to_string(&lockfile)
         .await

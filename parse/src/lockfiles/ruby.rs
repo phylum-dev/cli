@@ -1,10 +1,13 @@
+use std::ffi::OsStr;
+use std::path::Path;
+
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
-use crate::lockfiles::{Parse, ParseResult};
+use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
 
 pub struct GemLock;
 
@@ -18,8 +21,16 @@ impl Parse for GemLock {
         Ok(entries)
     }
 
+    fn format(&self) -> LockFileFormat {
+        LockFileFormat::Gem
+    }
+
     fn package_type(&self) -> PackageType {
         PackageType::RubyGems
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("Gemfile.lock"))
     }
 }
 
@@ -31,7 +42,7 @@ mod tests {
 
     #[test]
     fn lock_parse_gem() {
-        let pkgs = GemLock.parse_file("tests/fixtures/Gemfile.lock").unwrap();
+        let pkgs = GemLock.parse(include_str!("../../../tests/fixtures/Gemfile.lock")).unwrap();
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");

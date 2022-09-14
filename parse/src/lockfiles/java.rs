@@ -1,3 +1,6 @@
+use std::ffi::OsStr;
+use std::path::Path;
+
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
@@ -6,7 +9,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 
 use super::parsers::gradle_dep;
-use crate::lockfiles::{Parse, ParseResult};
+use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
 
 pub struct Pom;
 pub struct GradleLock;
@@ -21,8 +24,16 @@ impl Parse for GradleLock {
         Ok(entries)
     }
 
+    fn format(&self) -> LockFileFormat {
+        LockFileFormat::Gradle
+    }
+
     fn package_type(&self) -> PackageType {
         PackageType::Maven
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("gradle.lockfile"))
     }
 }
 
@@ -162,8 +173,16 @@ impl Parse for Pom {
         }
     }
 
+    fn format(&self) -> LockFileFormat {
+        LockFileFormat::Maven
+    }
+
     fn package_type(&self) -> PackageType {
         PackageType::Maven
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("effective-pom.xml"))
     }
 }
 
@@ -173,7 +192,8 @@ mod tests {
 
     #[test]
     fn lock_parse_gradle() {
-        let pkgs = GradleLock.parse_file("tests/fixtures/gradle.lockfile").unwrap();
+        let pkgs =
+            GradleLock.parse(include_str!("../../../tests/fixtures/gradle.lockfile")).unwrap();
 
         assert_eq!(pkgs.len(), 6);
 
@@ -192,7 +212,8 @@ mod tests {
 
     #[test]
     fn lock_parse_effective_pom() {
-        let mut pkgs = Pom.parse_file("tests/fixtures/effective-pom.xml").unwrap();
+        let mut pkgs =
+            Pom.parse(include_str!("../../../tests/fixtures/effective-pom.xml")).unwrap();
 
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);
@@ -212,7 +233,8 @@ mod tests {
 
     #[test]
     fn lock_parse_workspace_effective_pom() {
-        let pkgs = Pom.parse_file("tests/fixtures/workspace-effective-pom.xml").unwrap();
+        let pkgs =
+            Pom.parse(include_str!("../../../tests/fixtures/workspace-effective-pom.xml")).unwrap();
 
         assert_eq!(pkgs.len(), 88);
 
