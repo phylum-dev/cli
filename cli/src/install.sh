@@ -9,6 +9,7 @@ set -eu
 
 data_dir="${XDG_DATA_HOME:-${HOME}/.local/share}/phylum"
 completions_dir="${data_dir}/completions"
+extensions_dir="${data_dir}/extensions"
 bin_dir="${HOME}/.local/bin"
 
 error() {
@@ -131,6 +132,21 @@ copy_files() {
     (umask 077; mkdir -p "${data_dir}")
     cp -a "completions" "${data_dir}/"
     success "Copied completions to ${completions_dir}"
+
+    # Copy extensions over
+    (umask 077; mkdir -p "${extensions_dir}")
+    for ext in extensions/*/PhylumExt.toml
+    do
+        ext_name=$(basename "$(dirname "${ext}")")
+        dest="${extensions_dir}/${ext_name}"
+
+        # Delete the old version if it exists
+        [ -e "${dest}" ] && rm -rf "${dest}"
+
+        # Install the extension
+        cp -Rf "extensions/${ext_name}" "${dest}"
+    done
+    success "Copied extensions to ${data_dir}/extensions"
 }
 
 cd "$(dirname "$0")"
