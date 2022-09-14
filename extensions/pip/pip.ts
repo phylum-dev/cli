@@ -261,6 +261,28 @@ function parseOutput(output: string): PackageEntry[] {
                 version: version,
             };
         },
+        'Requirement': (current: string[], _: ParseState): ParseState => {
+
+            if(current.length < 4)
+                throw new Error(`invalid input - requirement list too short ${JSON.stringify(current)}`);
+
+            const packageNameRaw = current[2];
+            const packageVersionRaw = current[current.length - 1];
+
+            const nameMatches = packageNameRaw.match(/([A-Za-z0-9.\-_]+)(.*)/);
+            if(!nameMatches || !nameMatches.length)
+                throw new Error(`invalid package name gathered as locally satisfied requirement: ${packageNameRaw}`);
+
+            const name = nameMatches[0];
+            const version = packageVersionRaw.replace('(', '').replace(')', '');
+            res.push({name: name, version: version});
+
+            return {
+                state: 'requirement',
+                name: null,
+                version: null,
+            };
+        },
         'Would': (current: string[], last: ParseState): ParseState => {
             // Not currently used, but included here for future use; this would receive a list
             // of _new_ packages only that would be installed; we are currently just capturing the total
