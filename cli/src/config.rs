@@ -1,13 +1,13 @@
 use std::env::VarError;
 #[cfg(unix)]
-use std::fs::{DirBuilder, Permissions};
+use std::fs::DirBuilder;
 use std::io::{self, Write};
 #[cfg(unix)]
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use chrono::{DateTime, Local};
 use phylum_types::types::auth::RefreshToken;
 use phylum_types::types::common::ProjectId;
@@ -180,28 +180,7 @@ pub fn get_current_project() -> Option<ProjectConfig> {
 }
 
 pub fn get_home_settings_path() -> Result<PathBuf> {
-    let home_path =
-        home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))?;
-
     let config_path = dirs::config_dir()?.join("phylum").join("settings.yaml");
-    let old_config_path = home_path.join(".phylum").join("settings.yaml");
-
-    // Migrate the config from the old location.
-    if !config_path.exists() && old_config_path.exists() {
-        let config_dir = config_path.parent().unwrap();
-
-        #[cfg(unix)]
-        {
-            fs::set_permissions(&old_config_path, Permissions::from_mode(0o600))?;
-            DirBuilder::new().recursive(true).mode(0o700).create(&config_dir)?;
-        }
-
-        #[cfg(not(unix))]
-        fs::create_dir_all(&config_dir)?;
-
-        fs::rename(old_config_path, &config_path).unwrap();
-    }
-
     Ok(config_path)
 }
 
