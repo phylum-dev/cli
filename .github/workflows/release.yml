@@ -114,7 +114,7 @@ jobs:
             cp -R shell-completions ${archive}/completions
             cp cli/cli/src/install.sh ${archive}/install.sh
             chmod a+x ${archive}/phylum
-            zip -0 -r ${archive}.zip ${archive}
+            zip -r ${archive}.zip ${archive}
           done
 
       - name: Upload release artifacts
