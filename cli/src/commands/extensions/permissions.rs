@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use anyhow::{anyhow, Result};
-use birdcage::error::Error as SandboxError;
+use birdcage::error::{Error as SandboxError, Result as SandboxResult};
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
@@ -175,7 +175,7 @@ impl From<&Permissions> for PermissionsOptions {
 }
 
 /// Construct sandbox with a set of pre-defined acceptable exceptions.
-pub fn default_sandbox() -> Result<Birdcage> {
+pub fn default_sandbox() -> SandboxResult<Birdcage> {
     let mut birdcage = Birdcage::new()?;
 
     // Permit read access to lib for dynamic linking.
@@ -215,7 +215,7 @@ pub fn default_sandbox() -> Result<Birdcage> {
 }
 
 /// Add an execption to the sandbox, ignoring invalid path errors.
-pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> Result<()> {
+pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxResult<()> {
     match birdcage.add_exception(exception) {
         Ok(_) => Ok(()),
         // Ignore invalid path errors.

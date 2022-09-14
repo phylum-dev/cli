@@ -1,13 +1,13 @@
 //! Extension API functions.
 
 use std::cell::RefCell;
+use std::io;
+#[cfg(unix)]
+use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
-use std::thread;
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
 
 use anyhow::{anyhow, Context, Error, Result};
 use birdcage::{Exception, Sandbox};
@@ -319,35 +319,41 @@ async fn parse_lockfile(
 /// possible even after the command has been spawned.
 #[op]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
-    // Spawn thread so only the executed command is sandboxed.
-    let thread_handle = thread::spawn(move || -> Result<_> {
-        // Lock down process permissions.
-        let mut birdcage = permissions::default_sandbox()?;
-        for path in process.exceptions.read.sandbox_paths().iter() {
-            permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))?;
-        }
-        for path in process.exceptions.write.sandbox_paths().iter() {
-            permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))?;
-        }
-        for path in process.exceptions.run.sandbox_paths().iter() {
-            let absolute_path = permissions::resolve_bin_path(path);
-            permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
-        }
-        if process.exceptions.net {
-            birdcage.add_exception(Exception::Networking)?;
-        }
-        birdcage.lock()?;
+    // Setup process to be run.
+    let mut command = Command::new(process.cmd);
+    command.args(&process.args);
+    command.stdin(process.stdin);
+    command.stdout(process.stdout);
+    command.stderr(process.stderr);
 
-        // Spawn the new command.
-        let mut command = Command::new(process.cmd);
-        command.args(&process.args);
-        command.stdin(process.stdin);
-        command.stdout(process.stdout);
-        command.stderr(process.stderr);
-        Ok(command.output()?)
-    });
+    // Apply sandbox to subprocess after fork.
+    unsafe {
+        command.pre_exec(move || {
+            let into_ioerr = |err| io::Error::new(io::ErrorKind::Other, err);
 
-    let output = thread_handle.join().map_err(|_| anyhow!("sandbox worker thread error"))??;
+            let mut birdcage = permissions::default_sandbox().map_err(into_ioerr)?;
+            for path in process.exceptions.read.sandbox_paths().iter() {
+                permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.write.sandbox_paths().iter() {
+                permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.run.sandbox_paths().iter() {
+                let absolute_path = permissions::resolve_bin_path(path);
+                permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
+                    .map_err(into_ioerr)?;
+            }
+            if process.exceptions.net {
+                birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
+            }
+            birdcage.lock().map_err(into_ioerr)?;
+            Ok(())
+        });
+    }
+
+    let output = command.output()?;
 
     Ok(ProcessOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
