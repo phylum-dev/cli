@@ -73,7 +73,7 @@ impl Extension {
     pub fn install(&self) -> Result<()> {
         println!("Installing extension {}...", self.name());
 
-        let target_prefix = extension_path(self.name())?;
+        let target_prefix = extension_install_path(self.name())?;
 
         // TODO we may want to implement `upgrade` in the future, which would
         // allow writing to the path of an already installed extension.
@@ -118,10 +118,14 @@ impl Extension {
 
     pub fn uninstall(self) -> Result<()> {
         println!("Uninstalling extension {}...", self.name());
-        let target_prefix = extension_path(self.name())?;
+        let installed_paths = extension_paths(self.name())?;
 
-        if target_prefix != self.path {
+        if !installed_paths.contains(&self.path) {
             return Err(anyhow!("extension {} is not installed, skipping", self.name()));
+        }
+
+        if extension_install_path(self.name())? != self.path {
+            return Err(anyhow!("extension {} cannot be uninstalled", self.name()));
         }
 
         fs::remove_dir_all(&self.path)?;
@@ -133,7 +137,18 @@ impl Extension {
 
     /// Load an extension from the default path.
     pub fn load(name: &str) -> Result<Extension, anyhow::Error> {
-        Extension::try_from(extension_path(name)?)
+        let mut err = None;
+        for path in extension_paths(name)? {
+            match Extension::try_from(path) {
+                Ok(ext) => return Ok(ext),
+                Err(e) => {
+                    if err.is_none() {
+                        err = Some(e)
+                    }
+                },
+            }
+        }
+        Err(err.unwrap_or_else(|| anyhow!("Extension has no valid path")))
     }
 
     /// Return the path to this extension.
@@ -215,11 +230,22 @@ pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
     }
 }
 
-// Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
-pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
-    Ok(dirs::data_dir()?.join("phylum").join("extensions"))
+// Extension search path:
+//   * $XDG_DATA_HOME/phylum/extensions
+//   * $XDG_DATA_HOME/phylum/official-extensions
+pub fn extensions_paths() -> Result<Vec<PathBuf>, anyhow::Error> {
+    let data_dir = dirs::data_dir()?.join("phylum");
+    Ok(vec![data_dir.join("extensions"), data_dir.join("official-extensions")])
 }
 
-fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
-    Ok(extensions_path()?.join(name))
+/// Possible installed paths for an extension of the given name.
+fn extension_paths(name: &str) -> Result<Vec<PathBuf>, anyhow::Error> {
+    Ok(extensions_paths()?.into_iter().map(|p| p.join(name)).collect())
+}
+
+/// The path where a new extensions should be installed.
+fn extension_install_path(name: &str) -> Result<PathBuf, anyhow::Error> {
+    // Extensions should always be installed to the first dir in the list
+    let extensions_path = extensions_paths()?.into_iter().next().unwrap();
+    Ok(extensions_path.join(name))
 }

@@ -9,7 +9,7 @@ set -eu
 
 data_dir="${XDG_DATA_HOME:-${HOME}/.local/share}/phylum"
 completions_dir="${data_dir}/completions"
-extensions_dir="${data_dir}/extensions"
+extensions_dir="${data_dir}/official-extensions"
 bin_dir="${HOME}/.local/bin"
 
 error() {
@@ -146,7 +146,7 @@ copy_files() {
         # Install the extension
         cp -Rf "extensions/${ext_name}" "${dest}"
     done
-    success "Copied extensions to ${data_dir}/extensions"
+    success "Copied extensions to ${extensions_dir}"
 }
 
 cd "$(dirname "$0")"

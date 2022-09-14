@@ -300,20 +300,26 @@ async fn handle_list_extensions() -> CommandResult {
 /// Return a list of installed extensions. Filter out invalid extensions instead
 /// of exiting early.
 pub fn installed_extensions() -> Result<Vec<Extension>> {
-    let extensions_path = extension::extensions_path()?;
+    let extensions_paths = extension::extensions_paths()?;
 
-    let dir_entry = match fs::read_dir(extensions_path) {
-        Ok(d) => d,
-        Err(e) => {
-            if e.kind() == ErrorKind::NotFound {
-                return Ok(Vec::new());
-            } else {
-                return Err(e.into());
-            }
-        },
-    };
+    let mut dir_entries = Vec::new();
+    for extensions_path in extensions_paths {
+        let dir_entry = match fs::read_dir(extensions_path) {
+            Ok(d) => d,
+            Err(e) => {
+                if e.kind() == ErrorKind::NotFound {
+                    continue;
+                } else {
+                    return Err(e.into());
+                }
+            },
+        };
+        dir_entries.push(dir_entry)
+    }
 
-    Ok(dir_entry
+    Ok(dir_entries
+        .into_iter()
+        .flatten()
         .filter_map(|dir_entry| {
             match dir_entry
                 .map_err(|e| e.into())
