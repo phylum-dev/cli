@@ -27,22 +27,89 @@ class FileBackup {
   }
 }
 
-// Analyze new packages.
-async function checkDryRun(subcommand: string, args: string[]) {
-    try {
-        await Deno.stat('package.json');
-    } catch (e) {
-        console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
-        console.error(`[${red("phylum")}] Please move to the yarn project's top level directory and try again.`);
-        Deno.exit(125);
+// Ensure we're in a yarn root directory.
+try {
+    await Deno.stat('package.json');
+} catch (e) {
+    console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
+    console.error(`[${red("phylum")}] Please move to the yarn project's top level directory and try again.`);
+    Deno.exit(125);
+}
+
+// Store initial package manager file state.
+const packageLockBackup = new FileBackup('./yarn.lock');
+await packageLockBackup.backup();
+const packageBackup = new FileBackup('./package.json');
+await packageBackup.backup();
+
+// Analyze new dependencies with phylum before install/update.
+if (Deno.args.length >= 1
+    && (
+        Deno.args[0] === 'add')
+        || Deno.args[0] === 'install'
+        || Deno.args[0] === 'up'
+        || Deno.args[0] === 'dedupe'
+   ) {
+    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+
+    console.log(`[${green("phylum")}] Downloading packages to cache…`);
+
+    // Download packages to cache without sandbox.
+    let status = await Deno.run({ cmd: ['yarn', ...Deno.args, '--mode=skip-build']}).status();
+
+    // Ensure download worked. Failure is still "safe" for the user.
+    if (!status.success) {
+        console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
+        abort(status.code);
+    } else {
+        console.log(`[${green("phylum")}] Cache updated successfully.\n`);
     }
 
-    // Backup package/lock files.
-    const packageLockBackup = new FileBackup('./yarn.lock');
-    await packageLockBackup.backup();
-    const packageBackup = new FileBackup('./package.json');
-    await packageBackup.backup();
+    console.log(`[${green("phylum")}] Building packages inside sandbox…`);
 
+    // Run build inside a sandbox.
+    const output = PhylumApi.runSandboxed({
+        cmd: 'yarn',
+        args: ['install', '--immutable', '--immutable-cache'],
+        exceptions: {
+            run: ['yarn', 'node'],
+            read: ['./', '~/.cache/node/corepack'],
+            write: ['./.yarn/install-state.gz', '/tmp'],
+            net: false,
+        },
+    });
+
+    // Failure here could indicate vulnerabilities; report to the user.
+    if (!output.success) {
+        console.log(`[${red("phylum")}] Sandboxed build failed.`);
+        console.log(`[${red("phylum")}]`);
+
+        // Check for SIGSYS, since this confirms sandbox violation.
+        if (output.signal === 31) {
+            console.log(`[${red("phylum")}] Sandbox violation confirmed during install.`);
+            console.log(`[${red("phylum")}] Do NOT retry installation.`);
+            console.log(`[${red("phylum")}]`);
+            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum.`);
+
+            abort(128);
+        } else {
+            console.log(`[${red("phylum")}] This could mean one of your packages attempted to access a restricted resource.`);
+            console.log(`[${red("phylum")}] Do not retry installation without Phylum's extension.`);
+            console.log(`[${red("phylum")}]`);
+            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum should this error persist.`);
+
+            abort(output.code);
+        }
+    } else {
+        console.log(`[${green("phylum")}] Packages built successfully.`);
+    }
+} else {
+    let status = await Deno.run({ cmd: ['yarn', ...Deno.args] }).status();
+    Deno.exit(status.code);
+}
+
+// Analyze new packages.
+async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] Updating lockfile…`);
 
     let status = await Deno.run({
@@ -57,9 +124,9 @@ async function checkDryRun(subcommand: string, args: string[]) {
 
     const lockfile = await PhylumApi.parseLockfile('./yarn.lock', 'yarn');
 
-    // Restore package/lock files.
-    await packageLockBackup.restoreOrDelete();
-    await packageBackup.restoreOrDelete();
+    // Ensure `checkDryRun` never modifies package manager files,
+    // regardless of success.
+    await restoreBackup();
 
     console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
     console.log(`[${green("phylum")}] Analyzing packages…`);
@@ -83,66 +150,17 @@ async function checkDryRun(subcommand: string, args: string[]) {
     }
 }
 
-// Analyze new dependencies with phylum before install/update.
-if (Deno.args.length >= 1
-    && (
-        Deno.args[0] === 'add')
-        || Deno.args[0] === 'install'
-        || Deno.args[0] === 'up'
-        || Deno.args[0] === 'dedupe'
-   ) {
-    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+// Abort with specified exit code.
+//
+// This assumes that execution was not successful and it will automatically
+// revert to the last stored package manager files.
+async function abort(code) {
+    await restoreBackup();
+    Deno.exit(code);
+}
 
-    console.log(`[${green("phylum")}] Downloading packages to cache…`);
-
-    // Download packages to cache without sandbox.
-    let status = await Deno.run({ cmd: ['yarn', ...Deno.args, '--mode=skip-build']}).status();
-
-    // Ensure download worked. Failure is still "safe" for the user.
-    if (!status.success) {
-        console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
-        Deno.exit(status.code);
-    } else {
-        console.log(`[${green("phylum")}] Cache updated successfully.\n`);
-    }
-
-    console.log(`[${green("phylum")}] Building packages inside sandbox…`);
-
-    // Run build inside a sandbox.
-    const output = PhylumApi.runSandboxed({
-        cmd: 'yarn',
-        args: ['install', '--immutable', '--immutable-cache'],
-        exceptions: {
-            run: ['yarn', 'node'],
-            read: ['./', '~/.cache/node/corepack'],
-            write: ['./.yarn/install-state.gz'],
-            net: false,
-        },
-    });
-
-    // Failure here could indicate vulnerabilities; report to the user.
-    if (!output.success) {
-        console.log(`[${red("phylum")}] Sandboxed build failed.`);
-        console.log(`[${red("phylum")}]`);
-
-        // Check for SIGSYS, since this confirms sandbox violation.
-        if (output.signal === 31) {
-            console.log(`[${red("phylum")}] Sandbox violation confirmed during install.`);
-            console.log(`[${red("phylum")}] Do NOT retry installation.`);
-            console.log(`[${red("phylum")}]`);
-            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum.`);
-        } else {
-            console.log(`[${red("phylum")}] This could mean one of your packages attempted to access a restricted resource.`);
-            console.log(`[${red("phylum")}] Do not retry installation without Phylum's extension.`);
-            console.log(`[${red("phylum")}]`);
-            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum should this error persist.`);
-        }
-    } else {
-        console.log(`[${green("phylum")}] Packages built successfully.`);
-    }
-
-    Deno.exit(output.code);
-} else {
-    let status = await Deno.run({ cmd: ['yarn', ...Deno.args] }).status();
-    Deno.exit(status.code);
+// Restore package manager files.
+async function restoreBackup() {
+    await packageLockBackup.restoreOrDelete();
+    await packageBackup.restoreOrDelete();
 }

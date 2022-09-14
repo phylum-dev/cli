@@ -3,7 +3,10 @@ description = "yarn package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-run = ['yarn', 'node']
+run = ['yarn', 'node', "/usr/bin", "/tmp"]
 read = ['./', '~/.cache/node/corepack', '~/.yarn']
-write = ['./']
+write = ['./', '/tmp',
+#TODO
+'~/.yarn',
+]
 net = true
