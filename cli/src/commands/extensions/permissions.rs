@@ -206,6 +206,18 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::Read("/etc/ca-certificates".into()))?;
     add_exception(&mut birdcage, Exception::Read("/etc/ssl".into()))?;
 
+    // Allow executing anything in `$PATH`.
+    //
+    // While this is a quite wide-reaching exception, it should be safe considering
+    // that the directories in `$PATH` shouldn't contain any sensitive data and
+    // the remaining sandbox restrictions still applies.
+    //
+    // This is required since many package manager's build scripts will use various
+    // executables in their build scripts.
+    for path in env::var("PATH").iter().map(|path| path.split(':')).flatten() {
+        add_exception(&mut birdcage, Exception::ExecuteAndRead(path.into()))?;
+    }
+
     // TODO: I really don't like this
     if let Ok(config_dir) = dirs::config_dir() {
         add_exception(&mut birdcage, Exception::Write(config_dir.join("phylum/settings.yaml")))?;
