@@ -5,14 +5,14 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use phylum_parse::lockfiles::{get_path_parser, LockFileFormat};
+use phylum_parse::lockfiles::{get_path_parser, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
 use crate::{print_user_success, print_user_warning};
 
 pub fn lockfile_types() -> Vec<&'static str> {
-    LockFileFormat::iter().map(|format| format.name()).chain(["auto"]).collect()
+    LockfileFormat::iter().map(|format| format.name()).chain(["auto"]).collect()
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
@@ -24,7 +24,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
         let (pkgs, _) = try_get_packages(Path::new(lockfile))?;
         pkgs
     } else {
-        let parser = lockfile_type.parse::<LockFileFormat>().unwrap().parser();
+        let parser = lockfile_type.parse::<LockfileFormat>().unwrap().parser();
 
         let data = read_to_string(lockfile)?;
         parser.parse(&data)?
@@ -43,7 +43,7 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 
     let data = read_to_string(path)?;
 
-    for format in LockFileFormat::iter() {
+    for format in LockfileFormat::iter() {
         if let Ok(pkgs) = format.parser().parse(data.as_str()) {
             if !pkgs.is_empty() {
                 print_user_success!("Identified lockfile type: {}", format);

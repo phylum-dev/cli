@@ -5,7 +5,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
 
-use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
+use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
 
 pub struct CSProj;
 
@@ -71,8 +71,8 @@ impl Parse for CSProj {
         Ok(parsed.into())
     }
 
-    fn format(&self) -> LockFileFormat {
-        LockFileFormat::Msbuild
+    fn format(&self) -> LockfileFormat {
+        LockfileFormat::Msbuild
     }
 
     fn package_type(&self) -> PackageType {

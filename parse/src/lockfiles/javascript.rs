@@ -9,7 +9,7 @@ use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
-use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
+use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
 
 pub struct PackageLock;
 pub struct YarnLock;
@@ -79,8 +79,8 @@ impl Parse for PackageLock {
         }
     }
 
-    fn format(&self) -> LockFileFormat {
-        LockFileFormat::Npm
+    fn format(&self) -> LockfileFormat {
+        LockfileFormat::Npm
     }
 
     fn package_type(&self) -> PackageType {
@@ -196,8 +196,8 @@ impl Parse for YarnLock {
         Ok(packages)
     }
 
-    fn format(&self) -> LockFileFormat {
-        LockFileFormat::Yarn
+    fn format(&self) -> LockfileFormat {
+        LockfileFormat::Yarn
     }
 
     fn package_type(&self) -> PackageType {

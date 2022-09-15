@@ -7,7 +7,7 @@ use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
-use crate::lockfiles::{LockFileFormat, Parse, ParseResult};
+use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
 
 pub struct GemLock;
 
@@ -21,8 +21,8 @@ impl Parse for GemLock {
         Ok(entries)
     }
 
-    fn format(&self) -> LockFileFormat {
-        LockFileFormat::Gem
+    fn format(&self) -> LockfileFormat {
+        LockfileFormat::Gem
     }
 
     fn package_type(&self) -> PackageType {

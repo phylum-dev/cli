@@ -8,7 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
-use phylum_parse::lockfiles::LockFileFormat;
+use phylum_parse::lockfiles::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::JobId;
 use phylum_types::types::group::ListUserGroupsResponse;
@@ -225,7 +225,7 @@ async fn parse_lockfile(
     // Attempt to parse as requested lockfile type.
 
     let parser = lockfile_type
-        .parse::<LockFileFormat>()
+        .parse::<LockfileFormat>()
         .with_context(|| format!("Unrecognized lockfile type: `{lockfile_type}`"))?
         .parser();
 

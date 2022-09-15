@@ -22,7 +22,7 @@ mod ruby;
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
-pub enum LockFileFormat {
+pub enum LockfileFormat {
     Yarn,
     Npm,
     Gem,
@@ -40,21 +40,21 @@ pub enum LockFileFormat {
     Msbuild,
 }
 
-impl FromStr for LockFileFormat {
+impl FromStr for LockfileFormat {
     type Err = serde::de::value::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        LockFileFormat::deserialize(s.into_deserializer())
+        LockfileFormat::deserialize(s.into_deserializer())
     }
 }
 
-impl Display for LockFileFormat {
+impl Display for LockfileFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.serialize(f)
     }
 }
 
-impl LockFileFormat {
+impl LockfileFormat {
     /// Get the canonical Phylum name for this format.
     ///
     /// This is the string used in documentation and examples where the user
@@ -64,56 +64,56 @@ impl LockFileFormat {
     /// returns a `&'static str`.
     pub const fn name(&self) -> &'static str {
         match self {
-            LockFileFormat::Yarn => "yarn",
-            LockFileFormat::Npm => "npm",
-            LockFileFormat::Gem => "gem",
-            LockFileFormat::Pip => "pip",
-            LockFileFormat::Pipenv => "pipenv",
-            LockFileFormat::Poetry => "poetry",
-            LockFileFormat::Maven => "mvn",
-            LockFileFormat::Gradle => "gradle",
-            LockFileFormat::Msbuild => "nuget",
+            LockfileFormat::Yarn => "yarn",
+            LockfileFormat::Npm => "npm",
+            LockfileFormat::Gem => "gem",
+            LockfileFormat::Pip => "pip",
+            LockfileFormat::Pipenv => "pipenv",
+            LockfileFormat::Poetry => "poetry",
+            LockfileFormat::Maven => "mvn",
+            LockfileFormat::Gradle => "gradle",
+            LockfileFormat::Msbuild => "nuget",
         }
     }
 
     /// Get the corresponding parser for the specified format.
     pub fn parser(&self) -> &'static dyn Parse {
         match self {
-            LockFileFormat::Yarn => &YarnLock,
-            LockFileFormat::Npm => &PackageLock,
-            LockFileFormat::Gem => &GemLock,
-            LockFileFormat::Pip => &PyRequirements,
-            LockFileFormat::Pipenv => &PipFile,
-            LockFileFormat::Poetry => &Poetry,
-            LockFileFormat::Maven => &Pom,
-            LockFileFormat::Gradle => &GradleLock,
-            LockFileFormat::Msbuild => &CSProj,
+            LockfileFormat::Yarn => &YarnLock,
+            LockfileFormat::Npm => &PackageLock,
+            LockfileFormat::Gem => &GemLock,
+            LockfileFormat::Pip => &PyRequirements,
+            LockfileFormat::Pipenv => &PipFile,
+            LockfileFormat::Poetry => &Poetry,
+            LockfileFormat::Maven => &Pom,
+            LockfileFormat::Gradle => &GradleLock,
+            LockfileFormat::Msbuild => &CSProj,
         }
     }
 
     /// Iterate over all supported lock file formats.
-    pub fn iter() -> LockFileFormatIter {
-        LockFileFormatIter(0)
+    pub fn iter() -> LockfileFormatIter {
+        LockfileFormatIter(0)
     }
 }
 
 /// An iterator of all supported lock file formats.
-pub struct LockFileFormatIter(u8);
+pub struct LockfileFormatIter(u8);
 
-impl Iterator for LockFileFormatIter {
-    type Item = LockFileFormat;
+impl Iterator for LockfileFormatIter {
+    type Item = LockfileFormat;
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = match self.0 {
-            0 => LockFileFormat::Yarn,
-            1 => LockFileFormat::Npm,
-            2 => LockFileFormat::Gem,
-            3 => LockFileFormat::Pip,
-            4 => LockFileFormat::Pipenv,
-            5 => LockFileFormat::Poetry,
-            6 => LockFileFormat::Maven,
-            7 => LockFileFormat::Gradle,
-            8 => LockFileFormat::Msbuild,
+            0 => LockfileFormat::Yarn,
+            1 => LockfileFormat::Npm,
+            2 => LockfileFormat::Gem,
+            3 => LockfileFormat::Pip,
+            4 => LockfileFormat::Pipenv,
+            5 => LockfileFormat::Poetry,
+            6 => LockfileFormat::Maven,
+            7 => LockfileFormat::Gradle,
+            8 => LockfileFormat::Msbuild,
             _ => return None,
         };
         self.0 += 1;
@@ -128,7 +128,7 @@ pub trait Parse {
     fn parse(&self, data: &str) -> ParseResult;
 
     /// Indicate the type of file parsed by this parser
-    fn format(&self) -> LockFileFormat;
+    fn format(&self) -> LockfileFormat;
 
     /// Indicate the type of packages parsed by this parser
     fn package_type(&self) -> PackageType;
@@ -146,7 +146,7 @@ pub trait Parse {
 ///
 /// The file does not need to exist.
 pub fn get_path_parser<P: AsRef<Path>>(path: P) -> Option<&'static dyn Parse> {
-    LockFileFormat::iter().map(|f| f.parser()).find(|p| p.is_path_lockfile(path.as_ref()))
+    LockfileFormat::iter().map(|f| f.parser()).find(|p| p.is_path_lockfile(path.as_ref()))
 }
 
 #[cfg(test)]
@@ -154,18 +154,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_path_parser_identifies_lock_file_parsers() {
-        let test_cases: &[(&str, LockFileFormat)] = &[
-            ("Gemfile.lock", LockFileFormat::Gem),
-            ("yarn.lock", LockFileFormat::Yarn),
-            ("package-lock.json", LockFileFormat::Npm),
-            ("sample.csproj", LockFileFormat::Msbuild),
-            ("gradle.lockfile", LockFileFormat::Gradle),
-            ("effective-pom.xml", LockFileFormat::Maven),
-            ("requirements.txt", LockFileFormat::Pip),
-            ("Pipfile", LockFileFormat::Pipenv),
-            ("Pipfile.lock", LockFileFormat::Pipenv),
-            ("poetry.lock", LockFileFormat::Poetry),
+    fn get_path_parser_identifies_lockfile_parsers() {
+        let test_cases: &[(&str, LockfileFormat)] = &[
+            ("Gemfile.lock", LockfileFormat::Gem),
+            ("yarn.lock", LockfileFormat::Yarn),
+            ("package-lock.json", LockfileFormat::Npm),
+            ("sample.csproj", LockfileFormat::Msbuild),
+            ("gradle.lockfile", LockfileFormat::Gradle),
+            ("effective-pom.xml", LockfileFormat::Maven),
+            ("requirements.txt", LockfileFormat::Pip),
+            ("Pipfile", LockfileFormat::Pipenv),
+            ("Pipfile.lock", LockfileFormat::Pipenv),
+            ("poetry.lock", LockfileFormat::Poetry),
         ];
 
         for (file, expected_type) in test_cases {
@@ -175,29 +175,29 @@ mod tests {
     }
 
     #[test]
-    fn lock_file_format_parser_gets_correct_parser() {
-        // Make sure that the parser returned by LockFileFormat::parser() reports the
+    fn lockfile_format_parser_gets_correct_parser() {
+        // Make sure that the parser returned by LockfileFormat::parser() reports the
         // same format from its Parse::format().
-        for format in LockFileFormat::iter() {
+        for format in LockfileFormat::iter() {
             let parser = format.parser();
             assert_eq!(format, parser.format());
         }
     }
 
     #[test]
-    fn lock_file_format_from_str_parses_correctly() {
+    fn lockfile_format_from_str_parses_correctly() {
         for (name, expected_format) in [
-            ("yarn", LockFileFormat::Yarn),
-            ("npm", LockFileFormat::Npm),
-            ("gem", LockFileFormat::Gem),
-            ("pip", LockFileFormat::Pip),
-            ("pipenv", LockFileFormat::Pipenv),
-            ("poetry", LockFileFormat::Poetry),
-            ("mvn", LockFileFormat::Maven),
-            ("maven", LockFileFormat::Maven),
-            ("gradle", LockFileFormat::Gradle),
-            ("nuget", LockFileFormat::Msbuild),
-            ("msbuild", LockFileFormat::Msbuild),
+            ("yarn", LockfileFormat::Yarn),
+            ("npm", LockfileFormat::Npm),
+            ("gem", LockfileFormat::Gem),
+            ("pip", LockfileFormat::Pip),
+            ("pipenv", LockfileFormat::Pipenv),
+            ("poetry", LockfileFormat::Poetry),
+            ("mvn", LockfileFormat::Maven),
+            ("maven", LockfileFormat::Maven),
+            ("gradle", LockfileFormat::Gradle),
+            ("nuget", LockfileFormat::Msbuild),
+            ("msbuild", LockfileFormat::Msbuild),
         ] {
             let actual_format = name.parse().expect(&format!("Could not parse {:?}", name));
             assert_eq!(
@@ -209,17 +209,17 @@ mod tests {
     }
 
     #[test]
-    fn lock_file_format_display_serializes_correctly() {
+    fn lockfile_format_display_serializes_correctly() {
         for (expected_name, format) in [
-            ("yarn", LockFileFormat::Yarn),
-            ("npm", LockFileFormat::Npm),
-            ("gem", LockFileFormat::Gem),
-            ("pip", LockFileFormat::Pip),
-            ("pipenv", LockFileFormat::Pipenv),
-            ("poetry", LockFileFormat::Poetry),
-            ("mvn", LockFileFormat::Maven),
-            ("gradle", LockFileFormat::Gradle),
-            ("nuget", LockFileFormat::Msbuild),
+            ("yarn", LockfileFormat::Yarn),
+            ("npm", LockfileFormat::Npm),
+            ("gem", LockfileFormat::Gem),
+            ("pip", LockfileFormat::Pip),
+            ("pipenv", LockfileFormat::Pipenv),
+            ("poetry", LockfileFormat::Poetry),
+            ("mvn", LockfileFormat::Maven),
+            ("gradle", LockfileFormat::Gradle),
+            ("nuget", LockfileFormat::Msbuild),
         ] {
             let actual_name = format.to_string();
             assert_eq!(
@@ -231,8 +231,8 @@ mod tests {
     }
 
     #[test]
-    fn lock_file_format_name_matches_to_string() {
-        for format in LockFileFormat::iter() {
+    fn lockfile_format_name_matches_to_string() {
+        for format in LockfileFormat::iter() {
             let expected_name = format.to_string();
             assert_eq!(
                 &expected_name,
