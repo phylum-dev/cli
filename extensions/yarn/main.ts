@@ -72,9 +72,9 @@ if (Deno.args.length >= 1
         cmd: 'yarn',
         args: ['install', '--immutable', '--immutable-cache'],
         exceptions: {
-            run: ['yarn', 'node'],
-            read: ['./', '~/.cache/node/corepack'],
-            write: ['./.yarn/install-state.gz', '/tmp'],
+            run: ['yarn', '/tmp'],
+            read: ['~/.cache/node/corepack', './'],
+            write: ['/tmp', './.yarn'],
             net: false,
         },
     });
