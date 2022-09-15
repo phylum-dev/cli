@@ -139,7 +139,7 @@ pub trait Parse {
     fn is_path_lockfile(&self, path: &Path) -> bool;
 }
 
-/// Get the parser of a potential lock file.
+/// Get the parser for a potential lock file.
 ///
 /// If the file name does not look like a lock file supported by this crate,
 /// `None` is returned.
