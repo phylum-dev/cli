@@ -9,7 +9,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 
 use super::parsers::gradle_dep;
-use crate::{LockfileFormat, Parse, ParseResult};
+use crate::{Parse, ParseResult};
 
 pub struct Pom;
 pub struct GradleLock;
@@ -22,10 +22,6 @@ impl Parse for GradleLock {
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse requirements file")?;
         Ok(entries)
-    }
-
-    fn format(&self) -> LockfileFormat {
-        LockfileFormat::Gradle
     }
 
     fn package_type(&self) -> PackageType {
@@ -171,10 +167,6 @@ impl Parse for Pom {
                 Ok(packages)
             },
         }
-    }
-
-    fn format(&self) -> LockfileFormat {
-        LockfileFormat::Maven
     }
 
     fn package_type(&self) -> PackageType {

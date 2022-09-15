@@ -127,9 +127,6 @@ pub trait Parse {
     /// Parse from a string.
     fn parse(&self, data: &str) -> ParseResult;
 
-    /// Indicate the type of file parsed by this parser.
-    fn format(&self) -> LockfileFormat;
-
     /// Indicate the type of packages parsed by this parser.
     fn package_type(&self) -> PackageType;
 
@@ -139,14 +136,14 @@ pub trait Parse {
     fn is_path_lockfile(&self, path: &Path) -> bool;
 }
 
-/// Get the parser for a potential lock file.
+/// Get the expected format of a potential lock file.
 ///
 /// If the file name does not look like a lock file supported by this crate,
 /// `None` is returned.
 ///
 /// The file does not need to exist.
-pub fn get_path_parser<P: AsRef<Path>>(path: P) -> Option<&'static dyn Parse> {
-    LockfileFormat::iter().map(|f| f.parser()).find(|p| p.is_path_lockfile(path.as_ref()))
+pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
+    LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
 }
 
 #[cfg(test)]
@@ -169,18 +166,8 @@ mod tests {
         ];
 
         for (file, expected_type) in test_cases {
-            let pkg_type = get_path_parser(Path::new(file)).map(|p| p.format());
+            let pkg_type = get_path_format(Path::new(file));
             assert_eq!(pkg_type, Some(*expected_type), "{}", file);
-        }
-    }
-
-    #[test]
-    fn lockfile_format_parser_gets_correct_parser() {
-        // Make sure that the parser returned by LockfileFormat::parser() reports the
-        // same format from its Parse::format().
-        for format in LockfileFormat::iter() {
-            let parser = format.parser();
-            assert_eq!(format, parser.format());
         }
     }
 

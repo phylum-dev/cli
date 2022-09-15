@@ -10,7 +10,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::parsers::pypi;
-use crate::{LockfileFormat, Parse, ParseResult};
+use crate::{Parse, ParseResult};
 
 pub struct PyRequirements;
 pub struct PipFile;
@@ -24,10 +24,6 @@ impl Parse for PyRequirements {
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse requirements file")?;
         Ok(entries)
-    }
-
-    fn format(&self) -> LockfileFormat {
-        LockfileFormat::Pip
     }
 
     fn package_type(&self) -> PackageType {
@@ -92,10 +88,6 @@ impl Parse for PipFile {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    fn format(&self) -> LockfileFormat {
-        LockfileFormat::Pipenv
-    }
-
     fn package_type(&self) -> PackageType {
         PackageType::PyPi
     }
@@ -127,10 +119,6 @@ impl Parse for Poetry {
             })
             .map(PackageDescriptor::from)
             .collect())
-    }
-
-    fn format(&self) -> LockfileFormat {
-        LockfileFormat::Poetry
     }
 
     fn package_type(&self) -> PackageType {

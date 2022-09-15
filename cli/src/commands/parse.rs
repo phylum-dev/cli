@@ -5,7 +5,7 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use phylum_lockfile::{get_path_parser, LockfileFormat};
+use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
@@ -59,9 +59,10 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
 pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    let res = match get_path_parser(path) {
-        Some(parser) => {
+    let res = match get_path_format(path) {
+        Some(format) => {
             let data = read_to_string(path)?;
+            let parser = format.parser();
             (parser.parse(&data)?, parser.package_type())
         },
         None => try_get_packages(path)?,
