@@ -10,7 +10,6 @@ pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
-use strum::{EnumIter, IntoEnumIterator};
 
 mod csharp;
 mod java;
@@ -20,9 +19,7 @@ mod python;
 mod ruby;
 
 /// A file format that can be parsed.
-#[derive(
-    Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum LockFileFormat {
@@ -71,6 +68,35 @@ impl LockFileFormat {
             LockFileFormat::Gradle => &GradleLock,
             LockFileFormat::Msbuild => &CSProj,
         }
+    }
+
+    /// Iterate over all supported lock file formats.
+    pub fn iter() -> LockFileFormatIter {
+        LockFileFormatIter(0)
+    }
+}
+
+/// An iterator of all supported lock file formats.
+pub struct LockFileFormatIter(u8);
+
+impl Iterator for LockFileFormatIter {
+    type Item = LockFileFormat;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = match self.0 {
+            0 => LockFileFormat::Yarn,
+            1 => LockFileFormat::Npm,
+            2 => LockFileFormat::Gem,
+            3 => LockFileFormat::Pip,
+            4 => LockFileFormat::Pipenv,
+            5 => LockFileFormat::Poetry,
+            6 => LockFileFormat::Maven,
+            7 => LockFileFormat::Gradle,
+            8 => LockFileFormat::Msbuild,
+            _ => return None,
+        };
+        self.0 += 1;
+        Some(item)
     }
 }
 

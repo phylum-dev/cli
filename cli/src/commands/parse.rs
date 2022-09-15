@@ -7,7 +7,6 @@ use std::path::Path;
 use anyhow::{anyhow, Result};
 use phylum_parse::lockfiles::{get_path_parser, LockFileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
-use strum::IntoEnumIterator;
 
 use super::{CommandResult, ExitCode};
 use crate::{print_user_success, print_user_warning};
