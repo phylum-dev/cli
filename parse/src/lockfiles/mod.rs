@@ -55,6 +55,27 @@ impl Display for LockFileFormat {
 }
 
 impl LockFileFormat {
+    /// Get the canonical Phylum name for this format.
+    ///
+    /// This is the string used in documentation and examples where the user
+    /// specifies a lock file format by name.
+    ///
+    /// This method returns the same value as `.to_string()`, but is const and
+    /// returns a `&'static str`.
+    pub const fn name(&self) -> &'static str {
+        match self {
+            LockFileFormat::Yarn => "yarn",
+            LockFileFormat::Npm => "npm",
+            LockFileFormat::Gem => "gem",
+            LockFileFormat::Pip => "pip",
+            LockFileFormat::Pipenv => "pipenv",
+            LockFileFormat::Poetry => "poetry",
+            LockFileFormat::Maven => "mvn",
+            LockFileFormat::Gradle => "gradle",
+            LockFileFormat::Msbuild => "nuget",
+        }
+    }
+
     /// Get the corresponding parser for the specified format.
     pub fn parser(&self) -> &'static dyn Parse {
         match self {
@@ -205,6 +226,20 @@ mod tests {
                 expected_name, &actual_name,
                 "{:?} should to_string as {:?}",
                 format, expected_name,
+            );
+        }
+    }
+
+    #[test]
+    fn lock_file_format_name_matches_to_string() {
+        for format in LockFileFormat::iter() {
+            let expected_name = format.to_string();
+            assert_eq!(
+                &expected_name,
+                format.name(),
+                "{:?}.name() should be {:?}",
+                format,
+                expected_name,
             );
         }
     }
