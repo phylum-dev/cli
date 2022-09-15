@@ -124,13 +124,13 @@ impl Iterator for LockfileFormatIter {
 pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
 pub trait Parse {
-    /// Parse from a string
+    /// Parse from a string.
     fn parse(&self, data: &str) -> ParseResult;
 
-    /// Indicate the type of file parsed by this parser
+    /// Indicate the type of file parsed by this parser.
     fn format(&self) -> LockfileFormat;
 
-    /// Indicate the type of packages parsed by this parser
+    /// Indicate the type of packages parsed by this parser.
     fn package_type(&self) -> PackageType;
 
     /// Test if a file name could be a lock file supported by this parser.
