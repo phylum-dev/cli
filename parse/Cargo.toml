@@ -4,8 +4,7 @@ description = "Parsers used by Phylum"
 version = "0.1.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version = "1.60"
 
 [dependencies]
 anyhow = "1.0.44"
