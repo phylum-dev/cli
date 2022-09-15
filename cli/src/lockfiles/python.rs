@@ -104,7 +104,9 @@ impl Parse for Poetry {
             .packages
             .drain(..)
             .filter(|package| {
-                package.source.as_ref().map_or(true, |source| source.source_type == "git")
+                package.source.as_ref().map_or(true, |source| {
+                    source.source_type == "git" || source.source_type == "legacy"
+                })
             })
             .map(PackageDescriptor::from)
             .collect())
