@@ -1,5 +1,5 @@
 [package]
-name = "phylum-parse"
+name = "phylum_parse"
 description = "Parsers used by Phylum"
 version = "0.1.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
