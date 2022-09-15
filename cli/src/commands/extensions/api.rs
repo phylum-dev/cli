@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
-use birdcage::{Exception, Sandbox};
+use birdcage::{Exception, Sandbox, Birdcage};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
@@ -78,6 +78,8 @@ struct ProcessException {
     run: Permission,
     #[serde(default)]
     net: bool,
+    #[serde(default)]
+    strict: bool,
 }
 
 /// Standard I/O behavior.
@@ -331,7 +333,12 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
         command.pre_exec(move || {
             let into_ioerr = |err| io::Error::new(io::ErrorKind::Other, err);
 
-            let mut birdcage = permissions::default_sandbox().map_err(into_ioerr)?;
+            let mut birdcage = if process.exceptions.strict {
+                Birdcage::new().map_err(into_ioerr)?
+            } else {
+                permissions::default_sandbox().map_err(into_ioerr)?
+            };
+
             for path in process.exceptions.read.sandbox_paths().iter() {
                 permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))
                     .map_err(into_ioerr)?;

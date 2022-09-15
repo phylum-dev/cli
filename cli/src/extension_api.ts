@@ -281,6 +281,7 @@ export class PhylumApi {
     ///     write: false,
     ///     run: ["ls"],
     ///     net: false,
+    ///     strict: false,
     ///   }
     /// }
     /// ```
@@ -292,6 +293,11 @@ export class PhylumApi {
     /// neither absolute nor start with `~/`.
     ///
     /// The `net` permission accepts only boolean values.
+    ///
+    /// Some exceptions are added by default, to simplify the extension creation
+    /// process. If you're looking for more granular control, you can set strict
+    /// to `true` and no exceptions will be added without explicitly specifying
+    /// them.
     ///
     /// # Returns
     ///
