@@ -44,10 +44,11 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
     let data = read_to_string(path)?;
 
     for format in LockfileFormat::iter() {
-        if let Ok(pkgs) = format.parser().parse(data.as_str()) {
+        let parser = format.parser();
+        if let Ok(pkgs) = parser.parse(data.as_str()) {
             if !pkgs.is_empty() {
                 print_user_success!("Identified lockfile type: {}", format);
-                return Ok((pkgs, format.parser().package_type()));
+                return Ok((pkgs, parser.package_type()));
             }
         }
     }
