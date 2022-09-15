@@ -5,7 +5,7 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use phylum_parse::lockfiles::{get_path_parser, LockfileFormat};
+use phylum_lockfile::{get_path_parser, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};

@@ -199,7 +199,8 @@ mod tests {
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
         ] {
-            let actual_format = name.parse().expect(&format!("Could not parse {:?}", name));
+            let actual_format =
+                name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
             assert_eq!(
                 expected_format, actual_format,
                 "{:?} should parse as {:?}",

@@ -8,7 +8,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
-use phylum_parse::lockfiles::LockfileFormat;
+use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::JobId;
 use phylum_types::types::group::ListUserGroupsResponse;

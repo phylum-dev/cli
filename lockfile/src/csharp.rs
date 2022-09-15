@@ -5,7 +5,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
 
-use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
+use crate::{LockfileFormat, Parse, ParseResult};
 
 pub struct CSProj;
 
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn lock_parse_csproj() {
-        let pkgs = CSProj.parse(include_str!("../../../tests/fixtures/sample.csproj")).unwrap();
+        let pkgs = CSProj.parse(include_str!("../../tests/fixtures/sample.csproj")).unwrap();
 
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn lock_parse_another_invalid_char() {
-        let pkgs = CSProj.parse(include_str!("../../../tests/fixtures/Calculator.csproj")).unwrap();
+        let pkgs = CSProj.parse(include_str!("../../tests/fixtures/Calculator.csproj")).unwrap();
         assert!(!pkgs.is_empty());
     }
 }

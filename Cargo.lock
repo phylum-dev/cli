@@ -2839,7 +2839,7 @@ dependencies = [
  "minisign-verify",
  "once_cell",
  "open",
- "phylum_parse",
+ "phylum_lockfile",
  "phylum_types",
  "predicates",
  "prettytable-rs",
@@ -2865,7 +2865,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "phylum_parse"
+name = "phylum_lockfile"
 version = "0.1.0"
 dependencies = [
  "anyhow",

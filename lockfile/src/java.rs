@@ -9,7 +9,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
 
 use super::parsers::gradle_dep;
-use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
+use crate::{LockfileFormat, Parse, ParseResult};
 
 pub struct Pom;
 pub struct GradleLock;
@@ -192,8 +192,7 @@ mod tests {
 
     #[test]
     fn lock_parse_gradle() {
-        let pkgs =
-            GradleLock.parse(include_str!("../../../tests/fixtures/gradle.lockfile")).unwrap();
+        let pkgs = GradleLock.parse(include_str!("../../tests/fixtures/gradle.lockfile")).unwrap();
 
         assert_eq!(pkgs.len(), 6);
 
@@ -212,8 +211,7 @@ mod tests {
 
     #[test]
     fn lock_parse_effective_pom() {
-        let mut pkgs =
-            Pom.parse(include_str!("../../../tests/fixtures/effective-pom.xml")).unwrap();
+        let mut pkgs = Pom.parse(include_str!("../../tests/fixtures/effective-pom.xml")).unwrap();
 
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);
@@ -234,7 +232,7 @@ mod tests {
     #[test]
     fn lock_parse_workspace_effective_pom() {
         let pkgs =
-            Pom.parse(include_str!("../../../tests/fixtures/workspace-effective-pom.xml")).unwrap();
+            Pom.parse(include_str!("../../tests/fixtures/workspace-effective-pom.xml")).unwrap();
 
         assert_eq!(pkgs.len(), 88);
 

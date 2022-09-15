@@ -7,7 +7,7 @@ use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
-use crate::lockfiles::{LockfileFormat, Parse, ParseResult};
+use crate::{LockfileFormat, Parse, ParseResult};
 
 pub struct GemLock;
 
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn lock_parse_gem() {
-        let pkgs = GemLock.parse(include_str!("../../../tests/fixtures/Gemfile.lock")).unwrap();
+        let pkgs = GemLock.parse(include_str!("../../tests/fixtures/Gemfile.lock")).unwrap();
         assert_eq!(pkgs.len(), 214);
         assert_eq!(pkgs[0].name, "CFPropertyList");
         assert_eq!(pkgs[0].version, "2.3.6");
