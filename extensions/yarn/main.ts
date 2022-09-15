@@ -83,23 +83,12 @@ if (Deno.args.length >= 1
     if (!output.success) {
         console.log(`[${red("phylum")}] Sandboxed build failed.`);
         console.log(`[${red("phylum")}]`);
+        console.log(`[${red("phylum")}] This could mean one of your packages attempted to access a restricted resource.`);
+        console.log(`[${red("phylum")}] Do not retry installation without Phylum's extension.`);
+        console.log(`[${red("phylum")}]`);
+        console.log(`[${red("phylum")}] Please submit your lockfile to Phylum should this error persist.`);
 
-        // Check for SIGSYS, since this confirms sandbox violation.
-        if (output.signal === 31) {
-            console.log(`[${red("phylum")}] Sandbox violation confirmed during install.`);
-            console.log(`[${red("phylum")}] Do NOT retry installation.`);
-            console.log(`[${red("phylum")}]`);
-            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum.`);
-
-            abort(128);
-        } else {
-            console.log(`[${red("phylum")}] This could mean one of your packages attempted to access a restricted resource.`);
-            console.log(`[${red("phylum")}] Do not retry installation without Phylum's extension.`);
-            console.log(`[${red("phylum")}]`);
-            console.log(`[${red("phylum")}] Please submit your lockfile to Phylum should this error persist.`);
-
-            abort(output.code);
-        }
+        abort(output.code);
     } else {
         console.log(`[${green("phylum")}] Packages built successfully.`);
     }
