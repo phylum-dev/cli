@@ -207,7 +207,11 @@ pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
     if EXTENSION_NAME_RE.is_match(name) {
         Ok(())
     } else {
-        Err(anyhow!("{}: invalid extension name, must start with a letter and can contain only lowercase alphanumeric character or dashes (-)", name))
+        Err(anyhow!(
+            "{}: invalid extension name, must start with a letter and can contain only lowercase \
+             alphanumeric characters or dashes (-)",
+            name
+        ))
     }
 }
 
