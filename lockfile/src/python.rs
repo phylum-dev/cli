@@ -115,7 +115,9 @@ impl Parse for Poetry {
             .packages
             .drain(..)
             .filter(|package| {
-                package.source.as_ref().map_or(true, |source| source.source_type == "git")
+                package.source.as_ref().map_or(true, |source| {
+                    source.source_type == "git" || source.source_type == "legacy"
+                })
             })
             .map(PackageDescriptor::from)
             .collect())
@@ -269,7 +271,7 @@ mod tests {
     #[test]
     fn parse_poetry_lock() {
         let pkgs = Poetry.parse(include_str!("../../tests/fixtures/poetry.lock")).unwrap();
-        assert_eq!(pkgs.len(), 44);
+        assert_eq!(pkgs.len(), 45);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -285,6 +287,11 @@ mod tests {
             PackageDescriptor {
                 name: "poetry".into(),
                 version: "https://github.com/python-poetry/poetry.git#4bc181b06ff9780791bc9e3d5b11bb807ca29d70".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "autopep8".into(),
+                version: "1.5.6".into(),
                 package_type: PackageType::PyPi,
             },
         ];
