@@ -143,7 +143,7 @@ fn injected_api() {
     let test_cli = TestCli::builder().build();
 
     test_cli.install_extension(&fixtures_path().join("api")).success();
-    test_cli.run(&["api"]).success().stdout("44\n");
+    test_cli.run(&["api"]).success().stdout("45\n");
 }
 
 // Extensions can access CLI arguments.
