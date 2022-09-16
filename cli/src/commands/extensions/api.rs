@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
-use birdcage::{Exception, Sandbox, Birdcage};
+use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
