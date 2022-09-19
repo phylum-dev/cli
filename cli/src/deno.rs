@@ -8,6 +8,7 @@ use std::thread;
 
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Error, Result};
+#[cfg(unix)]
 use birdcage::{Exception, Sandbox};
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;

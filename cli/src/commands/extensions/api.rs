@@ -1,16 +1,20 @@
 //! Extension API functions.
 
 use std::cell::RefCell;
+#[cfg(unix)]
 use std::io;
 #[cfg(unix)]
 use std::os::unix::process::{CommandExt, ExitStatusExt};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(unix)]
+use std::path::PathBuf;
+#[cfg(unix)]
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
@@ -27,7 +31,9 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::auth::UserInfo;
-use crate::commands::extensions::permissions::{self, Permission};
+#[cfg(unix)]
+use crate::commands::extensions::permissions;
+use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
@@ -100,6 +106,7 @@ impl Default for ProcessStdio {
     }
 }
 
+#[cfg(unix)]
 impl From<ProcessStdio> for Stdio {
     fn from(stdio: ProcessStdio) -> Self {
         match stdio {
@@ -321,7 +328,7 @@ async fn parse_lockfile(
 /// permissions of the sandbox itself. As a result more privileged access is
 /// possible even after the command has been spawned.
 #[op]
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Setup process to be run.
     let mut command = Command::new(process.cmd);
@@ -378,9 +385,9 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
 
 /// Return error when trying to sandbox on Windows.
 #[op]
-#[cfg(target_os = "windows")]
+#[cfg(not(unix))]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
-    anyhow!("Extension sandboxing is not supported on this platform");
+    Err(anyhow!("Extension sandboxing is not supported on this platform"))
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {

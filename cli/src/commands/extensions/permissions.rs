@@ -1,11 +1,12 @@
+#[cfg(unix)]
 use std::borrow::Cow;
 use std::env;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 use birdcage::error::{Error as SandboxError, Result as SandboxResult};
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
@@ -43,7 +44,7 @@ impl Permission {
     }
 
     /// Get Birdcage sandbox exception resource paths.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(unix)]
     pub fn sandbox_paths(&self) -> Cow<'_, Vec<String>> {
         match self {
             Permission::List(paths) => Cow::Borrowed(paths),
@@ -130,7 +131,7 @@ impl Permissions {
     }
 
     /// Build a sandbox matching the requested permissions.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(unix)]
     pub fn build_sandbox(&self) -> Result<Birdcage> {
         let mut birdcage = default_sandbox()?;
 
@@ -179,7 +180,7 @@ impl From<&Permissions> for PermissionsOptions {
 }
 
 /// Construct sandbox with a set of pre-defined acceptable exceptions.
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 pub fn default_sandbox() -> SandboxResult<Birdcage> {
     let mut birdcage = Birdcage::new()?;
 
@@ -227,7 +228,7 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
 }
 
 /// Add an execption to the sandbox, ignoring invalid path errors.
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxResult<()> {
     match birdcage.add_exception(exception) {
         Ok(_) => Ok(()),
