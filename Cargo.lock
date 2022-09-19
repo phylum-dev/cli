@@ -286,6 +286,7 @@ dependencies = [
 [[package]]
 name = "birdcage"
 version = "0.1.0"
+source = "git+https://github.com/phylum-dev/birdcage#dbdf69636a1ecf4f59baab92ca41641e713b6b93"
 dependencies = [
  "landlock",
  "libc",
