@@ -209,7 +209,7 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     //
     // This is required since many package manager's build scripts will use various
     // executables in their build scripts.
-    for path in env::var("PATH").iter().map(|path| path.split(':')).flatten() {
+    for path in env::var("PATH").iter().flat_map(|path| path.split(':')) {
         add_exception(&mut birdcage, Exception::ExecuteAndRead(path.into()))?;
     }
 
@@ -227,7 +227,7 @@ pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxRe
         Ok(_) => Ok(()),
         // Ignore invalid path errors.
         Err(SandboxError::InvalidPath(_)) => Ok(()),
-        Err(err) => Err(err.into()),
+        Err(err) => Err(err),
     }
 }
 
