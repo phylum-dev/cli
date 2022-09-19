@@ -1,6 +1,6 @@
 use std::borrow::Cow;
+use std::env;
 use std::path::PathBuf;
-use std::{env, fs};
 
 use anyhow::{anyhow, Result};
 use birdcage::error::{Error as SandboxError, Result as SandboxResult};
@@ -179,22 +179,17 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     let mut birdcage = Birdcage::new()?;
 
     // Permit read access to lib for dynamic linking.
-    add_exception(&mut birdcage, Exception::Read("/usr/lib".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/usr/lib32".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/usr/libx32".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/usr/lib64".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/lib".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/lib32".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/libx32".into()))?;
-    add_exception(&mut birdcage, Exception::Read("/lib64".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/lib".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/lib32".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/libx32".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/lib64".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/lib".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/lib32".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/libx32".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/lib64".into()))?;
 
     // Allow `env` exec to resolve binary paths.
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
-
-    // Allow access to ld-linux, since it is required to run dynamic executables.
-    if let Some(ld_linux_path) = ld_linux_path() {
-        add_exception(&mut birdcage, Exception::ExecuteAndRead(ld_linux_path))?;
-    }
 
     // Allow access to DNS list.
     //
@@ -258,15 +253,6 @@ pub fn resolve_bin_path(bin: &str) -> PathBuf {
     }
 
     PathBuf::from(bin)
-}
-
-/// Find `ld-linux.so.*`.
-fn ld_linux_path() -> Option<PathBuf> {
-    fs::read_dir("/usr/lib")
-        .ok()?
-        .filter_map(|entry| entry.ok())
-        .find(|entry| entry.file_name().to_string_lossy().starts_with("ld-linux"))
-        .map(|entry| entry.path())
 }
 
 #[cfg(test)]
