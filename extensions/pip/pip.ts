@@ -269,11 +269,11 @@ function parseOutput(output: string): PackageEntry[] {
             const packageNameRaw = current[2];
             const packageVersionRaw = current[current.length - 1];
 
-            const nameMatches = packageNameRaw.match(/([A-Za-z0-9.\-_]+)(.*)/);
-            if(!nameMatches || !nameMatches.length)
+            const nameMatches = packageNameRaw.match(/([A-Za-z0-9\.\-_]+)(.*)+/);
+            if(!nameMatches || !nameMatches.length || nameMatches.length < 2)
                 throw new Error(`invalid package name gathered as locally satisfied requirement: ${packageNameRaw}`);
 
-            const name = nameMatches[0];
+            const name = nameMatches[1];
             const version = packageVersionRaw.replace('(', '').replace(')', '');
             res.push({name: name, version: version});
 
@@ -332,7 +332,7 @@ async function checkAndRunPip(args, pipPath: string): Promise<PackageList> {
     }
 
     const proc = Deno.run({
-        cmd: [pipPath, 'install', ...args, '--dry-run', '-I'],
+        cmd: [pipPath, 'install', ...args, '--dry-run'],
         stdout: 'piped',
         stderr: 'piped'
     });
