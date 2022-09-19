@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
+#[cfg(not(target_os = "windows"))]
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
@@ -320,6 +321,7 @@ async fn parse_lockfile(
 /// permissions of the sandbox itself. As a result more privileged access is
 /// possible even after the command has been spawned.
 #[op]
+#[cfg(not(target_os = "windows"))]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Setup process to be run.
     let mut command = Command::new(process.cmd);
@@ -372,6 +374,13 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
         #[cfg(not(unix))]
         signal: None,
     })
+}
+
+/// Return error when trying to sandbox on Windows.
+#[op]
+#[cfg(target_os = "windows")]
+fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+    anyhow!("Extension sandboxing is not supported on this platform");
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {

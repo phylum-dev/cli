@@ -97,14 +97,18 @@ pub async fn run(
     let state = ExtensionState::new(api);
     worker.js_runtime.op_state().borrow_mut().put(state);
 
-    // Create sandbox allowing the extension's requested permissions.
-    let mut sandbox = permissions.build_sandbox()?;
+    // Sandbox extension on macOS/Linux.
+    #[cfg(not(target_os = "windows"))]
+    {
+        // Create sandbox allowing the extension's requested permissions.
+        let mut sandbox = permissions.build_sandbox()?;
 
-    // Always allow read access to the extension's directory.
-    sandbox.add_exception(Exception::Read(extension.path()))?;
+        // Always allow read access to the extension's directory.
+        sandbox.add_exception(Exception::Read(extension.path()))?;
 
-    // Activate sandbox.
-    sandbox.lock()?;
+        // Activate sandbox.
+        sandbox.lock()?;
+    }
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {
