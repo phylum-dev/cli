@@ -3,4 +3,4 @@ description = "An extension with correctly specified permissions"
 entry_point = "main.ts"
 
 [permissions]
-run = true
+run = ["cargo"]

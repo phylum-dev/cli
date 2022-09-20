@@ -4,5 +4,3 @@ description = "Find required sandbox permissions"
 [permissions]
 run = true
 read = true
-write = true
-net = true
