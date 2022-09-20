@@ -219,11 +219,6 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
         add_exception(&mut birdcage, Exception::ExecuteAndRead(path.into()))?;
     }
 
-    // TODO: I really don't like this
-    if let Ok(config_dir) = dirs::config_dir() {
-        add_exception(&mut birdcage, Exception::Write(config_dir.join("phylum/settings.yaml")))?;
-    }
-
     Ok(birdcage)
 }
 
