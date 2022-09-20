@@ -1,10 +1,14 @@
 use std::convert::TryFrom;
 use std::env;
+#[cfg(unix)]
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
+#[cfg(unix)]
+use tempfile::NamedTempFile;
 
 use crate::common::*;
 
@@ -240,6 +244,92 @@ fn extension_run_help_flags() {
         .run(&["extension", "run", "-h", "short help"])
         .success()
         .stdout(predicate::str::contains("USAGE"));
+}
+
+// Networking fails without sandbox exception.
+#[cfg(unix)]
+#[test]
+fn net_sandboxing_fail() {
+    let test_cli = TestCli::builder().build();
+
+    #[rustfmt::skip]
+    test_cli
+        .extension("
+            const output = PhylumApi.runSandboxed({
+                cmd: 'curl',
+                args: ['http://phylum.io'],
+            });
+            Deno.exit(output.code);
+        ")
+        .build()
+        .run()
+        .failure();
+}
+
+// Networking succeeds with sandbox exception.
+#[cfg(unix)]
+#[test]
+fn net_sandboxing_success() {
+    let test_cli = TestCli::builder().build();
+
+    #[rustfmt::skip]
+    test_cli
+        .extension("
+            const output = PhylumApi.runSandboxed({
+                cmd: 'curl',
+                args: ['http://phylum.io'],
+                exceptions: { net: true },
+            });
+            Deno.exit(output.code);
+        ")
+        .build()
+        .run()
+        .success();
+}
+
+// FS read fails without sandbox exception.
+#[cfg(unix)]
+#[test]
+fn fs_sandboxing_fail() {
+    let test_cli = TestCli::builder().build();
+
+    // Create test file.
+    let file = NamedTempFile::new().unwrap();
+    fs::write(file.path(), "fs_test").unwrap();
+
+    #[rustfmt::skip]
+    let js = format!("
+        const output = PhylumApi.runSandboxed({{
+            cmd: 'cat',
+            args: ['{}'],
+        }});
+        Deno.exit(output.code);
+    ", file.path().to_string_lossy());
+
+    test_cli.extension(&js).build().run().failure();
+}
+
+// FS read succeeds with sandbox exception.
+#[cfg(unix)]
+#[test]
+fn fs_sandboxing_success() {
+    let test_cli = TestCli::builder().build();
+
+    // Create test file.
+    let file = NamedTempFile::new().unwrap();
+    fs::write(file.path(), "fs_test").unwrap();
+
+    #[rustfmt::skip]
+    let js = format!("
+        const output = PhylumApi.runSandboxed({{
+            cmd: 'cat',
+            args: ['{}'],
+            exceptions: {{ read: ['{0:}'] }},
+        }});
+        Deno.exit(output.code);
+    ", file.path().to_string_lossy());
+
+    test_cli.extension(&js).build().run().success().stdout("fs_test");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
