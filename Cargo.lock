@@ -1412,7 +1412,7 @@ checksum = "f58dc3c5e468259f19f2d46304a6b28f1c3d034442e14b322d2b850e36f6d5ae"
 dependencies = [
  "proc-macro2 1.0.43",
  "quote 1.0.21",
- "syn 1.0.99",
+ "syn 1.0.100",
 ]
 
 [[package]]
