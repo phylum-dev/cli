@@ -16,6 +16,12 @@ use phylum_cli::spinner::Spinner;
 use phylum_cli::{print, print_user_failure, print_user_success, print_user_warning, update};
 use phylum_types::types::job::Action;
 
+const LICENSE_BLURB: &str = "
+Copyright (C) 2022  Phylum, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.";
+
 /// Print a warning message to the user before exiting with exit code 0.
 pub fn exit_warn(message: impl AsRef<str>) -> ! {
     print_user_warning!("Warning: {}", message.as_ref());
@@ -150,7 +156,7 @@ async fn handle_update(matches: &ArgMatches) -> CommandResult {
 }
 
 fn handle_version(app_name: &str, ver: &str) -> CommandResult {
-    print_user_success!("{app_name} (Version {ver})");
+    print_user_success!("{app_name} (Version {ver}){LICENSE_BLURB}");
     Ok(ExitCode::Ok.into())
 }
 

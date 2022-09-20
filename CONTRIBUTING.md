@@ -7,10 +7,11 @@ Table of Contents:
 1. [Bug Reports](#bug-reports)
 2. [Feature Requests](#feature-requests)
 3. [Patches / Pull Requests](#patches--pull-requests)
-    1. [Testing](#testing)
-    2. [Documentation](#documentation)
-    3. [Style](#style)
-4. [Contact](#contact)
+   1. [Testing](#testing)
+   2. [Documentation](#documentation)
+   3. [Style](#style)
+4. [License](#license)
+5. [Contact](#contact)
 
 ## Bug Reports
 
@@ -100,6 +101,22 @@ shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 ```
 
 [shellcheck]: https://github.com/koalaman/shellcheck
+
+## License
+
+Copyright (C) 2022  Phylum, Inc.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License or any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/gpl.html> or write to
+`phylum@phylum.io` or `engineering@phylum.io`
 
 ## Contact
 
