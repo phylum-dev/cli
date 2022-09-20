@@ -7,8 +7,15 @@ use crate::common::{create_lockfile, create_project, TestCli};
 pub async fn get_user_info() {
     let test_cli = TestCli::builder().with_config(None).build();
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension("console.log(await PhylumApi.getUserInfo())")
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
@@ -19,8 +26,15 @@ pub async fn get_user_info() {
 pub async fn get_access_token() {
     let test_cli = TestCli::builder().with_config(None).build();
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension("console.log(await PhylumApi.getAccessToken())")
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
@@ -31,8 +45,15 @@ pub async fn get_access_token() {
 pub async fn get_refresh_token() {
     let test_cli = TestCli::builder().with_config(None).build();
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension("console.log(await PhylumApi.getRefreshToken())")
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
@@ -43,8 +64,15 @@ pub async fn get_refresh_token() {
 pub async fn get_package_details() {
     let test_cli = TestCli::builder().with_config(None).build();
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension("console.log(await PhylumApi.getPackageDetails('express', '4.18.1', 'npm'))")
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
@@ -67,8 +95,15 @@ pub fn get_current_project() {
 pub async fn get_groups() {
     let test_cli = TestCli::builder().with_config(None).build();
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension("console.log(await PhylumApi.getGroups())")
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
@@ -123,8 +158,15 @@ pub async fn get_job_status() {
         console.log(await PhylumApi.getJobStatus(jobId));"
     );
 
+    let permissions = Permissions {
+        write: Permission::Boolean(true),
+        net: Permission::Boolean(true),
+        ..Permissions::default()
+    };
+
     test_cli
         .extension(&analyze)
+        .with_permissions(permissions)
         .build()
         .run()
         .success()
