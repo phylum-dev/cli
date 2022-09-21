@@ -1,0 +1,18 @@
+[package]
+name = "phylum_lockfile"
+description = "Package lock file parsers used by Phylum"
+version = "0.1.0"
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
+edition = "2021"
+rust-version = "1.60"
+
+[dependencies]
+anyhow = "1.0.44"
+log = "0.4.6"
+nom = "7.1.1"
+phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
+serde_yaml = "0.9.2"
+serde-xml-rs = "0.5.1"
+toml = "0.5.8"

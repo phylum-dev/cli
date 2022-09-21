@@ -32,20 +32,19 @@ git-version = "0.3.5"
 home = "0.5.3"
 hyper = "0.14.16"
 lazy_static = "1.4.0"
-log = "^0.4.6"
+log = "0.4.6"
 maplit = "1.0.2"
 minisign-verify = "0.2.1"
-nom = "7.1.1"
 open = "3.0.1"
+phylum_lockfile = { path = "../lockfile" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 prettytable-rs = "0.8.0"
 rand = "0.8.4"
 reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }
 routerify = { version = "3.0.0", features =["all"] }
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
 serde_yaml = "0.9.2"
-serde-xml-rs = "0.5.1"
 sha2 = "0.10.2"
 shellexpand = "2.0.0"
 tempfile = "3.3.0"
