@@ -7,7 +7,7 @@
 # Introduction
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/phylum-dev/cli)](https://github.com/phylum-dev/cli/releases/latest/)
-[![MIT License](https://img.shields.io/github/license/phylum-dev/cli)](./LICENSE)
+[![License](https://img.shields.io/github/license/phylum-dev/cli)](https://github.com/phylum-dev/cli/blob/main/LICENSE)
 [![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/phylum-dev/cli/actions/workflows/test.yml)
 [![README](https://img.shields.io/badge/docs-README-blue)](https://docs.phylum.io/docs/welcome)
 
@@ -70,7 +70,7 @@ The command line interface (CLI) allows users to submit their project package de
    phylum analyze <package-lock-file.ext>
    ```
 
- 1. (Optional) View the analysis results in the [Phylum UI](https://app.phylum.io/auth/login)
+1. (Optional) View the analysis results in the [Phylum UI](https://app.phylum.io/auth/login)
 
 ## Extensions
 
@@ -78,7 +78,7 @@ Phylum CLI extensions allow you to extend the existing CLI functionality with
 new features. You can start exploring by taking a look at the official Phylum
 extensions:
 
-https://github.com/phylum-dev/cli/tree/main/extensions
+<https://github.com/phylum-dev/cli/tree/main/extensions>
 
 ### How-tos
 
@@ -96,11 +96,26 @@ consider using [Debian slim][debian-slim] instead.
 
 [debian-slim]: https://hub.docker.com/_/debian
 
+## License
+
+Copyright (C) 2022  Phylum, Inc.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License or any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/gpl.html> or write to
+`phylum@phylum.io` or `engineering@phylum.io`
+
 ---
 ## Slack
 
 Join us on the [Phylum Community Slack](https://join.slack.com/t/phylumio/shared_invite/zt-1cbgl6qjp-C_mkSFibEA9DyDxjYHbttQ)!
-
 
 ## Questions/Issues
 

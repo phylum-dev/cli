@@ -490,3 +490,10 @@ __metadata:
   resolution: "~@link:./src::locator=consumer-native-app%40workspace%3Aapp"
   languageName: node
   linkType: soft
+
+"ondisk@file:/home/user/ondisk::locator=xxx%40workspace%3A.":
+  version: 0.0.0
+  resolution: "ondisk@file:/home/user/ondisk#/home/user/ondisk::hash=4cecb0&locator=xxx%40workspace%3A."
+  checksum: f8bf09ed12ed5629de7aa255d18ad8d517598ab65f0023a95d0b81ce27f4492cc176daa6ed97cdeb014cdca2003c8fc8b47f6946be1c438cf8ed56b46ec1f357
+  languageName: node
+  linkType: hard

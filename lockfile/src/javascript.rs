@@ -159,6 +159,7 @@ impl Parse for YarnLock {
             }
 
             let (name, version) = if resolver.starts_with("workspace:")
+                || resolver.starts_with("file:")
                 || resolver.starts_with("link:")
             {
                 // Ignore filesystem dependencies like the project ("project@workspace:.").
