@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::path::Path;
 
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
@@ -8,7 +10,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::parsers::pypi;
-use crate::lockfiles::{Parse, ParseResult};
+use crate::{Parse, ParseResult};
 
 pub struct PyRequirements;
 pub struct PipFile;
@@ -26,6 +28,10 @@ impl Parse for PyRequirements {
 
     fn package_type(&self) -> PackageType {
         PackageType::PyPi
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("requirements.txt"))
     }
 }
 
@@ -85,6 +91,11 @@ impl Parse for PipFile {
     fn package_type(&self) -> PackageType {
         PackageType::PyPi
     }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("Pipfile"))
+            || path.file_name() == Some(OsStr::new("Pipfile.lock"))
+    }
 }
 
 impl Parse for Poetry {
@@ -114,6 +125,10 @@ impl Parse for Poetry {
 
     fn package_type(&self) -> PackageType {
         PackageType::PyPi
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("poetry.lock"))
     }
 }
 
@@ -165,7 +180,8 @@ mod tests {
 
     #[test]
     fn parse_requirements() {
-        let pkgs = PyRequirements.parse_file("tests/fixtures/requirements.txt").unwrap();
+        let pkgs =
+            PyRequirements.parse(include_str!("../../tests/fixtures/requirements.txt")).unwrap();
         assert_eq!(pkgs.len(), 131);
         assert_eq!(pkgs[0].name, "pyyaml");
         assert_eq!(pkgs[0].version, "5.4.1");
@@ -179,7 +195,9 @@ mod tests {
 
     #[test]
     fn parse_requirements_complex() {
-        let pkgs = PyRequirements.parse_file("tests/fixtures/complex-requirements.txt").unwrap();
+        let pkgs = PyRequirements
+            .parse(include_str!("../../tests/fixtures/complex-requirements.txt"))
+            .unwrap();
         assert_eq!(pkgs.len(), 8);
         assert_eq!(pkgs[0].name, "docopt");
         assert_eq!(pkgs[0].version, "0.6.1");
@@ -196,7 +214,7 @@ mod tests {
 
     #[test]
     fn parse_pipfile() {
-        let pkgs = PipFile.parse_file("tests/fixtures/Pipfile").unwrap();
+        let pkgs = PipFile.parse(include_str!("../../tests/fixtures/Pipfile")).unwrap();
         assert_eq!(pkgs.len(), 4);
 
         let expected_pkgs = [
@@ -224,7 +242,7 @@ mod tests {
 
     #[test]
     fn lock_parse_pipfile() {
-        let pkgs = PipFile.parse_file("tests/fixtures/Pipfile.lock").unwrap();
+        let pkgs = PipFile.parse(include_str!("../../tests/fixtures/Pipfile.lock")).unwrap();
         assert_eq!(pkgs.len(), 27);
 
         let expected_pkgs = [
@@ -252,7 +270,7 @@ mod tests {
 
     #[test]
     fn parse_poetry_lock() {
-        let pkgs = Poetry.parse_file("tests/fixtures/poetry.lock").unwrap();
+        let pkgs = Poetry.parse(include_str!("../../tests/fixtures/poetry.lock")).unwrap();
         assert_eq!(pkgs.len(), 45);
 
         let expected_pkgs = [
@@ -286,7 +304,7 @@ mod tests {
     /// Ensure sources other than PyPi are ignored.
     #[test]
     fn poetry_ignore_other_sources() {
-        let pkgs = Poetry.parse_file("tests/fixtures/poetry.lock").unwrap();
+        let pkgs = Poetry.parse(include_str!("../../tests/fixtures/poetry.lock")).unwrap();
 
         let invalid_package_names = ["toml", "directory-test", "requests"];
         for pkg in pkgs {

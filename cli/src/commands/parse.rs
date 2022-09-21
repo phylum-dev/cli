@@ -5,28 +5,14 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
+use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::{CommandResult, ExitCode};
-use crate::lockfiles::{
-    CSProj, GemLock, GradleLock, PackageLock, Parse, PipFile, Poetry, Pom, PyRequirements, YarnLock,
-};
 use crate::{print_user_success, print_user_warning};
 
-pub const LOCKFILE_PARSERS: &[(&str, &dyn Parse)] = &[
-    ("yarn", &YarnLock),
-    ("npm", &PackageLock),
-    ("gem", &GemLock),
-    ("pip", &PyRequirements),
-    ("pipenv", &PipFile),
-    ("poetry", &Poetry),
-    ("mvn", &Pom),
-    ("gradle", &GradleLock),
-    ("nuget", &CSProj),
-];
-
 pub fn lockfile_types() -> Vec<&'static str> {
-    LOCKFILE_PARSERS.iter().map(|(name, _)| *name).chain(["auto"]).collect()
+    LockfileFormat::iter().map(|format| format.name()).chain(["auto"]).collect()
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
@@ -38,11 +24,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
         let (pkgs, _) = try_get_packages(Path::new(lockfile))?;
         pkgs
     } else {
-        let parser = LOCKFILE_PARSERS
-            .iter()
-            .filter_map(|(name, parser)| (*name == lockfile_type).then(|| *parser))
-            .next()
-            .unwrap();
+        let parser = lockfile_type.parse::<LockfileFormat>().unwrap().parser();
 
         let data = read_to_string(lockfile)?;
         parser.parse(&data)?
@@ -61,10 +43,11 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 
     let data = read_to_string(path)?;
 
-    for (name, parser) in LOCKFILE_PARSERS.iter() {
+    for format in LockfileFormat::iter() {
+        let parser = format.parser();
         if let Ok(pkgs) = parser.parse(data.as_str()) {
             if !pkgs.is_empty() {
-                print_user_success!("Identified lockfile type: {}", name);
+                print_user_success!("Identified lockfile type: {}", format);
                 return Ok((pkgs, parser.package_type()));
             }
         }
@@ -76,42 +59,18 @@ pub fn try_get_packages(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageT
 /// Determine the lockfile type based on its name and parse
 /// accordingly to obtain the packages from it
 pub fn get_packages_from_lockfile(path: &Path) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    let file = path
-        .file_name()
-        .and_then(|file| file.to_str())
-        .ok_or_else(|| anyhow!("Lockfile path has no file name"))?;
-    let ext = path.extension().and_then(|ext| ext.to_str());
-
-    let pattern = match ext {
-        Some("csproj") => ".csproj",
-        _ => file,
+    let res = match get_path_format(path) {
+        Some(format) => {
+            let data = read_to_string(path)?;
+            let parser = format.parser();
+            (parser.parse(&data)?, parser.package_type())
+        },
+        None => try_get_packages(path)?,
     };
 
-    let res = match pattern {
-        "Gemfile.lock" => parse(GemLock, path)?,
-        "package-lock.json" => parse(PackageLock, path)?,
-        "yarn.lock" => parse(YarnLock, path)?,
-        "requirements.txt" => parse(PyRequirements, path)?,
-        "Pipfile" | "Pipfile.lock" => parse(PipFile, path)?,
-        "poetry.lock" => parse(Poetry, path)?,
-        "effective-pom.xml" => parse(Pom, path)?,
-        "gradle.lockfile" => parse(GradleLock, path)?,
-        ".csproj" => parse(CSProj, path)?,
-        _ => try_get_packages(path)?,
-    };
-
-    log::debug!("Read {} packages from file `{}`", res.0.len(), file);
+    log::debug!("Read {} packages from file `{}`", res.0.len(), path.display());
 
     Ok(res)
-}
-
-/// Get all packages for a specific lockfile type.
-pub(crate) fn parse<P: Parse + Sized>(
-    parser: P,
-    path: &Path,
-) -> Result<(Vec<PackageDescriptor>, PackageType)> {
-    let pkg_type = parser.package_type();
-    parser.parse_file(path).map(|pkgs| (pkgs, pkg_type))
 }
 
 #[cfg(test)]
@@ -121,18 +80,18 @@ mod tests {
     #[test]
     fn it_can_identify_lock_file_types() {
         let test_cases = [
-            ("tests/fixtures/Gemfile.lock", PackageType::RubyGems),
-            ("tests/fixtures/yarn-v1.lock", PackageType::Npm),
-            ("tests/fixtures/yarn.lock", PackageType::Npm),
-            ("tests/fixtures/package-lock.json", PackageType::Npm),
-            ("tests/fixtures/sample.csproj", PackageType::Nuget),
-            ("tests/fixtures/gradle.lockfile", PackageType::Maven),
-            ("tests/fixtures/effective-pom.xml", PackageType::Maven),
-            ("tests/fixtures/workspace-effective-pom.xml", PackageType::Maven),
-            ("tests/fixtures/requirements.txt", PackageType::PyPi),
-            ("tests/fixtures/Pipfile", PackageType::PyPi),
-            ("tests/fixtures/Pipfile.lock", PackageType::PyPi),
-            ("tests/fixtures/poetry.lock", PackageType::PyPi),
+            ("../tests/fixtures/Gemfile.lock", PackageType::RubyGems),
+            ("../tests/fixtures/yarn-v1.lock", PackageType::Npm),
+            ("../tests/fixtures/yarn.lock", PackageType::Npm),
+            ("../tests/fixtures/package-lock.json", PackageType::Npm),
+            ("../tests/fixtures/sample.csproj", PackageType::Nuget),
+            ("../tests/fixtures/gradle.lockfile", PackageType::Maven),
+            ("../tests/fixtures/effective-pom.xml", PackageType::Maven),
+            ("../tests/fixtures/workspace-effective-pom.xml", PackageType::Maven),
+            ("../tests/fixtures/requirements.txt", PackageType::PyPi),
+            ("../tests/fixtures/Pipfile", PackageType::PyPi),
+            ("../tests/fixtures/Pipfile.lock", PackageType::PyPi),
+            ("../tests/fixtures/poetry.lock", PackageType::PyPi),
         ];
 
         for (file, expected_type) in &test_cases {

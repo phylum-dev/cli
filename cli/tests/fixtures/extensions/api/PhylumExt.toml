@@ -3,4 +3,4 @@ description = "Test phylum API injection"
 entry_point = "main.ts"
 
 [permissions]
-read = ["./tests/fixtures/poetry.lock"]
+read = ["../tests/fixtures/poetry.lock"]

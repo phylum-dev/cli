@@ -2837,9 +2837,9 @@ dependencies = [
  "log",
  "maplit",
  "minisign-verify",
- "nom",
  "once_cell",
  "open",
+ "phylum_lockfile",
  "phylum_types",
  "predicates",
  "prettytable-rs",
@@ -2848,7 +2848,6 @@ dependencies = [
  "reqwest",
  "routerify",
  "serde",
- "serde-xml-rs",
  "serde_json",
  "serde_yaml",
  "sha2",
@@ -2863,6 +2862,21 @@ dependencies = [
  "walkdir",
  "wiremock",
  "zip",
+]
+
+[[package]]
+name = "phylum_lockfile"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "nom",
+ "phylum_types",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_yaml",
+ "toml",
 ]
 
 [[package]]
