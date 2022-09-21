@@ -107,7 +107,7 @@ pub async fn handle_auth(
     } else if let Some(matches) = matches.subcommand_matches("token") {
         handle_auth_token(&config, matches).await
     } else {
-        print_sc_help(app_helper, "auth");
+        print_sc_help(app_helper, &["auth"])?;
         Ok(ExitCode::Ok.into())
     }
 }

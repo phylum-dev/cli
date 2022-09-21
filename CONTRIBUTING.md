@@ -7,9 +7,9 @@ Table of Contents:
 1. [Bug Reports](#bug-reports)
 2. [Feature Requests](#feature-requests)
 3. [Patches / Pull Requests](#patches--pull-requests)
-    1. [Testing](#testing)
-    2. [Documentation](#documentation)
-    3. [Style](#style)
+   1. [Testing](#testing)
+   2. [Documentation](#documentation)
+   3. [Style](#style)
 4. [Contact](#contact)
 
 ## Bug Reports

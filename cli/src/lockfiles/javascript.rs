@@ -33,8 +33,8 @@ impl Parse for PackageLock {
             let mut packages = Vec::new();
             for (name, keys) in deps {
                 // Ignore local filesystem dependencies.
-                let name = match name.strip_prefix("node_modules/") {
-                    Some(name) => name,
+                let name = match name.rsplit_once("node_modules/") {
+                    Some((_, name)) => name,
                     None => continue,
                 };
 
@@ -152,6 +152,7 @@ impl Parse for YarnLock {
             }
 
             let (name, version) = if resolver.starts_with("workspace:")
+                || resolver.starts_with("file:")
                 || resolver.starts_with("link:")
             {
                 // Ignore filesystem dependencies like the project ("project@workspace:.").
@@ -213,7 +214,7 @@ mod tests {
     fn lock_parse_package_v7() {
         let pkgs = PackageLock.parse_file("tests/fixtures/package-lock.json").unwrap();
 
-        assert_eq!(pkgs.len(), 51);
+        assert_eq!(pkgs.len(), 52);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -231,6 +232,11 @@ mod tests {
                 version: "ssh://git@github.com/Microsoft/TypeScript.git#\
                           9189e42b1c8b1a91906a245a24697da5e0c11a08"
                     .into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "form-data".into(),
+                version: "2.3.3".into(),
                 package_type: PackageType::Npm,
             },
         ];

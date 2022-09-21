@@ -18,7 +18,7 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
 * NuGet
     * `*.csproj`
 * Maven
-    * `pom.xml`
+    * `effective-pom.xml`
     * `gradle.lockfile`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_project) , you can begin analysis by running:

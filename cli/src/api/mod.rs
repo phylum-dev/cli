@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
 use self::endpoints::BaseUriError;
+use crate::app::USER_AGENT;
 use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
 };
@@ -161,7 +162,6 @@ impl PhylumApi {
 
         config.auth_info.set_offline_access(tokens.refresh_token.clone());
 
-        let version = env!("CARGO_PKG_VERSION");
         let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do
         // not need to worry about refreshing the access token. We just set it
@@ -171,9 +171,9 @@ impl PhylumApi {
             HeaderValue::from_str(&format!("Bearer {}", tokens.access_token)).unwrap(),
         );
         headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
-        headers.insert("version", HeaderValue::from_str(version).unwrap());
 
         let client = Client::builder()
+            .user_agent(USER_AGENT.as_str())
             .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
             .danger_accept_invalid_certs(config.ignore_certs)
             .default_headers(headers)

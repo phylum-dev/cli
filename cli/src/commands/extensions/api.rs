@@ -10,18 +10,19 @@ use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::JobId;
+use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
-use phylum_types::types::project::ProjectDetailsResponse;
+use phylum_types::types::project::ProjectSummaryResponse;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::auth::UserInfo;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse::{self, LOCKFILE_PARSERS};
-use crate::config::get_current_project;
+use crate::config::{self, ProjectConfig};
 
 /// Package descriptor for any ecosystem.
 #[derive(Serialize, Deserialize, Debug)]
@@ -60,7 +61,7 @@ async fn analyze(
     let (project, group) = match (project, group) {
         (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
         (None, _) => {
-            if let Some(p) = get_current_project() {
+            if let Some(p) = config::get_current_project() {
                 (p.id, p.group_name)
             } else {
                 return Err(anyhow!("Failed to find a valid project configuration"));
@@ -143,22 +144,31 @@ async fn get_job_status(
     api.get_job_status_ext(&job_id).await.map_err(Error::from)
 }
 
-/// Retrieve a project's details.
-/// Equivalent to `phylum history project`.
+/// Show the user's currently linked project.
 #[op]
-async fn get_project_details(
-    op_state: Rc<RefCell<OpState>>,
-    project_name: Option<String>,
-) -> Result<ProjectDetailsResponse> {
+fn get_current_project() -> Option<ProjectConfig> {
+    config::get_current_project()
+}
+
+/// List all of the user's/group's project.
+#[op]
+async fn get_groups(op_state: Rc<RefCell<OpState>>) -> Result<ListUserGroupsResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    let project_name = project_name.map(String::from).map(Result::Ok).unwrap_or_else(|| {
-        get_current_project()
-            .map(|p| p.name)
-            .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))
-    })?;
-    api.get_project_details(&project_name).await.map_err(Error::from)
+    api.get_groups_list().await.map_err(Error::from)
+}
+
+/// List all of the user's/group's project.
+#[op]
+async fn get_projects(
+    op_state: Rc<RefCell<OpState>>,
+    group: Option<String>,
+) -> Result<Vec<ProjectSummaryResponse>> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    api.get_projects(group.as_deref()).await.map_err(Error::from)
 }
 
 /// Analyze a single package.
@@ -236,7 +246,9 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_access_token::decl(),
         get_refresh_token::decl(),
         get_job_status::decl(),
-        get_project_details::decl(),
+        get_current_project::decl(),
+        get_groups::decl(),
+        get_projects::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
     ]

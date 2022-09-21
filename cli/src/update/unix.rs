@@ -11,6 +11,7 @@ use serde::de::DeserializeOwned;
 use wiremock::MockServer;
 use zip::ZipArchive;
 
+use crate::app::USER_AGENT;
 use crate::spinner::Spinner;
 use crate::types::{GithubRelease, GithubReleaseAsset};
 
@@ -57,7 +58,7 @@ impl Default for ApplicationUpdater {
 
 /// Generic function for fetching data via HTTP GET.
 async fn http_get(url: &str) -> anyhow::Result<reqwest::Response> {
-    let client = Client::builder().user_agent("phylum-cli").build()?;
+    let client = Client::builder().user_agent(USER_AGENT.as_str()).build()?;
     let response = client.get(url).send().await?;
     Ok(response)
 }
@@ -81,8 +82,8 @@ async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<by
 }
 
 const SUPPORTED_PLATFORMS: &[&str] = &[
-    "x86_64-unknown-linux-musl",
-    "aarch64-unknown-linux-musl",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "aarch64-apple-darwin",
 ];
@@ -97,11 +98,7 @@ fn current_platform() -> anyhow::Result<String> {
         "unsupported"
     };
     let os = if cfg!(target_os = "linux") {
-        // We could check cfg!(target_env = "musl") here, but I think that's
-        // unnecessary. If a user compiles the CLI for x86_64-unknown-linux-gnu
-        // and then runs `phylum update`, we should be able to upgrade them to a
-        // x86_64-unknown-linux-musl binary without breaking anything.
-        "unknown-linux-musl"
+        "unknown-linux-gnu"
     } else if cfg!(target_os = "macos") {
         "apple-darwin"
     } else {

@@ -16,6 +16,12 @@ use phylum_cli::spinner::Spinner;
 use phylum_cli::{print, print_user_failure, print_user_success, print_user_warning, update};
 use phylum_types::types::job::Action;
 
+const LICENSE_BLURB: &str = r#"
+Copyright (C) 2022  Phylum, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."#;
+
 /// Print a warning message to the user before exiting with exit code 0.
 pub fn exit_warn(message: impl AsRef<str>) -> ! {
     print_user_warning!("Warning: {}", message.as_ref());
@@ -102,23 +108,6 @@ async fn handle_commands() -> CommandResult {
         }
     }
 
-    // Subcommands with precedence
-    //
-
-    // For these commands, we want to just provide verbose help and exit if no
-    // arguments are supplied.
-    if let Some(matches) = matches.subcommand_matches("analyze") {
-        if !matches.is_present("LOCKFILE") {
-            print::print_sc_help(app_helper, "analyze");
-            return Ok(ExitCode::Ok.into());
-        }
-    } else if let Some(matches) = matches.subcommand_matches("package") {
-        if !(matches.is_present("name") && matches.is_present("version")) {
-            print::print_sc_help(app_helper, "package");
-            return Ok(ExitCode::Ok.into());
-        }
-    }
-
     // Get the future, but don't await. Commands that require access to the API will
     // await on this, so that the API is not instantiated ahead of time for
     // subcommands that don't require it.
@@ -167,7 +156,7 @@ async fn handle_update(matches: &ArgMatches) -> CommandResult {
 }
 
 fn handle_version(app_name: &str, ver: &str) -> CommandResult {
-    print_user_success!("{app_name} (Version {ver})");
+    print_user_success!("{app_name} (Version {ver}){LICENSE_BLURB}");
     Ok(ExitCode::Ok.into())
 }
 

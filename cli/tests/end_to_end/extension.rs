@@ -51,22 +51,40 @@ pub async fn get_package_details() {
         .stdout(predicates::str::contains("vulnerability: 1"));
 }
 
-#[tokio::test]
-pub async fn get_project_details() {
-    let test_cli = TestCli::builder().with_config(None).build();
+#[test]
+pub fn get_current_project() {
+    let test_cli = TestCli::builder().cwd_temp().with_config(None).build();
 
-    let project = create_project().await;
-    let permissions =
-        Permissions { net: Permission::List(vec![String::from("123")]), ..Permissions::default() };
-
-    let project_details = format!("console.log(await PhylumApi.getProjectDetails({project:?}))");
     test_cli
-        .extension(&project_details)
-        .with_permissions(permissions)
+        .extension("console.log(PhylumApi.getCurrentProject())")
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains(r#"name: "integration-tests""#));
+        .stdout("null\n");
+}
+
+#[tokio::test]
+pub async fn get_groups() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension("console.log(await PhylumApi.getGroups())")
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("groups"));
+}
+
+#[tokio::test]
+pub async fn get_projects() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension("console.log(await PhylumApi.getProjects())")
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("["));
 }
 
 #[tokio::test]

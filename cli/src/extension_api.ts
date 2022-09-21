@@ -115,26 +115,70 @@ export class PhylumApi {
         return await Deno.core.opAsync('get_job_status', jobId);
     }
 
-    /// Get project info.
-    ///
-    /// This expects a `.phylum_project` file to be present if the `project`
-    /// parameter is undefined.
+    /// Get currently linked project.
     ///
     /// # Returns
     ///
-    /// Project details:
+    /// Project information:
     ///
     /// ```
     /// {
-    ///   name: "integration-tests",
-    ///   id: "c61344f2-b9c9-44c6-adbb-f4b33dd890bd",
-    ///   ecosystem: "npm",
-    ///   thresholds: { author: 0, engineering: 0, license: 0, malicious: 0, total: 0, vulnerability: 0 },
-    ///   jobs: []
+    ///   id: "a3a898bc-e954-4ff6-ea36-6a19beefedaa",
+    ///   name: "phylum",
+    ///   created_at: "2022-08-18T18:41:46.468054855+02:00",
+    ///   group_name: null
     /// }
     /// ```
-    static async getProjectDetails(projectName?: string): object {
-        return await Deno.core.opAsync('get_project_details', projectName);
+    ///
+    /// If no project is linked, this will return `null`.
+    static getCurrentProject(): object {
+        return Deno.core.opSync('get_current_project');
+    }
+
+    /// List the user's groups.
+    ///
+    /// # Returns
+    ///
+    /// Accessible groups:
+    ///
+    /// ```
+    /// {
+    ///   groups: [
+    ///     {
+    ///       created_at: "2022-05-02T14:25:24.184866508Z",
+    ///       last_modified: "2022-05-02T14:25:24.599950299Z",
+    ///       owner_email: "null@phylum.io",
+    ///       group_name: "phlock",
+    ///       is_admin: false,
+    ///       is_owner: true
+    ///     }
+    ///   ]
+    /// }
+    /// ```
+    static async getGroups(): object {
+        return Deno.core.opAsync('get_groups');
+    }
+
+    /// List the user's projects.
+    ///
+    /// # Returns
+    ///
+    /// Accessible projects:
+    ///
+    /// ```
+    /// [
+    ///   {
+    ///     name: "phylum",
+    ///     id: "5d6eaa97-dff8-dead-a619-bcafffefeef0",
+    ///     updated_at: "2022-08-16T22:22:14.092474Z",
+    ///     created_at: "2022-06-24T22:45:47.054472Z",
+    ///     ecosystem: "npm",
+    ///     group_name: null
+    ///   }
+    /// ]
+    /// ```
+    static async getProjects(group?: string): object {
+        return Deno.core.opAsync('get_projects', group);
     }
 
     /// Get analysis results for a single package.
