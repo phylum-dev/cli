@@ -41,7 +41,7 @@ Deno.exit(output.code);
 ```
 
 When running this against a file in your local directory, it will print its
-content, otherwise , you'll see `cat` printing the following error:
+content, otherwise, you'll see `cat` printing the following error:
 
 ```text
 cat: /tmp/illegal: Permission denied
@@ -97,7 +97,7 @@ This extension will run a script against each path in your filesystem
 recursively to validate what the most granular necessary exceptions are. Once
 completed, it will output all necessary paths.
 
-Most invokations of this extension will probably look something like this:
+Most invocations of this extension will probably look something like this:
 
 ```sh
 phylum find-permissions \
