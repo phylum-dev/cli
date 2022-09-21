@@ -13,8 +13,8 @@ if (Deno.args.includes('-h')
     console.log('    phylum find-permissions [OPTIONS] --bin <PATH>');
     console.log();
     console.log('OPTIONS:');
-    console.log('    --read               Check if tested paths need to be readadle or executable');
-    console.log('    --write              Check if tested paths need to be writeable');
+    console.log('    --read               Check if tested paths need to be readable or executable');
+    console.log('    --write              Check if tested paths need to be writable');
     console.log('    --pre-bin <PATH>     Executable to be run before test execution');
     console.log('    --bin <PATH>         Executable to be run to test path necessity');
     console.log('    --post-bin <PATH>    Executable to be run after test execution');
