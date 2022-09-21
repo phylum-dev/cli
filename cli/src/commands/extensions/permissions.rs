@@ -196,7 +196,7 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/libx32".into()))?;
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/lib64".into()))?;
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/opt/homebrew".into()))?;
-    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/local/lib".into()))?;
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/local".into()))?;
 
     // Allow `env` exec to resolve binary paths.
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
