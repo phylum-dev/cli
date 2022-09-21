@@ -1,0 +1,8 @@
+name = "pip-lock"
+description = "Utility for working with loose requirements files"
+entry_point = "main.ts"
+
+[permissions]
+run = ["pip", "pip3"]
+read = ["./"]
+env = ["PHYLUM_PIP_PATH"]
