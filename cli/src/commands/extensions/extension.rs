@@ -124,8 +124,7 @@ impl Extension {
                     .default(true);
 
                 // Abort if stdout is not a terminal to avoid hanging CI or other scripts
-                let stderr = Term::stderr();
-                if !stderr.is_term() || !prompt.interact_on(&stderr)? {
+                if !Term::stdout().is_term() || !prompt.interact()? {
                     return Err(anyhow!("install aborted"));
                 }
 
