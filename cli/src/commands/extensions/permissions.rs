@@ -74,7 +74,9 @@ where
     // Resolve `~/` home prefix.
     let home = dirs::home_dir().map_err(D::Error::custom)?;
     for path in &mut paths {
-        if let Some(suffix) = path.strip_prefix("~/") {
+        if let Some(suffix) =
+            path.strip_prefix("~").filter(|path| path.is_empty() || path.starts_with('/'))
+        {
             *path = home.join(suffix).display().to_string();
         }
     }
