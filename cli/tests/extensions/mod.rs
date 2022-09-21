@@ -78,7 +78,7 @@ fn unsuccessful_installation_prints_failure_message() {
     test_cli
         .install_extension(&fixtures_path().join("sample"))
         .failure()
-        .stderr(predicate::str::contains("extension already exists"));
+        .stderr(predicate::str::contains("identical extension already installed"));
 
     // Try to install the extension from the installed path. Should fail with an
     // error.

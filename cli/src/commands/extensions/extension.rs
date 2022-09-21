@@ -1,11 +1,14 @@
 use std::borrow::Cow;
 use std::convert::TryFrom;
-use std::fs::{self, DirBuilder};
+use std::fs::{self, DirBuilder, File};
+use std::io::{BufRead, BufReader};
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
+use console::Term;
+use dialoguer::Confirm;
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use log::{warn, LevelFilter};
@@ -69,25 +72,11 @@ impl Extension {
         }
     }
 
-    /// Install the extension in the default path.
-    pub fn install(&self) -> Result<()> {
-        println!("Installing extension {}...", self.name());
-
-        let target_prefix = extension_path(self.name())?;
-
-        // TODO we may want to implement `upgrade` in the future, which would
-        // allow writing to the path of an already installed extension.
-        if target_prefix.exists() {
-            return Err(anyhow!("extension already exists, skipping"));
-        }
-
-        if target_prefix == self.path {
-            return Err(anyhow!("extension path and installation path are identical, skipping"));
-        }
-
+    /// Copy the extension to a new path.
+    fn copy_to<P: AsRef<Path>>(&self, dest: P) -> Result<()> {
         for entry in WalkDir::new(&self.path) {
             let source_path = entry?.into_path();
-            let dest_path = target_prefix.join(source_path.strip_prefix(&self.path)?);
+            let dest_path = dest.as_ref().join(source_path.strip_prefix(&self.path)?);
 
             if source_path.is_dir() {
                 let mut builder = DirBuilder::new();
@@ -104,12 +93,48 @@ impl Extension {
                 );
             } else if source_path.is_file() {
                 if dest_path.exists() {
-                    return Err(anyhow!("{}: already exists", dest_path.to_string_lossy()));
+                    return Err(anyhow!("{}: already exists", dest_path.display()));
                 } else {
                     fs::copy(source_path, dest_path)?;
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Install the extension in the default path.
+    pub fn install(&self) -> Result<()> {
+        println!("Installing extension {}...", self.name());
+        let target_prefix = extension_path(self.name())?;
+
+        if target_prefix == self.path {
+            return Err(anyhow!("extension path and installation path are identical, skipping"));
+        }
+
+        if target_prefix.exists() {
+            if dir_compare(&self.path, &target_prefix)? {
+                return Err(anyhow!("identical extension already installed, skipping"));
+            } else {
+                let mut prompt = Confirm::new();
+                prompt
+                    .with_prompt(format!(
+                        "Another version of the '{}' extension is already installed. Overwrite?",
+                        self.name()
+                    ))
+                    .default(true);
+
+                // Abort if stdout is not a terminal to avoid hanging CI or other scripts
+                let stderr = Term::stderr();
+                if !stderr.is_term() || !prompt.interact_on(&stderr)? {
+                    return Err(anyhow!("install aborted"));
+                }
+
+                println!("Removing installed version of the '{}' extension...", self.name());
+                fs::remove_dir_all(&target_prefix)?;
+            }
+        }
+
+        self.copy_to(target_prefix)?;
 
         println!("Extension {} installed successfully", self.name());
 
@@ -166,12 +191,12 @@ impl TryFrom<PathBuf> for Extension {
 
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
         if !path.is_dir() {
-            return Err(anyhow!("{}: not a directory", path.to_string_lossy()));
+            return Err(anyhow!("{}: not a directory", path.display()));
         }
 
         let manifest_path = path.join(MANIFEST_NAME);
         if !manifest_path.exists() {
-            return Err(anyhow!("{}: missing {}", path.to_string_lossy(), MANIFEST_NAME));
+            return Err(anyhow!("{}: missing {}", path.display(), MANIFEST_NAME));
         }
 
         let buf = fs::read(manifest_path)?;
@@ -180,17 +205,11 @@ impl TryFrom<PathBuf> for Extension {
         let entry_point_path = path.join(manifest.entry_point());
 
         if !entry_point_path.exists() {
-            return Err(anyhow!(
-                "{}: entry point does not exist",
-                entry_point_path.to_string_lossy()
-            ));
+            return Err(anyhow!("{}: entry point does not exist", entry_point_path.display()));
         }
 
         if !entry_point_path.is_file() {
-            return Err(anyhow!(
-                "{}: entry point is not a file",
-                entry_point_path.to_string_lossy()
-            ));
+            return Err(anyhow!("{}: entry point is not a file", entry_point_path.display()));
         }
 
         validate_name(&manifest.name)?;
@@ -222,4 +241,81 @@ pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
 
 fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
     Ok(extensions_path()?.join(name))
+}
+
+/// Compare the contents of two directories
+fn dir_compare<A: AsRef<Path>, B: AsRef<Path>>(a: A, b: B) -> Result<bool> {
+    let a = WalkDir::new(a).sort_by_file_name();
+    let b = WalkDir::new(b).sort_by_file_name();
+
+    for (a, b) in a.into_iter().zip(b) {
+        let a = a?;
+        let b = b?;
+
+        if a.depth() == 0 && b.depth() == 0 {
+            // Don't check the top-level directory
+            continue;
+        }
+
+        if a.depth() != b.depth()
+            || a.file_name() != b.file_name()
+            || a.file_type() != b.file_type()
+        {
+            log::trace!(
+                "Directory structure mismatch:\n  {}\n  {}",
+                a.path().display(),
+                b.path().display()
+            );
+
+            return Ok(false);
+        }
+
+        if a.file_type().is_file() && !file_compare(a.into_path(), b.into_path())? {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}
+
+/// Compare the contents of two files
+fn file_compare<A: AsRef<Path>, B: AsRef<Path>>(a: A, b: B) -> Result<bool> {
+    log::trace!("Comparing files:\n  {}\n  {}", a.as_ref().display(), b.as_ref().display());
+    let a = File::open(a)?;
+    let b = File::open(b)?;
+
+    if a.metadata()?.len() != b.metadata()?.len() {
+        log::trace!("File length mismatch");
+        return Ok(false);
+    }
+
+    let mut a = BufReader::new(a);
+    let mut b = BufReader::new(b);
+
+    loop {
+        let a_buf = a.fill_buf()?;
+        let b_buf = b.fill_buf()?;
+
+        if a_buf.is_empty() && b_buf.is_empty() {
+            // Both EOF at same time. Equal files
+            return Ok(true);
+        }
+
+        let cmp_len = std::cmp::min(a_buf.len(), b_buf.len());
+        if cmp_len == 0 {
+            // Only 1 EOF. Files are different
+            // Note: Because of the file length check above, this should be impossible
+            //       except perhaps if a file is actively being changed.
+            log::trace!("File length mismatch (race condition?)");
+            return Ok(false);
+        }
+
+        if a_buf[..cmp_len] != b_buf[..cmp_len] {
+            log::trace!("File contents mismatch");
+            return Ok(false);
+        }
+
+        a.consume(cmp_len);
+        b.consume(cmp_len);
+    }
 }
