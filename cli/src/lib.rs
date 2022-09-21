@@ -11,7 +11,6 @@ pub mod filter;
 pub mod fmt_deno_error;
 pub mod format;
 pub mod histogram;
-pub mod lockfiles;
 pub mod print;
 pub mod prompt;
 pub mod spinner;
