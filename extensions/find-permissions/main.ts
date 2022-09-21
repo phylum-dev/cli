@@ -19,6 +19,7 @@ if (Deno.args.includes('-h')
     console.log('    --bin <PATH>         Executable to be run to test path necessity');
     console.log('    --post-bin <PATH>    Executable to be run after test execution');
     console.log('    --skip-files         Only check directories, speeding up the process');
+    console.log('    --strict             Use strict sandboxing mode');
     Deno.exit(0);
 }
 
@@ -54,6 +55,9 @@ const post_test_bin = getArgOption('--post-bin');
 
 // Check if files should be ignored.
 const skipFiles = Deno.args.includes('--skip-files');
+
+// Check if sandboxing should be strict.
+const strict = Deno.args.includes('--strict');
 
 // Required sandboxing exceptions.
 const requiredPaths = [];
@@ -165,17 +169,23 @@ async function test(directories: [string]): bool {
     read.push(test_bin);
 
     // Run test against test executable.
-    const output = PhylumApi.runSandboxed({
-        cmd: test_bin,
-        exceptions: {
-            write,
-            read,
-            run: read,
-            net: true,
-        },
-        stdout: 'null',
-        stderr: 'null',
-    });
+    let output = undefined;
+    try {
+        output = PhylumApi.runSandboxed({
+            cmd: test_bin,
+            exceptions: {
+                strict,
+                write,
+                read,
+                run: read,
+                net: true,
+            },
+            stdout: 'null',
+            stderr: 'null',
+        });
+    } catch (_e) {
+        return false;
+    }
 
     // Run post-test cleanup executable.
     if (post_test_bin) {
