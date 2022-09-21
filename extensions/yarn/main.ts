@@ -2,26 +2,26 @@ import { red, green, yellow } from 'https://deno.land/std@0.150.0/fmt/colors.ts'
 import { PhylumApi } from 'phylum';
 
 class FileBackup {
-  readonly fileName: string
-  readonly fileContent: string | null
+  readonly fileName: string;
+  readonly fileContent: string | null;
 
   constructor(fileName: string) {
-    this.fileName = fileName
-    this.fileContent = null
+    this.fileName = fileName;
+    this.fileContent = null;
   }
 
   async backup() {
     try {
-      this.fileContent = await Deno.readTextFile(this.fileName)
+      this.fileContent = await Deno.readTextFile(this.fileName);
     } catch (e) {}
   }
 
   async restoreOrDelete() {
     try {
       if (this.fileContent != null) {
-        await Deno.writeTextFile(this.fileName, this.fileContent)
+        await Deno.writeTextFile(this.fileName, this.fileContent);
       } else {
-        await Deno.remove(this.fileName)
+        await Deno.remove(this.fileName);
       }
     } catch (e) {}
   }
@@ -39,8 +39,8 @@ try {
 // Store initial package manager file state.
 const packageLockBackup = new FileBackup('./yarn.lock');
 await packageLockBackup.backup();
-const packageBackup = new FileBackup('./package.json');
-await packageBackup.backup();
+const manifestBackup = new FileBackup('./package.json');
+await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
 if (Deno.args.length >= 1
@@ -72,9 +72,9 @@ if (Deno.args.length >= 1
         cmd: 'yarn',
         args: ['install', '--immutable', '--immutable-cache'],
         exceptions: {
-            run: ['yarn', '/tmp'],
-            read: ['~/.cache/node/corepack', './'],
             write: ['/tmp', './.yarn'],
+            run: ['yarn', '/tmp'],
+            read: true,
             net: false,
         },
     });
@@ -108,7 +108,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     // Ensure lockfile update was successful.
     if (!status.success) {
         console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-        Deno.exit(status.code);
+        abort(status.code);
     }
 
     const lockfile = await PhylumApi.parseLockfile('./yarn.lock', 'yarn');
@@ -151,5 +151,5 @@ async function abort(code) {
 // Restore package manager files.
 async function restoreBackup() {
     await packageLockBackup.restoreOrDelete();
-    await packageBackup.restoreOrDelete();
+    await manifestBackup.restoreOrDelete();
 }
