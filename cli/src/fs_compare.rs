@@ -83,3 +83,57 @@ fn file_compare<A: AsRef<Path>, B: AsRef<Path>>(a: A, b: B) -> Result<bool> {
         b.consume(cmp_len);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use tempfile::TempDir;
+
+    use super::*;
+
+    /// One simple file
+    fn dir_one() -> Result<TempDir> {
+        let dir = tempfile::tempdir()?;
+        fs::write(dir.path().join("foo.txt"), "Hello, World!")?;
+        Ok(dir)
+    }
+
+    /// dir_one with an added file
+    fn dir_two() -> Result<TempDir> {
+        let dir = tempfile::tempdir()?;
+        fs::write(dir.path().join("foo.txt"), "Hello, World!")?;
+        fs::write(dir.path().join("bar.bin"), vec![0u8; 1024])?;
+        Ok(dir)
+    }
+
+    /// dir_one, but the file contents have changed
+    fn dir_three() -> Result<TempDir> {
+        let dir = tempfile::tempdir()?;
+        fs::write(dir.path().join("foo.txt"), "Hello, Mars!")?;
+        Ok(dir)
+    }
+
+    #[test]
+    fn basic_dir_compare() {
+        let a = dir_one().unwrap();
+        let b = dir_two().unwrap();
+        let c = dir_three().unwrap();
+
+        // None of these should be equal to each other
+        assert!(!dir_compare(&a, &b).unwrap());
+        assert!(!dir_compare(&a, &c).unwrap());
+        assert!(!dir_compare(&b, &a).unwrap());
+        assert!(!dir_compare(&b, &c).unwrap());
+        assert!(!dir_compare(&c, &a).unwrap());
+        assert!(!dir_compare(&c, &b).unwrap());
+
+        // They should be equal to themselves.
+        let a2 = dir_one().unwrap();
+        let b2 = dir_two().unwrap();
+        let c2 = dir_three().unwrap();
+        assert!(dir_compare(&a, &a2).unwrap());
+        assert!(dir_compare(&b, &b2).unwrap());
+        assert!(dir_compare(&c, &c2).unwrap());
+    }
+}
