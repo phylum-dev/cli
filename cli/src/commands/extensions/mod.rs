@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, ArgMatches, Command, ValueHint};
+use clap::{arg, Arg, ArgGroup, ArgMatches, Command, ValueHint};
 use dialoguer::console::Term;
 use dialoguer::Confirm;
 use futures::future::BoxFuture;
@@ -36,7 +36,13 @@ pub fn command<'a>() -> Command<'a> {
         .subcommand(
             Command::new("install")
                 .about("Install extension")
-                .arg(arg!(-y --yes "Automatically accept requested permissions"))
+                .arg(arg!(-y --yes "Accept permissions and overwrite existing (same as --overwrite --accept-permissions)"))
+                .arg(Arg::new("accept-permissions").long("accept-permissions").help("Automatically accept requested permissions"))
+                .group(
+                    ArgGroup::new("accept-permissions-group").args(&["yes", "accept-permissions"]),
+                )
+                .arg(arg!(--overwrite "Overwrite existing extension"))
+                .group(ArgGroup::new("overwrite-group").args(&["yes", "overwrite"]))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -97,8 +103,12 @@ pub async fn handle_extensions(
 ) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
-            handle_install_extension(matches.value_of("PATH").unwrap(), matches.is_present("yes"))
-                .await
+            handle_install_extension(
+                matches.value_of("PATH").unwrap(),
+                matches.is_present("accept-permissions-group"),
+                matches.is_present("overwrite-group"),
+            )
+            .await
         },
         Some(("uninstall", matches)) => {
             handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
@@ -159,7 +169,11 @@ pub async fn handle_run_extension_from_path(
 /// Handle the `extension install` subcommand path.
 ///
 /// Install the extension from the specified path.
-async fn handle_install_extension(path: &str, accept_permissions: bool) -> CommandResult {
+async fn handle_install_extension(
+    path: &str,
+    accept_permissions: bool,
+    overwrite: bool,
+) -> CommandResult {
     // NOTE: Extension installation without slashes is reserved for the marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
@@ -168,6 +182,15 @@ async fn handle_install_extension(path: &str, accept_permissions: bool) -> Comma
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
+    if !overwrite {
+        if let Ok(installed_extension) = Extension::load(extension.name()) {
+            if extension == installed_extension {
+                return Err(anyhow!("identical extension already installed, skipping"));
+            }
+            ask_overwrite(&extension)?;
+        }
+    }
+
     if !accept_permissions && !extension.permissions().is_allow_none() {
         ask_permissions(&extension)?;
     }
@@ -175,6 +198,23 @@ async fn handle_install_extension(path: &str, accept_permissions: bool) -> Comma
     extension.install()?;
 
     Ok(CommandValue::Code(ExitCode::Ok))
+}
+
+fn ask_overwrite(extension: &Extension) -> Result<()> {
+    let mut prompt = Confirm::new();
+    prompt
+        .with_prompt(format!(
+            "Another version of the '{}' extension is already installed. Overwrite?",
+            extension.name()
+        ))
+        .default(true);
+
+    // Abort if stdout is not a terminal to avoid hanging CI or other scripts
+    if !Term::stdout().is_term() || !prompt.interact()? {
+        return Err(anyhow!("install aborted"));
+    }
+
+    Ok(())
 }
 
 fn ask_permissions(extension: &Extension) -> Result<()> {

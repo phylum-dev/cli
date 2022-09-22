@@ -7,8 +7,6 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
-use console::Term;
-use dialoguer::Confirm;
 use futures::future::BoxFuture;
 use lazy_static::lazy_static;
 use log::{warn, LevelFilter};
@@ -112,25 +110,7 @@ impl Extension {
         }
 
         if target_prefix.exists() {
-            if dir_compare(&self.path, &target_prefix)? {
-                return Err(anyhow!("identical extension already installed, skipping"));
-            } else {
-                let mut prompt = Confirm::new();
-                prompt
-                    .with_prompt(format!(
-                        "Another version of the '{}' extension is already installed. Overwrite?",
-                        self.name()
-                    ))
-                    .default(true);
-
-                // Abort if stdout is not a terminal to avoid hanging CI or other scripts
-                if !Term::stdout().is_term() || !prompt.interact()? {
-                    return Err(anyhow!("install aborted"));
-                }
-
-                println!("Removing installed version of the '{}' extension...", self.name());
-                fs::remove_dir_all(&target_prefix)?;
-            }
+            fs::remove_dir_all(&target_prefix)?;
         }
 
         self.copy_to(target_prefix)?;
@@ -181,6 +161,14 @@ impl Extension {
 
         // Execute Deno extension.
         deno::run(api, self, args).await
+    }
+}
+
+impl PartialEq for Extension {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+            || (self.name() == other.name()
+                && dir_compare(&self.path, &other.path).unwrap_or(false))
     }
 }
 
