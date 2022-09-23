@@ -2,59 +2,125 @@ import { red, green, yellow } from 'https://deno.land/std@0.150.0/fmt/colors.ts'
 import { PhylumApi } from 'phylum';
 
 class FileBackup {
-  readonly fileName: string
-  readonly fileContent: string | null
+  readonly fileName: string;
+  readonly fileContent: string | null;
 
   constructor(fileName: string) {
-    this.fileName = fileName
-    this.fileContent = null
+    this.fileName = fileName;
+    this.fileContent = null;
   }
 
   async backup() {
     try {
-      this.fileContent = await Deno.readTextFile(this.fileName)
+      this.fileContent = await Deno.readTextFile(this.fileName);
     } catch (e) {}
   }
 
   async restoreOrDelete() {
     try {
       if (this.fileContent != null) {
-        await Deno.writeTextFile(this.fileName, this.fileContent)
+        await Deno.writeTextFile(this.fileName, this.fileContent);
       } else {
-        await Deno.remove(this.fileName)
+        await Deno.remove(this.fileName);
       }
     } catch (e) {}
   }
 }
 
-// Analyze new packages.
-async function checkDryRun(subcommand: string, args: string[]) {
-    try {
-        await Deno.stat('package.json');
-    } catch (e) {
-        console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
-        console.error(`[${red("phylum")}] Please move to the npm project's top level directory and try again.`);
-        Deno.exit(125);
+// Ensure we're in an npm root directory.
+try {
+    await Deno.stat('package.json');
+} catch (e) {
+    console.error(`[${red("phylum")}] \`package.json\` was not found in the current directory.`);
+    console.error(`[${red("phylum")}] Please move to the npm project's top level directory and try again.`);
+    Deno.exit(125);
+}
+
+// Store initial package manager file state.
+const packageLockBackup = new FileBackup('./package-lock.json');
+await packageLockBackup.backup();
+const manifestBackup = new FileBackup('./package.json');
+await manifestBackup.backup();
+
+
+// Analyze new dependencies with phylum before install/update.
+if (Deno.args.length >= 1
+    && (
+        'install'.startsWith(Deno.args[0])
+        || 'isntall'.startsWith(Deno.args[0])
+        || 'update'.startsWith(Deno.args[0])
+        || 'udpate'.startsWith(Deno.args[0])
+    )) {
+    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+
+    console.log(`[${green("phylum")}] Installing without build scripts…`);
+
+    // Install packages without executing build scripts.
+    let status = await Deno.run({ cmd: ['npm', ...Deno.args, '--ignore-scripts']}).status();
+
+    // Ensure install worked. Failure is still "safe" for the user.
+    if (!status.success) {
+        console.error(`[${red("phylum")}] Installing packges failed.\n`);
+        abort(status.code);
+    } else {
+        console.log(`[${green("phylum")}] Packages installed successfully.\n`);
     }
 
-    // Backup package/lock files.
-    const packageLockBackup = new FileBackup('./package-lock.json');
-    await packageLockBackup.backup();
-    const packageBackup = new FileBackup('./package.json');
-    await packageBackup.backup();
+    console.log(`[${green("phylum")}] Running build scripts inside sandbox…`);
 
-    await Deno.run({
+    // Run build scripts inside a sandbox.
+    const output = PhylumApi.runSandboxed({
+        cmd: 'npm',
+        args: ['install'],
+        exceptions: {
+            write: ['~/.npm/_logs', './package-lock.json', './node_modules'],
+            run: ['npm'],
+            read: true,
+            net: false,
+        },
+    });
+
+    // Failure here could indicate vulnerabilities; report to the user.
+    if (!output.success) {
+        console.log(`[${red("phylum")}] Sandboxed build failed.`);
+        console.log(`[${red("phylum")}]`);
+        console.log(`[${red("phylum")}] This could mean one of your packages attempted to access a restricted resource.`);
+        console.log(`[${red("phylum")}] Do not retry installation without Phylum's extension.`);
+        console.log(`[${red("phylum")}]`);
+        console.log(`[${red("phylum")}] Please submit your lockfile to Phylum should this error persist.`);
+
+        abort(output.code);
+    } else {
+        console.log(`[${green("phylum")}] Packages built successfully.`);
+    }
+} else {
+    let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
+    Deno.exit(status.code);
+}
+
+// Analyze new packages.
+async function checkDryRun(subcommand: string, args: string[]) {
+    console.log(`[${green("phylum")}] Updating lockfile…`);
+
+    let status = await Deno.run({
         cmd: ['npm', subcommand, '--package-lock-only', ...args],
         stdout: 'piped',
         stderr: 'piped',
     }).status();
 
+    // Ensure lockfile update was successful.
+    if (!status.success) {
+        console.error(`[${red("phylum")}] Lockfile update failed.\n`);
+        abort(status.code);
+    }
+
     const lockfile = await PhylumApi.parseLockfile('./package-lock.json', 'npm');
 
-    // Restore package/lock files.
-    await packageLockBackup.restoreOrDelete();
-    await packageBackup.restoreOrDelete();
+    // Ensure `checkDryRun` never modifies package manager files,
+    // regardless of success.
+    await restoreBackup();
 
+    console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
     console.log(`[${green("phylum")}] Analyzing packages…`);
 
     if (lockfile.packages.length === 0) {
@@ -76,18 +142,17 @@ async function checkDryRun(subcommand: string, args: string[]) {
     }
 }
 
-// Analyze new dependencies with phylum before install/update.
-if (Deno.args.length >= 1
-    && (
-        'install'.startsWith(Deno.args[0])
-        || 'isntall'.startsWith(Deno.args[0])
-        || 'update'.startsWith(Deno.args[0])
-        || 'udpate'.startsWith(Deno.args[0])
-    )) {
-    await checkDryRun(Deno.args[0], Deno.args.slice(1));
+// Abort with specified exit code.
+//
+// This assumes that execution was not successful and it will automatically
+// revert to the last stored package manager files.
+async function abort(code) {
+    await restoreBackup();
+    Deno.exit(code);
 }
 
-// Run the command with side effects.
-console.log(`[${green("phylum")}] Applying changes…`);
-let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
-Deno.exit(status.code);
+// Restore package manager files.
+async function restoreBackup() {
+    await packageLockBackup.restoreOrDelete();
+    await manifestBackup.restoreOrDelete();
+}

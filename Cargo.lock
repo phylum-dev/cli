@@ -284,6 +284,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "birdcage"
+version = "0.1.0"
+source = "git+https://github.com/phylum-dev/birdcage#36d28f03d84d809d92e1a0200eeb1f9d43741532"
+dependencies = [
+ "landlock",
+ "libc",
+ "seccompiler",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1386,6 +1396,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "enumflags2"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e75d4cd21b95383444831539909fbb14b9dc3fdceb2a6f5d36577329a1f55ccb"
+dependencies = [
+ "enumflags2_derive",
+]
+
+[[package]]
+name = "enumflags2_derive"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f58dc3c5e468259f19f2d46304a6b28f1c3d034442e14b322d2b850e36f6d5ae"
+dependencies = [
+ "proc-macro2 1.0.43",
+ "quote 1.0.21",
+ "syn 1.0.100",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2215,6 +2245,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "landlock"
+version = "0.1.0"
+source = "git+https://github.com/cd-work/rust-landlock#1e09cb01ba08ef14fd77f8b8759583e90c1a302b"
+dependencies = [
+ "enumflags2",
+ "libc",
+ "thiserror",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2820,6 +2860,7 @@ dependencies = [
  "assert_cmd",
  "atty",
  "base64 0.13.0",
+ "birdcage",
  "bytes",
  "chrono",
  "cidr",
@@ -3550,6 +3591,15 @@ dependencies = [
  "pkcs8",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "seccompiler"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e01d1292a1131b22ccea49f30bd106f1238b5ddeec1a98d39268dcc31d540e68"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
