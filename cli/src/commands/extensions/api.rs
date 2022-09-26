@@ -1,11 +1,21 @@
 //! Extension API functions.
 
 use std::cell::RefCell;
+#[cfg(unix)]
+use std::io;
+#[cfg(unix)]
+use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
+#[cfg(unix)]
+use std::path::PathBuf;
+#[cfg(unix)]
+use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Error, Result};
+#[cfg(unix)]
+use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
@@ -21,6 +31,9 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::auth::UserInfo;
+#[cfg(unix)]
+use crate::commands::extensions::permissions;
+use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
@@ -43,6 +56,75 @@ impl From<PackageDescriptor> for PackageSpecifier {
 struct PackageLock {
     packages: Vec<PackageSpecifier>,
     package_type: PackageType,
+}
+
+/// New process to be launched.
+#[derive(Serialize, Deserialize, Debug)]
+struct Process {
+    cmd: String,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    stdin: ProcessStdio,
+    #[serde(default)]
+    stdout: ProcessStdio,
+    #[serde(default)]
+    stderr: ProcessStdio,
+    #[serde(default)]
+    exceptions: ProcessException,
+}
+
+/// Sandboxing exceptions.
+#[derive(Serialize, Deserialize, Debug, Default)]
+struct ProcessException {
+    #[serde(default)]
+    read: Permission,
+    #[serde(default)]
+    write: Permission,
+    #[serde(default)]
+    run: Permission,
+    #[serde(default)]
+    net: bool,
+    #[serde(default)]
+    strict: bool,
+}
+
+/// Standard I/O behavior.
+#[derive(Serialize, Deserialize, Debug)]
+enum ProcessStdio {
+    #[serde(rename = "inherit")]
+    Inherit,
+    #[serde(rename = "piped")]
+    Piped,
+    #[serde(rename = "null")]
+    Null,
+}
+
+impl Default for ProcessStdio {
+    fn default() -> Self {
+        Self::Inherit
+    }
+}
+
+#[cfg(unix)]
+impl From<ProcessStdio> for Stdio {
+    fn from(stdio: ProcessStdio) -> Self {
+        match stdio {
+            ProcessStdio::Piped => Self::piped(),
+            ProcessStdio::Inherit => Self::inherit(),
+            ProcessStdio::Null => Self::null(),
+        }
+    }
+}
+
+/// Subprocess output.
+#[derive(Serialize, Deserialize, Debug)]
+struct ProcessOutput {
+    stdout: String,
+    stderr: String,
+    success: bool,
+    signal: Option<i32>,
+    code: Option<i32>,
 }
 
 /// Analyze a lockfile.
@@ -240,6 +322,74 @@ async fn parse_lockfile(
     })
 }
 
+/// Run a command inside a sandbox.
+///
+/// This runs the supplied command in a sandbox, without restricting the
+/// permissions of the sandbox itself. As a result more privileged access is
+/// possible even after the command has been spawned.
+#[op]
+#[cfg(unix)]
+fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+    // Setup process to be run.
+    let mut command = Command::new(process.cmd);
+    command.args(&process.args);
+    command.stdin(process.stdin);
+    command.stdout(process.stdout);
+    command.stderr(process.stderr);
+
+    // Apply sandbox to subprocess after fork.
+    unsafe {
+        command.pre_exec(move || {
+            let into_ioerr = |err| io::Error::new(io::ErrorKind::Other, err);
+
+            let mut birdcage = if process.exceptions.strict {
+                Birdcage::new().map_err(into_ioerr)?
+            } else {
+                permissions::default_sandbox().map_err(into_ioerr)?
+            };
+
+            for path in process.exceptions.read.sandbox_paths().iter() {
+                permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.write.sandbox_paths().iter() {
+                permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.run.sandbox_paths().iter() {
+                let absolute_path = permissions::resolve_bin_path(path);
+                permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
+                    .map_err(into_ioerr)?;
+            }
+            if process.exceptions.net {
+                birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
+            }
+            birdcage.lock().map_err(into_ioerr)?;
+            Ok(())
+        });
+    }
+
+    let output = command.output()?;
+
+    Ok(ProcessOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        success: output.status.success(),
+        code: output.status.code(),
+        #[cfg(unix)]
+        signal: output.status.signal(),
+        #[cfg(not(unix))]
+        signal: None,
+    })
+}
+
+/// Return error when trying to sandbox on Windows.
+#[op]
+#[cfg(not(unix))]
+fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
+    Err(anyhow!("Extension sandboxing is not supported on this platform"))
+}
+
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
@@ -252,5 +402,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_projects::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
+        run_sandboxed::decl(),
     ]
 }
