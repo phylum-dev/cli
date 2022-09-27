@@ -10,6 +10,7 @@ pub mod dirs;
 pub mod filter;
 pub mod fmt_deno_error;
 pub mod format;
+pub mod fs_compare;
 pub mod histogram;
 pub mod print;
 pub mod prompt;

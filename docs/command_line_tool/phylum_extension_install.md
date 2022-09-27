@@ -11,9 +11,14 @@ phylum extension install [OPTIONS] <PATH>
 ```
 
 ### Options
+`--accept-permissions`
+&emsp; Automatically accept requested permissions
+
+`--overwrite`
+&emsp; Overwrite existing extension
 
 `-y`, `--yes`
-&emsp; Automatically accept requested permissions
+&emsp; Accept permissions and overwrite existing (same as `--overwrite --accept-permissions`)
 
 ### Details
 
