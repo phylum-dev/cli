@@ -131,6 +131,16 @@ copy_files() {
     (umask 077; mkdir -p "${data_dir}")
     cp -a "completions" "${data_dir}/"
     success "Copied completions to ${completions_dir}"
+
+    # Install extensions
+    for ext in extensions/*/PhylumExt.toml
+    do
+        ext=$(dirname "${ext}")
+
+        # Install the extension
+        "${bin_dir}/${bin_name}" extension install --accept-permissions "${ext}"
+    done
+    success "Installed default extensions"
 }
 
 cd "$(dirname "$0")"
