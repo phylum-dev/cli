@@ -67,6 +67,12 @@ fn successful_installation_prints_message() {
         .install_extension(&fixtures_path().join("sample"))
         .success()
         .stdout(predicate::str::contains("Extension sample installed successfully"));
+
+    // Installing the same extension twice is also fine (because we're using --yes)
+    test_cli
+        .install_extension(&fixtures_path().join("sample"))
+        .success()
+        .stdout(predicate::str::contains("Extension sample installed successfully"));
 }
 
 // When a user attempts to install an invalid extension, it should fail and
@@ -77,12 +83,6 @@ fn unsuccessful_installation_prints_failure_message() {
 
     // Install the extension. Should succeed.
     test_cli.install_extension(&fixtures_path().join("sample")).success();
-
-    // Reinstall the same extension. Should fail with an error.
-    test_cli
-        .install_extension(&fixtures_path().join("sample"))
-        .failure()
-        .stderr(predicate::str::contains("extension already exists"));
 
     // Try to install the extension from the installed path. Should fail with an
     // error.

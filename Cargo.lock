@@ -2865,6 +2865,7 @@ dependencies = [
  "chrono",
  "cidr",
  "clap",
+ "console",
  "deno_ast",
  "deno_core",
  "deno_runtime",
