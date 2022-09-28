@@ -187,7 +187,11 @@ async fn handle_install_extension(
     if !overwrite {
         if let Ok(installed_extension) = Extension::load(extension.name()) {
             if extension == installed_extension {
-                return Err(anyhow!("identical extension already installed, skipping"));
+                print_user_success!(
+                    "Extension {} already installed, nothing to do",
+                    extension.name()
+                );
+                return Ok(CommandValue::Code(ExitCode::Ok));
             }
             ask_overwrite(&extension)?;
         }
