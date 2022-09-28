@@ -138,7 +138,8 @@ copy_files() {
         ext=$(dirname "${ext}")
 
         # Install the extension
-        "${bin_dir}/${bin_name}" extension install --accept-permissions "${ext}"
+        # Note: We ignore the exit code here because the user might decline the install
+        "${bin_dir}/${bin_name}" extension install --accept-permissions "${ext}" || true
     done
     success "Installed default extensions"
 }
