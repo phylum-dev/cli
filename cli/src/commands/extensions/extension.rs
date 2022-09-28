@@ -101,7 +101,6 @@ impl Extension {
 
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
-        println!("Installing extension {}...", self.name());
         let target_prefix = extension_path(self.name())?;
 
         if target_prefix == self.path {
@@ -113,8 +112,6 @@ impl Extension {
         }
 
         self.copy_to(target_prefix)?;
-
-        println!("Extension {} installed successfully", self.name());
 
         Ok(())
     }
