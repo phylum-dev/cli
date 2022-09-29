@@ -9,8 +9,8 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 #[macro_export]
 macro_rules! print_user_success {
     ($($tts:tt)*) => {{
-        eprint!("✅ ");
-        eprintln!($($tts)*);
+        print!("✅ ");
+        println!($($tts)*);
     }}
 }
 

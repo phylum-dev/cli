@@ -2,7 +2,7 @@
 name = "fixture"
 version = "0.1.0"
 description = ""
-authors = ["Andrea Venuta <andrea@phylum.io>"]
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"

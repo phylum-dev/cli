@@ -182,10 +182,16 @@ async fn handle_install_extension(
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
+    println!("Installing extension {}...", extension.name());
+
     if !overwrite {
         if let Ok(installed_extension) = Extension::load(extension.name()) {
             if extension == installed_extension {
-                return Err(anyhow!("identical extension already installed, skipping"));
+                print_user_success!(
+                    "Extension {} already installed, nothing to do",
+                    extension.name()
+                );
+                return Ok(CommandValue::Code(ExitCode::Ok));
             }
             ask_overwrite(&extension)?;
         }
@@ -196,6 +202,8 @@ async fn handle_install_extension(
     }
 
     extension.install()?;
+
+    print_user_success!("Extension {} installed successfully", extension.name());
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }

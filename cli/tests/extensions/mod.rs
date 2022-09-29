@@ -170,7 +170,7 @@ fn create_extension() {
     test_cli
         .run(&["extension", "new", "my-ext"])
         .success()
-        .stderr(predicates::str::contains("✅ Extension created successfully"));
+        .stdout(predicates::str::contains("✅ Extension created successfully"));
 }
 
 // Extension creation with invalid name fails
