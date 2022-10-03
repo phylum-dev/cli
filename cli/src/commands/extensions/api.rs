@@ -18,16 +18,18 @@ use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
-use phylum_types::types::common::JobId;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
+use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 #[cfg(unix)]
 use crate::commands::extensions::permissions;
@@ -252,6 +254,24 @@ async fn get_projects(
     let api = state.api().await?;
 
     api.get_projects(group.as_deref()).await.map_err(Error::from)
+}
+
+/// Create a project.
+#[op]
+async fn create_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: &str,
+    group: Option<&str>,
+) -> Result<ProjectId> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    api.create_project(name, group).await.map_err(|e| match e {
+        PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. }) => {
+            anyhow!("Project '{}' already exists", name)
+        },
+        err => err.into(),
+    })
 }
 
 /// Analyze a single package.

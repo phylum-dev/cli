@@ -181,6 +181,19 @@ export class PhylumApi {
         return Deno.core.opAsync('get_projects', group);
     }
 
+    /// Create a project.
+    ///
+    /// # Returns
+    /// 
+    /// The id of the newly created project:
+    ///
+    /// ```
+    /// "5d6eaa97-dff8-dead-a619-bcafffefeef0"
+    /// ```
+    static async createProject(name: string, group?: string): string {
+        return Deno.core.opAsync('create_project', name, group);
+    }
+
     /// Get analysis results for a single package.
     ///
     /// This will not start a new package analysis, but only retrieve previous
