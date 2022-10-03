@@ -260,13 +260,13 @@ async fn get_projects(
 #[op]
 async fn create_project(
     op_state: Rc<RefCell<OpState>>,
-    name: &str,
-    group: Option<&str>,
+    name: String,
+    group: Option<String>,
 ) -> Result<ProjectId> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    api.create_project(name, group).await.map_err(|e| match e {
+    api.create_project(&name, group.as_deref()).await.map_err(|e| match e {
         PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. }) => {
             anyhow!("Project '{}' already exists", name)
         },
@@ -432,6 +432,7 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_current_project::decl(),
         get_groups::decl(),
         get_projects::decl(),
+        create_project::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),
