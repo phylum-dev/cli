@@ -273,7 +273,7 @@ mod tests {
             name: "@yarnpkg/lockfile".to_string(),
             version: "1.1.0".to_string(),
             package_type: PackageType::Npm,
-        }]);
+        }])
     }
 
     #[test]
