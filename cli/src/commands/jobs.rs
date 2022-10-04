@@ -2,8 +2,8 @@ use std::io;
 use std::path::Path;
 use std::str::FromStr;
 
-use ansi_term::Color::Blue;
 use anyhow::{anyhow, Context, Result};
+use console::style;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::{Action, JobStatusResponse};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -29,7 +29,7 @@ where
         Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
             print_user_warning!(
                 "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                Blue.paint("phylum analyze <lock_file>")
+                style("phylum analyze <lock_file>").blue()
             );
             return Ok(Action::None);
         },
@@ -90,7 +90,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
                 print_user_warning!(
                     "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                    Blue.paint("phylum analyze <lock_file>")
+                    style("phylum analyze <lock_file>").blue()
                 );
                 return Ok(ExitCode::NoHistoryFound.into());
             },

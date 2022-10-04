@@ -1,4 +1,4 @@
-use ansi_term::Color::White;
+use console::style;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Input, Select};
 use phylum_types::types::user_settings::Threshold;
@@ -10,7 +10,7 @@ const ALWAYS_ENABLED_THRESHOLDS: [&str; 1] = ["total project"];
 /// threshold.
 pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
     let threshold = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("{} Threshold", format_args!("{}", White.paint(name.to_uppercase()))))
+        .with_prompt(format!("{} Threshold", format_args!("{}", style(name.to_uppercase()).white())))
         .validate_with(|input: &String| -> Result<(), String> {
             if input.eq_ignore_ascii_case("disabled") {
                 if ALWAYS_ENABLED_THRESHOLDS.contains(&name) {
@@ -33,7 +33,7 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
         .interact_text()?;
 
     if threshold.eq_ignore_ascii_case("disabled") {
-        println!("\nDisabling {} risk domain", format_args!("{}", White.paint(name)));
+        println!("\nDisabling {} risk domain", format_args!("{}", style(name).white()));
         println!("\n-----\n");
 
         return Ok(Threshold { action: "none".into(), threshold: 0., active: false });
@@ -41,7 +41,7 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
 
     println!(
         "\nWhat should happen if a score falls below the {} threshold?\n",
-        format_args!("{}", White.paint(name))
+        format_args!("{}", style(name).white())
     );
 
     let items = vec!["Break the CI/CD build", "Print a warning message", "Do nothing"];
@@ -53,7 +53,7 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
         .interact()
         .unwrap();
     let action = items[selection];
-    println!("✔ {} Action · {}", White.paint(name.to_uppercase()), action);
+    println!("✔ {} Action · {}", style(name.to_uppercase()).white(), action);
     println!("\n-----\n");
 
     let threshold = threshold.parse::<i32>().unwrap() as f32 / 100.;

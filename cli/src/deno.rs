@@ -6,8 +6,8 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::thread;
 
-use ansi_term::Color;
 use anyhow::{anyhow, Context, Error, Result};
+use console::style;
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
@@ -121,7 +121,7 @@ fn print_js_error(error: Error) -> CommandResult {
 
     println!(
         "{}: {}",
-        Color::Red.paint("Extension error"),
+        style("Extension error").red(),
         fmt_deno_error::format_js_error(&js_error)
     );
 

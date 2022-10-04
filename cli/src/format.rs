@@ -2,8 +2,8 @@ use std::cmp;
 use std::io::{self, Write};
 use std::str::{self, FromStr};
 
-use ansi_term::Colour::{Blue, Green, Purple, Red, White, Yellow};
 use chrono::NaiveDateTime;
+use console::style;
 use phylum_types::types::group::{ListUserGroupsResponse, UserGroup};
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor, JobStatusResponse};
 use phylum_types::types::package::{
@@ -77,18 +77,18 @@ impl Format for Vec<JobDescriptor> {
 
         let mut jobs = String::new();
         for (i, job) in self.iter().enumerate() {
-            let mut state = Green.paint("PASS").to_string();
+            let mut state = style("PASS").green().to_string();
             let score = format!("{:>3}", (job.score * 100.0) as u32);
-            let mut colored_score = Green.paint(&score).to_string();
+            let mut colored_score = style(&score).green().to_string();
             let project_name = print::truncate(&job.project, 39);
-            let colored_project_name = White.bold().paint(project_name).to_string();
+            let colored_project_name = style(project_name).white().bold().to_string();
 
             if job.num_incomplete > 0 {
-                colored_score = format!("{}", Yellow.paint(&score));
-                state = format!("{}", Yellow.paint("INCOMPLETE"));
+                colored_score = format!("{}", style(&score).yellow());
+                state = format!("{}", style("INCOMPLETE").yellow());
             } else if !job.pass {
-                colored_score = format!("{}", Red.paint(&score));
-                state = format!("{}", Red.paint("FAIL"));
+                colored_score = format!("{}", style(&score).red());
+                state = format!("{}", style("FAIL").red());
             }
 
             let first_line = format!(
@@ -254,7 +254,7 @@ where
     }
 
     // Color header to distinguish it from rows.
-    header = Blue.paint(header).to_string();
+    header = style(header).blue().to_string();
 
     // Combine header with all rows.
     let rows = rows.join("\n");
@@ -320,11 +320,11 @@ where
     summary = format!("{}\n{:>16}: {}", summary, "Ecosystem", ecosystem_label);
 
     let status = if resp.num_incomplete > 0 {
-        format!("{:>16}: {}", "Status", Yellow.paint("INCOMPLETE"))
+        format!("{:>16}: {}", "Status", style("INCOMPLETE").yellow())
     } else if resp.pass {
-        format!("{:>16}: {}", "Status", Green.paint("PASS"))
+        format!("{:>16}: {}", "Status", style("PASS").green())
     } else {
-        format!("{:>16}: {}\n{:>16}: {}", "Status", Red.paint("FAIL"), "Reason", resp.msg)
+        format!("{:>16}: {}\n{:>16}: {}", "Status", style("FAIL").red(), "Reason", resp.msg)
     };
 
     let scores: Vec<f64> = resp.packages.iter().map(|p| p.score()).collect();
@@ -352,7 +352,7 @@ where
     if resp.num_incomplete > 0 {
         let notice = format!(
             "\n{}: {:.2}% of submitted packages are currently being processed. Scores may change once processing completes.\n            For more information on processing visit https://docs.phylum.io/docs/processing.",
-            Purple.paint("PROCESSING"),
+            style("PROCESSING").magenta(),
             (resp.num_incomplete as f32/resp.packages.len() as f32)*100.0
         );
         table.add_row(row![notice]);
