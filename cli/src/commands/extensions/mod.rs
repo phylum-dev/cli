@@ -316,10 +316,17 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
     let entry_path = extension_path.join("main.ts");
     fs::write(entry_path, EXTENSION_SKELETON)?;
 
+    // Ensure `./` is prepended to all relative paths.
+    let install_path = if extension_path.is_relative() && !extension_path.starts_with("./") {
+        format!("./{path}")
+    } else {
+        path.to_owned()
+    };
+
     print_user_success!(
         "\
         Extension created successfully
-        \nRun `phylum extension install {path}` to install it."
+        \nRun `phylum extension install {install_path}` to install it."
     );
 
     Ok(CommandValue::Code(ExitCode::Ok))
