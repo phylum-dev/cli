@@ -17,7 +17,6 @@ selfmanage = []
 end-to-end-tests = []
 
 [dependencies]
-ansi_term = "0.12.1"
 anyhow = "1.0.44"
 atty = "0.2.14"
 base64 = "0.13.0"
