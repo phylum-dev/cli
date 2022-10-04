@@ -5,9 +5,9 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
-use ansi_term::Color;
 use anyhow::{anyhow, Context, Result};
 use clap::{arg, Arg, ArgGroup, ArgMatches, Command, ValueHint};
+use console::style;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
 use futures::future::BoxFuture;
@@ -246,9 +246,9 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
 
         if permissions.is_empty() {
             let msg = format!("{key} any {resource}");
-            println!("\n  {}", Color::Yellow.bold().paint(msg));
+            println!("\n  {}", style(msg).yellow().bold());
         } else {
-            println!("\n  {} the following {resource}s:", Color::Blue.bold().paint(key));
+            println!("\n  {} the following {resource}s:", style(key).blue().bold());
 
             for permission in permissions {
                 println!("    '{permission}'");
@@ -341,7 +341,7 @@ async fn handle_list_extensions() -> CommandResult {
     if extensions.is_empty() {
         println!("No extensions are currently installed.");
     } else {
-        let heading = Color::Blue.paint("Extension Name         Description");
+        let heading = style("Extension Name         Description").blue();
         println!("{heading}");
 
         for extension in extensions {
