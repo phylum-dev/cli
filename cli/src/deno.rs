@@ -119,11 +119,7 @@ fn print_js_error(error: Error) -> CommandResult {
         return Err(anyhow!(message.to_owned()));
     }
 
-    println!(
-        "{}: {}",
-        style("Extension error").red(),
-        fmt_deno_error::format_js_error(&js_error)
-    );
+    println!("{}: {}", style("Extension error").red(), fmt_deno_error::format_js_error(&js_error));
 
     Ok(ExitCode::JsError.into())
 }

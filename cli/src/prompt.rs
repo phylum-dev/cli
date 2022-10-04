@@ -10,7 +10,10 @@ const ALWAYS_ENABLED_THRESHOLDS: [&str; 1] = ["total project"];
 /// threshold.
 pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
     let threshold = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("{} Threshold", format_args!("{}", style(name.to_uppercase()).white())))
+        .with_prompt(format!(
+            "{} Threshold",
+            format_args!("{}", style(name.to_uppercase()).white())
+        ))
         .validate_with(|input: &String| -> Result<(), String> {
             if input.eq_ignore_ascii_case("disabled") {
                 if ALWAYS_ENABLED_THRESHOLDS.contains(&name) {

@@ -5,9 +5,9 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
-use console::style;
 use anyhow::{anyhow, Context, Result};
 use clap::{arg, Arg, ArgGroup, ArgMatches, Command, ValueHint};
+use console::style;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
 use futures::future::BoxFuture;
