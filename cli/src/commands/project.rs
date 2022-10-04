@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use ansi_term::Color::White;
 use anyhow::{anyhow, Context, Result};
 use chrono::Local;
+use console::style;
 use reqwest::StatusCode;
 
 use super::{CommandResult, ExitCode};
@@ -95,7 +95,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         print_user_success!(
             "Linked the current working directory to the project {}.",
-            format!("{}", White.paint(proj_conf.name))
+            format!("{}", style(proj_conf.name).white())
         );
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
         let mut project_name = matches.value_of("name").unwrap_or("current");
@@ -124,21 +124,21 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         println!();
         println!(
             "    * {}: print a message to standard error",
-            format_args!("{}", White.paint("Print a warning"))
+            format_args!("{}", style("Print a warning").white())
         );
         println!(
             "    * {}: If we are in CI/CD break the build and return a non-zero exit code",
-            format_args!("{}", White.paint("Break the build"))
+            format_args!("{}", style("Break the build").white())
         );
         println!(
             "    * {}: Ignore the failure and continue",
-            format_args!("{}", White.paint("Nothing, fail silently"))
+            format_args!("{}", style("Nothing, fail silently").white())
         );
         println!();
 
         println!(
             "Specify the thresholds and actions for {}. Accepted values are 0-100 or 'Disabled'.",
-            format_args!("{}", White.paint(project_name))
+            format_args!("{}", style(project_name).white())
         );
         println!();
 
@@ -186,13 +186,13 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             Ok(_) => {
                 print_user_success!(
                     "Set all thresholds for the {} project",
-                    White.paint(project_name)
+                    style(project_name).white()
                 );
             },
             Err(err) => {
                 print_user_failure!(
                     "Failed to set thresholds for the {} project: {err}",
-                    White.paint(project_name),
+                    style(project_name).white(),
                 );
                 return Ok(ExitCode::SetThresholdsFailure.into());
             },
