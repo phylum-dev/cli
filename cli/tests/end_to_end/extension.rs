@@ -80,7 +80,8 @@ pub async fn create_and_delete_project() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension(r#"
+        .extension(
+            r#"
             try {
                 await PhylumApi.deleteProject("create_and_delete_test_project")
             } catch (e) {
@@ -94,7 +95,8 @@ pub async fn create_and_delete_project() {
                 console.log("ERROR " + projectId + " " + duplicatedProjectId)
             }
 
-        "#)
+        "#,
+        )
         .build()
         .run()
         .success()
