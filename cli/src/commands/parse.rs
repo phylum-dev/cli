@@ -1,14 +1,10 @@
 //! `phylum parse` command for lockfile parsing
 
-use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use clap::builder::TypedValueParser;
-use clap::error::{Error as ClapError, ErrorKind as ClapErrorKind};
-use clap::{Arg, Command};
 use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
@@ -17,38 +13,6 @@ use crate::{print_user_success, print_user_warning};
 
 pub fn lockfile_types() -> Vec<&'static str> {
     LockfileFormat::iter().map(|format| format.name()).chain(["auto"]).collect()
-}
-
-#[derive(Copy, Clone)]
-pub struct LockfileValueParser;
-
-impl TypedValueParser for LockfileValueParser {
-    type Value = &'static str;
-
-    fn parse_ref(
-        &self,
-        _cmd: &Command,
-        _arg: Option<&Arg>,
-        value: &OsStr,
-    ) -> Result<Self::Value, ClapError> {
-        // Assure value is valid UTF8.
-        let value = match value.to_str() {
-            Some(value) => value,
-            None => return Err(ClapError::raw(ClapErrorKind::InvalidUtf8, "expected UTF8 string")),
-        };
-
-        // Check if value matches one of the known lockfile types.
-        for lockfile_type in LockfileFormat::iter().map(|format| format.name()).chain(["auto"]) {
-            if value == lockfile_type {
-                return Ok(lockfile_type);
-            }
-        }
-
-        Err(ClapError::raw(
-            ClapErrorKind::InvalidValue,
-            format!("invalid lockfile type: {:?}", value),
-        ))
-    }
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
