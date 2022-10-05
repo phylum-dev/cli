@@ -11,7 +11,7 @@ use crate::{print_user_failure, print_user_success};
 /// Handle `phylum group` subcommand.
 pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
-        let group_name = matches.value_of("group_name").unwrap();
+        let group_name = matches.get_one::<String>("group_name").unwrap();
         match api.create_group(group_name).await {
             Ok(response) => {
                 print_user_success!("Successfully created group {}", response.group_name);
@@ -28,7 +28,7 @@ pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> Comm
 
         let response = api.get_groups_list().await?;
 
-        let pretty = !matches.is_present("json");
+        let pretty = !matches.contains_id("json");
         response.write_stdout(pretty);
 
         Ok(ExitCode::Ok.into())

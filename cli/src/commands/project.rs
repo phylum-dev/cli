@@ -29,15 +29,15 @@ pub async fn get_project_list(
 /// project, linking a current repository to an existing project, listing
 /// projects and setting project thresholds for risk domains.
 pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.is_present("json");
+    let pretty_print = !matches.contains_id("json");
 
     if let Some(matches) = matches.subcommand_matches("create") {
-        let name = matches.value_of("name").unwrap();
-        let group = matches.value_of("group");
+        let name = matches.get_one::<String>("name").unwrap();
+        let group = matches.get_one::<String>("group").cloned();
 
         log::info!("Initializing new project: `{}`", name);
 
-        let project_id = match api.create_project(name, group).await {
+        let project_id = match api.create_project(name, group.as_deref()).await {
             Ok(project_id) => project_id,
             Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
                 print_user_failure!("Project '{}' already exists", name);
@@ -49,7 +49,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let proj_conf = ProjectConfig {
             id: project_id.to_owned(),
             created_at: Local::now(),
-            group_name: group.map(String::from),
+            group_name: group,
             name: name.to_owned(),
         };
 
@@ -59,11 +59,11 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         print_user_success!("Successfully created new project, {}", name);
     } else if let Some(matches) = matches.subcommand_matches("delete") {
-        let project_name = matches.value_of("name").unwrap();
-        let group_name = matches.value_of("group");
+        let project_name = matches.get_one::<String>("name").unwrap();
+        let group_name = matches.get_one::<&str>("group");
 
         let proj_uuid = api
-            .get_project_id(project_name, group_name)
+            .get_project_id(project_name, group_name.copied())
             .await
             .context("A project with that name does not exist")?;
 
@@ -71,15 +71,15 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         print_user_success!("Successfully deleted project, {}", project_name);
     } else if let Some(matches) = matches.subcommand_matches("list") {
-        let group = matches.value_of("group");
-        let pretty_print = pretty_print && !matches.is_present("json");
-        get_project_list(api, pretty_print, group).await?;
+        let group = matches.get_one::<&str>("group");
+        let pretty_print = pretty_print && !matches.contains_id("json");
+        get_project_list(api, pretty_print, group.copied()).await?;
     } else if let Some(matches) = matches.subcommand_matches("link") {
-        let project_name = matches.value_of("name").unwrap();
-        let group_name = matches.value_of("group");
+        let project_name = matches.get_one::<String>("name").unwrap();
+        let group_name = matches.get_one::<String>("group").cloned();
 
         let proj_uuid = api
-            .get_project_id(project_name, group_name)
+            .get_project_id(project_name, group_name.as_deref())
             .await
             .context("A project with that name does not exist")?;
 
@@ -87,7 +87,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             id: proj_uuid,
             name: project_name.into(),
             created_at: Local::now(),
-            group_name: group_name.map(String::from),
+            group_name,
         };
         save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
@@ -98,13 +98,14 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             format!("{}", style(proj_conf.name).white())
         );
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
-        let mut project_name = matches.value_of("name").unwrap_or("current");
-        let group_name = matches.value_of("group");
+        let mut project_name =
+            matches.get_one::<String>("name").cloned().unwrap_or_else(|| String::from("current"));
+        let group_name = matches.get_one::<&str>("group");
 
         let proj =
             if project_name == "current" { get_current_project().map(|p| p.name) } else { None };
 
-        project_name = proj.as_deref().unwrap_or(project_name);
+        project_name = proj.unwrap_or(project_name);
         log::debug!("Setting thresholds for project `{}`", project_name);
 
         println!("Risk thresholds allow you to specify what constitutes a failure.");
@@ -138,12 +139,12 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         println!(
             "Specify the thresholds and actions for {}. Accepted values are 0-100 or 'Disabled'.",
-            format_args!("{}", style(project_name).white())
+            format_args!("{}", style(&project_name).white())
         );
         println!();
 
         let project_id = api
-            .get_project_id(project_name, group_name)
+            .get_project_id(&project_name, group_name.copied())
             .await
             .context("Could not get project ID")?;
 
@@ -186,20 +187,20 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             Ok(_) => {
                 print_user_success!(
                     "Set all thresholds for the {} project",
-                    style(project_name).white()
+                    style(&project_name).white()
                 );
             },
             Err(err) => {
                 print_user_failure!(
                     "Failed to set thresholds for the {} project: {err}",
-                    style(project_name).white(),
+                    style(&project_name).white(),
                 );
                 return Ok(ExitCode::SetThresholdsFailure.into());
             },
         }
     } else {
-        let group = matches.value_of("group");
-        get_project_list(api, pretty_print, group).await?;
+        let group = matches.get_one::<&str>("group");
+        get_project_list(api, pretty_print, group.copied()).await?;
     }
 
     Ok(ExitCode::Ok.into())

@@ -60,12 +60,12 @@ async fn handle_commands() -> CommandResult {
     let app_name = app.get_name().to_string();
     // Required for printing help messages since `get_matches()` consumes `App`
     let app_helper = &mut app.clone();
-    let ver = app.get_version().unwrap();
+    let ver = app.get_version().unwrap().to_owned();
     let matches = app.get_matches();
 
     let settings_path = config::get_home_settings_path()?;
     let config_path = matches
-        .value_of("config")
+        .get_one::<String>("config")
         .and_then(|config_path| shellexpand::env(config_path).ok())
         .map(|config_path| PathBuf::from(config_path.to_string()))
         .unwrap_or(settings_path);
@@ -74,14 +74,14 @@ async fn handle_commands() -> CommandResult {
     let mut config: Config = config::read_configuration(&config_path).map_err(|err| {
         anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
     })?;
-    config.ignore_certs |= matches.is_present("no-check-certificate");
+    config.ignore_certs |= matches.contains_id("no-check-certificate");
 
     if config.ignore_certs {
         log::warn!("Ignoring TLS server certificate verification per user request.");
     }
 
     // We initialize these value here, for later use by the PhylumApi object.
-    let timeout = matches.value_of("timeout").and_then(|t| t.parse::<u64>().ok());
+    let timeout = matches.get_one::<String>("timeout").and_then(|t| t.parse::<u64>().ok());
 
     // Check for updates, if we haven't explicitly invoked `update`.
     //
@@ -119,7 +119,7 @@ async fn handle_commands() -> CommandResult {
             drop(api);
             auth::handle_auth(config, &config_path, sub_matches, app_helper, timeout).await
         },
-        "version" => handle_version(&app_name, ver),
+        "version" => handle_version(&app_name, &ver),
         "update" => handle_update(sub_matches).await,
         "parse" => parse::handle_parse(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
@@ -149,7 +149,7 @@ async fn handle_ping(api: PhylumApi) -> CommandResult {
 }
 
 async fn handle_update(matches: &ArgMatches) -> CommandResult {
-    let res = update::do_update(matches.is_present("prerelease")).await;
+    let res = update::do_update(matches.contains_id("prerelease")).await;
     let message = res?;
     print_user_success!("{}", message);
     Ok(ExitCode::Ok.into())

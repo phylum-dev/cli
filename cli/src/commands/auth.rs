@@ -66,7 +66,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
         },
     };
 
-    if matches.is_present("bearer") {
+    if matches.contains_id("bearer") {
         let api_uri = &config.connection.uri;
         let tokens =
             auth::handle_refresh_tokens(refresh_token, config.ignore_certs, api_uri).await?;
@@ -83,7 +83,7 @@ pub async fn handle_auth(
     config: Config,
     config_path: &Path,
     matches: &clap::ArgMatches,
-    app_helper: &mut Command<'_>,
+    app_helper: &mut Command,
     timeout: Option<u64>,
 ) -> CommandResult {
     if matches.subcommand_matches("register").is_some() {

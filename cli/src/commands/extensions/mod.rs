@@ -30,7 +30,7 @@ import { PhylumApi } from 'phylum';
 console.log('Hello, World!');
 ";
 
-pub fn command<'a>() -> Command<'a> {
+pub fn command() -> Command {
     Command::new("extension")
         .about("Manage extensions")
         .subcommand(
@@ -64,7 +64,7 @@ pub fn command<'a>() -> Command<'a> {
 }
 
 /// Generate the subcommands for each extension.
-pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
+pub fn add_extensions_subcommands(command: Command) -> Command {
     let extensions = match installed_extensions() {
         Ok(extensions) => extensions,
         Err(e) => {
@@ -87,7 +87,7 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
         })
         .fold(command, |command, ext| {
             command.subcommand(
-                Command::new(ext.name())
+                Command::new(ext.name().to_owned())
                     .allow_hyphen_values(true)
                     .disable_help_flag(true)
                     .arg(arg!([OPTIONS] ... "Extension parameters")),
@@ -99,22 +99,24 @@ pub fn add_extensions_subcommands(command: Command<'_>) -> Command<'_> {
 pub async fn handle_extensions(
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
-    app: &mut Command<'_>,
+    app: &mut Command,
 ) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
             handle_install_extension(
-                matches.value_of("PATH").unwrap(),
-                matches.is_present("accept-permissions-group"),
-                matches.is_present("overwrite-group"),
+                matches.get_one::<String>("PATH").unwrap(),
+                matches.contains_id("accept-permissions-group"),
+                matches.contains_id("overwrite-group"),
             )
             .await
         },
         Some(("uninstall", matches)) => {
-            handle_uninstall_extension(matches.value_of("NAME").unwrap()).await
+            handle_uninstall_extension(matches.get_one::<String>("NAME").unwrap()).await
         },
         Some(("run", matches)) => handle_run_extension_from_path(app, api, matches).await,
-        Some(("new", matches)) => handle_create_extension(matches.value_of("PATH").unwrap()).await,
+        Some(("new", matches)) => {
+            handle_create_extension(matches.get_one::<String>("PATH").unwrap()).await
+        },
         Some(("list", _)) | None => handle_list_extensions().await,
         _ => unreachable!(),
     }
@@ -141,14 +143,14 @@ pub async fn handle_run_extension(
 ///
 /// Run the extension located at the given path.
 pub async fn handle_run_extension_from_path(
-    app: &mut Command<'_>,
+    app: &mut Command,
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
 ) -> CommandResult {
-    let path = matches.value_of("PATH").unwrap();
+    let path = matches.get_one::<&str>("PATH").unwrap();
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
-    if ["--help", "-h", "help"].contains(&path) {
+    if ["--help", "-h", "help"].contains(path) {
         print_sc_help(app, &["extension", "run"])?;
         return Ok(CommandValue::Code(ExitCode::Ok));
     }
@@ -157,7 +159,7 @@ pub async fn handle_run_extension_from_path(
         fs::canonicalize(path).with_context(|| anyhow!("Invalid extension path: {path:?}"))?;
     let extension = Extension::try_from(extension_path)?;
 
-    if !matches.is_present("yes") && !extension.permissions().is_allow_none() {
+    if !matches.contains_id("yes") && !extension.permissions().is_allow_none() {
         ask_permissions(&extension)?;
     }
 

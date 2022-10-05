@@ -2,7 +2,8 @@ use clap::{Arg, Command, ValueHint};
 use git_version::git_version;
 use lazy_static::lazy_static;
 
-use crate::commands::{extensions, parse};
+use crate::commands::extensions;
+use crate::commands::parse::LockfileValueParser;
 
 const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_prefix = "cargo:");
 
@@ -21,7 +22,7 @@ and 'engineering' domains
     --filter=crit,aut,eng
 "#;
 
-pub fn app<'a>() -> clap::Command<'a> {
+pub fn app() -> clap::Command {
     // NOTE: We do not use the `arg!` macro here since it causes a stack overflow on
     // Windows.
     #[allow(unused_mut)]
@@ -210,7 +211,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     .long("lockfile-type")
                     .value_name("type")
                     .help("The type of the lock file (default: auto)")
-                    .possible_values(parse::lockfile_types()),
+                    .value_parser(LockfileValueParser),
             ]),
         )
         .subcommand(
