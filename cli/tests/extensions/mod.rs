@@ -233,17 +233,17 @@ fn extension_run_help_flags() {
     test_cli
         .run(&["extension", "run", "help", "help subcommand"])
         .success()
-        .stdout(predicate::str::contains("USAGE"));
+        .stdout(predicate::str::contains("Usage"));
 
     test_cli
         .run(&["extension", "run", "--help", "long help"])
         .success()
-        .stdout(predicate::str::contains("USAGE"));
+        .stdout(predicate::str::contains("Usage"));
 
     test_cli
         .run(&["extension", "run", "-h", "short help"])
         .success()
-        .stdout(predicate::str::contains("USAGE"));
+        .stdout(predicate::str::contains("Usage"));
 }
 
 // Networking fails without sandbox exception.

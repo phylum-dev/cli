@@ -66,7 +66,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
         },
     };
 
-    if matches.contains_id("bearer") {
+    if matches.get_flag("bearer") {
         let api_uri = &config.connection.uri;
         let tokens =
             auth::handle_refresh_tokens(refresh_token, config.ignore_certs, api_uri).await?;

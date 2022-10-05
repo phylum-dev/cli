@@ -73,12 +73,12 @@ pub async fn get_job_status(
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
 pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.contains_id("json");
-    let verbose = matches.contains_id("verbose");
+    let pretty_print = !matches.get_flag("json");
+    let verbose = matches.get_flag("verbose");
     let mut action = Action::None;
     let display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
 
-    if matches.contains_id("JOB_ID") {
+    if matches.get_flag("JOB_ID") {
         let job_id =
             JobId::from_str(matches.get_one::<String>("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
@@ -132,10 +132,10 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         request_type = res.1;
 
         label = matches.get_one::<String>("label");
-        verbose = matches.contains_id("verbose");
-        pretty_print = !matches.contains_id("json");
+        verbose = matches.get_flag("verbose");
+        pretty_print = !matches.get_flag("json");
         display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
-        is_user = !matches.contains_id("force");
+        is_user = !matches.get_flag("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         (project, group) = cli_project(api, matches).await?;
@@ -154,12 +154,12 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         // If a package type was provided on the command line, prefer that
         //  to the global setting
-        if matches.contains_id("type") {
+        if matches.get_flag("type") {
             request_type = PackageType::from_str(matches.get_one::<String>("type").unwrap())
                 .unwrap_or(request_type);
         }
         label = matches.get_one::<String>("label");
-        is_user = !matches.contains_id("force");
+        is_user = !matches.get_flag("force");
 
         while !eof {
             match reader.read_line(&mut line) {

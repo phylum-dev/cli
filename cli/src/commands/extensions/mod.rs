@@ -6,7 +6,7 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, Arg, ArgGroup, ArgMatches, Command, ValueHint};
+use clap::{arg, Arg, ArgAction, ArgMatches, Command, ValueHint};
 use console::style;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
@@ -36,13 +36,17 @@ pub fn command() -> Command {
         .subcommand(
             Command::new("install")
                 .about("Install extension")
-                .arg(arg!(-y --yes "Accept permissions and overwrite existing (same as --overwrite --accept-permissions)"))
-                .arg(Arg::new("accept-permissions").long("accept-permissions").help("Automatically accept requested permissions"))
-                .group(
-                    ArgGroup::new("accept-permissions-group").args(&["yes", "accept-permissions"]),
+                .arg(
+                    arg!(-y --yes "Accept permissions and overwrite existing extensions (same as --overwrite --accept-permissions)")
+                        .conflicts_with("accept-permissions")
+                        .conflicts_with("overwrite")
+                )
+                .arg(Arg::new("accept-permissions")
+                    .action(ArgAction::SetTrue)
+                    .long("accept-permissions")
+                    .help("Automatically accept requested permissions")
                 )
                 .arg(arg!(--overwrite "Overwrite existing extension"))
-                .group(ArgGroup::new("overwrite-group").args(&["yes", "overwrite"]))
                 .arg(arg!([PATH]).required(true).value_hint(ValueHint::DirPath)),
         )
         .subcommand(
@@ -103,10 +107,11 @@ pub async fn handle_extensions(
 ) -> CommandResult {
     match matches.subcommand() {
         Some(("install", matches)) => {
+            let yes = matches.get_flag("yes");
             handle_install_extension(
                 matches.get_one::<String>("PATH").unwrap(),
-                matches.contains_id("accept-permissions-group"),
-                matches.contains_id("overwrite-group"),
+                yes || matches.get_flag("accept-permissions"),
+                yes || matches.get_flag("overwrite"),
             )
             .await
         },
@@ -147,10 +152,10 @@ pub async fn handle_run_extension_from_path(
     api: BoxFuture<'static, Result<PhylumApi>>,
     matches: &ArgMatches,
 ) -> CommandResult {
-    let path = matches.get_one::<&str>("PATH").unwrap();
+    let path = matches.get_one::<String>("PATH").unwrap();
     let options = matches.get_many("OPTIONS").map(|options| options.cloned().collect());
 
-    if ["--help", "-h", "help"].contains(path) {
+    if ["--help", "-h", "help"].contains(&path.as_str()) {
         print_sc_help(app, &["extension", "run"])?;
         return Ok(CommandValue::Code(ExitCode::Ok));
     }
@@ -159,7 +164,7 @@ pub async fn handle_run_extension_from_path(
         fs::canonicalize(path).with_context(|| anyhow!("Invalid extension path: {path:?}"))?;
     let extension = Extension::try_from(extension_path)?;
 
-    if !matches.contains_id("yes") && !extension.permissions().is_allow_none() {
+    if !matches.get_flag("yes") && !extension.permissions().is_allow_none() {
         ask_permissions(&extension)?;
     }
 

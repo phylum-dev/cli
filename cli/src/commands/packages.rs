@@ -20,7 +20,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
 
     // If a package type was provided on the command line, prefer that
     //  to the global setting
-    if options.contains_id("package-type") {
+    if options.get_flag("package-type") {
         package_type = PackageType::from_str(options.get_one::<String>("package-type").unwrap())
             .unwrap_or(package_type);
     }
@@ -30,7 +30,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
 
 /// Handle the subcommands for the `package` subcommand.
 pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.contains_id("json");
+    let pretty_print = !matches.get_flag("json");
 
     let pkg = parse_package(matches, &api.config().request_type);
     let mut resp = match api.get_package_details(&pkg).await {

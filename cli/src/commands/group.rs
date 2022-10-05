@@ -28,7 +28,7 @@ pub async fn handle_group(api: &mut PhylumApi, mut matches: &ArgMatches) -> Comm
 
         let response = api.get_groups_list().await?;
 
-        let pretty = !matches.contains_id("json");
+        let pretty = !matches.get_flag("json");
         response.write_stdout(pretty);
 
         Ok(ExitCode::Ok.into())
