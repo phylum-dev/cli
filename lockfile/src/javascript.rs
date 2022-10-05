@@ -269,11 +269,14 @@ mod tests {
         let pkgs =
             YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
-        assert_eq!(pkgs, vec![PackageDescriptor {
-            name: "@yarnpkg/lockfile".to_string(),
-            version: "1.1.0".to_string(),
-            package_type: PackageType::Npm,
-        }]);
+        assert_eq!(
+            pkgs,
+            vec![PackageDescriptor {
+                name: "@yarnpkg/lockfile".to_string(),
+                version: "1.1.0".to_string(),
+                package_type: PackageType::Npm,
+            }]
+        );
     }
 
     #[test]

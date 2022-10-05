@@ -3,6 +3,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 pub use csharp::CSProj;
+pub use golang::GoSum;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -12,6 +13,7 @@ use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
 mod csharp;
+mod golang;
 mod java;
 mod javascript;
 mod parsers;
@@ -38,6 +40,8 @@ pub enum LockfileFormat {
     #[serde(rename = "nuget")]
     #[serde(alias = "msbuild")]
     Msbuild,
+    #[serde(rename = "gosum")]
+    GoSum,
 }
 
 impl FromStr for LockfileFormat {
@@ -73,6 +77,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => "mvn",
             LockfileFormat::Gradle => "gradle",
             LockfileFormat::Msbuild => "nuget",
+            LockfileFormat::GoSum => "gosum",
         }
     }
 
@@ -88,6 +93,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => &Pom,
             LockfileFormat::Gradle => &GradleLock,
             LockfileFormat::Msbuild => &CSProj,
+            LockfileFormat::GoSum => &GoSum,
         }
     }
 
@@ -114,6 +120,7 @@ impl Iterator for LockfileFormatIter {
             6 => LockfileFormat::Maven,
             7 => LockfileFormat::Gradle,
             8 => LockfileFormat::Msbuild,
+            9 => LockfileFormat::GoSum,
             _ => return None,
         };
         self.0 += 1;
@@ -163,6 +170,7 @@ mod tests {
             ("Pipfile", LockfileFormat::Pipenv),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
+            ("go.sum", LockfileFormat::GoSum),
         ];
 
         for (file, expected_type) in test_cases {
@@ -185,6 +193,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
+            ("gosum", LockfileFormat::GoSum),
         ] {
             let actual_format =
                 name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
@@ -208,6 +217,7 @@ mod tests {
             ("mvn", LockfileFormat::Maven),
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
+            ("gosum", LockfileFormat::GoSum),
         ] {
             let actual_name = format.to_string();
             assert_eq!(

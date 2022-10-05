@@ -192,7 +192,7 @@ pub fn app() -> Command {
                     .short('t')
                     .long("package-type")
                     .value_name("type")
-                    .help("The type of the package (\"npm\", \"ruby\", \"pypi\", etc.)"),
+                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -291,7 +291,7 @@ pub fn app() -> Command {
                         .short('t')
                         .long("type")
                         .value_name("type")
-                        .help("Package type (`npm`, `rubygems`, `pypi`, etc)"),
+                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",

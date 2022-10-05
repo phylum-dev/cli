@@ -47,10 +47,15 @@ impl Format for Vec<ProjectSummaryResponse> {
         // Maximum length of the name column.
         const MAX_NAME_WIDTH: usize = 28;
 
-        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(self, &[
-            ("Project Name", |project| print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()),
-            ("Project ID", |project| project.id.to_string()),
-        ]);
+        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(
+            self,
+            &[
+                ("Project Name", |project| {
+                    print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()
+                }),
+                ("Project ID", |project| project.id.to_string()),
+            ],
+        );
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -62,11 +67,18 @@ impl Format for ListUserGroupsResponse {
         // Maximum length of owner email column.
         const MAX_OWNER_WIDTH: usize = 25;
 
-        let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
-            ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
-            ("Owner", |group| print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()),
-            ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
-        ]);
+        let table = format_table::<fn(&UserGroup) -> String, _>(
+            &self.groups,
+            &[
+                ("Group Name", |group| {
+                    print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()
+                }),
+                ("Owner", |group| {
+                    print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()
+                }),
+                ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
+            ],
+        );
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -295,6 +307,7 @@ where
         PackageType::PyPi => "PyPI",
         PackageType::Maven => "Maven",
         PackageType::Nuget => "NuGet",
+        PackageType::Golang => "Golang",
     };
 
     let date_time = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
