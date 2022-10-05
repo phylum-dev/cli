@@ -236,7 +236,7 @@ impl PhylumApi {
     }
 
     /// Delete a project
-    pub async fn delete_project(&mut self, project_id: ProjectId) -> Result<()> {
+    pub async fn delete_project(&self, project_id: ProjectId) -> Result<()> {
         let _: IgnoredAny = self
             .delete(endpoints::delete_project(
                 &self.config.connection.uri,

@@ -194,6 +194,15 @@ export class PhylumApi {
         return Deno.core.opAsync('create_project', name, group);
     }
 
+    /// Deletes a project.
+    ///
+    /// # Returns
+    /// 
+    /// Nothing if successful; throws an error if unsuccessful.
+    static async deleteProject(name: string, group?: string): string {
+        return Deno.core.opAsync('delete_project', name, group);
+    }
+
     /// Get analysis results for a single package.
     ///
     /// This will not start a new package analysis, but only retrieve previous

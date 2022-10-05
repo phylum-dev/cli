@@ -76,6 +76,32 @@ pub async fn get_groups() {
 }
 
 #[tokio::test]
+pub async fn create_and_delete_project() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension(r#"
+            try {
+                await PhylumApi.deleteProject("create_and_delete_test_project")
+            } catch (e) {
+            }
+
+            let projectId = await PhylumApi.createProject("create_and_delete")
+            let duplicatedProjectId = await PhylumApi.createProject("create_and_delete")
+            if (projectId === duplicatedProjectId) {
+                console.log("OK")
+            } else {
+                console.log("ERROR " + projectId + " " + duplicatedProjectId)
+            }
+
+        "#)
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("["));
+}
+
+#[tokio::test]
 pub async fn get_projects() {
     let test_cli = TestCli::builder().with_config(None).build();
 

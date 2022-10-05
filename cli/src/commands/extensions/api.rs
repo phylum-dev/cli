@@ -266,12 +266,28 @@ async fn create_project(
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    api.create_project(&name, group.as_deref()).await.map_err(|e| match e {
-        PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. }) => {
-            anyhow!("Project '{}' already exists", name)
+    // Retrieve the id if the project already exists, otherwise return the id or the error.
+    match api.create_project(&name, group.as_deref()).await {
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            api.get_project_id(&name, group.as_deref()).await.map_err(|e| e.into())
         },
-        err => err.into(),
-    })
+        Err(e) => Err(e.into()),
+        Ok(id) => Ok(id),
+    }
+}
+
+/// Delete a project.
+#[op]
+async fn delete_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: String,
+    group: Option<String>,
+) -> Result<()> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    let project_id = api.get_project_id(&name, group.as_deref()).await?;
+    api.delete_project(project_id).await.map_err(|e| e.into())
 }
 
 /// Analyze a single package.
@@ -433,6 +449,7 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_groups::decl(),
         get_projects::decl(),
         create_project::decl(),
+        delete_project::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),
