@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use ansi_term::Color::{Blue, Cyan};
 use anyhow::{anyhow, Result};
 use clap::Command;
+use console::style;
 use prettytable::format;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
@@ -32,9 +32,9 @@ macro_rules! print_user_failure {
 
 /// Prints a verbose message informing the user that an update is available.
 pub fn print_update_message() {
-    eprintln!("---------------- {} ----------------\n", Cyan.paint("Update Available"));
+    eprintln!("---------------- {} ----------------\n", style("Update Available").cyan());
     eprintln!("A new version of the Phylum CLI is available. Run");
-    eprintln!("\n\t{}\n\nto update to the latest version!\n", Blue.paint("phylum update"));
+    eprintln!("\n\t{}\n\nto update to the latest version!\n", style("phylum update").blue());
     eprintln!("{:-^50}\n\n", "");
 }
 

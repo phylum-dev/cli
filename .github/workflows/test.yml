@@ -65,7 +65,9 @@ jobs:
           command: test
           args: --locked
 
-      - name: All Features
+      # Skip this step for external PRs (because it requires a secret)
+      - if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        name: All Features
         uses: actions-rs/cargo@v1
         with:
           command: test

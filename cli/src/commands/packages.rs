@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
-use ansi_term::Color::Blue;
 use clap::ArgMatches;
+use console::style;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 
@@ -38,7 +38,7 @@ pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches)
         Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
             print_user_warning!(
                 "No matching packages found. Submit a lockfile for processing:\n\n\t{}\n",
-                Blue.paint("phylum analyze <lock_file>")
+                style("phylum analyze <lock_file>").blue()
             );
             return Ok(ExitCode::PackageNotFound.into());
         },
