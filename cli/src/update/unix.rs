@@ -271,7 +271,8 @@ mod tests {
     #[test]
     fn test_signature_validation() {
         let file = b"Hello, world\n";
-        let minisign_sig = "untrusted comment: signature from minisign secret \
+        let minisign_sig =
+            "untrusted comment: signature from minisign secret \
              key\nRWT6G44ykbS8GJ+2A+Fjj6ZdR1/\
              632p6WlwqAYhb8DSeKhCl3rzG1TGSF9CD9DDf9BdWrOjvnqi78yh38djVuYvAW2FhE0MvTQ4=\ntrusted \
              comment: Phylum, Inc. - Future of software supply chain \
