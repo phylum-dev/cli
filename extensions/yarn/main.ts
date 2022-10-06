@@ -56,14 +56,14 @@ if (Deno.args.length >= 1
 
     // Download packages to cache without sandbox.
     let status = PhylumApi.runSandboxed({
-      cmd: 'yarn',
-      args: [...Deno.args, '--mode=skip-build'],
-      exceptions: {
-          write: ['~/.cache',  '~/.yarn', './'],
-          read: ['~/.cache',  '~/.yarn', './'],
-          run: false,
-          net: true,
-      }
+        cmd: 'yarn',
+        args: [...Deno.args, '--mode=skip-build'],
+        exceptions: {
+            write: ['~/.cache',  '~/.yarn', './'],
+            read: ['~/.cache',  '~/.yarn', './'],
+            run: false,
+            net: true,
+        }
     })
 
     // Ensure download worked. Failure is still "safe" for the user.
@@ -103,14 +103,14 @@ if (Deno.args.length >= 1
     }
 } else {
     let status = PhylumApi.runSandboxed({
-      cmd: 'yarn',
-      args: [...Deno.args],
-      exceptions: {
-          write: ['~/.cache', '~/.yarn', './'],
-          read: ['~/.cache', '~/.yarn', './'],
-          run: false,
-          net: true,
-      }
+        cmd: 'yarn',
+        args: [...Deno.args],
+        exceptions: {
+            write: ['~/.cache', '~/.yarn', './'],
+            read: ['~/.cache', '~/.yarn', './'],
+            run: false,
+            net: true,
+        }
     })
     Deno.exit(status.code);
 }
@@ -120,14 +120,14 @@ async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] Updating lockfile…`);
 
     let status = PhylumApi.runSandboxed({
-      cmd: 'yarn',
-      args: [...Deno.args, '--mode=update-lockfile'],
-      exceptions: {
-          write: ['~/.cache',  '~/.yarn', './'],
-          read: ['~/.cache',  '~/.yarn', './'],
-          run: false,
-          net: true,
-      }
+        cmd: 'yarn',
+        args: [...Deno.args, '--mode=update-lockfile'],
+        exceptions: {
+            write: ['~/.cache',  '~/.yarn', './'],
+            read: ['~/.cache',  '~/.yarn', './'],
+            run: false,
+            net: true,
+        }
     })
 
     // Ensure lockfile update was successful.
