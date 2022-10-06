@@ -94,13 +94,12 @@ pub async fn create_and_delete_project() {
             } else {
                 console.log("ERROR " + projectId + " " + duplicatedProjectId)
             }
-
         "#,
         )
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains("["));
+        .stdout(predicates::str::contains("OK"));
 }
 
 #[tokio::test]
