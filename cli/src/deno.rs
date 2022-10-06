@@ -59,10 +59,14 @@ pub async fn run(
         ts_version: Default::default(),
         location: Default::default(),
         unstable: Default::default(),
+        inspect: Default::default(),
     };
 
     let options = WorkerOptions {
         bootstrap,
+        web_worker_pre_execute_module_cb: Arc::new(|_| {
+            unimplemented!("web workers are not supported")
+        }),
         web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         module_loader: Rc::new(ExtensionsModuleLoader::new(extension.path())),
@@ -77,15 +81,17 @@ pub async fn run(
         get_error_class_fn: Default::default(),
         origin_storage_dir: Default::default(),
         broadcast_channel: Default::default(),
+        cache_storage_dir: Default::default(),
         source_map_getter: Default::default(),
         root_cert_store: Default::default(),
+        npm_resolver: Default::default(),
         blob_store: Default::default(),
         stdio: Default::default(),
     };
 
     // Build permissions object from extension's requested permissions.
     let permissions_options = PermissionsOptions::from(&*extension.permissions());
-    let worker_permissions = Permissions::from_options(&permissions_options);
+    let worker_permissions = Permissions::from_options(&permissions_options)?;
 
     // Initialize Deno runtime.
     let mut worker =

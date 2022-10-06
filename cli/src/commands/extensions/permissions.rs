@@ -174,6 +174,7 @@ impl From<&Permissions> for PermissionsOptions {
             allow_net,
             allow_run,
             allow_env,
+            allow_sys: None,
             allow_ffi: None,
             allow_hrtime: false,
             prompt: false,
