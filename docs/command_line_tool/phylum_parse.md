@@ -10,7 +10,7 @@ phylum parse [OPTIONS] <LOCKFILE>
 
 ### Options
 `-t`, `--lockfile-type`
-&emsp; The type of the lockfile (default: `auto`): `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `auto`
+&emsp; The type of the lockfile (default: `auto`): `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `gosum`, `auto`
 
 ### Examples
 ```sh
