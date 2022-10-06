@@ -6,7 +6,7 @@ use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
 
-use super::parsers::go_sum;
+use crate::parsers::go_sum;
 use crate::{Parse, ParseResult};
 
 pub struct GoSum;
