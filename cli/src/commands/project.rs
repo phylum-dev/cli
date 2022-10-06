@@ -63,7 +63,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let group_name = matches.get_one::<String>("group");
 
         let proj_uuid = api
-            .get_project_id(project_name, group_name.map(|g| &**g))
+            .get_project_id(project_name, group_name.map(String::as_str))
             .await
             .context("A project with that name does not exist")?;
 
@@ -73,7 +73,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let group = matches.get_one::<String>("group");
         let pretty_print = pretty_print && !matches.get_flag("json");
-        get_project_list(api, pretty_print, group.map(|g| &**g)).await?;
+        get_project_list(api, pretty_print, group.map(String::as_str)).await?;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group").cloned();
@@ -144,7 +144,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         println!();
 
         let project_id = api
-            .get_project_id(&project_name, group_name.map(|g| &**g))
+            .get_project_id(&project_name, group_name.map(String::as_str))
             .await
             .context("Could not get project ID")?;
 
@@ -200,7 +200,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         }
     } else {
         let group = matches.get_one::<String>("group");
-        get_project_list(api, pretty_print, group.map(|g| &**g)).await?;
+        get_project_list(api, pretty_print, group.map(String::as_str)).await?;
     }
 
     Ok(ExitCode::Ok.into())
