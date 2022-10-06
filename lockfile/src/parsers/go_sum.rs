@@ -1,11 +1,11 @@
 use std::ops::Not;
 
-use phylum_types::types::package::{PackageDescriptor, PackageType};
-
-use super::Result;
 use nom::bytes::complete::take_until;
 use nom::character::complete::space0;
 use nom::combinator::recognize;
+use phylum_types::types::package::{PackageDescriptor, PackageType};
+
+use super::Result;
 
 pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
     let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
