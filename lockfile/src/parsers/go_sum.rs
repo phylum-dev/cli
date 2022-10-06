@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::Result;
@@ -19,15 +21,12 @@ fn package(input: &str) -> Option<PackageDescriptor> {
     // just records the hash for a go.mod file. The package this
     // go.mod file belongs to will also be listed, and that's what
     // we're interested in, so we simply discard this entry.
-    if version.ends_with(r"/go.mod") {
-        None
-    } else {
-        Some(PackageDescriptor {
-            name: name.to_string(),
-            version: version.to_string(),
-            package_type: PackageType::Golang,
-        })
-    }
+
+    version.ends_with(r"/go.mod").not().then(|| PackageDescriptor {
+        name: name.to_string(),
+        version: version.to_string(),
+        package_type: PackageType::Golang,
+    })
 }
 
 fn package_name(input: &str) -> Result<&str, &str> {
