@@ -13,7 +13,7 @@ use crate::{dirs, print_user_success, print_user_warning};
 
 /// Handle the `uninstall` subcommand.
 pub fn handle_uninstall(matches: &ArgMatches) -> CommandResult {
-    if matches.is_present("purge") {
+    if matches.get_flag("purge") {
         purge()?;
     }
 

@@ -13,15 +13,15 @@ use crate::print_user_warning;
 
 fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDescriptor {
     // Read required options.
-    let name = options.value_of("name").unwrap().to_string();
-    let version = options.value_of("version").unwrap().to_string();
+    let name = options.get_one::<String>("name").unwrap().to_string();
+    let version = options.get_one::<String>("version").unwrap().to_string();
 
     let mut package_type = request_type.to_owned();
 
     // If a package type was provided on the command line, prefer that
     //  to the global setting
-    if options.is_present("package-type") {
-        package_type = PackageType::from_str(options.value_of("package-type").unwrap())
+    if options.get_flag("package-type") {
+        package_type = PackageType::from_str(options.get_one::<String>("package-type").unwrap())
             .unwrap_or(package_type);
     }
 
@@ -30,7 +30,7 @@ fn parse_package(options: &ArgMatches, request_type: &PackageType) -> PackageDes
 
 /// Handle the subcommands for the `package` subcommand.
 pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.is_present("json");
+    let pretty_print = !matches.get_flag("json");
 
     let pkg = parse_package(matches, &api.config().request_type);
     let mut resp = match api.get_package_details(&pkg).await {
@@ -45,7 +45,7 @@ pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches)
         Err(err) => return Err(err.into()),
     };
 
-    let filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
+    let filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
     if let Some(filter) = filter {
         resp.filter(&filter);
     }

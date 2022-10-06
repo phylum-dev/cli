@@ -73,15 +73,16 @@ pub async fn get_job_status(
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
 pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.is_present("json");
-    let verbose = matches.is_present("verbose");
+    let pretty_print = !matches.get_flag("json");
+    let verbose = matches.get_flag("verbose");
     let mut action = Action::None;
-    let display_filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
+    let display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
 
-    if matches.is_present("JOB_ID") {
-        let job_id = JobId::from_str(matches.value_of("JOB_ID").expect("No job id found"))?;
+    if matches.get_flag("JOB_ID") {
+        let job_id =
+            JobId::from_str(matches.get_one::<String>("JOB_ID").expect("No job id found"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
-    } else if let Some(project) = matches.value_of("project") {
+    } else if let Some(project) = matches.get_one::<String>("project") {
         let resp = api.get_project_details(project).await?.jobs;
         resp.write_stdout(pretty_print);
     } else {
@@ -122,25 +123,27 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         (project, group) = cli_project(api, matches).await?;
 
         // Should never get here if `LOCKFILE` was not specified
-        let lockfile = matches.value_of("LOCKFILE").ok_or_else(|| anyhow!("Lockfile not found"))?;
+        let lockfile =
+            matches.get_one::<String>("LOCKFILE").ok_or_else(|| anyhow!("Lockfile not found"))?;
         let res = get_packages_from_lockfile(Path::new(lockfile))
             .context("Unable to locate any valid package in package lockfile")?;
 
         packages = res.0;
         request_type = res.1;
 
-        label = matches.value_of("label");
-        verbose = matches.is_present("verbose");
-        pretty_print = !matches.is_present("json");
-        display_filter = matches.value_of("filter").and_then(|v| Filter::from_str(v).ok());
-        is_user = !matches.is_present("force");
+        label = matches.get_one::<String>("label");
+        verbose = matches.get_flag("verbose");
+        pretty_print = !matches.get_flag("json");
+        display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
+        is_user = !matches.get_flag("force");
         synch = true;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         (project, group) = cli_project(api, matches).await?;
 
         let mut eof = false;
         let mut line = String::new();
-        let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.value_of("file") {
+        let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.get_one::<String>("file")
+        {
             // read entries from the file
             Box::new(io::BufReader::new(std::fs::File::open(file).unwrap()))
         } else {
@@ -151,12 +154,12 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         // If a package type was provided on the command line, prefer that
         //  to the global setting
-        if matches.is_present("type") {
-            request_type =
-                PackageType::from_str(matches.value_of("type").unwrap()).unwrap_or(request_type);
+        if matches.get_flag("type") {
+            request_type = PackageType::from_str(matches.get_one::<String>("type").unwrap())
+                .unwrap_or(request_type);
         }
-        label = matches.value_of("label");
-        is_user = !matches.is_present("force");
+        label = matches.get_one::<String>("label");
+        is_user = !matches.get_flag("force");
 
         while !eof {
             match reader.read_line(&mut line) {
@@ -218,10 +221,10 @@ async fn cli_project(
     matches: &clap::ArgMatches,
 ) -> Result<(ProjectId, Option<String>)> {
     // Prefer `--project` and `--group` if they were specified.
-    if let Some(project_name) = matches.value_of("project") {
-        let group = matches.value_of("group");
-        let project = api.get_project_id(project_name, group).await?;
-        return Ok((project, group.map(String::from)));
+    if let Some(project_name) = matches.get_one::<String>("project") {
+        let group = matches.get_one::<String>("group").cloned();
+        let project = api.get_project_id(project_name, group.as_deref()).await?;
+        return Ok((project, group));
     }
 
     // Retrieve the project from the `.phylum_project` file.

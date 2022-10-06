@@ -1,4 +1,5 @@
-use clap::{Arg, Command, ValueHint};
+use clap::builder::PossibleValuesParser;
+use clap::{Arg, ArgAction, Command, ValueHint};
 use git_version::git_version;
 use lazy_static::lazy_static;
 
@@ -21,7 +22,7 @@ and 'engineering' domains
     --filter=crit,aut,eng
 "#;
 
-pub fn app<'a>() -> clap::Command<'a> {
+pub fn app() -> Command {
     // NOTE: We do not use the `arg!` macro here since it causes a stack overflow on
     // Windows.
     #[allow(unused_mut)]
@@ -43,6 +44,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .value_name("TIMEOUT")
                 .help("Set the timeout (in seconds) for requests to the Phylum api"),
             Arg::new("no-check-certificate")
+                .action(ArgAction::SetTrue)
                 .long("no-check-certificate")
                 .help("Don't validate the server certificate when performing api requests"),
         ])
@@ -51,6 +53,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
                 .arg(
                     Arg::new("prerelease")
+                        .action(ArgAction::SetTrue)
                         .short('p')
                         .long("prerelease")
                         .help("Update to the latest prerelease (vs. stable, default: false)")
@@ -63,11 +66,13 @@ pub fn app<'a>() -> clap::Command<'a> {
                     .value_name("JOB_ID")
                     .help("The job id to query (or `current` for the most recent job)"),
                 Arg::new("verbose")
+                    .action(ArgAction::SetTrue)
                     .short('v')
                     .long("verbose")
                     .help("Increase verbosity of api response."),
                 Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
                 Arg::new("json")
+                    .action(ArgAction::SetTrue)
                     .short('j')
                     .long("json")
                     .help("Produce output in json format (default: false)"),
@@ -83,6 +88,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .about("Create, list, link and set thresholds for projects")
                 .args(&[
                     Arg::new("json")
+                        .action(ArgAction::SetTrue)
                         .short('j')
                         .long("json")
                         .help("Produce output in json format (default: false)"),
@@ -122,6 +128,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("list").about("List all existing projects").args(&[
                         Arg::new("json")
+                            .action(ArgAction::SetTrue)
                             .short('j')
                             .long("json")
                             .help("Produce output in json format (default: false)"),
@@ -165,6 +172,7 @@ pub fn app<'a>() -> clap::Command<'a> {
             Command::new("package").about("Retrieve the details of a specific package").args(&[
                 Arg::new("name").value_name("name").help("The name of the package.").required(true),
                 Arg::new("version")
+                    .action(ArgAction::SetTrue)
                     .value_name("version")
                     .help("The version of the package.")
                     .required(true),
@@ -174,6 +182,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     .value_name("type")
                     .help("The type of the package (\"npm\", \"ruby\", \"pypi\", etc.)"),
                 Arg::new("json")
+                    .action(ArgAction::SetTrue)
                     .short('j')
                     .long("json")
                     .help("Produce output in json format (default: false)"),
@@ -191,6 +200,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("token").about("Return the current authentication token").arg(
                         Arg::new("bearer")
+                            .action(ArgAction::SetTrue)
                             .short('b')
                             .long("bearer")
                             .help("Output the short-lived bearer token for the Phylum API"),
@@ -210,7 +220,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                     .long("lockfile-type")
                     .value_name("type")
                     .help("The type of the lock file (default: auto)")
-                    .possible_values(parse::lockfile_types()),
+                    .value_parser(PossibleValuesParser::new(parse::lockfile_types())),
             ]),
         )
         .subcommand(
@@ -222,17 +232,19 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .value_hint(ValueHint::FilePath)
                         .help("The package lock file to submit.")
                         .required(true),
-                    Arg::new("force").short('F').long("force").help(
+                    Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
                     ),
                     Arg::new("label").short('l').value_name("label"),
                     Arg::new("verbose")
+                        .action(ArgAction::SetTrue)
                         .short('v')
                         .long("verbose")
                         .help("Increase verbosity of api response."),
                     Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
                     Arg::new("json")
+                        .action(ArgAction::SetTrue)
                         .short('j')
                         .long("json")
                         .help("Produce output in json format (default: false)"),
@@ -268,11 +280,14 @@ pub fn app<'a>() -> clap::Command<'a> {
                         .long("type")
                         .value_name("type")
                         .help("Package type (`npm`, `rubygems`, `pypi`, etc)"),
-                    Arg::new("force").short('F').long("force").help(
+                    Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
                     ),
-                    Arg::new("low-priority").short('L').long("low-priority"),
+                    Arg::new("low-priority")
+                        .action(ArgAction::SetTrue)
+                        .short('L')
+                        .long("low-priority"),
                     Arg::new("label").short('l').long("label"),
                     Arg::new("project")
                         .short('p')
@@ -293,6 +308,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .about("Interact with user groups")
                 .arg(
                     Arg::new("json")
+                        .action(ArgAction::SetTrue)
                         .short('j')
                         .long("json")
                         .help("Produce group list in json format (default: false)"),
@@ -300,6 +316,7 @@ pub fn app<'a>() -> clap::Command<'a> {
                 .subcommand(
                     Command::new("list").about("List all groups the user is a member of").arg(
                         Arg::new("json")
+                            .action(ArgAction::SetTrue)
                             .short('j')
                             .long("json")
                             .help("Produce output in json format (default: false)"),
@@ -323,6 +340,7 @@ pub fn app<'a>() -> clap::Command<'a> {
         app = app.subcommand(
             Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
                 Arg::new("purge")
+                    .action(ArgAction::SetTrue)
                     .short('p')
                     .long("purge")
                     .help("Remove all files, including configuration files (default: false)"),

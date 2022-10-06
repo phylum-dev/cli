@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
-use super::{CommandResult, ExitCode};
+use crate::commands::{CommandResult, ExitCode};
 use crate::{print_user_success, print_user_warning};
 
 pub fn lockfile_types() -> Vec<&'static str> {
@@ -16,11 +16,12 @@ pub fn lockfile_types() -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let lockfile_type = matches.value_of("lockfile-type").unwrap_or("auto");
+    let auto_type = String::from("auto");
+    let lockfile_type = matches.get_one::<String>("lockfile-type").unwrap_or(&auto_type);
     // LOCKFILE is a required parameter, so .unwrap() should be safe.
-    let lockfile = matches.value_of("LOCKFILE").unwrap();
+    let lockfile = matches.get_one::<String>("LOCKFILE").unwrap();
 
-    let pkgs = if lockfile_type == "auto" {
+    let pkgs = if lockfile_type == &auto_type {
         let (pkgs, _) = try_get_packages(Path::new(lockfile))?;
         pkgs
     } else {
