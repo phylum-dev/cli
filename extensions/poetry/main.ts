@@ -56,7 +56,7 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
     args: Deno.args,
     exceptions: {
       read: ['~/.cache/pypoetry', '~/.local/lib', './'],
-      write: ['~/.cache/pypoetry', '~/.local/lib', './'],
+      write: ['~/.cache/pypoetry', './'],
       run: false,
       net: true,
     }
