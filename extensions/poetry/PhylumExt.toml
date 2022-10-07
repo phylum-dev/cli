@@ -4,5 +4,5 @@ entry_point = "main.ts"
 
 [permissions]
 run = ["poetry"]
-read = ["~/.cache/pypoetry", "~/.local/lib", "./"]
+read = ["~/.cache/pypoetry", "./"]
 write = ["~/.cache/pypoetry", "./"]
