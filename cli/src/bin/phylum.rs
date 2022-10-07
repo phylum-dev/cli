@@ -63,6 +63,19 @@ async fn handle_commands() -> CommandResult {
     let ver = app.get_version().unwrap().to_owned();
     let matches = app.get_matches();
 
+    // Set the log level based on CLI arguments.
+    let log_level = match (matches.get_count("verbose"), matches.get_count("quiet")) {
+        (_, 2..) => "off",
+        (_, 1) => "error",
+        (0, 0) => "warn",
+        (1, _) => "info",
+        (2, _) => "debug",
+        (3.., _) => "trace",
+    };
+
+    // Initialize logger.
+    env_logger::Builder::from_env(Env::default().default_filter_or(log_level)).init();
+
     let settings_path = config::get_home_settings_path()?;
     let config_path = matches
         .get_one::<String>("config")
@@ -162,8 +175,6 @@ fn handle_version(app_name: &str, ver: &str) -> CommandResult {
 
 #[tokio::main]
 async fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
-
     match handle_commands().await {
         Ok(CommandValue::Action(action)) => match action {
             Action::None => ExitCode::Ok.exit(),

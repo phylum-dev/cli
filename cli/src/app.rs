@@ -47,6 +47,15 @@ pub fn app() -> Command {
                 .action(ArgAction::SetTrue)
                 .long("no-check-certificate")
                 .help("Don't validate the server certificate when performing api requests"),
+            Arg::new("verbose")
+                .short('v')
+                .help("Increase the level of verbosity (the maximum is -vvv)")
+                .action(ArgAction::Count),
+            Arg::new("quiet")
+                .short('q')
+                .help("Reduce the level of verbosity (the maximum is -qq)")
+                .action(ArgAction::Count)
+                .conflicts_with("verbose"),
         ])
         .subcommand(
             Command::new("update")
