@@ -151,11 +151,17 @@ async function test(directories: [string]): bool {
 
     // Run pre-test setup executable.
     if (pre_test_bin) {
-        let pre_status = await Deno.run({
-            cmd: [pre_test_bin],
+        let pre_status = PhylumApi.runSandboxed({
+            cmd: pre_test_bin,
             stdout: 'null',
             stderr: 'null',
-        }).status();
+            exceptions: {
+                write: ['/'],
+                read: ['/'],
+                execute: ['/'],
+                net: true
+            }
+        })
 
         if (!pre_status.success) {
             console.error(`${red('Pre-test executable failed')}`);
@@ -189,11 +195,17 @@ async function test(directories: [string]): bool {
 
     // Run post-test cleanup executable.
     if (post_test_bin) {
-        let post_status = await Deno.run({
-            cmd: [post_test_bin],
+        let post_status = PhylumApi.runSandboxed({
+            cmd: post_test_bin,
             stdout: 'null',
             stderr: 'null',
-        }).status();
+            exceptions: {
+                write: ['/'],
+                read: ['/'],
+                execute: ['/'],
+                net: true
+            }
+        })
 
         if (!post_status.success) {
             console.error(`${red('Post-test executable failed')}`);

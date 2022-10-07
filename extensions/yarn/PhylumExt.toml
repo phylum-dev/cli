@@ -3,6 +3,6 @@ description = "yarn package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-write = ["./package.json", "yarn.lock"]
-read = ["./package.json", "yarn.lock"]
+write = ["~/.cache", "~/.yarn", "./"]
+read = ["~/.cache", "~/.yarn", "./"]
 run = ["yarn"]

@@ -272,7 +272,7 @@ dependencies = [
 [[package]]
 name = "birdcage"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/birdcage#e88d8d33265a9097628210c4f131aa5d6938a52d"
+source = "git+https://github.com/phylum-dev/birdcage?branch=andrea/abi-v2#6f3328c0f378d29bf25929276817b6c5da83808c"
 dependencies = [
  "landlock",
  "libc",
@@ -1512,6 +1512,26 @@ dependencies = [
  "proc-macro2 1.0.46",
  "quote 1.0.21",
  "syn 1.0.101",
+]
+
+[[package]]
+name = "enumflags2"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e75d4cd21b95383444831539909fbb14b9dc3fdceb2a6f5d36577329a1f55ccb"
+dependencies = [
+ "enumflags2_derive",
+]
+
+[[package]]
+name = "enumflags2_derive"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f58dc3c5e468259f19f2d46304a6b28f1c3d034442e14b322d2b850e36f6d5ae"
+dependencies = [
+ "proc-macro2 1.0.43",
+ "quote 1.0.21",
+ "syn 1.0.100",
 ]
 
 [[package]]

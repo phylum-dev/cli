@@ -1,7 +1,7 @@
 #[cfg(unix)]
 use std::borrow::Cow;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -74,11 +74,7 @@ where
     // Resolve `~/` home prefix.
     let home = dirs::home_dir().map_err(D::Error::custom)?;
     for path in &mut paths {
-        if let Some(suffix) =
-            path.strip_prefix('~').filter(|path| path.is_empty() || path.starts_with('/'))
-        {
-            *path = home.join(suffix).display().to_string();
-        }
+        *path = expand_home_path(path, &home).display().to_string();
     }
 
     Ok(paths)
@@ -230,12 +226,11 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
 /// Add an execption to the sandbox, ignoring invalid path errors.
 #[cfg(unix)]
 pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxResult<()> {
-    match birdcage.add_exception(exception) {
-        Ok(_) => Ok(()),
+    birdcage.add_exception(exception).map(|_| ()).or_else(|e| match e {
         // Ignore invalid path errors.
-        Err(SandboxError::InvalidPath(_)) => Ok(()),
-        Err(err) => Err(err),
-    }
+        SandboxError::InvalidPath(_) => Ok(()),
+        err => Err(err),
+    })
 }
 
 /// Resolve non-absolute bin paths from `$PATH`.
@@ -260,6 +255,13 @@ pub fn resolve_bin_path(bin: &str) -> PathBuf {
     }
 
     PathBuf::from(bin)
+}
+
+pub fn expand_home_path(path: &str, home: &Path) -> PathBuf {
+    path.strip_prefix('~')
+        .filter(|path| path.is_empty() || path.starts_with('/'))
+        .map(|suffix| home.join(suffix.strip_prefix('/').unwrap_or(suffix)))
+        .unwrap_or_else(|| PathBuf::from(path))
 }
 
 #[cfg(test)]

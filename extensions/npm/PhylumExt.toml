@@ -3,6 +3,6 @@ description = "NPM package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-write = ["./package-lock.json", "./package.json"]
-read = ["./package-lock.json", "./package.json"]
+write = ["~/.npm", "./"]
+read = ["~/.npm", "./"]
 run = ["npm"]

@@ -7,8 +7,6 @@ use std::io;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
 #[cfg(unix)]
-use std::path::PathBuf;
-#[cfg(unix)]
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -37,6 +35,8 @@ use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
+#[cfg(unix)]
+use crate::dirs;
 
 /// Package descriptor for any ecosystem.
 #[derive(Serialize, Deserialize, Debug)]
@@ -331,7 +331,7 @@ async fn parse_lockfile(
 #[cfg(unix)]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Setup process to be run.
-    let mut command = Command::new(process.cmd);
+    let mut command = Command::new(&process.cmd);
     command.args(&process.args);
     command.stdin(process.stdin);
     command.stdout(process.stdout);
@@ -340,7 +340,11 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Apply sandbox to subprocess after fork.
     unsafe {
         command.pre_exec(move || {
-            let into_ioerr = |err| io::Error::new(io::ErrorKind::Other, err);
+            fn into_ioerr<E: Into<Box<dyn std::error::Error + Send + Sync>>>(err: E) -> io::Error {
+                io::Error::new(io::ErrorKind::Other, err)
+            }
+
+            let home_dir = dirs::home_dir().map_err(into_ioerr)?;
 
             let mut birdcage = if process.exceptions.strict {
                 Birdcage::new().map_err(into_ioerr)?
@@ -349,11 +353,13 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             };
 
             for path in process.exceptions.read.sandbox_paths().iter() {
-                permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))
+                let path = permissions::expand_home_path(path, &home_dir);
+                permissions::add_exception(&mut birdcage, Exception::Read(path))
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.write.sandbox_paths().iter() {
-                permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))
+                let path = permissions::expand_home_path(path, &home_dir);
+                permissions::add_exception(&mut birdcage, Exception::Write(path))
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.run.sandbox_paths().iter() {
@@ -364,12 +370,15 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             if process.exceptions.net {
                 birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
+
             birdcage.lock().map_err(into_ioerr)?;
             Ok(())
         });
     }
 
-    let output = command.output()?;
+    let output = command.output().with_context(|| {
+        format!("Executing sandboxed process `{}` `{}`", process.cmd, process.args.join(" "))
+    })?;
 
     Ok(ProcessOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),

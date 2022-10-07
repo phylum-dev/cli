@@ -55,7 +55,16 @@ if (Deno.args.length >= 1
     console.log(`[${green("phylum")}] Downloading packages to cache…`);
 
     // Download packages to cache without sandbox.
-    let status = await Deno.run({ cmd: ['yarn', ...Deno.args, '--mode=skip-build']}).status();
+    let status = PhylumApi.runSandboxed({
+      cmd: 'yarn',
+      args: [...Deno.args, '--mode=skip-build'],
+      exceptions: {
+          write: ['~/.cache',  '~/.yarn', './'],
+          read: ['~/.cache',  '~/.yarn', './'],
+          run: false,
+          net: true,
+      }
+    })
 
     // Ensure download worked. Failure is still "safe" for the user.
     if (!status.success) {
@@ -93,7 +102,16 @@ if (Deno.args.length >= 1
         console.log(`[${green("phylum")}] Packages built successfully.`);
     }
 } else {
-    let status = await Deno.run({ cmd: ['yarn', ...Deno.args] }).status();
+    let status = PhylumApi.runSandboxed({
+      cmd: 'yarn',
+      args: [...Deno.args],
+      exceptions: {
+          write: ['~/.cache', '~/.yarn', './'],
+          read: ['~/.cache', '~/.yarn', './'],
+          run: false,
+          net: true,
+      }
+    })
     Deno.exit(status.code);
 }
 
@@ -101,9 +119,16 @@ if (Deno.args.length >= 1
 async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] Updating lockfile…`);
 
-    let status = await Deno.run({
-        cmd: ['yarn', subcommand, ...args, '--mode=update-lockfile'],
-    }).status();
+    let status = PhylumApi.runSandboxed({
+      cmd: 'yarn',
+      args: [...Deno.args, '--mode=update-lockfile'],
+      exceptions: {
+          write: ['~/.cache',  '~/.yarn', './'],
+          read: ['~/.cache',  '~/.yarn', './'],
+          run: false,
+          net: true,
+      }
+    })
 
     // Ensure lockfile update was successful.
     if (!status.success) {
