@@ -22,7 +22,7 @@ mod ruby;
 
 /// A file format that can be parsed.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "lowercase")]
 #[non_exhaustive]
 pub enum LockfileFormat {
     Yarn,
@@ -40,7 +40,6 @@ pub enum LockfileFormat {
     #[serde(rename = "nuget")]
     #[serde(alias = "msbuild")]
     Msbuild,
-    #[serde(rename = "gosum")]
     GoSum,
 }
 
