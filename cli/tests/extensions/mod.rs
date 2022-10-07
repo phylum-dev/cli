@@ -332,6 +332,18 @@ fn fs_sandboxing_success() {
     test_cli.extension(&js).build().run().success().stdout("fs_test");
 }
 
+#[test]
+fn help_contains_description() {
+    let test_cli = TestCli::builder().build();
+
+    test_cli.install_extension(&fixtures_path().join("sample")).success();
+
+    test_cli
+        .run(&["--help"])
+        .success()
+        .stdout(predicate::str::contains("This extension does a thing"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
