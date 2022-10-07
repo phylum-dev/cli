@@ -377,7 +377,9 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     }
 
     let output = command.output().with_context(|| {
-        format!("Executing sandboxed process `{}` `{}`", process.cmd, process.args.join(" "))
+        let cmd = process.cmd;
+        let args = process.args.iter().map(|arg| format!("`{arg}`")).collect::<Vec<_>>().join(" ");
+        format!("Executing sandboxed process failed: `{cmd}` {args}",)
     })?;
 
     Ok(ProcessOutput {
