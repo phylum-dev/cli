@@ -194,7 +194,7 @@ export class PhylumApi {
         return Deno.core.opAsync('create_project', name, group);
     }
 
-    /// Deletes a project.
+    /// Delete a project.
     ///
     /// # Returns
     /// 

@@ -83,7 +83,7 @@ pub async fn create_and_delete_project() {
         .extension(
             r#"
             try {
-                await PhylumApi.deleteProject("create_and_delete_test_project")
+                await PhylumApi.deleteProject("create_and_delete")
             } catch (e) {
             }
 
