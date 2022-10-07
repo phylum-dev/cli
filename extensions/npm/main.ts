@@ -60,7 +60,7 @@ if (Deno.args.length >= 1
         cmd: 'npm',
         args: [...Deno.args, '--ignore-scripts'],
         exceptions: {
-            read: ['~/.npm', './'],
+            read: true,
             write: ['~/.npm', './'],
             run: ['npm'],
             net: true,
