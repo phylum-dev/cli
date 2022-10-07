@@ -1,7 +1,7 @@
 #[cfg(unix)]
 use std::borrow::Cow;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -12,7 +12,7 @@ use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::dirs;
+use crate::dirs::{self, expand_home_path};
 
 /// Resource permissions.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -255,13 +255,6 @@ pub fn resolve_bin_path(bin: &str) -> PathBuf {
     }
 
     PathBuf::from(bin)
-}
-
-pub fn expand_home_path(path: &str, home: &Path) -> PathBuf {
-    path.strip_prefix('~')
-        .filter(|path| path.is_empty() || path.starts_with('/'))
-        .map(|suffix| home.join(suffix.strip_prefix('/').unwrap_or(suffix)))
-        .unwrap_or_else(|| PathBuf::from(path))
 }
 
 #[cfg(test)]

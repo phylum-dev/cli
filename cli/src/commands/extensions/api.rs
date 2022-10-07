@@ -353,12 +353,12 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             };
 
             for path in process.exceptions.read.sandbox_paths().iter() {
-                let path = permissions::expand_home_path(path, &home_dir);
+                let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Read(path))
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.write.sandbox_paths().iter() {
-                let path = permissions::expand_home_path(path, &home_dir);
+                let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Write(path))
                     .map_err(into_ioerr)?;
             }
