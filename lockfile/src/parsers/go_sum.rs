@@ -35,7 +35,7 @@ fn package(input: &str) -> Result<&str, Option<PackageDescriptor>> {
 
 fn package_name(input: &str) -> Result<&str, &str> {
     // take away any leading whitespace
-    let (input, _) = recognize(space0)(input)?;
+    let (input, _) = space0(input)?;
 
     // the package name will be everything up until a space
     recognize(take_until(" "))(input)
