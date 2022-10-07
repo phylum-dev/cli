@@ -140,7 +140,7 @@ impl Permissions {
             add_exception(&mut birdcage, Exception::Write(path))?;
         }
         for path in self.run.sandbox_paths().iter() {
-            let absolute_path = resolve_bin_path(path);
+            let absolute_path = resolve_bin_path(path)?;
             add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
         }
 
@@ -234,27 +234,31 @@ pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxRe
 }
 
 /// Resolve non-absolute bin paths from `$PATH`.
-pub fn resolve_bin_path(bin: &str) -> PathBuf {
+pub fn resolve_bin_path(bin: &str) -> Result<PathBuf> {
     // Do not transform absolute paths.
     if bin.starts_with('/') {
-        return PathBuf::from(bin);
+        return Ok(PathBuf::from(bin));
+    }
+
+    if bin.starts_with('~') {
+        return Ok(dirs::expand_home_path(bin, &dirs::home_dir()?));
     }
 
     // Try to read `$PATH`.
     let path = match env::var("PATH") {
         Ok(path) => path,
-        Err(_) => return PathBuf::from(bin),
+        Err(_) => return Ok(PathBuf::from(bin)),
     };
 
     // Return first path in `$PATH` that contains `bin`.
     for path in path.split(':') {
         let combined = PathBuf::from(path).join(&bin);
         if combined.exists() {
-            return combined;
+            return Ok(combined);
         }
     }
 
-    PathBuf::from(bin)
+    Ok(PathBuf::from(bin))
 }
 
 #[cfg(test)]
