@@ -59,8 +59,8 @@ if (Deno.args.length >= 1
         cmd: 'yarn',
         args: [...Deno.args, '--mode=skip-build'],
         exceptions: {
-            write: ['~/.cache',  '~/.yarn', './'],
-            read: ['~/.cache',  '~/.yarn', './'],
+            read: ['~/.cache/node', '~/.cache/yarn',  '~/.yarn', './'],
+            write: ['~/.cache/node', '~/.cache/yarn', '~/.yarn', './'],
             run: false,
             net: true,
         }
@@ -106,8 +106,8 @@ if (Deno.args.length >= 1
         cmd: 'yarn',
         args: [...Deno.args],
         exceptions: {
-            write: ['~/.cache', '~/.yarn', './'],
-            read: ['~/.cache', '~/.yarn', './'],
+            read: ['~/.cache/node', '~/.cache/yarn',  '~/.yarn', './'],
+            write: ['~/.cache/node', '~/.cache/yarn', '~/.yarn', './'],
             run: false,
             net: true,
         }
@@ -123,8 +123,8 @@ async function checkDryRun(subcommand: string, args: string[]) {
         cmd: 'yarn',
         args: [...Deno.args, '--mode=update-lockfile'],
         exceptions: {
-            write: ['~/.cache',  '~/.yarn', './'],
-            read: ['~/.cache',  '~/.yarn', './'],
+            read: ['~/.cache/node', '~/.cache/yarn',  '~/.yarn', './'],
+            write: ['~/.cache/node', '~/.cache/yarn', '~/.yarn', './'],
             run: false,
             net: true,
         }
