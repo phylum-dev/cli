@@ -289,7 +289,7 @@ async fn parse_lockfile(
     {
         let mut state = op_state.borrow_mut();
         let permissions = state.borrow_mut::<Permissions>();
-        permissions.read.check(Path::new(&lockfile))?;
+        permissions.read.check(Path::new(&lockfile), None)?;
     }
 
     // Fallback to automatic parser without lockfile type specified.
