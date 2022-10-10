@@ -4,5 +4,5 @@ entry_point = "main.ts"
 
 [permissions]
 run = ["poetry"]
-read = true,
+read = ["./poetry.lock", "./pyproject.toml"]
 write = ["./poetry.lock", "./pyproject.toml"]
