@@ -8,7 +8,6 @@ pub mod config;
 pub mod deno;
 pub mod dirs;
 pub mod filter;
-pub mod fmt_deno_error;
 pub mod format;
 pub mod fs_compare;
 pub mod histogram;
