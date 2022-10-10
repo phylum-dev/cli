@@ -185,10 +185,21 @@ export class PhylumApi {
     ///
     /// # Returns
     /// 
-    /// The id of the newly created project:
+    /// An object containing the id of the project, and an indication
+    /// stating whether the project was just created or already existing.
     ///
     /// ```
-    /// "5d6eaa97-dff8-dead-a619-bcafffefeef0"
+    /// {
+    ///   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
+    ///   "status": "created"
+    /// }
+    /// ```
+    ///
+    /// ```
+    /// {
+    ///   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
+    ///   "status": "exists"
+    /// }
     /// ```
     static async createProject(name: string, group?: string): string {
         return Deno.core.opAsync('create_project', name, group);
