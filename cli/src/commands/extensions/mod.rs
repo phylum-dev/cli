@@ -94,6 +94,7 @@ pub fn add_extensions_subcommands(command: Command) -> Command {
                 Command::new(ext.name().to_owned())
                     .allow_hyphen_values(true)
                     .disable_help_flag(true)
+                    .about(ext.description().unwrap_or_default().to_owned())
                     .arg(arg!([OPTIONS] ... "Extension parameters")),
             )
         })
