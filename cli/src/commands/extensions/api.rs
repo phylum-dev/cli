@@ -256,24 +256,38 @@ async fn get_projects(
     api.get_projects(group.as_deref()).await.map_err(Error::from)
 }
 
+#[derive(Serialize)]
+struct CreatedProject {
+    id: ProjectId,
+    status: CreatedProjectStatus,
+}
+
+#[derive(Serialize)]
+enum CreatedProjectStatus {
+    Created,
+    Existing,
+}
+
 /// Create a project.
 #[op]
 async fn create_project(
     op_state: Rc<RefCell<OpState>>,
     name: String,
     group: Option<String>,
-) -> Result<ProjectId> {
+) -> Result<CreatedProject> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     // Retrieve the id if the project already exists, otherwise return the id or the
     // error.
     match api.create_project(&name, group.as_deref()).await {
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            api.get_project_id(&name, group.as_deref()).await.map_err(|e| e.into())
-        },
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
+            .get_project_id(&name, group.as_deref())
+            .await
+            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Existing })
+            .map_err(|e| e.into()),
         Err(e) => Err(e.into()),
-        Ok(id) => Ok(id),
+        Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
     }
 }
 

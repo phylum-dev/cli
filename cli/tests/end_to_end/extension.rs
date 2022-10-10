@@ -87,19 +87,25 @@ pub async fn create_and_delete_project() {
             } catch (e) {
             }
 
-            let projectId = await PhylumApi.createProject("create_and_delete")
-            let duplicatedProjectId = await PhylumApi.createProject("create_and_delete")
-            if (projectId === duplicatedProjectId) {
-                console.log("OK")
-            } else {
-                console.log("ERROR " + projectId + " " + duplicatedProjectId)
+            let newPrj = await PhylumApi.createProject("create_and_delete")
+            let existingPrj = await PhylumApi.createProject("create_and_delete")
+
+            if (newPrj.id !== existingPrj.id) {
+                throw `ERROR IDs: ${newPrj.id} vs ${existingPrj.id}`
+            }
+
+            if (newPrj.status != "created") {
+                throw `ERROR newPrj.status = ${newPrj.status}`
+            }
+
+            if (existingPrj.status != "existing") {
+                throw `ERROR existingPrj.status = ${existingPrj.status}`
             }
         "#,
         )
         .build()
         .run()
-        .success()
-        .stdout(predicates::str::contains("OK"));
+        .success();
 }
 
 #[tokio::test]
