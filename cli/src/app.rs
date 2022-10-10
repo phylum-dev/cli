@@ -31,6 +31,7 @@ pub fn app() -> Command {
         .version(VERSION)
         .author("Phylum, Inc.")
         .about("Client interface to the Phylum system")
+        .next_display_order(None)
         .args(&[
             Arg::new("config")
                 .short('c')
