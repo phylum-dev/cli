@@ -18,6 +18,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        style: [all, default]
+        include:
+          - style: all
+            flags: '--all-features'
+          - style: default
+            flags: ''
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -40,40 +46,42 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
         with:
-          key: v2
+          key: v2-${{matrix.style}}
 
       - name: Format check
-        if: github.event_name != 'schedule'
+        if: github.event_name != 'schedule' && matrix.style == 'default'
         run: cargo +nightly fmt --all -- --check
 
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --locked
+          args: --locked ${{ matrix.flags }}
 
       - name: Clippy
         if: github.event_name != 'schedule'
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --locked -- -D warnings
+          args: --locked ${{ matrix.flags }} -- -D warnings
 
       - name: Test
+        if: matrix.style == 'default'
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --locked
+          args: --locked ${{ matrix.flags }}
 
       # Skip this step for external PRs (because it requires a secret)
-      - if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        name: All Features
+      - name: Test All Features
+        if: matrix.style == 'all' && github.secret_source != 'None'
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --locked ${{ matrix.flags }}
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
     #       https://github.com/phylum-dev/cli/issues/467
