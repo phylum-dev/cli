@@ -125,7 +125,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
         args: [subcommand, '--package-lock-only', ...args],
         exceptions: {
             write: ['~/.npm', './'],
-            read: ['~/.npm', './'],
+            read: true,
             run: ['npm'],
             net: true,
         }

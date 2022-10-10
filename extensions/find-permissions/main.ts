@@ -200,9 +200,9 @@ async function test(directories: [string]): bool {
             stdout: 'null',
             stderr: 'null',
             exceptions: {
-                write: ['/'],
-                read: ['/'],
-                execute: ['/'],
+                write: true,
+                read: true,
+                execute: true,
                 net: true
             }
         })
