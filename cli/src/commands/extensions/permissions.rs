@@ -1,7 +1,7 @@
 #[cfg(unix)]
 use std::borrow::Cow;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -140,7 +140,7 @@ impl Permissions {
             add_exception(&mut birdcage, Exception::Write(path))?;
         }
         for path in self.run.sandbox_paths().iter() {
-            let absolute_path = resolve_bin_path(path)?;
+            let absolute_path = resolve_bin_path(path);
             add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
         }
 
@@ -235,31 +235,29 @@ pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxRe
 }
 
 /// Resolve non-absolute bin paths from `$PATH`.
-pub fn resolve_bin_path(bin: &str) -> Result<PathBuf> {
-    // Do not transform absolute paths.
-    if bin.starts_with('/') {
-        return Ok(PathBuf::from(bin));
-    }
+pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
+    let bin: &Path = bin.as_ref();
 
-    if bin.starts_with('~') {
-        return Ok(dirs::expand_home_path(bin, &dirs::home_dir()?));
+    // Do not transform absolute paths.
+    if bin.has_root() {
+        return bin.to_owned();
     }
 
     // Try to read `$PATH`.
     let path = match env::var("PATH") {
         Ok(path) => path,
-        Err(_) => return Ok(PathBuf::from(bin)),
+        Err(_) => return PathBuf::from(bin),
     };
 
     // Return first path in `$PATH` that contains `bin`.
     for path in path.split(':') {
         let combined = PathBuf::from(path).join(&bin);
         if combined.exists() {
-            return Ok(combined);
+            return combined;
         }
     }
 
-    Ok(PathBuf::from(bin))
+    PathBuf::from(bin)
 }
 
 #[cfg(test)]
