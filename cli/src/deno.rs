@@ -15,7 +15,7 @@ use deno_runtime::deno_core::{
 };
 use deno_runtime::permissions::{Permissions, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
-use deno_runtime::{colors, BootstrapOptions};
+use deno_runtime::{colors, fmt_errors, BootstrapOptions};
 use futures::future::BoxFuture;
 use tokio::fs;
 use url::{Host, Url};
@@ -24,7 +24,6 @@ use crate::api::PhylumApi;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
-use crate::fmt_deno_error;
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("./extension_api.ts");
@@ -125,7 +124,7 @@ fn print_js_error(error: Error) -> CommandResult {
         return Err(anyhow!(message.to_owned()));
     }
 
-    println!("{}: {}", style("Extension error").red(), fmt_deno_error::format_js_error(&js_error));
+    println!("{}: {}", style("Extension error").red(), fmt_errors::format_js_error(&js_error));
 
     Ok(ExitCode::JsError.into())
 }
