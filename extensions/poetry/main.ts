@@ -55,7 +55,7 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
     cmd: 'poetry',
     args: Deno.args,
     exceptions: {
-      read: ['~/.cache/pypoetry', './'],
+      read: true,
       write: ['~/.cache/pypoetry', './'],
       run: false,
       net: true,
@@ -72,7 +72,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
     cmd: 'poetry',
     args: [subcommand, '-n', '--lock', ...args.map(s => s.toString())],
     exceptions: {
-      read: ['~/.cache/pypoetry', './'],
+      read: true,
       write: ['~/.cache/pypoetry', './'],
       run: false,
       net: true,
