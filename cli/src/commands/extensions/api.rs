@@ -265,7 +265,7 @@ struct CreatedProject {
 #[derive(Serialize)]
 enum CreatedProjectStatus {
     Created,
-    Existing,
+    Exists,
 }
 
 /// Create a project.
@@ -284,7 +284,7 @@ async fn create_project(
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
             .get_project_id(&name, group.as_deref())
             .await
-            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Existing })
+            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
             .map_err(|e| e.into()),
         Err(e) => Err(e.into()),
         Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
