@@ -226,11 +226,12 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
 /// Add an execption to the sandbox, ignoring invalid path errors.
 #[cfg(unix)]
 pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxResult<()> {
-    birdcage.add_exception(exception).map(|_| ()).or_else(|e| match e {
+    match birdcage.add_exception(exception) {
+        Ok(_) => Ok(()),
         // Ignore invalid path errors.
-        SandboxError::InvalidPath(_) => Ok(()),
-        err => Err(err),
-    })
+        Err(SandboxError::InvalidPath(_)) => Ok(()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Resolve non-absolute bin paths from `$PATH`.
