@@ -363,8 +363,8 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.run.sandbox_paths().iter() {
-                let absolute_path =
-                    permissions::resolve_bin_path(dirs::expand_home_path(path, &home_dir));
+                let path = dirs::expand_home_path(path, &home_dir);
+                let absolute_path = permissions::resolve_bin_path(path);
                 permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
                     .map_err(into_ioerr)?;
             }
