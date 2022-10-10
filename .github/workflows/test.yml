@@ -38,10 +38,6 @@ jobs:
           profile: minimal
           components: rustfmt
 
-      - uses: Swatinem/rust-cache@v1
-        with:
-          key: v3
-
       - name: Format check
         if: github.event_name != 'schedule'
         run: cargo +nightly fmt --all -- --check
