@@ -34,24 +34,25 @@ fn package(input: &str) -> Result<&str, Option<PackageDescriptor>> {
 }
 
 fn package_name(input: &str) -> Result<&str, &str> {
-    // take away any leading whitespace
+    // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
-    // the package name will be everything up until a space
+    // The package name will be everything up until a space.
     recognize(take_until(" "))(input)
 }
 
 fn package_version(input: &str) -> Result<&str, &str> {
-    // take away the leading whitespace
+    // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
-    // the version will be the string up until a space
+    // The version will be everything up until a space.
     recognize(take_until(" "))(input)
 }
 
 fn package_hash(input: &str) -> Result<&str, &str> {
-    // take away the leading whitespace, then the hash
-    // is everything left until the end of the line
+    // Take away any leading whitespace.
     let (input, _) = space0(input)?;
+
+    // The hash will be everything up until the end of the line.
     take_till_line_end(input)
 }
