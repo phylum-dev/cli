@@ -61,6 +61,23 @@ impl Permission {
             Err(anyhow!("Requires {resource_type} access to {resource:?}"))
         }
     }
+
+    pub fn subset_of(&self, parent: &Permission) -> Result<Permission> {
+        use Permission::*;
+        match (parent, self) {
+            (&Boolean(parent), &Boolean(child)) => Ok(Permission::Boolean(parent && child)),
+            (&List(ref parent), &Boolean(true)) => Ok(Permission::List(parent.clone())),
+            (&List(_), &Boolean(false)) => Ok(Permission::Boolean(false)),
+            (&Boolean(true), &List(ref child)) => Ok(Permission::List(child.clone())),
+            (&Boolean(false), &List(_)) => Ok(Permission::Boolean(false)),
+            (&List(ref parent), &List(ref child)) => Permission::paths_subset(parent, child),
+        }
+    }
+
+    fn paths_subset(parent: &[String], child: &[String]) -> Result<Permission> {
+        let parent = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
+        let child = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
+    }
 }
 
 /// Deserializer for automatically resolving `~/` path prefix.
