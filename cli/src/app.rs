@@ -65,25 +65,12 @@ pub fn app() -> Command {
 
     app = extensions::add_extensions_subcommands(app);
 
-    #[cfg(feature = "selfmanage")]
-    {
-        app = app.subcommand(
-            Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
-                Arg::new("purge")
-                    .action(ArgAction::SetTrue)
-                    .short('p')
-                    .long("purge")
-                    .help("Remove all files, including configuration files (default: false)"),
-            ),
-        );
-    }
-
     app
 }
 
 /// Add non-extension subcommands.
 pub fn add_subcommands(command: Command) -> Command {
-    command
+    let mut app = command
         .subcommand(
             Command::new("update")
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
@@ -367,7 +354,22 @@ pub fn add_subcommands(command: Command) -> Command {
                     ),
                 ),
         )
-        .subcommand(extensions::command())
+        .subcommand(extensions::command());
+
+    #[cfg(feature = "selfmanage")]
+    {
+        app = app.subcommand(
+            Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
+                Arg::new("purge")
+                    .action(ArgAction::SetTrue)
+                    .short('p')
+                    .long("purge")
+                    .help("Remove all files, including configuration files (default: false)"),
+            ),
+        );
+    }
+
+    app
 }
 
 /// Check if a non-extension subcommand exists.
