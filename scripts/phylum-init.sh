@@ -4,7 +4,18 @@ set -eu
 
 SUPPORTED_TARGETS="aarch64-apple-darwin x86_64-apple-darwin aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu"
 BASE_URL="https://github.com/phylum-dev/cli/releases/latest/download"
-MINISIG_PUBKEY="RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf"
+OPENSSL_PUBKEY=$(cat <<EOF
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyGgvuy6CWSgJuhKY8oVz
+42udH1F2yIlaBoxAdQFuY2zxPSSpK9zv34B7m0JekuC5WCYfW0gS2Z8Ryu2RVdQh
+7DXvQb7qwzZT0H11K9Pw8hIHBvZPM+d61GWgWDc3k/rFwMmqd+kytVZy0mVxNdv4
+P2qvy6BNaiUI7yoB1ahR/6klfkPit0X7pkK9sTHwW+/WcYitTQKnEnRzA3q8EmA7
+rbU/sFEypzBA3C3qNJZyKSwy47kWXhC4xXUS2NXvew4FoVU6ybMoeDApwsx1AgTu
+CPPnPlCwuCIyUPezCP5XYczuHfaWeuwArlwdJFSUpMTc+SqO6REKgL9yvpqsO5Ia
+sQIDAQAB
+-----END PUBLIC KEY-----
+EOF
+)
 
 # Get the platform name.
 get_platform() {
@@ -119,7 +130,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -z "${NO_VERIFY:-}" ]; then
-    require_command minisign "See https://jedisct1.github.io/minisign/ for information on installing minisign"
+    require_command openssl
 fi
 
 if [ -z "${TARGET:-}" ]; then
@@ -166,8 +177,12 @@ download "${archive}" "${URL}"
 
 # Validate the archive
 if [ -z "${NO_VERIFY:-}" ]; then
-    download "${archive}.minisig" "${URL}.minisig"
-    if ! minisign -V -q -P "${MINISIG_PUBKEY}" -m "${archive}" -x "${archive}.minisig"; then
+    pubkey="${tempdir}/key.pub"
+    echo "${OPENSSL_PUBKEY}" > "${pubkey}"
+
+    download "${archive}.signature" "${URL}.signature"
+
+    if ! openssl dgst -sha256 -verify "${pubkey}" -signature "${archive}.signature" "${archive}"; then
         echo "ERROR: File signature is invalid! Aborting install" >&2
         exit 1
     fi
