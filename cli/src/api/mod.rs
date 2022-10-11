@@ -225,7 +225,7 @@ impl PhylumApi {
     }
 
     /// Create a new project
-    pub async fn create_project(&mut self, name: &str, group: Option<&str>) -> Result<ProjectId> {
+    pub async fn create_project(&self, name: &str, group: Option<&str>) -> Result<ProjectId> {
         let response: CreateProjectResponse = self
             .post(
                 endpoints::post_create_project(&self.config.connection.uri)?,
@@ -236,7 +236,7 @@ impl PhylumApi {
     }
 
     /// Delete a project
-    pub async fn delete_project(&mut self, project_id: ProjectId) -> Result<()> {
+    pub async fn delete_project(&self, project_id: ProjectId) -> Result<()> {
         let _: IgnoredAny = self
             .delete(endpoints::delete_project(
                 &self.config.connection.uri,

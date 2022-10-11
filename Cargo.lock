@@ -272,7 +272,7 @@ dependencies = [
 [[package]]
 name = "birdcage"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/birdcage#e88d8d33265a9097628210c4f131aa5d6938a52d"
+source = "git+https://github.com/phylum-dev/birdcage#214bbba518cb299e14a6841c20562334773a6449"
 dependencies = [
  "landlock",
  "libc",
@@ -2372,7 +2372,7 @@ dependencies = [
 [[package]]
 name = "landlock"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/rust-landlock#526fbfaf9399e3fa5555cc8ad832131831e94489"
+source = "git+https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1"
 dependencies = [
  "enumflags2",
  "libc",

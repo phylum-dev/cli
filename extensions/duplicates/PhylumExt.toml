@@ -1,4 +1,5 @@
 name = "duplicates"
+description = "List duplicate dependencies"
 
 [permissions]
 read = ["./"]

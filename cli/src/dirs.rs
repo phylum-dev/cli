@@ -30,3 +30,11 @@ pub fn xdg_dir(env_var: &str, path_suffix: impl AsRef<Path>) -> Result<PathBuf> 
         .map(|var| Ok(PathBuf::from(var)))
         .unwrap_or_else(|| Ok(home_dir()?.join(path_suffix)))
 }
+
+/// Expand leading tildes to the user's home path.
+pub fn expand_home_path(path: &str, home: &Path) -> PathBuf {
+    path.strip_prefix('~')
+        .filter(|path| path.is_empty() || path.starts_with('/'))
+        .map(|suffix| home.join(suffix.strip_prefix('/').unwrap_or(suffix)))
+        .unwrap_or_else(|| PathBuf::from(path))
+}

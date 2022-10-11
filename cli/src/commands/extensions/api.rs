@@ -7,8 +7,6 @@ use std::io;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
 #[cfg(unix)]
-use std::path::PathBuf;
-#[cfg(unix)]
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -20,16 +18,18 @@ use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
-use phylum_types::types::common::JobId;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
+use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 #[cfg(unix)]
 use crate::commands::extensions::permissions;
@@ -37,6 +37,8 @@ use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
+#[cfg(unix)]
+use crate::dirs;
 
 /// Package descriptor for any ecosystem.
 #[derive(Serialize, Deserialize, Debug)]
@@ -254,6 +256,55 @@ async fn get_projects(
     api.get_projects(group.as_deref()).await.map_err(Error::from)
 }
 
+#[derive(Serialize)]
+struct CreatedProject {
+    id: ProjectId,
+    status: CreatedProjectStatus,
+}
+
+#[derive(Serialize)]
+enum CreatedProjectStatus {
+    Created,
+    Exists,
+}
+
+/// Create a project.
+#[op]
+async fn create_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: String,
+    group: Option<String>,
+) -> Result<CreatedProject> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    // Retrieve the id if the project already exists, otherwise return the id or the
+    // error.
+    match api.create_project(&name, group.as_deref()).await {
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
+            .get_project_id(&name, group.as_deref())
+            .await
+            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
+            .map_err(|e| e.into()),
+        Err(e) => Err(e.into()),
+        Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
+    }
+}
+
+/// Delete a project.
+#[op]
+async fn delete_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: String,
+    group: Option<String>,
+) -> Result<()> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    let project_id = api.get_project_id(&name, group.as_deref()).await?;
+    api.delete_project(project_id).await.map_err(|e| e.into())
+}
+
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
 #[op]
@@ -331,7 +382,7 @@ async fn parse_lockfile(
 #[cfg(unix)]
 fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Setup process to be run.
-    let mut command = Command::new(process.cmd);
+    let mut command = Command::new(&process.cmd);
     command.args(&process.args);
     command.stdin(process.stdin);
     command.stdout(process.stdout);
@@ -340,7 +391,11 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     // Apply sandbox to subprocess after fork.
     unsafe {
         command.pre_exec(move || {
-            let into_ioerr = |err| io::Error::new(io::ErrorKind::Other, err);
+            fn into_ioerr<E: Into<Box<dyn std::error::Error + Send + Sync>>>(err: E) -> io::Error {
+                io::Error::new(io::ErrorKind::Other, err)
+            }
+
+            let home_dir = dirs::home_dir().map_err(into_ioerr)?;
 
             let mut birdcage = if process.exceptions.strict {
                 Birdcage::new().map_err(into_ioerr)?
@@ -349,14 +404,17 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             };
 
             for path in process.exceptions.read.sandbox_paths().iter() {
-                permissions::add_exception(&mut birdcage, Exception::Read(PathBuf::from(path)))
+                let path = dirs::expand_home_path(path, &home_dir);
+                permissions::add_exception(&mut birdcage, Exception::Read(path))
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.write.sandbox_paths().iter() {
-                permissions::add_exception(&mut birdcage, Exception::Write(PathBuf::from(path)))
+                let path = dirs::expand_home_path(path, &home_dir);
+                permissions::add_exception(&mut birdcage, Exception::Write(path))
                     .map_err(into_ioerr)?;
             }
             for path in process.exceptions.run.sandbox_paths().iter() {
+                let path = dirs::expand_home_path(path, &home_dir);
                 let absolute_path = permissions::resolve_bin_path(path);
                 permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
                     .map_err(into_ioerr)?;
@@ -364,12 +422,17 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             if process.exceptions.net {
                 birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
+
             birdcage.lock().map_err(into_ioerr)?;
             Ok(())
         });
     }
 
-    let output = command.output()?;
+    let output = command.output().with_context(|| {
+        let cmd = process.cmd;
+        let args = process.args.iter().map(|arg| format!("`{arg}`")).collect::<Vec<_>>().join(" ");
+        format!("Executing sandboxed process failed: `{cmd}` {args}",)
+    })?;
 
     Ok(ProcessOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -400,6 +463,8 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_current_project::decl(),
         get_groups::decl(),
         get_projects::decl(),
+        create_project::decl(),
+        delete_project::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),

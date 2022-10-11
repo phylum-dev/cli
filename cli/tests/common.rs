@@ -226,7 +226,7 @@ pub async fn create_project() -> &'static str {
     };
 
     // Attempt to create the project, ignoring conflicts.
-    let mut api = PhylumApi::new(config, None).await.unwrap();
+    let api = PhylumApi::new(config, None).await.unwrap();
     match api.create_project(PROJECT_NAME, None).await {
         Ok(_) | Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
         },
