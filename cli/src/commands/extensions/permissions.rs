@@ -1,7 +1,7 @@
 #[cfg(unix)]
 use std::borrow::Cow;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -12,7 +12,7 @@ use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::dirs;
+use crate::dirs::{self, expand_home_path};
 
 /// Resource permissions.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -74,11 +74,7 @@ where
     // Resolve `~/` home prefix.
     let home = dirs::home_dir().map_err(D::Error::custom)?;
     for path in &mut paths {
-        if let Some(suffix) =
-            path.strip_prefix('~').filter(|path| path.is_empty() || path.starts_with('/'))
-        {
-            *path = home.join(suffix).display().to_string();
-        }
+        *path = expand_home_path(path, &home).display().to_string();
     }
 
     Ok(paths)
@@ -239,10 +235,12 @@ pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxRe
 }
 
 /// Resolve non-absolute bin paths from `$PATH`.
-pub fn resolve_bin_path(bin: &str) -> PathBuf {
+pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
+    let bin: &Path = bin.as_ref();
+
     // Do not transform absolute paths.
-    if bin.starts_with('/') {
-        return PathBuf::from(bin);
+    if bin.has_root() {
+        return bin.to_owned();
     }
 
     // Try to read `$PATH`.

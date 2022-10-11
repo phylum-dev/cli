@@ -51,7 +51,16 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
     Deno.exit(analysisOutcome);
   }
 } else {
-  let status = await Deno.run({ cmd: ['poetry', ...Deno.args] }).status();
+  let status = PhylumApi.runSandboxed({
+    cmd: 'poetry',
+    args: Deno.args,
+    exceptions: {
+      read: true,
+      write: ['~/.cache/pypoetry', './'],
+      run: false,
+      net: true,
+    }
+  })
   Deno.exit(status.code);
 }
 
@@ -59,11 +68,16 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
 async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  let status = await Deno.run({
-    cmd: ['poetry', subcommand, '-n', '--lock', ...args.map(s => s.toString())],
-    stdout: 'piped',
-    stderr: 'piped',
-  }).status();
+  let status = PhylumApi.runSandboxed({
+    cmd: 'poetry',
+    args: [subcommand, '-n', '--lock', ...args.map(s => s.toString())],
+    exceptions: {
+      read: true,
+      write: ['~/.cache/pypoetry', './'],
+      run: false,
+      net: true,
+    }
+  })
 
   // Ensure dry-run update was successful.
   if (!status.success) {
@@ -80,7 +94,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
 
-  if (lockfile.packages.length === 0) {
+  if (lockfileData.packages.length === 0) {
     console.log(`[${green("phylum")}] No packages found in lockfile.\n`)
     return;
   }
@@ -112,5 +126,5 @@ async function abort(code) {
 // Restore package manager files.
 async function restoreBackup() {
     await packageLockBackup.restoreOrDelete();
-    await packageBackup.restoreOrDelete();
+    await manifestBackup.restoreOrDelete();
 }

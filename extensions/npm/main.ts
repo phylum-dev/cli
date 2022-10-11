@@ -56,7 +56,16 @@ if (Deno.args.length >= 1
     console.log(`[${green("phylum")}] Installing without build scripts…`);
 
     // Install packages without executing build scripts.
-    let status = await Deno.run({ cmd: ['npm', ...Deno.args, '--ignore-scripts']}).status();
+    let status = PhylumApi.runSandboxed({
+        cmd: 'npm',
+        args: [...Deno.args, '--ignore-scripts'],
+        exceptions: {
+            read: true,
+            write: ['~/.npm', './'],
+            run: ['npm'],
+            net: true,
+        },
+    })
 
     // Ensure install worked. Failure is still "safe" for the user.
     if (!status.success) {
@@ -94,7 +103,16 @@ if (Deno.args.length >= 1
         console.log(`[${green("phylum")}] Packages built successfully.`);
     }
 } else {
-    let status = await Deno.run({ cmd: ['npm', ...Deno.args] }).status();
+    let status = PhylumApi.runSandboxed({
+        cmd: 'npm', 
+        args: Deno.args,
+        exceptions: {
+            write: ['~/.npm', './'],
+            read: ['~/.npm', './'],
+            run: ['npm'],
+            net: true,
+        }
+    });
     Deno.exit(status.code);
 }
 
@@ -102,11 +120,16 @@ if (Deno.args.length >= 1
 async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] Updating lockfile…`);
 
-    let status = await Deno.run({
-        cmd: ['npm', subcommand, '--package-lock-only', ...args],
-        stdout: 'piped',
-        stderr: 'piped',
-    }).status();
+    let status = PhylumApi.runSandboxed({
+        cmd: 'npm',
+        args: [subcommand, '--package-lock-only', ...args],
+        exceptions: {
+            write: ['~/.npm', './'],
+            read: true,
+            run: ['npm'],
+            net: true,
+        }
+    })
 
     // Ensure lockfile update was successful.
     if (!status.success) {
