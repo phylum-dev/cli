@@ -181,6 +181,39 @@ export class PhylumApi {
         return Deno.core.opAsync('get_projects', group);
     }
 
+    /// Create a project.
+    ///
+    /// # Returns
+    /// 
+    /// An object containing the id of the project, and an indication
+    /// stating whether the project was just created or already existing.
+    ///
+    /// ```
+    /// {
+    ///   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
+    ///   "status": "created"
+    /// }
+    /// ```
+    ///
+    /// ```
+    /// {
+    ///   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
+    ///   "status": "exists"
+    /// }
+    /// ```
+    static async createProject(name: string, group?: string): string {
+        return Deno.core.opAsync('create_project', name, group);
+    }
+
+    /// Delete a project.
+    ///
+    /// # Returns
+    /// 
+    /// Nothing if successful; throws an error if unsuccessful.
+    static async deleteProject(name: string, group?: string): string {
+        return Deno.core.opAsync('delete_project', name, group);
+    }
+
     /// Get analysis results for a single package.
     ///
     /// This will not start a new package analysis, but only retrieve previous

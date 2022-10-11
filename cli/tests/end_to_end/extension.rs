@@ -76,6 +76,39 @@ pub async fn get_groups() {
 }
 
 #[tokio::test]
+pub async fn create_and_delete_project() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension(
+            r#"
+            try {
+                await PhylumApi.deleteProject("create_and_delete")
+            } catch (e) {
+            }
+
+            let newPrj = await PhylumApi.createProject("create_and_delete")
+            let existingPrj = await PhylumApi.createProject("create_and_delete")
+
+            if (newPrj.id !== existingPrj.id) {
+                throw `ERROR IDs: ${newPrj.id} vs ${existingPrj.id}`
+            }
+
+            if (newPrj.status != "created") {
+                throw `ERROR newPrj.status = ${newPrj.status}`
+            }
+
+            if (existingPrj.status != "exists") {
+                throw `ERROR existingPrj.status = ${existingPrj.status}`
+            }
+        "#,
+        )
+        .build()
+        .run()
+        .success();
+}
+
+#[tokio::test]
 pub async fn get_projects() {
     let test_cli = TestCli::builder().with_config(None).build();
 

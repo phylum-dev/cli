@@ -11,13 +11,13 @@ use console::style;
 use dialoguer::console::Term;
 use dialoguer::Confirm;
 use futures::future::BoxFuture;
-use log::{error, warn};
+use log::error;
 
 use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 use crate::print::print_sc_help;
-use crate::print_user_success;
+use crate::{print_user_success, print_user_warning};
 
 pub mod api;
 pub mod extension;
@@ -83,7 +83,10 @@ pub fn add_extensions_subcommands(command: Command) -> Command {
         .into_iter()
         .filter(|ext| {
             if names.contains(ext.name()) {
-                warn!("{}: extension was filtered out due to name conflict", ext.name());
+                print_user_warning!(
+                    "{}: extension was filtered out due to name conflict",
+                    ext.name()
+                );
                 false
             } else {
                 true
