@@ -72,14 +72,23 @@ fn incorrect_net_permission_unsuccessful_run() {
 }
 
 #[test]
-fn correct_run_permission_successful_install_and_run() {
+fn deno_run_api_disabled() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
-        .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
-        .success();
-
-    test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("install"));
+        .extension(
+            r#"
+        try {
+            await Deno.run("/bin/echo")
+        } catch(e) {
+            console.log("OK")
+        }
+    "#,
+        )
+        .build()
+        .run()
+        .success()
+        .stdout(predicate::str::contains("OK"));
 }
 
 #[tokio::test]
