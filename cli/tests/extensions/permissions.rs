@@ -78,11 +78,12 @@ fn deno_run_api_disabled() {
     test_cli
         .extension(
             r#"
-            try {
-                await Deno.run({ cmd: ["cargo", "--list"] })
-            } catch(e) {
-                console.log("OK")
-            }"#,
+        try {
+            await Deno.run("/bin/echo")
+        } catch(e) {
+            console.log("OK")
+        }
+    "#,
         )
         .build()
         .run()
