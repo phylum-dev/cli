@@ -18,16 +18,18 @@ use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
 use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
-use phylum_types::types::common::JobId;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
+use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 #[cfg(unix)]
 use crate::commands::extensions::permissions;
@@ -254,6 +256,55 @@ async fn get_projects(
     api.get_projects(group.as_deref()).await.map_err(Error::from)
 }
 
+#[derive(Serialize)]
+struct CreatedProject {
+    id: ProjectId,
+    status: CreatedProjectStatus,
+}
+
+#[derive(Serialize)]
+enum CreatedProjectStatus {
+    Created,
+    Exists,
+}
+
+/// Create a project.
+#[op]
+async fn create_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: String,
+    group: Option<String>,
+) -> Result<CreatedProject> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    // Retrieve the id if the project already exists, otherwise return the id or the
+    // error.
+    match api.create_project(&name, group.as_deref()).await {
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
+            .get_project_id(&name, group.as_deref())
+            .await
+            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
+            .map_err(|e| e.into()),
+        Err(e) => Err(e.into()),
+        Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
+    }
+}
+
+/// Delete a project.
+#[op]
+async fn delete_project(
+    op_state: Rc<RefCell<OpState>>,
+    name: String,
+    group: Option<String>,
+) -> Result<()> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    let project_id = api.get_project_id(&name, group.as_deref()).await?;
+    api.delete_project(project_id).await.map_err(|e| e.into())
+}
+
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
 #[op]
@@ -412,6 +463,8 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_current_project::decl(),
         get_groups::decl(),
         get_projects::decl(),
+        create_project::decl(),
+        delete_project::decl(),
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),
