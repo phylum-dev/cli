@@ -36,7 +36,7 @@ pub async fn run(
 ) -> CommandResult {
     let phylum_api = Extension::builder()
         .middleware(|op| match op.name {
-            "op_request_permission" | "op_run" => op.disable(),
+            "op_request_permission" => op.disable(),
             _ => op,
         })
         .ops(api::api_decls())
