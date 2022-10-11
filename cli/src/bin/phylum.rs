@@ -5,6 +5,7 @@ use std::time::UNIX_EPOCH;
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use env_logger::Env;
+use log::LevelFilter;
 use phylum_cli::api::PhylumApi;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
@@ -62,6 +63,23 @@ async fn handle_commands() -> CommandResult {
     let app_helper = &mut app.clone();
     let ver = app.get_version().unwrap().to_owned();
     let matches = app.get_matches();
+
+    // Set the log level based on CLI arguments.
+    let log_level = match (matches.get_count("verbose"), matches.get_count("quiet")) {
+        (_, 2..) => Some(LevelFilter::Off),
+        (_, 1) => Some(LevelFilter::Error),
+        (1, _) => Some(LevelFilter::Info),
+        (2, _) => Some(LevelFilter::Debug),
+        (3.., _) => Some(LevelFilter::Trace),
+        // Use environment setup by default.
+        (0, 0) => None,
+    };
+
+    // Initialize the logger at the desired level.
+    match log_level {
+        Some(level) => env_logger::Builder::new().filter_level(level).init(),
+        None => env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init(),
+    };
 
     let settings_path = config::get_home_settings_path()?;
     let config_path = matches
@@ -162,8 +180,6 @@ fn handle_version(app_name: &str, ver: &str) -> CommandResult {
 
 #[tokio::main]
 async fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
-
     match handle_commands().await {
         Ok(CommandValue::Action(action)) => match action {
             Action::None => ExitCode::Ok.exit(),
