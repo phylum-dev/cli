@@ -1,10 +1,16 @@
-let cmd = Deno.run({
-  cmd: ['cargo', '--list'],
-  stdout: 'piped'
-})
+import { PhylumApi } from 'phylum';
 
-await cmd.status()
+let cmd = PhylumApi.runSandboxed({
+  cmd: '/bin/echo',
+  args: ['hello'],
+  stdout: 'piped',
+  stderr: 'piped',
+  exceptions: {
+    read: false,
+    write: false,
+    net: false,
+    run: false,
+  }
+});
 
-let output = await cmd.output()
-
-await Deno.stdout.write(output)
+await Deno.stdout.write(new TextEncoder().encode(cmd.stdout));
