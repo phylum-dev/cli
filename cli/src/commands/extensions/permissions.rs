@@ -75,9 +75,66 @@ impl Permission {
     }
 
     fn paths_subset(parent: &[String], child: &[String]) -> Result<Permission> {
-        let parent = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
-        let child = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
+        // A is a path-subset of B iff:
+        // - for every b in B
+        // - there exists at least one a in A
+        // - such that a is a prefix for b
+        let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
+        let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
+
+        let without_parent: Vec<_> = child_paths
+            .iter()
+            .filter_map(|child| {
+                if !parent_paths.iter().any(|p| child.starts_with(p)) {
+                    Some(child.to_string_lossy())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if !without_parent.is_empty() {
+            Err(anyhow!("Not subpath: {}", without_parent.join(", ")))
+        } else {
+            Ok(Permission::List(child.to_vec()))
+        }
     }
+}
+
+#[test]
+fn test_paths_subset() {
+    let paths_subset = |a: &[&str], b: &[&str]| {
+        Permission::paths_subset(
+            &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+            &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+        )
+    };
+
+    let perm_list = |a: &[&str]| Permission::List(a.iter().map(|s| s.to_string()).collect());
+
+    assert_eq!(paths_subset(&["/tmp"], &["/tmp"]).unwrap(), perm_list(&["/tmp"]));
+
+    assert_eq!(
+        paths_subset(&["/tmp"], &["/tmp/something"]).unwrap(),
+        perm_list(&["/tmp/something"])
+    );
+
+    assert!(paths_subset(&["/tmp"], &["/"]).unwrap_err().to_string().ends_with('/'),);
+
+    assert!(paths_subset(&["/tmp"], &["/etc/something"])
+        .unwrap_err()
+        .to_string()
+        .contains("/etc/something"));
+
+    assert_eq!(
+        paths_subset(&["/tmp", "/etc"], &["/etc/something"]).unwrap(),
+        perm_list(&["/etc/something"])
+    );
+
+    assert!(paths_subset(&["/tmp", "/etc"], &["/something"])
+        .unwrap_err()
+        .to_string()
+        .contains("/something"));
 }
 
 /// Deserializer for automatically resolving `~/` path prefix.
