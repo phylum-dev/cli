@@ -99,8 +99,8 @@ mod tests {
     }
 
     #[test]
-    fn parse_cargo_lockv1() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargov1.lock")).unwrap();
+    fn parse_cargo_lock_v1() {
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v1.lock")).unwrap();
         assert_eq!(pkgs.len(), 136);
         println!("{:?}", pkgs);
         let expected_pkgs = [
@@ -122,8 +122,8 @@ mod tests {
     }
 
     #[test]
-    fn parse_cargo_lockv2() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargov2.lock")).unwrap();
+    fn parse_cargo_lock_v2() {
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v2.lock")).unwrap();
         assert_eq!(pkgs.len(), 24);
 
         let expected_pkgs = [PackageDescriptor {
@@ -137,8 +137,8 @@ mod tests {
         }
     }
     #[test]
-    fn parse_cargo_lockv3() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargov3.lock")).unwrap();
+    fn parse_cargo_lock_v3() {
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
         assert_eq!(pkgs.len(), 24);
 
         let expected_pkgs = [PackageDescriptor {
