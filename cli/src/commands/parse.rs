@@ -93,6 +93,7 @@ mod tests {
             ("../tests/fixtures/Pipfile", PackageType::PyPi),
             ("../tests/fixtures/Pipfile.lock", PackageType::PyPi),
             ("../tests/fixtures/poetry.lock", PackageType::PyPi),
+            ("../tests/fixtures/rust-cargo.lock", PackageType::Cargo),
         ];
 
         for (file, expected_type) in &test_cases {
