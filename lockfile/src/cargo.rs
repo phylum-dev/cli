@@ -1,16 +1,12 @@
-use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use anyhow::{anyhow, Context};
-use nom::error::convert_error;
-use nom::Finish;
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
-use serde_json::Value;
 
-use super::parsers::pypi;
 use crate::{Parse, ParseResult};
+
+pub struct Cargo;
 
 #[derive(Deserialize, Debug)]
 struct CargoLock {
@@ -88,14 +84,13 @@ impl From<Package> for PackageDescriptor {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn parse_cargo_lock() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/cargo.lock")).unwrap();
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/rust-cargo.lock")).unwrap();
         assert_eq!(pkgs.len(), 45);
 
         let expected_pkgs = [
@@ -129,7 +124,7 @@ mod tests {
     /// Ensure sources other than Cargo are ignored.
     #[test]
     fn cargo_ignore_other_sources() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/cargo.lock")).unwrap();
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/rust-cargo.lock")).unwrap();
 
         let invalid_package_names = ["toml", "directory-test", "requests"];
         for pkg in pkgs {

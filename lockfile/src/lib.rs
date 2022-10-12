@@ -2,6 +2,7 @@ use std::fmt::Display;
 use std::path::Path;
 use std::str::FromStr;
 
+pub use cargo::Cargo;
 pub use csharp::CSProj;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
@@ -11,6 +12,7 @@ pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
+mod cargo;
 mod csharp;
 mod java;
 mod javascript;
@@ -38,6 +40,7 @@ pub enum LockfileFormat {
     #[serde(rename = "nuget")]
     #[serde(alias = "msbuild")]
     Msbuild,
+    Cargo,
 }
 
 impl FromStr for LockfileFormat {
@@ -73,6 +76,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => "mvn",
             LockfileFormat::Gradle => "gradle",
             LockfileFormat::Msbuild => "nuget",
+            LockfileFormat::Cargo => "cargo",
         }
     }
 
@@ -88,6 +92,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => &Pom,
             LockfileFormat::Gradle => &GradleLock,
             LockfileFormat::Msbuild => &CSProj,
+            LockfileFormat::Cargo => &Cargo,
         }
     }
 
@@ -114,6 +119,7 @@ impl Iterator for LockfileFormatIter {
             6 => LockfileFormat::Maven,
             7 => LockfileFormat::Gradle,
             8 => LockfileFormat::Msbuild,
+            10 => LockfileFormat::Cargo,
             _ => return None,
         };
         self.0 += 1;
@@ -163,6 +169,7 @@ mod tests {
             ("Pipfile", LockfileFormat::Pipenv),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
+            ("Cargo.lock", LockfileFormat::Cargo),
         ];
 
         for (file, expected_type) in test_cases {
@@ -185,6 +192,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
+            ("cargo", LockfileFormat::Cargo),
         ] {
             let actual_format =
                 name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
