@@ -119,7 +119,7 @@ impl Iterator for LockfileFormatIter {
             6 => LockfileFormat::Maven,
             7 => LockfileFormat::Gradle,
             8 => LockfileFormat::Msbuild,
-            10 => LockfileFormat::Cargo,
+            9 => LockfileFormat::Cargo,
             _ => return None,
         };
         self.0 += 1;

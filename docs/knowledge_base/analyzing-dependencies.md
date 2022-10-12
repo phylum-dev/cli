@@ -21,7 +21,7 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
     * `effective-pom.xml`
     * `gradle.lockfile`
 * Cargo
-    * `rust-cargo.lock`
+    * `cargo.lock`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_project) , you can begin analysis by running:
 
