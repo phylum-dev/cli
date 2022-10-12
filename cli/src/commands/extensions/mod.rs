@@ -17,7 +17,7 @@ use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 use crate::print::print_sc_help;
-use crate::{print_user_success, print_user_warning};
+use crate::{app, print_user_success, print_user_warning};
 
 pub mod api;
 pub mod extension;
@@ -193,15 +193,21 @@ async fn handle_install_extension(
     let extension_path = PathBuf::from(path);
     let extension = Extension::try_from(extension_path)?;
 
-    println!("Installing extension {}...", extension.name());
+    // Ensure extension subcommand does not exist yet.
+    let name = extension.name();
+    if app::is_builtin_subcommand(name) {
+        return Err(anyhow!(
+            "Subcommand {name:?} is reserved for the CLI and cannot be used for extensions. \n   \
+             Please try renaming the extension."
+        ));
+    }
+
+    println!("Installing extension {name}...");
 
     if !overwrite {
-        if let Ok(installed_extension) = Extension::load(extension.name()) {
+        if let Ok(installed_extension) = Extension::load(name) {
             if extension == installed_extension {
-                print_user_success!(
-                    "Extension {} already installed, nothing to do",
-                    extension.name()
-                );
+                print_user_success!("Extension {name} already installed, nothing to do");
                 return Ok(CommandValue::Code(ExitCode::Ok));
             }
             ask_overwrite(&extension)?;
@@ -214,7 +220,7 @@ async fn handle_install_extension(
 
     extension.install()?;
 
-    print_user_success!("Extension {} installed successfully", extension.name());
+    print_user_success!("Extension {name} installed successfully");
 
     Ok(CommandValue::Code(ExitCode::Ok))
 }
@@ -314,6 +320,13 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
 
     extension::validate_name(name)?;
 
+    // Ensure extension subcommand does not exist yet.
+    if app::is_builtin_subcommand(name) {
+        return Err(anyhow!(
+            "Subcommand {name:?} is reserved for the CLI and cannot be used for extensions."
+        ));
+    }
+
     // Create all missing directories.
     fs::create_dir_all(&extension_path)
         .with_context(|| format!("Unable to create all directories in {path:?}"))?;
@@ -347,7 +360,10 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
 ///
 /// List installed extensions.
 async fn handle_list_extensions() -> CommandResult {
-    let extensions = installed_extensions()?;
+    let mut extensions = installed_extensions()?;
+
+    // Filter extensions conflicting with built-in commands.
+    extensions.retain(|ext| !app::is_builtin_subcommand(ext.name()));
 
     if extensions.is_empty() {
         println!("No extensions are currently installed.");

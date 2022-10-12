@@ -9,6 +9,7 @@ use nom::{AsChar, IResult};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 pub mod gem;
+pub mod go_sum;
 pub mod gradle_dep;
 pub mod pypi;
 pub mod yarn;

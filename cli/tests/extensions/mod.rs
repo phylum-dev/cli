@@ -196,14 +196,13 @@ fn valid_extension_is_loaded_correctly() {
 }
 
 #[test]
-fn conflicting_extension_name_is_filtered() {
+fn conflicting_extension_cannot_be_installed() {
     let test_cli = TestCli::builder().build();
 
-    test_cli.install_extension(&fixtures_path().join("ping")).success();
     test_cli
-        .run(&["extension", "list"])
-        .success()
-        .stderr(predicate::str::contains("extension was filtered out"));
+        .install_extension(&fixtures_path().join("ping"))
+        .failure()
+        .stderr(predicate::str::contains("Subcommand \"ping\" is reserved"));
 }
 
 #[test]

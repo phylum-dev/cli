@@ -59,7 +59,18 @@ pub fn app() -> Command {
                 .help("Reduce the level of verbosity (the maximum is -qq)")
                 .action(ArgAction::Count)
                 .conflicts_with("verbose"),
-        ])
+        ]);
+
+    app = add_subcommands(app);
+
+    app = extensions::add_extensions_subcommands(app);
+
+    app
+}
+
+/// Add non-extension subcommands.
+pub fn add_subcommands(command: Command) -> Command {
+    let mut app = command
         .subcommand(
             Command::new("update")
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
@@ -192,7 +203,7 @@ pub fn app() -> Command {
                     .short('t')
                     .long("package-type")
                     .value_name("type")
-                    .help("The type of the package (\"npm\", \"ruby\", \"pypi\", etc.)"),
+                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -291,7 +302,7 @@ pub fn app() -> Command {
                         .short('t')
                         .long("type")
                         .value_name("type")
-                        .help("Package type (`npm`, `rubygems`, `pypi`, etc)"),
+                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
@@ -345,8 +356,6 @@ pub fn app() -> Command {
         )
         .subcommand(extensions::command());
 
-    app = extensions::add_extensions_subcommands(app);
-
     #[cfg(feature = "selfmanage")]
     {
         app = app.subcommand(
@@ -361,4 +370,12 @@ pub fn app() -> Command {
     }
 
     app
+}
+
+/// Check if a non-extension subcommand exists.
+pub fn is_builtin_subcommand(name: &str) -> bool {
+    add_subcommands(Command::new("phylum"))
+        .get_subcommands()
+        .map(Command::get_name)
+        .any(|cmd_name| cmd_name == name)
 }
