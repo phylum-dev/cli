@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 pub use cargo::Cargo;
 pub use csharp::CSProj;
+pub use golang::GoSum;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -14,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 mod cargo;
 mod csharp;
+mod golang;
 mod java;
 mod javascript;
 mod parsers;
@@ -22,7 +24,7 @@ mod ruby;
 
 /// A file format that can be parsed.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "lowercase")]
 #[non_exhaustive]
 pub enum LockfileFormat {
     Yarn,
@@ -40,6 +42,7 @@ pub enum LockfileFormat {
     #[serde(rename = "nuget")]
     #[serde(alias = "msbuild")]
     Msbuild,
+    Go,
     Cargo,
 }
 
@@ -75,8 +78,10 @@ impl LockfileFormat {
             LockfileFormat::Poetry => "poetry",
             LockfileFormat::Maven => "mvn",
             LockfileFormat::Gradle => "gradle",
-            LockfileFormat::Msbuild => "nuget",
+            LockfileFormat::Msbuild => "nuget
+            LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
+            
         }
     }
 
@@ -92,6 +97,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => &Pom,
             LockfileFormat::Gradle => &GradleLock,
             LockfileFormat::Msbuild => &CSProj,
+            LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
         }
     }
@@ -119,7 +125,8 @@ impl Iterator for LockfileFormatIter {
             6 => LockfileFormat::Maven,
             7 => LockfileFormat::Gradle,
             8 => LockfileFormat::Msbuild,
-            9 => LockfileFormat::Cargo,
+            9 => LockfileFormat::Go,
+            10 => LockfileFormat::Cargo,
             _ => return None,
         };
         self.0 += 1;
@@ -169,6 +176,7 @@ mod tests {
             ("Pipfile", LockfileFormat::Pipenv),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
+            ("go.sum", LockfileFormat::Go),
             ("Cargo.lock", LockfileFormat::Cargo),
         ];
 
@@ -192,6 +200,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
+            ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
         ] {
             let actual_format =
@@ -216,6 +225,7 @@ mod tests {
             ("mvn", LockfileFormat::Maven),
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
+            ("go", LockfileFormat::Go),
         ] {
             let actual_name = format.to_string();
             assert_eq!(

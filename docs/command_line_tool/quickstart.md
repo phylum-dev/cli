@@ -23,17 +23,16 @@ The command line interface (CLI) allows users to submit their project package de
 
    | Target | Package |
    | --- | --- |
-   | x86_64-unknown-linux-musl | [phylum-x86_64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip) <br /> [phylum-x86_64-unknown-linux-musl.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-musl.zip.minisig) |
-   | aarch64-unknown-linux-musl | [phylum-aarch64-unknown-linux-musl.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip) <br /> [phylum-aarch64-unknown-linux-musl.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-musl.zip.minisig) |
-   | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) <br /> [phylum-x86_64-apple-darwin.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip.minisig) |
-   | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) <br /> [phylum-aarch64-apple-darwin.zip.minisig](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip.minisig) |
+   | x86_64-unknown-linux-gnu | [phylum-x86_64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip) <br /> [phylum-x86_64-unknown-linux-gnu.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip.signature) |
+   | aarch64-unknown-linux-gnu | [phylum-aarch64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip) <br /> [phylum-aarch64-unknown-linux-gnu.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip.signature) |
+   | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) <br /> [phylum-x86_64-apple-darwin.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip.signature) |
+   | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) <br /> [phylum-aarch64-apple-darwin.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip.signature) |
 
-1. Confirm the signature of the archive with [minisign](https://jedisct1.github.io/minisign/) and the public key for Phylum
+1. Confirm the signature of the archive with `openssl` and the [public key for Phylum](https://raw.githubusercontent.com/phylum-dev/cli/main/scripts/signing-key.pub):
 
    ```sh
-   $ minisign -Vm phylum-*.zip -P RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf
-   Signature and comment signature verified
-   Trusted comment: Phylum - The Software Supply Chain Company
+   $ openssl dgst -sha256 -verify signing-key.pub -signature phylum-*.zip.signature phylum-*.zip
+   Verified OK
    ```
 
 1. Unzip the archive

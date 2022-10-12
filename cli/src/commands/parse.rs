@@ -93,6 +93,7 @@ mod tests {
             ("../tests/fixtures/Pipfile", PackageType::PyPi),
             ("../tests/fixtures/Pipfile.lock", PackageType::PyPi),
             ("../tests/fixtures/poetry.lock", PackageType::PyPi),
+            ("../tests/fixtures/go.sum", PackageType::Golang),
             ("../tests/fixtures/Cargo.lock", PackageType::Cargo),
         ];
 

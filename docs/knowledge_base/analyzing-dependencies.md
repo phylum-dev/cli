@@ -20,8 +20,10 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
 * Maven
     * `effective-pom.xml`
     * `gradle.lockfile`
+* Golang
+    * `go.sum`
 * Cargo
-    * `cargo.lock`
+    * `Cargo.lock`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_project) , you can begin analysis by running:
 

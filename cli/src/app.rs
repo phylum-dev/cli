@@ -59,7 +59,18 @@ pub fn app() -> Command {
                 .help("Reduce the level of verbosity (the maximum is -qq)")
                 .action(ArgAction::Count)
                 .conflicts_with("verbose"),
-        ])
+        ]);
+
+    app = add_subcommands(app);
+
+    app = extensions::add_extensions_subcommands(app);
+
+    app
+}
+
+/// Add non-extension subcommands.
+pub fn add_subcommands(command: Command) -> Command {
+    let mut app = command
         .subcommand(
             Command::new("update")
                 .about("Check for a new release of the Phylum CLI tool and update if one exists")
@@ -345,8 +356,6 @@ pub fn app() -> Command {
         )
         .subcommand(extensions::command());
 
-    app = extensions::add_extensions_subcommands(app);
-
     #[cfg(feature = "selfmanage")]
     {
         app = app.subcommand(
@@ -361,4 +370,12 @@ pub fn app() -> Command {
     }
 
     app
+}
+
+/// Check if a non-extension subcommand exists.
+pub fn is_builtin_subcommand(name: &str) -> bool {
+    add_subcommands(Command::new("phylum"))
+        .get_subcommands()
+        .map(Command::get_name)
+        .any(|cmd_name| cmd_name == name)
 }
