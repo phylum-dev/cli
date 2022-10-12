@@ -2,6 +2,7 @@
 use std::borrow::Cow;
 use std::env;
 use std::path::{Path, PathBuf};
+use std::result::Result as StdResult;
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -62,7 +63,7 @@ impl Permission {
         }
     }
 
-    pub fn subset_of(&self, parent: &Permission) -> Result<Permission> {
+    pub fn subset_of(&self, parent: &Permission) -> StdResult<Permission, Vec<String>> {
         use Permission::*;
         match (parent, self) {
             (&Boolean(parent), &Boolean(child)) => Ok(Permission::Boolean(parent && child)),
@@ -70,15 +71,28 @@ impl Permission {
             (&List(_), &Boolean(false)) => Ok(Permission::Boolean(false)),
             (&Boolean(true), &List(ref child)) => Ok(Permission::List(child.clone())),
             (&Boolean(false), &List(_)) => Ok(Permission::Boolean(false)),
-            (&List(ref parent), &List(ref child)) => Permission::paths_subset(parent, child),
+            (&List(ref parent), &List(ref child)) => {
+                Permission::paths_subset(parent, child).map(|()| Permission::List(child.clone()))
+            },
         }
     }
 
-    fn paths_subset(parent: &[String], child: &[String]) -> Result<Permission> {
-        // A is a path-subset of B iff:
-        // - for every b in B
-        // - there exists at least one a in A
-        // - such that a is a prefix for b
+    fn paths_subset(parent: &[String], child: &[String]) -> StdResult<(), Vec<String>> {
+        // Let P be the set of all paths.
+        //
+        // Let "<" be the partial order relation over P such that "a < b" reads "a is
+        // prefix of b" where a, b are two paths in P.
+        //
+        // Let "<<" be the partial order relation over the power set of P, such that "A
+        // << B" reads "A is paths-subset of B" where A and B are subsets of P.
+        //
+        // A << B if and only if, for each a in A, there exist at least one b in B such
+        // that a < b.
+        //
+        // The above definition is tested in `tests::paths_subset_algorithm` below.
+        //
+        // In this method, A is `child` and B is `parent`.
+
         let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
         let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
 
@@ -86,7 +100,7 @@ impl Permission {
             .iter()
             .filter_map(|child| {
                 if !parent_paths.iter().any(|p| child.starts_with(p)) {
-                    Some(child.to_string_lossy())
+                    Some(child.to_string_lossy().to_string())
                 } else {
                     None
                 }
@@ -94,47 +108,11 @@ impl Permission {
             .collect::<Vec<_>>();
 
         if !without_parent.is_empty() {
-            Err(anyhow!("Not subpath: {}", without_parent.join(", ")))
+            Err(without_parent)
         } else {
-            Ok(Permission::List(child.to_vec()))
+            Ok(())
         }
     }
-}
-
-#[test]
-fn test_paths_subset() {
-    let paths_subset = |a: &[&str], b: &[&str]| {
-        Permission::paths_subset(
-            &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
-            &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
-        )
-    };
-
-    let perm_list = |a: &[&str]| Permission::List(a.iter().map(|s| s.to_string()).collect());
-
-    assert_eq!(paths_subset(&["/tmp"], &["/tmp"]).unwrap(), perm_list(&["/tmp"]));
-
-    assert_eq!(
-        paths_subset(&["/tmp"], &["/tmp/something"]).unwrap(),
-        perm_list(&["/tmp/something"])
-    );
-
-    assert!(paths_subset(&["/tmp"], &["/"]).unwrap_err().to_string().ends_with('/'),);
-
-    assert!(paths_subset(&["/tmp"], &["/etc/something"])
-        .unwrap_err()
-        .to_string()
-        .contains("/etc/something"));
-
-    assert_eq!(
-        paths_subset(&["/tmp", "/etc"], &["/etc/something"]).unwrap(),
-        perm_list(&["/etc/something"])
-    );
-
-    assert!(paths_subset(&["/tmp", "/etc"], &["/something"])
-        .unwrap_err()
-        .to_string()
-        .contains("/something"));
 }
 
 /// Deserializer for automatically resolving `~/` path prefix.
@@ -384,5 +362,42 @@ mod tests {
 
         assert_eq!(permissions.read.get(), Some(&Vec::new()));
         assert_eq!(permissions.net.get(), None);
+    }
+
+    #[test]
+    fn paths_subset_algorithm() {
+        let paths_subset = |a: &[&str], b: &[&str]| {
+            Permission::paths_subset(
+                &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+                &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+            )
+        };
+
+        // {} << A.
+        assert!(paths_subset(&["/tmp"], &[]).is_ok());
+
+        // A << A.
+        assert!(paths_subset(&["/tmp"], &["/tmp"]).is_ok());
+        assert!(paths_subset(&["/etc", "/tmp"], &["/tmp", "/etc"]).is_ok());
+        assert!(paths_subset(&["/etc", "/tmp", "/"], &["/tmp", "/", "/etc"]).is_ok());
+
+        // A << B if A = {a}, B = {b} and a < b.
+        assert!(paths_subset(&["/"], &["/tmp"]).is_ok());
+        assert!(paths_subset(&["/tmp"], &["/tmp/something"]).is_ok());
+
+        // Not A << B if A = {a}, B = {b} and not a < b.
+        assert!(paths_subset(&["/tmp"], &["/"]).is_err());
+        assert!(paths_subset(&["/tmp"], &["/etc/something"]).is_err());
+
+        // A << B if for each a in A, there exist at least one b in B such that a < b.
+        assert!(paths_subset(&["/tmp", "/etc"], &["/etc/something"]).is_ok());
+        assert!(paths_subset(&["/tmp", "/etc"], &["/etc", "/tmp/something"]).is_ok());
+        assert!(paths_subset(&["/tmp", "/etc"], &["/tmp", "/etc/something"]).is_ok());
+        assert!(paths_subset(&["/tmp", "/etc"], &["/etc/something", "/tmp/something"]).is_ok());
+
+        // Not A << B if there exists one a in A such that for each b in B, not a < b.
+        assert!(paths_subset(&["/tmp", "/etc"], &["/something"]).is_err());
+        assert!(paths_subset(&["/tmp", "/etc"], &["/tmp", "/etc", "/something"]).is_err());
+        assert!(paths_subset(&["/tmp", "/etc"], &["/tmp/a", "/etc/b", "/something"]).is_err());
     }
 }
