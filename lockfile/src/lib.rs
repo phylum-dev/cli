@@ -78,10 +78,9 @@ impl LockfileFormat {
             LockfileFormat::Poetry => "poetry",
             LockfileFormat::Maven => "mvn",
             LockfileFormat::Gradle => "gradle",
-            LockfileFormat::Msbuild => "nuget
+            LockfileFormat::Msbuild => "nuget",
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
-            
         }
     }
 
