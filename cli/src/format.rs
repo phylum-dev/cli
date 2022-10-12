@@ -295,6 +295,7 @@ where
         PackageType::PyPi => "PyPI",
         PackageType::Maven => "Maven",
         PackageType::Nuget => "NuGet",
+        PackageType::Golang => "Golang",
     };
 
     let date_time = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
