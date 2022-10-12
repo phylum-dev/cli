@@ -24,7 +24,7 @@ struct Package {
 impl Parse for Cargo {
     /// Parses `cargo.lock` files into a vec of packages
     fn parse(&self, data: &str) -> ParseResult {
-        let mut lock: CargoLock = toml::from_str(data).unwrap();
+        let mut lock: CargoLock = toml::from_str(data)?;
         Ok(lock
             .packages
             .drain(..)
