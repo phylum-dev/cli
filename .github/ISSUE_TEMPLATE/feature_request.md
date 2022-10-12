@@ -13,6 +13,3 @@ A concise description of the new feature component.
 # Acceptance Criteria
 - [ ] Outputs XYZ when ...
 - [ ] New endpoint ABC exists ...
-
-## Associated User Story
---
