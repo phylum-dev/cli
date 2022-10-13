@@ -79,9 +79,9 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     let mut action = Action::None;
     let display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
 
-    if matches.get_flag("JOB_ID") {
+    if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
         let job_id =
-            JobId::from_str(matches.get_one::<String>("JOB_ID").expect("No job id found"))?;
+            JobId::from_str(job_id).with_context(|| format!("{job_id:?} is not a valid Job ID"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let resp = api.get_project_details(project).await?.jobs;
