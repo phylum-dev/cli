@@ -1,6 +1,5 @@
 use std::ffi::OsStr;
 use std::path::Path;
-// use cargo::util::errors::CargoResult;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
@@ -60,10 +59,6 @@ impl TryFrom<Package> for PackageDescriptor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn parse_cli_cargo_lock() {
-        
-    }
 
     #[test]
     fn parse_cargo_lock_v1() {
