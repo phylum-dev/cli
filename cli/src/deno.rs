@@ -99,6 +99,8 @@ pub async fn run(
     // Export shared state.
     let state = ExtensionState::new(api);
     worker.js_runtime.op_state().borrow_mut().put(state);
+    let permissions = extension.permissions().into_owned();
+    worker.js_runtime.op_state().borrow_mut().put(permissions);
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {

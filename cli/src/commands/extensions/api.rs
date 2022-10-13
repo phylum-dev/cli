@@ -91,6 +91,18 @@ struct ProcessException {
     strict: bool,
 }
 
+impl From<ProcessException> for permissions::Permissions {
+    fn from(process_exception: ProcessException) -> Self {
+        Self {
+            read: process_exception.read,
+            write: process_exception.write,
+            run: process_exception.run,
+            env: Permission::Boolean(true),
+            net: Permission::Boolean(process_exception.net),
+        }
+    }
+}
+
 /// Standard I/O behavior.
 #[derive(Serialize, Deserialize, Debug)]
 enum ProcessStdio {
@@ -380,13 +392,21 @@ async fn parse_lockfile(
 /// possible even after the command has been spawned.
 #[op]
 #[cfg(unix)]
-fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
+    let Process { cmd, args, stdin, stdout, stderr, exceptions } = process;
+    let exceptions_strict = exceptions.strict;
+    let real_permissions = {
+        let mut state = op_state.borrow_mut();
+        let permissions = state.borrow_mut::<permissions::Permissions>();
+        permissions::Permissions::from(exceptions).subset_of(permissions)
+    }?;
+
     // Setup process to be run.
-    let mut command = Command::new(&process.cmd);
-    command.args(&process.args);
-    command.stdin(process.stdin);
-    command.stdout(process.stdout);
-    command.stderr(process.stderr);
+    let mut command = Command::new(&cmd);
+    command.args(&args);
+    command.stdin(stdin);
+    command.stdout(stdout);
+    command.stderr(stderr);
 
     // Apply sandbox to subprocess after fork.
     unsafe {
@@ -397,29 +417,29 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
 
             let home_dir = dirs::home_dir().map_err(into_ioerr)?;
 
-            let mut birdcage = if process.exceptions.strict {
+            let mut birdcage = if exceptions_strict {
                 Birdcage::new().map_err(into_ioerr)?
             } else {
                 permissions::default_sandbox().map_err(into_ioerr)?
             };
 
-            for path in process.exceptions.read.sandbox_paths().iter() {
+            for path in real_permissions.read.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Read(path))
                     .map_err(into_ioerr)?;
             }
-            for path in process.exceptions.write.sandbox_paths().iter() {
+            for path in real_permissions.write.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Write(path))
                     .map_err(into_ioerr)?;
             }
-            for path in process.exceptions.run.sandbox_paths().iter() {
+            for path in real_permissions.run.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 let absolute_path = permissions::resolve_bin_path(path);
                 permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
                     .map_err(into_ioerr)?;
             }
-            if process.exceptions.net {
+            if let permissions::Permission::Boolean(true) = real_permissions.net {
                 birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
 
@@ -429,8 +449,7 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     }
 
     let output = command.output().with_context(|| {
-        let cmd = process.cmd;
-        let args = process.args.iter().map(|arg| format!("`{arg}`")).collect::<Vec<_>>().join(" ");
+        let args = args.iter().map(|arg| format!("`{arg}`")).collect::<Vec<_>>().join(" ");
         format!("Executing sandboxed process failed: `{cmd}` {args}",)
     })?;
 

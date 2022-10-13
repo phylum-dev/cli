@@ -7,6 +7,7 @@ use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
+use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
 #[cfg(unix)]
 use tempfile::NamedTempFile;
 
@@ -281,6 +282,13 @@ fn net_sandboxing_success() {
             });
             Deno.exit(output.code);
         ")
+        .with_permissions(Permissions {
+            read: Permission::Boolean(true),
+            write: Permission::Boolean(true),
+            env: Permission::Boolean(true),
+            run: Permission::Boolean(true),
+            net: Permission::Boolean(true),
+        })
         .build()
         .run()
         .success();
@@ -318,6 +326,8 @@ fn fs_sandboxing_success() {
     let file = NamedTempFile::new().unwrap();
     fs::write(file.path(), "fs_test").unwrap();
 
+    let file_path = file.path().to_string_lossy().to_string();
+
     #[rustfmt::skip]
     let js = format!("
         const output = PhylumApi.runSandboxed({{
@@ -326,9 +336,21 @@ fn fs_sandboxing_success() {
             exceptions: {{ read: ['{0:}'] }},
         }});
         Deno.exit(output.code);
-    ", file.path().to_string_lossy());
+    ", file_path);
 
-    test_cli.extension(&js).build().run().success().stdout("fs_test");
+    test_cli
+        .extension(&js)
+        .with_permissions(Permissions {
+            read: Permission::List(vec![file_path]),
+            write: Permission::Boolean(true),
+            env: Permission::Boolean(true),
+            run: Permission::Boolean(true),
+            net: Permission::Boolean(true),
+        })
+        .build()
+        .run()
+        .success()
+        .stdout("fs_test");
 }
 
 #[test]
