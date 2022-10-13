@@ -395,7 +395,7 @@ async fn parse_lockfile(
 fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
     let Process { cmd, args, stdin, stdout, stderr, exceptions } = process;
     let exceptions_strict = exceptions.strict;
-    let real_permissions = {
+    let resolved_permissions = {
         let mut state = op_state.borrow_mut();
         let permissions = state.borrow_mut::<permissions::Permissions>();
         permissions::Permissions::from(exceptions).subset_of(permissions)
@@ -423,23 +423,23 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
                 permissions::default_sandbox().map_err(into_ioerr)?
             };
 
-            for path in real_permissions.read.sandbox_paths().iter() {
+            for path in resolved_permissions.read.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Read(path))
                     .map_err(into_ioerr)?;
             }
-            for path in real_permissions.write.sandbox_paths().iter() {
+            for path in resolved_permissions.write.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 permissions::add_exception(&mut birdcage, Exception::Write(path))
                     .map_err(into_ioerr)?;
             }
-            for path in real_permissions.run.sandbox_paths().iter() {
+            for path in resolved_permissions.run.sandbox_paths().iter() {
                 let path = dirs::expand_home_path(path, &home_dir);
                 let absolute_path = permissions::resolve_bin_path(path);
                 permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))
                     .map_err(into_ioerr)?;
             }
-            if let permissions::Permission::Boolean(true) = real_permissions.net {
+            if let permissions::Permission::Boolean(true) = resolved_permissions.net {
                 birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
 
