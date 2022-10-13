@@ -96,9 +96,14 @@ impl Permission {
         let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
         let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
 
+        // List all child paths for which no parent path exists such that child <
+        // parent. O(n*m) where n = child_paths,len() and m =
+        // parent_paths.len().
         let without_parent: Vec<_> = child_paths
             .iter()
             .filter_map(|child| {
+                // Using PathBuf::starts_with rather than String::starts_with in order to get
+                // the correct semantics.
                 if !parent_paths.iter().any(|p| child.starts_with(p)) {
                     Some(child.to_string_lossy().to_string())
                 } else {
@@ -107,6 +112,8 @@ impl Permission {
             })
             .collect::<Vec<_>>();
 
+        // The above list must be empty for the child paths to be a subset of the
+        // parents'.
         if !without_parent.is_empty() {
             Err(without_parent)
         } else {
@@ -201,6 +208,20 @@ impl Permissions {
         }
 
         Ok(birdcage)
+    }
+
+    pub fn subset_of(&self, other: &Permissions) -> Result<Permissions> {
+        let error_context = |perm: &'static str| {
+            move |e: Vec<String>| anyhow!("invalid {perm} permissions: {}", e.join(", "))
+        };
+
+        Ok(Permissions {
+            read: self.read.subset_of(&other.read).map_err(error_context("read"))?,
+            write: self.write.subset_of(&other.write).map_err(error_context("write"))?,
+            env: self.env.subset_of(&other.env).map_err(error_context("env"))?,
+            run: self.run.subset_of(&other.run).map_err(error_context("run"))?,
+            net: self.net.subset_of(&other.net).map_err(error_context("net"))?,
+        })
     }
 }
 
@@ -366,6 +387,7 @@ mod tests {
 
     #[test]
     fn paths_subset_algorithm() {
+        // Shorthand to invoke Permission::paths_subset through &str slices.
         let paths_subset = |a: &[&str], b: &[&str]| {
             Permission::paths_subset(
                 &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
@@ -399,5 +421,82 @@ mod tests {
         assert!(paths_subset(&["/tmp", "/etc"], &["/something"]).is_err());
         assert!(paths_subset(&["/tmp", "/etc"], &["/tmp", "/etc", "/something"]).is_err());
         assert!(paths_subset(&["/tmp", "/etc"], &["/tmp/a", "/etc/b", "/something"]).is_err());
+    }
+
+    #[test]
+    fn permission_is_subset() {
+        // Check that two Permission::List have the same content.
+        fn permission_matches(permission: &Permission, content: &[&str]) -> bool {
+            use std::collections::HashSet;
+
+            if let Permission::List(l) = permission {
+                l.iter().map(|s| s.as_str()).collect::<HashSet<_>>()
+                    == content.iter().cloned().collect::<HashSet<_>>()
+            } else {
+                false
+            }
+        }
+
+        // Shorthand to construct a Permission::List from a &str slice.
+        fn permission_list(paths: &[&str]) -> Permission {
+            Permission::List(paths.iter().cloned().map(String::from).collect())
+        }
+
+        // Test permission sets where both child and parent are lists.
+
+        let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
+        let child = permission_list(&["/tmp/foo", "/home/foo/.npm/_cacache"]);
+        assert!(permission_matches(&child.subset_of(&parent).unwrap(), &[
+            "/tmp/foo",
+            "/home/foo/.npm/_cacache"
+        ]));
+
+        let parent = permission_list(&["/etc", "/home/foo/.npm"]);
+        let child = permission_list(&["/tmp/foo", "/home/foo/.npm/_cacache"]);
+        assert!(child.subset_of(&parent).is_err());
+
+        // Test permission sets where child is boolean.
+
+        let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
+        let child = Permission::Boolean(true);
+        assert!(permission_matches(&child.subset_of(&parent).unwrap(), &[
+            "/tmp",
+            "/home/foo/.npm"
+        ]));
+
+        let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
+        let child = Permission::Boolean(false);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+
+        // Test permission sets where parent is boolean.
+
+        let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
+        let child = Permission::Boolean(true);
+        assert!(permission_matches(&child.subset_of(&parent).unwrap(), &[
+            "/tmp",
+            "/home/foo/.npm"
+        ]));
+
+        let parent = Permission::Boolean(false);
+        let child = permission_list(&["/tmp", "/home/foo/.npm"]);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+
+        // Test boolean permissions.
+
+        let parent = Permission::Boolean(true);
+        let child = Permission::Boolean(false);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+
+        let parent = Permission::Boolean(false);
+        let child = Permission::Boolean(true);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+
+        let parent = Permission::Boolean(true);
+        let child = Permission::Boolean(true);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(true)));
+
+        let parent = Permission::Boolean(false);
+        let child = Permission::Boolean(false);
+        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
     }
 }
