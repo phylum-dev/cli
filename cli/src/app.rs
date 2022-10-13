@@ -88,11 +88,6 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("JOB_ID")
                     .value_name("JOB_ID")
                     .help("The job id to query (or `current` for the most recent job)"),
-                Arg::new("verbose")
-                    .action(ArgAction::SetTrue)
-                    .short('v')
-                    .long("verbose")
-                    .help("Increase verbosity of api response."),
                 Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
@@ -259,11 +254,6 @@ pub fn add_subcommands(command: Command) -> Command {
                          system)",
                     ),
                     Arg::new("label").short('l').value_name("label"),
-                    Arg::new("verbose")
-                        .action(ArgAction::SetTrue)
-                        .short('v')
-                        .long("verbose")
-                        .help("Increase verbosity of api response."),
                     Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
                     Arg::new("json")
                         .action(ArgAction::SetTrue)
