@@ -38,6 +38,11 @@ impl Parse for PackageLock {
                     None => continue,
                 };
 
+                // Ignore bundled dependencies.
+                if keys.get("inBundle").is_some() {
+                    continue;
+                }
+
                 // Get dependency type.
                 let resolved = get_field(keys, "resolved")
                     .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
@@ -213,7 +218,7 @@ mod tests {
     fn lock_parse_package_v7() {
         let pkgs = PackageLock.parse_file("tests/fixtures/package-lock.json").unwrap();
 
-        assert_eq!(pkgs.len(), 52);
+        assert_eq!(pkgs.len(), 53);
 
         let expected_pkgs = [
             PackageDescriptor {
@@ -236,6 +241,11 @@ mod tests {
             PackageDescriptor {
                 name: "form-data".into(),
                 version: "2.3.3".into(),
+                package_type: PackageType::Npm,
+            },
+            PackageDescriptor {
+                name: "match-sorter".into(),
+                version: "3.1.1".into(),
                 package_type: PackageType::Npm,
             },
         ];
