@@ -68,6 +68,12 @@ jobs:
           command: test
           args: --locked
 
+      - name: Oldstable
+        run: |
+          oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
+          rustup toolchain install --profile minimal "$oldstable"
+          cargo "+$oldstable" check
+
       # Skip this step for external PRs (because it requires a secret)
       - if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         name: All Features
