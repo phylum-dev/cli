@@ -108,7 +108,7 @@ if (Deno.args.length >= 1
         args: Deno.args,
         exceptions: {
             write: ['~/.npm', './'],
-            read: ['~/.npm', './'],
+            read: true,
             run: ['npm'],
             net: true,
         }

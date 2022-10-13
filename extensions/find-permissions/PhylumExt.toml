@@ -2,5 +2,8 @@ name = "find-permissions"
 description = "Find required sandbox permissions"
 
 [permissions]
-run = true
 read = true
+write = true
+run = true
+net = true
+
