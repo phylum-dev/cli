@@ -89,7 +89,7 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("history").about("Return information about historical jobs").args(&[
                 Arg::new("JOB_ID")
                     .value_name("JOB_ID")
-                    .help("The job id to query (or `current` for the most recent job)"),
+                    .help("The job id to query"),
                 Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
