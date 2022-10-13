@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 use std::path::Path;
+// use cargo::util::errors::CargoResult;
 
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use serde::Deserialize;
@@ -22,20 +23,17 @@ struct Package {
 }
 
 impl Parse for Cargo {
-    /// Parses `cargo.lock` files into a vec of packages
+    /// Parses `Cargo.lock` files into a vec of packages.
     fn parse(&self, data: &str) -> ParseResult {
         let mut lock: CargoLock = toml::from_str(data)?;
         Ok(lock
             .packages
             .drain(..)
-            .filter_map(|package| {
-                package.source.as_ref().map(|_| PackageDescriptor::from(package.clone()))
-            })
+            .filter_map(|package| PackageDescriptor::try_from(package).ok())
             .collect())
     }
 
     fn package_type(&self) -> PackageType {
-        println!("declared package type");
         PackageType::Cargo
     }
 
@@ -44,16 +42,18 @@ impl Parse for Cargo {
     }
 }
 
-impl From<Package> for PackageDescriptor {
-    fn from(package: Package) -> Self {
-        let source = package.source.unwrap_or_default();
-        let version = if source.starts_with("git+") {
-            source.trim_start_matches("git+").into()
+impl TryFrom<Package> for PackageDescriptor {
+    type Error = ();
+
+    fn try_from(package: Package) -> Result<Self, Self::Error> {
+        let source = package.source.ok_or(())?;
+        let version = if let Some(git_version) = source.strip_prefix("git+") {
+            git_version.into()
         } else {
             package.version
         };
 
-        Self { name: package.name, package_type: PackageType::Cargo, version }
+        Ok(Self { name: package.name, package_type: PackageType::Cargo, version })
     }
 }
 
@@ -62,47 +62,13 @@ mod tests {
     use super::*;
     #[test]
     fn parse_cli_cargo_lock() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo.lock")).unwrap();
-        assert_eq!(pkgs.len(), 530);
-
-        let expected_pkgs = [
-            PackageDescriptor {
-                name: "Inflector".into(),
-                version: "0.11.4".into(),
-                package_type: PackageType::Cargo,
-            },
-            PackageDescriptor {
-                name: "adler".into(),
-                version: "1.0.2".into(),
-                package_type: PackageType::Cargo,
-            },
-            PackageDescriptor {
-                name: "aead".into(),
-                version: "0.5.1".into(),
-                package_type: PackageType::Cargo,
-            },
-            PackageDescriptor {
-                name: "aes".into(),
-                version: "0.8.1".into(),
-                package_type: PackageType::Cargo,
-            },
-            PackageDescriptor {
-                name: "landlock".into(),
-                version: "https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into(),
-                package_type: PackageType::Cargo,
-            },
-        ];
-
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
-        }
+        
     }
 
     #[test]
     fn parse_cargo_lock_v1() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v1.lock")).unwrap();
         assert_eq!(pkgs.len(), 136);
-        println!("{:?}", pkgs);
         let expected_pkgs = [
             PackageDescriptor {
                 name: "core-foundation".into(),
@@ -139,13 +105,35 @@ mod tests {
     #[test]
     fn parse_cargo_lock_v3() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
-        assert_eq!(pkgs.len(), 24);
+        assert_eq!(pkgs.len(), 530);
 
-        let expected_pkgs = [PackageDescriptor {
-            name: "quote".into(),
-            version: "1.0.18".into(),
-            package_type: PackageType::Cargo,
-        }];
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "Inflector".into(),
+                version: "0.11.4".into(),
+                package_type: PackageType::Cargo,
+            },
+            PackageDescriptor {
+                name: "adler".into(),
+                version: "1.0.2".into(),
+                package_type: PackageType::Cargo,
+            },
+            PackageDescriptor {
+                name: "aead".into(),
+                version: "0.5.1".into(),
+                package_type: PackageType::Cargo,
+            },
+            PackageDescriptor {
+                name: "aes".into(),
+                version: "0.8.1".into(),
+                package_type: PackageType::Cargo,
+            },
+            PackageDescriptor {
+                name: "landlock".into(),
+                version: "https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into(),
+                package_type: PackageType::Cargo,
+            },
+        ];
 
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
@@ -154,7 +142,7 @@ mod tests {
     /// Ensure sources other than Cargo are ignored.
     #[test]
     fn cargo_ignore_other_sources() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo.lock")).unwrap();
+        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
 
         let invalid_package_names = ["xtask", "phylum-cli", "phylum_lockfile"];
         for pkg in pkgs {
