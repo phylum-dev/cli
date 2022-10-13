@@ -55,6 +55,13 @@ jobs:
           command: clippy
           args: --locked -- -D warnings
 
+      - name: Test generating shell completion files
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: gencomp
+
       - name: Test
         uses: actions-rs/cargo@v1
         with:

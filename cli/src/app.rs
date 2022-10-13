@@ -195,7 +195,6 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("package").about("Retrieve the details of a specific package").args(&[
                 Arg::new("name").value_name("name").help("The name of the package.").required(true),
                 Arg::new("version")
-                    .action(ArgAction::SetTrue)
                     .value_name("version")
                     .help("The version of the package.")
                     .required(true),
