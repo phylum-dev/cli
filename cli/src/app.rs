@@ -50,11 +50,13 @@ pub fn app() -> Command {
                 .help("Don't validate the server certificate when performing api requests"),
             Arg::new("verbose")
                 .short('v')
+                .long("verbose")
                 .global(true)
                 .help("Increase the level of verbosity (the maximum is -vvv)")
                 .action(ArgAction::Count),
             Arg::new("quiet")
                 .short('q')
+                .long("quiet")
                 .global(true)
                 .help("Reduce the level of verbosity (the maximum is -qq)")
                 .action(ArgAction::Count)
