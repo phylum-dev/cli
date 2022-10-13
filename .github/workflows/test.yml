@@ -69,7 +69,7 @@ jobs:
           args: --locked
 
       - name: Oldstable
-        if: matrix.os != windows-latest
+        if: matrix.os != 'windows-latest'
         run: |
           oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
           rustup toolchain install --profile minimal "$oldstable"
