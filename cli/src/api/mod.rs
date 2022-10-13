@@ -149,12 +149,12 @@ impl PhylumApi {
         // Do we have a refresh token?
         let tokens: TokenResponse = match &config.auth_info.offline_access() {
             Some(refresh_token) => {
-                handle_refresh_tokens(refresh_token, config.ignore_certs, &config.connection.uri)
+                handle_refresh_tokens(refresh_token, config.ignore_certs(), &config.connection.uri)
                     .await
                     .context("Token refresh failed")?
             },
             None => {
-                handle_auth_flow(&AuthAction::Login, config.ignore_certs, &config.connection.uri)
+                handle_auth_flow(&AuthAction::Login, config.ignore_certs(), &config.connection.uri)
                     .await
                     .context("User login failed")?
             },
@@ -175,7 +175,7 @@ impl PhylumApi {
         let client = Client::builder()
             .user_agent(USER_AGENT.as_str())
             .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
-            .danger_accept_invalid_certs(config.ignore_certs)
+            .danger_accept_invalid_certs(config.ignore_certs())
             .default_headers(headers)
             .build()?;
 
@@ -219,7 +219,7 @@ impl PhylumApi {
     /// Get information about the authenticated user
     pub async fn user_info(&self) -> Result<UserInfo> {
         let oidc_settings =
-            fetch_oidc_server_settings(self.config.ignore_certs, &self.config.connection.uri)
+            fetch_oidc_server_settings(self.config.ignore_certs(), &self.config.connection.uri)
                 .await?;
         self.get(oidc_settings.userinfo_endpoint).await
     }

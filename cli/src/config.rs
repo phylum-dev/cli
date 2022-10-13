@@ -52,8 +52,35 @@ pub struct Config {
     pub auth_info: AuthInfo,
     pub request_type: PackageType,
     pub last_update: Option<usize>,
+    #[serde(skip)]
+    ignore_certs_cli: bool,
     #[serde(deserialize_with = "default_option_bool")]
-    pub ignore_certs: bool,
+    ignore_certs: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
+            auth_info: AuthInfo::default(),
+            request_type: PackageType::Npm,
+            ignore_certs_cli: false,
+            ignore_certs: false,
+            last_update: None,
+        }
+    }
+}
+
+impl Config {
+    /// Check if certificates should be ignored.
+    pub fn ignore_certs(&self) -> bool {
+        self.ignore_certs_cli || self.ignore_certs
+    }
+
+    /// Set the CLI `--no-check-certificate` override value.
+    pub fn set_ignore_certs_cli(&mut self, ignore_certs_cli: bool) {
+        self.ignore_certs_cli = ignore_certs_cli;
+    }
 }
 
 fn default_option_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -69,18 +96,6 @@ pub struct ProjectConfig {
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
-            auth_info: AuthInfo::default(),
-            request_type: PackageType::Npm,
-            ignore_certs: false,
-            last_update: None,
-        }
-    }
 }
 
 /// Create or open a file. If the file is created, it will restrict permissions

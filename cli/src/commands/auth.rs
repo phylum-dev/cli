@@ -13,7 +13,8 @@ use crate::{auth, print_user_success, print_user_warning};
 /// registration page
 async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<()> {
     let api_uri = &config.connection.uri;
-    config.auth_info = PhylumApi::register(config.auth_info, config.ignore_certs, api_uri).await?;
+    let ignore_certs = config.ignore_certs();
+    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs, api_uri).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -22,7 +23,8 @@ async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<
 /// login page
 async fn handle_auth_login(mut config: Config, config_path: &Path) -> Result<()> {
     let api_uri = &config.connection.uri;
-    config.auth_info = PhylumApi::login(config.auth_info, config.ignore_certs, api_uri).await?;
+    let ignore_certs = config.ignore_certs();
+    config.auth_info = PhylumApi::login(config.auth_info, ignore_certs, api_uri).await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -69,7 +71,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     if matches.get_flag("bearer") {
         let api_uri = &config.connection.uri;
         let tokens =
-            auth::handle_refresh_tokens(refresh_token, config.ignore_certs, api_uri).await?;
+            auth::handle_refresh_tokens(refresh_token, config.ignore_certs(), api_uri).await?;
         println!("{}", tokens.access_token);
         Ok(ExitCode::Ok.into())
     } else {
