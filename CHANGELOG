@@ -1,3 +1,4 @@
+* 3.10.1 - Fix NPM dependency bundling
 * 3.10.0 - Support legacy poetry dependency source type, remove XDG migration code, send better UA header, and bugfixes
 * 3.9.1 - Fix package-lock.json parsing
 * 3.9.0 - Add support for native certificate store
