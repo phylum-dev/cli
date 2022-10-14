@@ -228,12 +228,6 @@ mod tests {
     use super::ApplicationUpdater;
     use crate::test::mockito::*;
 
-    #[test]
-    fn creating_application() {
-        // TODO: Is this test useful?
-        let _ = ApplicationUpdater::default();
-    }
-
     #[tokio::test]
     async fn version_check() {
         let body = r#"{
