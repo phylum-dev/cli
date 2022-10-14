@@ -22,11 +22,9 @@ fn pass_api_key_through_env() {
 fn ignore_empty_token() {
     const CONFIG_TOKEN: &str = "CONFIGTOKEN";
 
-    let config = Config {
-        connection: ConnectionInfo { uri: API_URL.into() },
-        auth_info: AuthInfo::new(Some(RefreshToken::new(CONFIG_TOKEN))),
-        ..Config::default()
-    };
+    let mut config = Config::default();
+    config.connection = ConnectionInfo { uri: API_URL.into() };
+    config.auth_info = AuthInfo::new(Some(RefreshToken::new(CONFIG_TOKEN)));
 
     TestCli::builder()
         .with_config(config)
