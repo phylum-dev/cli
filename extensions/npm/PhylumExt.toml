@@ -6,3 +6,4 @@ entry_point = "main.ts"
 write = ["~/.npm", "./"]
 read = true,
 run = ["npm"]
+net = true
