@@ -32,7 +32,8 @@ use tokio::fs;
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 #[cfg(unix)]
-use crate::commands::extensions::permissions::{self, Permission};
+use crate::commands::extensions::permissions;
+use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
