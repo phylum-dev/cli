@@ -263,6 +263,15 @@ mod tests {
 
     #[test]
     fn test_signature_validation() {
-        // TODO: Sign something and test this, I guess....
+        let data = include_bytes!("hello.txt");
+        let sig = include_bytes!("hello.txt.signature");
+
+        let updater = ApplicationUpdater::default();
+        assert!(updater.has_valid_signature(data, sig));
+
+        // Flip some bits and make sure it fails
+        let mut sig: Vec<u8> = sig.as_slice().into();
+        sig[15] = !sig[15];
+        assert!(!updater.has_valid_signature(data, &sig));
     }
 }
