@@ -62,6 +62,7 @@ deno_runtime = { version = "0.79.0" }
 deno_core = { version = "0.153.0" }
 deno_ast = { version = "0.19.0", features = ["transpiling"] }
 birdcage = { git = "https://github.com/phylum-dev/birdcage" }
+libc = "0.2.135"
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
