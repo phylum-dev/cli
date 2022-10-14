@@ -68,12 +68,13 @@ impl Permission {
         match (parent, self) {
             // Child deny-all always succeeds, returning deny-all.
             (_, &Boolean(false)) => Ok(Boolean(false)),
-            // Parent deny-all fails with everything else.
+            // Parent deny-all fails with all child permissions but deny-all.
             (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
-            // Child allow-all inherits the parent's permissions.
-            (&List(ref parent), &Boolean(true)) => Ok(List(parent.clone())),
-            // Parent allow-all returns the child's permissions.
-            (&Boolean(true), &Boolean(child)) => Ok(Boolean(child)),
+            // Child allow-all succeeds with parent allow-all.
+            (&Boolean(true), &Boolean(true)) => Ok(Boolean(true)),
+            // Child allow-all fails with more restrictive parent permissions.
+            (_, &Boolean(true)) => Err(anyhow!("Requested permissions incompatible with parent")),
+            // Parent allow-all always succeeds, returning the child's permissions.
             (&Boolean(true), &List(ref child)) => Ok(List(child.clone())),
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
@@ -468,10 +469,7 @@ mod tests {
 
         let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
         let child = Permission::Boolean(true);
-        assert!(permission_matches(&child.subset_of(&parent).unwrap(), &[
-            "/tmp",
-            "/home/foo/.npm"
-        ]));
+        assert!(&child.subset_of(&parent).is_err());
 
         let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
         let child = Permission::Boolean(false);
@@ -479,8 +477,8 @@ mod tests {
 
         // Test permission sets where parent is boolean.
 
-        let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
-        let child = Permission::Boolean(true);
+        let parent = Permission::Boolean(true);
+        let child = permission_list(&["/tmp", "/home/foo/.npm"]);
         assert!(permission_matches(&child.subset_of(&parent).unwrap(), &[
             "/tmp",
             "/home/foo/.npm"
