@@ -70,12 +70,10 @@ impl Permission {
             (_, &Boolean(false)) => Ok(Boolean(false)),
             // Parent deny-all fails with all child permissions but deny-all.
             (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
-            // Child allow-all succeeds with parent allow-all.
-            (&Boolean(true), &Boolean(true)) => Ok(Boolean(true)),
+            // Parent allow-all always succeeds, returning the child's permissions.
+            (&Boolean(true), child) => Ok(child.clone()),
             // Child allow-all fails with more restrictive parent permissions.
             (_, &Boolean(true)) => Err(anyhow!("Requested permissions incompatible with parent")),
-            // Parent allow-all always succeeds, returning the child's permissions.
-            (&Boolean(true), &List(ref child)) => Ok(List(child.clone())),
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
             (&List(ref parent), &List(ref child)) => Permission::paths_subset(parent, child)
