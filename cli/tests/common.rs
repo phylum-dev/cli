@@ -221,7 +221,7 @@ pub fn create_lockfile(dir: &Path) -> PathBuf {
 pub async fn create_project() -> &'static str {
     let offline_access = Some(RefreshToken::new(env::var("PHYLUM_API_KEY").unwrap()));
     let mut config = Config::default();
-    config.connection =  ConnectionInfo { uri: API_URL.into() };
+    config.connection = ConnectionInfo { uri: API_URL.into() };
     config.auth_info = AuthInfo::new(offline_access);
 
     // Attempt to create the project, ignoring conflicts.
