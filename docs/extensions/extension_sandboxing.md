@@ -56,6 +56,15 @@ permission is a superset of `read` that allows for execution. While `read`,
 `write`, and `run` accept either a path to be allowed or a boolean, `net` only
 allows for a boolean value.
 
+## Limitations
+
+The `PhylumApi.runSandboxed` method is the only allowed means of spawning
+child processes from an extension. In order to prevent extension to escape the
+sandbox, methods such as `Deno.run` are explicitly disabled.
+
+The method is not allowed to specify permissions that are less restrictive than
+the ones specified in the manifest.
+
 ## Advanced Usage
 
 By default, access to some paths is granted automatically to make extension
