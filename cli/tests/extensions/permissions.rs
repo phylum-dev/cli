@@ -72,6 +72,7 @@ fn incorrect_net_permission_unsuccessful_run() {
 }
 
 #[test]
+#[cfg(unix)]
 fn correct_run_permission_successful_install_and_run() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
@@ -80,6 +81,21 @@ fn correct_run_permission_successful_install_and_run() {
         .success();
 
     test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("hello"));
+}
+
+#[test]
+#[cfg(not(unix))]
+fn correct_run_permission_fail_on_windows() {
+    let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
+
+    test_cli
+        .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
+        .success();
+
+    test_cli
+        .run(&["correct-run-perms"])
+        .failure()
+        .stderr(predicate::str::contains("Extension sandboxing is not supported on this platform"));
 }
 
 #[tokio::test]

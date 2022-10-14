@@ -69,9 +69,7 @@ impl Permission {
             // Child deny-all always succeeds, returning deny-all.
             (_, &Boolean(false)) => Ok(Boolean(false)),
             // Parent deny-all fails with everything else.
-            (&Boolean(false), child) => {
-                Err(anyhow!("Requested permissions incompatible with parent"))
-            },
+            (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
             // Child allow-all inherits the parent's permissions.
             (&List(ref parent), &Boolean(true)) => Ok(List(parent.clone())),
             // Parent allow-all returns the child's permissions.
