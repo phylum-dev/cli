@@ -69,7 +69,9 @@ impl Permission {
             // Child deny-all always succeeds, returning deny-all.
             (_, &Boolean(false)) => Ok(Boolean(false)),
             // Parent deny-all fails with everything else.
-            (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
+            (&Boolean(false), child) => {
+                Err(anyhow!("Requested permissions incompatible with parent"))
+            },
             // Child allow-all inherits the parent's permissions.
             (&List(ref parent), &Boolean(true)) => Ok(List(parent.clone())),
             // Parent allow-all returns the child's permissions.
@@ -222,12 +224,14 @@ impl Permissions {
     }
 
     pub fn subset_of(&self, other: &Permissions) -> Result<Permissions> {
+        let err_ctx = |name: &'static str| move |e| anyhow!("{name}: {}", e);
+
         Ok(Permissions {
-            read: self.read.subset_of(&other.read)?,
-            write: self.write.subset_of(&other.write)?,
-            env: self.env.subset_of(&other.env)?,
-            run: self.run.subset_of(&other.run)?,
-            net: self.net.subset_of(&other.net)?,
+            read: self.read.subset_of(&other.read).map_err(err_ctx("read"))?,
+            write: self.write.subset_of(&other.write).map_err(err_ctx("write"))?,
+            env: self.env.subset_of(&other.env).map_err(err_ctx("env"))?,
+            run: self.run.subset_of(&other.run).map_err(err_ctx("run"))?,
+            net: self.net.subset_of(&other.net).map_err(err_ctx("net"))?,
         })
     }
 }
