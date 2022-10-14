@@ -220,6 +220,7 @@ mod tests {
             connection: con,
             auth_info: auth,
             request_type: PackageType::Npm,
+            ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
         };

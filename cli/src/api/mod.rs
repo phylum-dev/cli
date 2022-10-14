@@ -387,11 +387,9 @@ mod tests {
         let mock_server = build_mock_server().await;
         let auth_info = build_unauthenticated_auth_info();
 
-        let config = Config {
-            connection: ConnectionInfo { uri: mock_server.uri() },
-            auth_info,
-            ..Default::default()
-        };
+        let mut config = Config::default();
+        config.connection = ConnectionInfo { uri: mock_server.uri() };
+        config.auth_info = auth_info;
 
         let api = PhylumApi::new(config, None).await?;
         // After auth, auth_info should have a offline access token

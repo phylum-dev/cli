@@ -131,11 +131,9 @@ pub mod mockito {
     }
 
     pub async fn build_phylum_api(mock_server: &MockServer) -> Result<PhylumApi, PhylumApiError> {
-        let config = Config {
-            connection: ConnectionInfo { uri: mock_server.uri() },
-            auth_info: build_authenticated_auth_info(),
-            ..Default::default()
-        };
+        let mut config = Config::default();
+        config.connection = ConnectionInfo { uri: mock_server.uri() };
+        config.auth_info = build_authenticated_auth_info();
         let phylum = PhylumApi::new(config, None).await?;
         Ok(phylum)
     }

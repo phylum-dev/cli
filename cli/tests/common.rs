@@ -52,9 +52,10 @@ impl TestCliBuilder {
     /// If true, a configuration will be generated, stored and passed as an
     /// option.
     pub fn with_config(mut self, config: impl Into<Option<Config>>) -> Self {
-        self.config = Some(config.into().unwrap_or_else(|| Config {
-            connection: ConnectionInfo { uri: API_URL.into() },
-            ..Config::default()
+        self.config = Some(config.into().unwrap_or_else(|| {
+            let mut config = Config::default();
+            config.connection = ConnectionInfo { uri: API_URL.into() };
+            config
         }));
         self
     }
@@ -219,11 +220,9 @@ pub fn create_lockfile(dir: &Path) -> PathBuf {
 /// Ensure the specified project exists.
 pub async fn create_project() -> &'static str {
     let offline_access = Some(RefreshToken::new(env::var("PHYLUM_API_KEY").unwrap()));
-    let config = Config {
-        connection: ConnectionInfo { uri: API_URL.into() },
-        auth_info: AuthInfo::new(offline_access),
-        ..Config::default()
-    };
+    let mut config = Config::default();
+    config.connection =  ConnectionInfo { uri: API_URL.into() };
+    config.auth_info = AuthInfo::new(offline_access);
 
     // Attempt to create the project, ignoring conflicts.
     let api = PhylumApi::new(config, None).await.unwrap();
