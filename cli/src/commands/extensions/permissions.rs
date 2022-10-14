@@ -63,17 +63,28 @@ impl Permission {
         }
     }
 
-    pub fn subset_of(&self, parent: &Permission) -> StdResult<Permission, Vec<String>> {
+    pub fn subset_of(&self, parent: &Permission) -> Result<Permission> {
         use Permission::*;
         match (parent, self) {
-            (&Boolean(parent), &Boolean(child)) => Ok(Permission::Boolean(parent && child)),
-            (&List(ref parent), &Boolean(true)) => Ok(Permission::List(parent.clone())),
-            (&List(_), &Boolean(false)) => Ok(Permission::Boolean(false)),
-            (&Boolean(true), &List(ref child)) => Ok(Permission::List(child.clone())),
-            (&Boolean(false), &List(_)) => Ok(Permission::Boolean(false)),
-            (&List(ref parent), &List(ref child)) => {
-                Permission::paths_subset(parent, child).map(|()| Permission::List(child.clone()))
-            },
+            // Child deny-all always succeeds, returning deny-all.
+            (_, &Boolean(false)) => Ok(Boolean(false)),
+            // Parent deny-all fails with everything else.
+            (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
+            // Child allow-all inherits the parent's permissions.
+            (&List(ref parent), &Boolean(true)) => Ok(List(parent.clone())),
+            // Parent allow-all returns the child's permissions.
+            (&Boolean(true), &Boolean(child)) => Ok(Boolean(child)),
+            (&Boolean(true), &List(ref child)) => Ok(List(child.clone())),
+            // Parent set vs child set have to be validated.
+            // This will error if child is not subset of parent, and return the child set otherwise.
+            (&List(ref parent), &List(ref child)) => Permission::paths_subset(parent, child)
+                .map(|()| Permission::List(child.clone()))
+                .map_err(|mismatches| {
+                    anyhow!(
+                        "Requested permission paths incompatible with parent: {}",
+                        mismatches.join(", ")
+                    )
+                }),
         }
     }
 
@@ -211,16 +222,12 @@ impl Permissions {
     }
 
     pub fn subset_of(&self, other: &Permissions) -> Result<Permissions> {
-        let error_context = |perm: &'static str| {
-            move |e: Vec<String>| anyhow!("invalid {perm} permissions: {}", e.join(", "))
-        };
-
         Ok(Permissions {
-            read: self.read.subset_of(&other.read).map_err(error_context("read"))?,
-            write: self.write.subset_of(&other.write).map_err(error_context("write"))?,
-            env: self.env.subset_of(&other.env).map_err(error_context("env"))?,
-            run: self.run.subset_of(&other.run).map_err(error_context("run"))?,
-            net: self.net.subset_of(&other.net).map_err(error_context("net"))?,
+            read: self.read.subset_of(&other.read)?,
+            write: self.write.subset_of(&other.write)?,
+            env: self.env.subset_of(&other.env)?,
+            run: self.run.subset_of(&other.run)?,
+            net: self.net.subset_of(&other.net)?,
         })
     }
 }
@@ -466,7 +473,7 @@ mod tests {
 
         let parent = permission_list(&["/tmp", "/home/foo/.npm"]);
         let child = Permission::Boolean(false);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+        assert!(matches!(&child.subset_of(&parent), Ok(Permission::Boolean(false))));
 
         // Test permission sets where parent is boolean.
 
@@ -479,24 +486,24 @@ mod tests {
 
         let parent = Permission::Boolean(false);
         let child = permission_list(&["/tmp", "/home/foo/.npm"]);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+        assert!(&child.subset_of(&parent).is_err());
 
         // Test boolean permissions.
 
-        let parent = Permission::Boolean(true);
-        let child = Permission::Boolean(false);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
-
         let parent = Permission::Boolean(false);
         let child = Permission::Boolean(true);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+        assert!(&child.subset_of(&parent).is_err());
+
+        let parent = Permission::Boolean(true);
+        let child = Permission::Boolean(false);
+        assert!(matches!(&child.subset_of(&parent), Ok(Permission::Boolean(false))));
 
         let parent = Permission::Boolean(true);
         let child = Permission::Boolean(true);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(true)));
+        assert!(matches!(&child.subset_of(&parent), Ok(Permission::Boolean(true))));
 
         let parent = Permission::Boolean(false);
         let child = Permission::Boolean(false);
-        assert!(matches!(&child.subset_of(&parent).unwrap(), Permission::Boolean(false)));
+        assert!(matches!(&child.subset_of(&parent), Ok(Permission::Boolean(false))));
     }
 }
