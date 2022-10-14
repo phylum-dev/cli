@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
+use log::LevelFilter;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::{Action, JobStatusResponse};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -74,13 +75,13 @@ pub async fn get_job_status(
 /// job run.
 pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.get_flag("json");
-    let verbose = matches.get_flag("verbose");
+    let verbose = log::max_level() > LevelFilter::Warn;
     let mut action = Action::None;
     let display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
 
-    if matches.get_flag("JOB_ID") {
+    if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
         let job_id =
-            JobId::from_str(matches.get_one::<String>("JOB_ID").expect("No job id found"))?;
+            JobId::from_str(job_id).with_context(|| format!("{job_id:?} is not a valid Job ID"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let resp = api.get_project_details(project).await?.jobs;
@@ -132,7 +133,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         request_type = res.1;
 
         label = matches.get_one::<String>("label");
-        verbose = matches.get_flag("verbose");
+        verbose = log::max_level() > LevelFilter::Warn;
         pretty_print = !matches.get_flag("json");
         display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
         is_user = !matches.get_flag("force");
