@@ -98,14 +98,6 @@ jobs:
       - name: Download release artifacts
         uses: actions/download-artifact@v3
 
-      # Temporarily provide glibc binaries as *-unknown-linux-musl, to allow upgrading to the new archive names.
-      # NOTE: This does NOT provide a musl version; the archives are still glibc executables. This will
-      #       only help with updates on systems that support both musl AND glibc (e.g., WSL on Windows).
-      - name: Create update compatability files
-        run: |
-          cp -R phylum-x86_64-unknown-linux-gnu phylum-x86_64-unknown-linux-musl
-          cp -R phylum-aarch64-unknown-linux-gnu phylum-aarch64-unknown-linux-musl
-
       - name: Prep archives
         run: |
           for archive in phylum-*/;
