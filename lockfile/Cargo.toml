@@ -4,7 +4,7 @@ description = "Package lock file parsers used by Phylum"
 version = "0.1.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.63.0"
 
 [dependencies]
 anyhow = "1.0.44"
