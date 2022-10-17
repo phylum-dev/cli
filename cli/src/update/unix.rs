@@ -4,9 +4,11 @@ use std::str;
 
 use anyhow::{anyhow, Context};
 use log::debug;
-use minisign_verify::{PublicKey, Signature};
 use reqwest::Client;
+use rsa::pkcs8::DecodePublicKey;
+use rsa::{Hash, PaddingScheme, PublicKey, RsaPublicKey};
 use serde::de::DeserializeOwned;
+use sha2::{Digest, Sha256};
 #[cfg(test)]
 use wiremock::MockServer;
 use zip::ZipArchive;
@@ -15,8 +17,8 @@ use crate::app::USER_AGENT;
 use crate::spinner::Spinner;
 use crate::types::{GithubRelease, GithubReleaseAsset};
 
-// Phylum's public key for Minisign.
-const PUBKEY: &str = "RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf";
+// Phylum's public signing key.
+const PUBKEY: &str = include_str!("../../../scripts/signing-key.pub");
 
 const GITHUB_URI: &str = "https://api.github.com";
 
@@ -45,14 +47,12 @@ pub async fn do_update(prerelease: bool) -> anyhow::Result<String> {
 
 #[derive(Debug)]
 struct ApplicationUpdater {
-    pubkey: PublicKey,
     github_uri: String,
 }
 
 impl Default for ApplicationUpdater {
     fn default() -> Self {
-        let pubkey = PublicKey::from_base64(PUBKEY).expect("Unable to decode the public key");
-        ApplicationUpdater { pubkey, github_uri: GITHUB_URI.to_owned() }
+        ApplicationUpdater { github_uri: GITHUB_URI.to_owned() }
     }
 }
 
@@ -119,8 +119,7 @@ impl ApplicationUpdater {
     /// Build a instance for use in tests
     #[cfg(test)]
     fn build_test_instance(mock_server: MockServer) -> Self {
-        let pubkey = PublicKey::from_base64(PUBKEY).expect("Unable to decode the public key");
-        ApplicationUpdater { pubkey, github_uri: mock_server.uri() }
+        ApplicationUpdater { github_uri: mock_server.uri() }
     }
 
     /// Check for an update by querying the Github releases page.
@@ -181,7 +180,7 @@ impl ApplicationUpdater {
         debug!("Finding the github assets in the Github JSON response");
         let zip_asset = self.find_github_asset(&latest, &format!("{}.zip", archive_name))?;
         let sig_asset =
-            self.find_github_asset(&latest, &format!("{}.zip.minisig", archive_name))?;
+            self.find_github_asset(&latest, &format!("{}.zip.signature", archive_name))?;
 
         debug!("Downloading the update files");
         let zip = download_github_asset(zip_asset).await?;
@@ -189,7 +188,7 @@ impl ApplicationUpdater {
 
         spinner.set_message("Verifying binary signatures...").await;
         debug!("Verifying the package signature");
-        if !self.has_valid_signature(&zip, str::from_utf8(&sig)?) {
+        if !self.has_valid_signature(&zip, &sig) {
             anyhow::bail!("The update binary failed signature validation");
         }
 
@@ -211,35 +210,23 @@ impl ApplicationUpdater {
 
     /// Verify that the downloaded binary matches the expected signature.
     /// Returns `true` for a valid signature, `false` otherwise.
-    fn has_valid_signature(&self, bin: &[u8], sig: &str) -> bool {
-        let signature = match Signature::decode(sig) {
-            Ok(x) => x,
-            Err(_) => return false,
-        };
+    fn has_valid_signature(&self, bin: &[u8], sig: &[u8]) -> bool {
+        let verify_key = RsaPublicKey::from_public_key_pem(PUBKEY).expect("invalid public key");
 
-        // TODO: Change the `allow_legacy` argument to `false` after we stop using
-        // legacy signatures https://github.com/phylum-dev/cli/issues/266
-        self.pubkey.verify(bin, &signature, true).is_ok()
+        let hashed = Sha256::digest(bin);
+        verify_key
+            .verify(PaddingScheme::PKCS1v15Sign { hash: Some(Hash::SHA2_256) }, &hashed, sig)
+            .is_ok()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use minisign_verify::PublicKey;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, ResponseTemplate};
 
     use super::ApplicationUpdater;
     use crate::test::mockito::*;
-
-    #[test]
-    fn creating_application() {
-        let correct_pubkey =
-            PublicKey::from_base64("RWT6G44ykbS8GABiLXrJrYsap7FCY77m/Jyi0fgsr/Fsy3oLwU4l0IDf")
-                .expect("Failed to create public key");
-        let updater = ApplicationUpdater::default();
-        assert!(correct_pubkey == updater.pubkey);
-    }
 
     #[tokio::test]
     async fn version_check() {
@@ -270,16 +257,15 @@ mod tests {
 
     #[test]
     fn test_signature_validation() {
-        let file = b"Hello, world\n";
-        let minisign_sig =
-            "untrusted comment: signature from minisign secret \
-             key\nRWT6G44ykbS8GJ+2A+Fjj6ZdR1/\
-             632p6WlwqAYhb8DSeKhCl3rzG1TGSF9CD9DDf9BdWrOjvnqi78yh38djVuYvAW2FhE0MvTQ4=\ntrusted \
-             comment: Phylum, Inc. - Future of software supply chain \
-             security\nkBL1siaOp2uZq2IrNKVguDGje88ghM2L0XJ6n/\
-             1rjGL2aQwbJ0fZPe5uOde3IbObPKTF4KCHbRtMALUEu6TaBQ==\n";
+        let data = include_bytes!("hello.txt");
+        let sig = include_bytes!("hello.txt.signature");
 
         let updater = ApplicationUpdater::default();
-        assert!(updater.has_valid_signature(file, minisign_sig));
+        assert!(updater.has_valid_signature(data, sig));
+
+        // Flip some bits and make sure it fails
+        let mut sig: Vec<u8> = sig.as_slice().into();
+        sig[15] = !sig[15];
+        assert!(!updater.has_valid_signature(data, &sig));
     }
 }
