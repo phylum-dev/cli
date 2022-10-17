@@ -92,9 +92,9 @@ async fn handle_commands() -> CommandResult {
     let mut config: Config = config::read_configuration(&config_path).map_err(|err| {
         anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
     })?;
-    config.ignore_certs |= matches.get_flag("no-check-certificate");
+    config.set_ignore_certs_cli(matches.get_flag("no-check-certificate"));
 
-    if config.ignore_certs {
+    if config.ignore_certs() {
         log::warn!("Ignoring TLS server certificate verification per user request.");
     }
 
