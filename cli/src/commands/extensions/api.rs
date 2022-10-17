@@ -153,9 +153,7 @@ impl TryFrom<ProcessStdio> for ProcessStdioFds {
                 (Some(rx), Some(tx))
             },
             ProcessStdio::Null => {
-                let mut opts = OpenOptions::new();
-                opts.write(true);
-                let file = opts.open("/dev/null")?;
+                let file = OpenOptions::new().write(true).open("/dev/null")?;
                 (None, Some(file))
             },
         };
