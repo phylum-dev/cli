@@ -64,49 +64,38 @@ impl Permission {
     }
 
     pub fn subset_of(&self, parent: &Permission) -> Result<Permission> {
-        use Permission::*;
         match (parent, self) {
             // Child deny-all always succeeds, returning deny-all.
-            (_, &Boolean(false)) => Ok(Boolean(false)),
+            (_, &Permission::Boolean(false)) => Ok(Permission::Boolean(false)),
             // Parent deny-all fails with all child permissions but deny-all.
-            (&Boolean(false), _) => {
+            (&Permission::Boolean(false), _) => {
                 Err(anyhow!("Requested permissions incompatible with the manifest"))
             },
             // Parent allow-all always succeeds, returning the child's permissions.
-            (&Boolean(true), child) => Ok(child.clone()),
+            (&Permission::Boolean(true), child) => Ok(child.clone()),
             // Child allow-all fails with more restrictive parent permissions.
-            (_, &Boolean(true)) => {
+            (_, &Permission::Boolean(true)) => {
                 Err(anyhow!("Requested permissions incompatible with the manifest"))
             },
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
-            (&List(ref parent), &List(ref child)) => Permission::check_paths_subset(parent, child)
-                .map(|_| Permission::List(child.clone()))
-                .map_err(|mismatches| {
-                    anyhow!(
-                        "Requested permission paths incompatible with parent: {}",
-                        mismatches.join(", ")
-                    )
-                }),
+            (&Permission::List(ref parent), &Permission::List(ref child)) => {
+                Permission::check_paths_include_childs(parent, child)
+                    .map(|_| Permission::List(child.clone()))
+                    .map_err(|mismatches| {
+                        anyhow!(
+                            "Requested permission paths incompatible with the manifest: {}",
+                            mismatches.join(", ")
+                        )
+                    })
+            },
         }
     }
 
-    fn check_paths_subset(parent: &[String], child: &[String]) -> StdResult<(), Vec<String>> {
-        // Let P be the set of all paths.
-        //
-        // Let "<" be the partial order relation over P such that "a < b" reads "a is
-        // prefix of b" where a, b are two paths in P.
-        //
-        // Let "<<" be the partial order relation over the power set of P, such that "A
-        // << B" reads "A is paths-subset of B" where A and B are subsets of P.
-        //
-        // A << B if and only if, for each a in A, there exist at least one b in B such
-        // that a < b.
-        //
-        // The above definition is tested in `tests::paths_subset_algorithm` below.
-        //
-        // In this method, A is `child` and B is `parent`.
-
+    fn check_paths_include_childs(
+        parent: &[String],
+        child: &[String],
+    ) -> StdResult<(), Vec<String>> {
         let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
         let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
 
@@ -399,7 +388,7 @@ mod tests {
     fn paths_subset_algorithm() {
         // Shorthand to invoke Permission::paths_subset through &str slices.
         let paths_subset = |a: &[&str], b: &[&str]| {
-            Permission::check_paths_subset(
+            Permission::check_paths_include_childs(
                 &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
                 &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
             )
