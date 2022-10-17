@@ -69,15 +69,19 @@ impl Permission {
             // Child deny-all always succeeds, returning deny-all.
             (_, &Boolean(false)) => Ok(Boolean(false)),
             // Parent deny-all fails with all child permissions but deny-all.
-            (&Boolean(false), _) => Err(anyhow!("Requested permissions incompatible with parent")),
+            (&Boolean(false), _) => {
+                Err(anyhow!("Requested permissions incompatible with the manifest"))
+            },
             // Parent allow-all always succeeds, returning the child's permissions.
             (&Boolean(true), child) => Ok(child.clone()),
             // Child allow-all fails with more restrictive parent permissions.
-            (_, &Boolean(true)) => Err(anyhow!("Requested permissions incompatible with parent")),
+            (_, &Boolean(true)) => {
+                Err(anyhow!("Requested permissions incompatible with the manifest"))
+            },
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
-            (&List(ref parent), &List(ref child)) => Permission::paths_subset(parent, child)
-                .map(|()| Permission::List(child.clone()))
+            (&List(ref parent), &List(ref child)) => Permission::check_paths_subset(parent, child)
+                .map(|_| Permission::List(child.clone()))
                 .map_err(|mismatches| {
                     anyhow!(
                         "Requested permission paths incompatible with parent: {}",
@@ -87,7 +91,7 @@ impl Permission {
         }
     }
 
-    fn paths_subset(parent: &[String], child: &[String]) -> StdResult<(), Vec<String>> {
+    fn check_paths_subset(parent: &[String], child: &[String]) -> StdResult<(), Vec<String>> {
         // Let P be the set of all paths.
         //
         // Let "<" be the partial order relation over P such that "a < b" reads "a is
@@ -106,24 +110,22 @@ impl Permission {
         let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
         let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
 
-        // List all child paths for which no parent path exists such that child <
-        // parent. O(n*m) where n = child_paths,len() and m =
-        // parent_paths.len().
+        // Find all paths in `child` that don't have a prefix in `parent`.
         let without_parent: Vec<_> = child_paths
             .iter()
             .filter_map(|child| {
                 // Using PathBuf::starts_with rather than String::starts_with in order to get
                 // the correct semantics.
-                if !parent_paths.iter().any(|p| child.starts_with(p)) {
-                    Some(child.to_string_lossy().to_string())
-                } else {
+                if parent_paths.iter().any(|p| child.starts_with(p)) {
                     None
+                } else {
+                    Some(child.to_string_lossy().to_string())
                 }
             })
             .collect::<Vec<_>>();
 
-        // The above list must be empty for the child paths to be a subset of the
-        // parents'.
+        // The above list must be empty for all child paths to be a subset of the
+        // parent.
         if !without_parent.is_empty() {
             Err(without_parent)
         } else {
@@ -397,7 +399,7 @@ mod tests {
     fn paths_subset_algorithm() {
         // Shorthand to invoke Permission::paths_subset through &str slices.
         let paths_subset = |a: &[&str], b: &[&str]| {
-            Permission::paths_subset(
+            Permission::check_paths_subset(
                 &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
                 &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
             )

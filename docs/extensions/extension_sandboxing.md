@@ -59,11 +59,11 @@ allows for a boolean value.
 ## Limitations
 
 The `PhylumApi.runSandboxed` method is the only allowed means of spawning
-child processes from an extension. In order to prevent extension to escape the
-sandbox, methods such as `Deno.run` are explicitly disabled.
+child processes from an extension. The `Deno.run` method is explicitly disabled
+in order to prevent extension from escaping the sandbox.
 
-The method is not allowed to specify permissions that are less restrictive than
-the ones specified in the manifest.
+The method is only allowed to request permissions that are at least as restrictive
+as the ones specified in the manifest.
 
 ## Advanced Usage
 
