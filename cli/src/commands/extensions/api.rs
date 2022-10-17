@@ -173,10 +173,10 @@ impl ProcessStdioFds {
             None => return Ok(()),
         };
 
-        if unsafe { libc::dup2(child_fd, fd) } != -1 {
-            Ok(())
-        } else {
+        if unsafe { libc::dup2(child_fd, fd) } == -1 {
             Err(io::Error::last_os_error())
+        } else {
+            Ok(())
         }
     }
 }
