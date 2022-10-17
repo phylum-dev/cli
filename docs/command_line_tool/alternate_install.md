@@ -23,7 +23,7 @@ Phylum is written in Rust, so you'll need a recent Rust installation to build it
 3. You can use the executable directly as `./target/debug/phylum` or install it like so:
 
    ```sh
-   cargo install --path cli
+   cargo install --locked --path cli
    ```
 
 ## Install with Python
