@@ -443,6 +443,7 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
             if let permissions::Permission::Boolean(true) = resolved_permissions.net {
                 birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
+            birdcage.add_exception(Exception::FullEnvironment).map_err(into_ioerr)?;
 
             birdcage.lock().map_err(into_ioerr)?;
             Ok(())

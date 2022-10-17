@@ -69,13 +69,13 @@ impl Permission {
             (_, &Permission::Boolean(false)) => Ok(Permission::Boolean(false)),
             // Parent deny-all fails with all child permissions but deny-all.
             (&Permission::Boolean(false), _) => {
-                Err(anyhow!("Requested permissions incompatible with the manifest"))
+                Err(anyhow!("All permissions are denied by the manifest"))
             },
             // Parent allow-all always succeeds, returning the child's permissions.
             (&Permission::Boolean(true), child) => Ok(child.clone()),
             // Child allow-all fails with more restrictive parent permissions.
             (_, &Permission::Boolean(true)) => {
-                Err(anyhow!("Requested permissions incompatible with the manifest"))
+                Err(anyhow!("The requested permissions are denied by the manifest"))
             },
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
@@ -84,7 +84,7 @@ impl Permission {
                     .map(|_| Permission::List(child.clone()))
                     .map_err(|mismatches| {
                         anyhow!(
-                            "Requested permission paths incompatible with the manifest: {}",
+                            "The following paths are denied by the manifest: {}",
                             mismatches.join(", ")
                         )
                     })
@@ -212,7 +212,7 @@ impl Permissions {
     }
 
     pub fn subset_of(&self, other: &Permissions) -> Result<Permissions> {
-        let err_ctx = |name: &'static str| move |e| anyhow!("{name}: {}", e);
+        let err_ctx = |name: &'static str| move |e| anyhow!("Invalid {name} permissions: {}", e);
 
         Ok(Permissions {
             read: self.read.subset_of(&other.read).map_err(err_ctx("read"))?,
