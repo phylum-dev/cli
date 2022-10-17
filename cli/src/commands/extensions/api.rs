@@ -142,11 +142,13 @@ impl TryFrom<ProcessStdio> for ProcessStdioFds {
         let (parent, child) = match stdio {
             ProcessStdio::Inherit => (None, None),
             ProcessStdio::Piped => unsafe {
+                // Create a pipe to send STDIO from child to parent.
                 let mut fds = [0, 0];
                 if libc::pipe(fds.as_mut_ptr()) == -1 {
                     return Err(io::Error::last_os_error());
                 }
 
+                // Convert pipe FDs to Rust files.
                 let rx = File::from_raw_fd(fds[0]);
                 let tx = File::from_raw_fd(fds[1]);
 
