@@ -519,6 +519,7 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
 }
 
 /// Lock down the current process.
+#[cfg(unix)]
 fn lock_process(exceptions: ProcessException) -> Result<()> {
     let home_dir = dirs::home_dir()?;
 
