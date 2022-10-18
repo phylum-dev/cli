@@ -6,7 +6,7 @@ use std::fs::{File, OpenOptions};
 #[cfg(unix)]
 use std::io::{self, Read};
 #[cfg(unix)]
-use std::os::fd::{AsRawFd, FromRawFd, RawFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
