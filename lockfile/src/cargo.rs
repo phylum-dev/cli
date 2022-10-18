@@ -6,8 +6,6 @@ use serde::Deserialize;
 
 use crate::{Parse, ParseResult};
 
-pub struct Cargo;
-
 #[derive(Deserialize, Debug, Clone)]
 struct CargoLock {
     #[serde(rename = "package")]
@@ -20,6 +18,8 @@ struct Package {
     version: String,
     source: Option<String>,
 }
+
+pub struct Cargo;
 
 impl Parse for Cargo {
     /// Parses `Cargo.lock` files into a vec of packages.
