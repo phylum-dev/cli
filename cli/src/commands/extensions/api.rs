@@ -555,7 +555,7 @@ fn lock_process(exceptions: ProcessException) -> Result<()> {
         },
     };
     for exception in env_exceptions {
-        permissions::add_exception(&mut birdcage, exception)?;
+        birdcage.add_exception(exception)?;
     }
 
     // Lock down the process.
