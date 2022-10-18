@@ -447,7 +447,7 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
     let mut stderr_fds: ProcessStdioFds = process.stderr.try_into()?;
 
     match unsafe { libc::fork() } {
-        -1 => return Err(io::Error::last_os_error().into()),
+        -1 => Err(io::Error::last_os_error().into()),
         // Handle child process.
         0 => {
             // Connect STDOUT/STDERR with parent if necessary.
@@ -513,7 +513,7 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
                 stderr_fd.read_to_string(&mut stderr)?;
             }
 
-            return Ok(ProcessOutput { stdout, stderr, success: code == Some(0), signal, code });
+            Ok(ProcessOutput { stdout, stderr, success: code == Some(0), signal, code })
         },
     }
 }
