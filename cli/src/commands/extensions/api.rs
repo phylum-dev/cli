@@ -98,7 +98,7 @@ impl From<ProcessException> for permissions::Permissions {
             read: process_exception.read,
             write: process_exception.write,
             run: process_exception.run,
-            env: Permission::Boolean(false), // TODO: replace with inherit
+            env: Permission::Boolean(true),
             net: Permission::Boolean(process_exception.net),
         }
     }

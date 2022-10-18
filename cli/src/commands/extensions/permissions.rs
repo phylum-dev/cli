@@ -80,7 +80,7 @@ impl Permission {
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
             (&Permission::List(ref parent), &Permission::List(ref child)) => {
-                Permission::check_paths_include_childs(parent, child)
+                Permission::check_paths_include_children(parent, child)
                     .map(|_| Permission::List(child.clone()))
                     .map_err(|mismatches| {
                         anyhow!(
@@ -92,7 +92,7 @@ impl Permission {
         }
     }
 
-    fn check_paths_include_childs(
+    fn check_paths_include_children(
         parent: &[String],
         child: &[String],
     ) -> StdResult<(), Vec<String>> {
@@ -388,7 +388,7 @@ mod tests {
     fn paths_subset_algorithm() {
         // Shorthand to invoke Permission::paths_subset through &str slices.
         let paths_subset = |a: &[&str], b: &[&str]| {
-            Permission::check_paths_include_childs(
+            Permission::check_paths_include_children(
                 &a.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
                 &b.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
             )
