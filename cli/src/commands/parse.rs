@@ -94,6 +94,7 @@ mod tests {
             ("../tests/fixtures/Pipfile.lock", PackageType::PyPi),
             ("../tests/fixtures/poetry.lock", PackageType::PyPi),
             ("../tests/fixtures/go.sum", PackageType::Golang),
+            ("../tests/fixtures/Cargo_v3.lock", PackageType::Cargo),
         ];
 
         for (file, expected_type) in &test_cases {
