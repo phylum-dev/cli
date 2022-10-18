@@ -199,7 +199,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('t')
                     .long("package-type")
                     .value_name("type")
-                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
+                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -293,7 +293,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("type")
                         .value_name("type")
-                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang")"#),
+                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
