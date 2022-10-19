@@ -99,6 +99,19 @@ struct ProcessException {
     strict: bool,
 }
 
+#[cfg(unix)]
+impl From<ProcessException> for permissions::Permissions {
+    fn from(process_exception: ProcessException) -> Self {
+        Self {
+            read: process_exception.read,
+            write: process_exception.write,
+            run: process_exception.run,
+            env: process_exception.env,
+            net: Permission::Boolean(process_exception.net),
+        }
+    }
+}
+
 /// Standard I/O behavior.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 enum ProcessStdio {
@@ -442,7 +455,16 @@ async fn parse_lockfile(
 /// possible even after the command has been spawned.
 #[op]
 #[cfg(unix)]
-fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
+    let Process { cmd, args, stdin, exceptions, .. } = process;
+
+    let strict = exceptions.strict;
+    let resolved_permissions = {
+        let mut state = op_state.borrow_mut();
+        let permissions = state.borrow_mut::<permissions::Permissions>();
+        permissions::Permissions::from(exceptions).subset_of(permissions)
+    }?;
+
     let mut stdout_fds: ProcessStdioFds = process.stdout.try_into()?;
     let mut stderr_fds: ProcessStdioFds = process.stderr.try_into()?;
 
@@ -455,12 +477,12 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
             stderr_fds.replace_fd(libc::STDERR_FILENO)?;
 
             // Apply sandboxing rules.
-            lock_process(process.exceptions)?;
+            lock_process(resolved_permissions, strict)?;
 
             // Setup process to be run.
-            let mut command = Command::new(&process.cmd);
-            command.args(&process.args);
-            command.stdin(process.stdin);
+            let mut command = Command::new(&cmd);
+            command.args(&args);
+            command.stdin(stdin);
             command.stdout(Stdio::inherit());
             command.stderr(Stdio::inherit());
 
@@ -520,11 +542,10 @@ fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
 
 /// Lock down the current process.
 #[cfg(unix)]
-fn lock_process(exceptions: ProcessException) -> Result<()> {
+fn lock_process(exceptions: permissions::Permissions, strict: bool) -> Result<()> {
     let home_dir = dirs::home_dir()?;
 
-    let mut birdcage =
-        if exceptions.strict { Birdcage::new()? } else { permissions::default_sandbox()? };
+    let mut birdcage = if strict { Birdcage::new()? } else { permissions::default_sandbox()? };
 
     // Apply filesystem exceptions.
     for path in exceptions.read.sandbox_paths().iter() {
@@ -542,7 +563,7 @@ fn lock_process(exceptions: ProcessException) -> Result<()> {
     }
 
     // Apply network exceptions.
-    if exceptions.net {
+    if let permissions::Permission::Boolean(true) = exceptions.net {
         birdcage.add_exception(Exception::Networking)?;
     }
 
