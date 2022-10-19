@@ -272,7 +272,7 @@ dependencies = [
 [[package]]
 name = "birdcage"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/birdcage#092deddb0d6a8dd65f9dfceb370b3b5b05e06b55"
+source = "git+https://github.com/phylum-dev/birdcage#446b0758ed49b028f75b943dbc1a4d38c5015909"
 dependencies = [
  "landlock",
  "libc",
@@ -3121,6 +3121,7 @@ dependencies = [
  "home",
  "hyper",
  "lazy_static",
+ "libc",
  "log",
  "maplit",
  "once_cell",

@@ -205,6 +205,17 @@ impl Permissions {
             birdcage.add_exception(Exception::Networking)?;
         }
 
+        let env_exceptions = match &self.env {
+            Permission::Boolean(true) => vec![Exception::FullEnvironment],
+            Permission::Boolean(false) => Vec::new(),
+            Permission::List(keys) => {
+                keys.iter().map(|key| Exception::Environment(key.clone())).collect()
+            },
+        };
+        for exception in env_exceptions {
+            add_exception(&mut birdcage, exception)?;
+        }
+
         Ok(birdcage)
     }
 
