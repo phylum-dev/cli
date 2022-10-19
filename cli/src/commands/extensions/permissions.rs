@@ -96,14 +96,14 @@ impl Permission {
         parent: &[String],
         child: &[String],
     ) -> StdResult<(), Vec<String>> {
-        let parent_paths = parent.iter().map(PathBuf::from).collect::<Vec<_>>();
-        let child_paths = child.iter().map(PathBuf::from).collect::<Vec<_>>();
+        let parent_paths = parent.iter().map(Path::new).collect::<Vec<_>>();
+        let child_paths = child.iter().map(Path::new).collect::<Vec<_>>();
 
         // Find all paths in `child` that don't have a prefix in `parent`.
         let without_parent: Vec<_> = child_paths
             .iter()
             .filter_map(|child| {
-                // Using PathBuf::starts_with rather than String::starts_with in order to get
+                // Using Path::starts_with rather than String::starts_with in order to get
                 // the correct semantics.
                 if parent_paths.iter().any(|p| child.starts_with(p)) {
                     None

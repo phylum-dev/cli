@@ -7,6 +7,7 @@ use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
+#[cfg(unix)]
 use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
 #[cfg(unix)]
 use tempfile::NamedTempFile;
