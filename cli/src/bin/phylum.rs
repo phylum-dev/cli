@@ -9,8 +9,11 @@ use log::LevelFilter;
 use phylum_cli::api::PhylumApi;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
+#[cfg(unix)]
+use phylum_cli::commands::sandbox;
 use phylum_cli::commands::{
-    auth, extensions, group, jobs, packages, parse, project, CommandResult, CommandValue, ExitCode,
+    auth, extensions, group, jobs, packages, parse, project, CommandResult, CommandValue,
+    ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -155,6 +158,8 @@ async fn handle_commands() -> CommandResult {
         "uninstall" => uninstall::handle_uninstall(sub_matches),
 
         "extension" => extensions::handle_extensions(Box::pin(api), sub_matches, app_helper).await,
+        #[cfg(unix)]
+        "sandbox" => sandbox::handle_sandbox(sub_matches).await,
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },

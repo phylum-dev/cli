@@ -350,6 +350,57 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(extensions::command());
 
+    #[cfg(unix)]
+    {
+        app = app.subcommand(
+            Command::new("sandbox").hide(true).about("Run an application in a sandbox").args(&[
+                Arg::new("allow-read")
+                    .help("Add filesystem read sandbox exception")
+                    .long("allow-read")
+                    .value_name("PATH")
+                    .value_hint(ValueHint::FilePath)
+                    .action(ArgAction::Append),
+                Arg::new("allow-write")
+                    .help("Add filesystem write sandbox exception")
+                    .long("allow-write")
+                    .value_name("PATH")
+                    .value_hint(ValueHint::FilePath)
+                    .action(ArgAction::Append),
+                Arg::new("allow-run")
+                    .help("Add filesystem execute sandbox exception")
+                    .long("allow-run")
+                    .value_name("PATH")
+                    .value_hint(ValueHint::FilePath)
+                    .action(ArgAction::Append),
+                Arg::new("allow-env")
+                    .help("Add environment variable access sandbox exception")
+                    .long("allow-env")
+                    .value_name("ENV_VAR"),
+                // TODO: Can we combine this with allow-env?
+                Arg::new("allow-all-env")
+                    .help("Add full environment variable access sandbox exception")
+                    .long("allow-all-env")
+                    .conflicts_with("allow-env")
+                    .action(ArgAction::SetTrue),
+                Arg::new("allow-net")
+                    .help("Add network access sandbox exception")
+                    .long("allow-net")
+                    .action(ArgAction::SetTrue),
+                Arg::new("strict")
+                    .help("Do not add any default sandbox exceptions")
+                    .long("strict")
+                    .action(ArgAction::SetTrue),
+                Arg::new("cmd").help("Command to be executed").value_name("CMD").required(true),
+                Arg::new("args")
+                    .help("Command arguments")
+                    .value_name("ARG")
+                    .trailing_var_arg(true)
+                    .allow_hyphen_values(true)
+                    .action(ArgAction::Append),
+            ]),
+        )
+    }
+
     #[cfg(feature = "selfmanage")]
     {
         app = app.subcommand(

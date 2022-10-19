@@ -9,6 +9,8 @@ pub mod jobs;
 pub mod packages;
 pub mod parse;
 pub mod project;
+#[cfg(unix)]
+pub mod sandbox;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
 
@@ -32,21 +34,40 @@ pub type CommandResult = anyhow::Result<CommandValue>;
 /// Unique exit code values.
 #[derive(Copy, Clone)]
 pub enum ExitCode {
-    Ok = 0,
-    Generic = 1,
-    NotAuthenticated = 10,
-    AuthenticationFailure = 11,
-    PackageNotFound = 12,
-    SetThresholdsFailure = 13,
-    AlreadyExists = 14,
-    NoHistoryFound = 15,
-    JsError = 16,
-    FailedThresholds = 100,
+    Ok,
+    Generic,
+    NotAuthenticated,
+    AuthenticationFailure,
+    PackageNotFound,
+    SetThresholdsFailure,
+    AlreadyExists,
+    NoHistoryFound,
+    JsError,
+    FailedThresholds,
+    Custom(i32),
 }
 
 impl ExitCode {
     /// Terminate the application with this exit code.
     pub fn exit(&self) -> ! {
-        process::exit(*self as i32);
+        process::exit(self.into());
+    }
+}
+
+impl From<&ExitCode> for i32 {
+    fn from(code: &ExitCode) -> Self {
+        match code {
+            ExitCode::Ok => 0,
+            ExitCode::Generic => 1,
+            ExitCode::NotAuthenticated => 10,
+            ExitCode::AuthenticationFailure => 11,
+            ExitCode::PackageNotFound => 12,
+            ExitCode::SetThresholdsFailure => 13,
+            ExitCode::AlreadyExists => 14,
+            ExitCode::NoHistoryFound => 15,
+            ExitCode::JsError => 16,
+            ExitCode::FailedThresholds => 100,
+            ExitCode::Custom(code) => *code,
+        }
     }
 }
