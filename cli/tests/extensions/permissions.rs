@@ -1,3 +1,5 @@
+use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+
 use crate::common::*;
 use crate::extensions::fixtures_path;
 
@@ -113,4 +115,21 @@ pub async fn get_package_details() {
         .run()
         .failure()
         .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
+}
+
+#[test]
+fn permission_op() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    let permissions =
+        Permissions { read: Permission::List(vec!["/tmp".to_string()]), ..Permissions::default() };
+
+    let parse_lockfile = "
+         const perms = PhylumApi.permissions()
+         console.log(perms);";
+
+    let status =
+        test_cli.extension(parse_lockfile).with_permissions(permissions).build().run().success();
+
+    println!("{}", String::from_utf8_lossy(&status.get_output().stdout));
 }

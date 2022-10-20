@@ -359,4 +359,8 @@ export class PhylumApi {
     static runSandboxed(process: object): object {
         return Deno.core.opSync('run_sandboxed', process);
     }
+
+    static permissions(): object {
+        return Deno.core.opSync('permissions');
+    }
 }

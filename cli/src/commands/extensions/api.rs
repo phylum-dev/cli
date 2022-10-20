@@ -2,16 +2,10 @@
 
 use std::cell::RefCell;
 #[cfg(unix)]
-use std::fs::{File, OpenOptions};
+use std::io;
 #[cfg(unix)]
-use std::io::{self, Read};
-#[cfg(unix)]
-use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
+use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
-#[cfg(unix)]
-use std::process;
 #[cfg(unix)]
 use std::process::{Command, Stdio};
 use std::rc::Rc;
@@ -38,7 +32,7 @@ use tokio::fs;
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 #[cfg(unix)]
-use crate::commands::extensions::permissions;
+use crate::commands::extensions::permissions as ext_permissions;
 use crate::commands::extensions::permissions::Permission;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
@@ -92,28 +86,13 @@ struct ProcessException {
     #[serde(default)]
     run: Permission,
     #[serde(default)]
-    env: Permission,
-    #[serde(default)]
     net: bool,
     #[serde(default)]
     strict: bool,
 }
 
-#[cfg(unix)]
-impl From<ProcessException> for permissions::Permissions {
-    fn from(process_exception: ProcessException) -> Self {
-        Self {
-            read: process_exception.read,
-            write: process_exception.write,
-            run: process_exception.run,
-            env: process_exception.env,
-            net: Permission::Boolean(process_exception.net),
-        }
-    }
-}
-
 /// Standard I/O behavior.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 enum ProcessStdio {
     #[serde(rename = "inherit")]
     Inherit,
@@ -136,60 +115,6 @@ impl From<ProcessStdio> for Stdio {
             ProcessStdio::Piped => Self::piped(),
             ProcessStdio::Inherit => Self::inherit(),
             ProcessStdio::Null => Self::null(),
-        }
-    }
-}
-
-/// File descriptors for Stdio.
-#[cfg(unix)]
-struct ProcessStdioFds {
-    parent: Option<File>,
-    child: Option<File>,
-}
-
-#[cfg(unix)]
-impl TryFrom<ProcessStdio> for ProcessStdioFds {
-    type Error = io::Error;
-
-    fn try_from(stdio: ProcessStdio) -> io::Result<Self> {
-        let (parent, child) = match stdio {
-            ProcessStdio::Inherit => (None, None),
-            ProcessStdio::Piped => unsafe {
-                // Create a pipe to send STDIO from child to parent.
-                let mut fds = [0, 0];
-                if libc::pipe(fds.as_mut_ptr()) == -1 {
-                    return Err(io::Error::last_os_error());
-                }
-
-                // Convert pipe FDs to Rust files.
-                let rx = File::from_raw_fd(fds[0]);
-                let tx = File::from_raw_fd(fds[1]);
-
-                (Some(rx), Some(tx))
-            },
-            ProcessStdio::Null => {
-                let file = OpenOptions::new().write(true).open("/dev/null")?;
-                (None, Some(file))
-            },
-        };
-
-        Ok(Self { parent, child })
-    }
-}
-
-#[cfg(unix)]
-impl ProcessStdioFds {
-    /// Replace a FD with the child FD.
-    fn replace_fd(&self, fd: RawFd) -> io::Result<()> {
-        let child_fd = match &self.child {
-            Some(child) => child.as_raw_fd(),
-            None => return Ok(()),
-        };
-
-        if unsafe { libc::dup2(child_fd, fd) } == -1 {
-            Err(io::Error::last_os_error())
-        } else {
-            Ok(())
         }
     }
 }
@@ -414,8 +339,7 @@ async fn parse_lockfile(
     // Ensure extension has file read-access.
     {
         let mut state = op_state.borrow_mut();
-        let permissions = state.borrow_mut::<Permissions>();
-        permissions.read.check(Path::new(&lockfile), None)?;
+        state.borrow_mut::<Permissions>().read.check(Path::new(&lockfile), None)?;
     }
 
     // Fallback to automatic parser without lockfile type specified.
@@ -455,134 +379,73 @@ async fn parse_lockfile(
 /// possible even after the command has been spawned.
 #[op]
 #[cfg(unix)]
-fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
-    let Process { cmd, args, stdin, exceptions, .. } = process;
+fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+    // Setup process to be run.
+    let mut command = Command::new(&process.cmd);
+    command.args(&process.args);
+    command.stdin(process.stdin);
+    command.stdout(process.stdout);
+    command.stderr(process.stderr);
 
-    let strict = exceptions.strict;
-    let resolved_permissions = {
-        let mut state = op_state.borrow_mut();
-        let permissions = state.borrow_mut::<permissions::Permissions>();
-        permissions::Permissions::from(exceptions).subset_of(permissions)
-    }?;
-
-    let mut stdout_fds: ProcessStdioFds = process.stdout.try_into()?;
-    let mut stderr_fds: ProcessStdioFds = process.stderr.try_into()?;
-
-    match unsafe { libc::fork() } {
-        -1 => Err(io::Error::last_os_error().into()),
-        // Handle child process.
-        0 => {
-            // Connect STDOUT/STDERR with parent if necessary.
-            stdout_fds.replace_fd(libc::STDOUT_FILENO)?;
-            stderr_fds.replace_fd(libc::STDERR_FILENO)?;
-
-            // Apply sandboxing rules.
-            lock_process(resolved_permissions, strict)?;
-
-            // Setup process to be run.
-            let mut command = Command::new(&cmd);
-            command.args(&args);
-            command.stdin(stdin);
-            command.stdout(Stdio::inherit());
-            command.stderr(Stdio::inherit());
-
-            // Wait for process to complete.
-            let status = command.status()?;
-
-            // Terminate child process.
-            if let Some(code) = status.code() {
-                process::exit(code);
-            } else if let Some(signal) = status.signal() {
-                // Attempt to propagate kill signals.
-                unsafe { libc::kill(process::id() as i32, signal) };
-
-                // Fall back to arbitrary error.
-                process::exit(113);
-            } else {
-                process::exit(0);
+    // Apply sandbox to subprocess after fork.
+    unsafe {
+        command.pre_exec(move || {
+            fn into_ioerr<E: Into<Box<dyn std::error::Error + Send + Sync>>>(err: E) -> io::Error {
+                io::Error::new(io::ErrorKind::Other, err)
             }
-        },
-        // Handle parent process.
-        child_pid => {
-            // Drop write side of pipe FDs, so child can write to it.
-            stdout_fds.child.take();
-            stderr_fds.child.take();
 
-            // Wait for the child to complete.
-            let mut exit_code = 0;
-            if unsafe { libc::waitpid(child_pid, (&mut exit_code) as *mut _, 0) } == -1 {
-                return Err(io::Error::last_os_error().into());
+            let home_dir = dirs::home_dir().map_err(into_ioerr)?;
+
+            let mut birdcage = if process.exceptions.strict {
+                Birdcage::new().map_err(into_ioerr)?
+            } else {
+                ext_permissions::default_sandbox().map_err(into_ioerr)?
             };
 
-            // Check process exit status.
-            let mut signal = None;
-            let mut code = None;
-            if libc::WIFEXITED(exit_code) {
-                code = Some(libc::WEXITSTATUS(exit_code));
-            } else if libc::WIFSIGNALED(exit_code) {
-                signal = Some(libc::WTERMSIG(exit_code));
-            } else if libc::WIFSTOPPED(exit_code) {
-                signal = Some(libc::WSTOPSIG(exit_code));
+            for path in process.exceptions.read.sandbox_paths().iter() {
+                let path = dirs::expand_home_path(path, &home_dir);
+                ext_permissions::add_exception(&mut birdcage, Exception::Read(path))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.write.sandbox_paths().iter() {
+                let path = dirs::expand_home_path(path, &home_dir);
+                ext_permissions::add_exception(&mut birdcage, Exception::Write(path))
+                    .map_err(into_ioerr)?;
+            }
+            for path in process.exceptions.run.sandbox_paths().iter() {
+                let path = dirs::expand_home_path(path, &home_dir);
+                let absolute_path = ext_permissions::resolve_bin_path(path);
+                ext_permissions::add_exception(
+                    &mut birdcage,
+                    Exception::ExecuteAndRead(absolute_path),
+                )
+                .map_err(into_ioerr)?;
+            }
+            if process.exceptions.net {
+                birdcage.add_exception(Exception::Networking).map_err(into_ioerr)?;
             }
 
-            // Read STDOUT/STDERR from pipe.
-            let mut stdout = String::new();
-            if let Some(mut stdout_fd) = stdout_fds.parent {
-                stdout_fd.read_to_string(&mut stdout)?;
-            }
-            let mut stderr = String::new();
-            if let Some(mut stderr_fd) = stderr_fds.parent {
-                stderr_fd.read_to_string(&mut stderr)?;
-            }
-
-            Ok(ProcessOutput { stdout, stderr, success: code == Some(0), signal, code })
-        },
-    }
-}
-
-/// Lock down the current process.
-#[cfg(unix)]
-fn lock_process(exceptions: permissions::Permissions, strict: bool) -> Result<()> {
-    let home_dir = dirs::home_dir()?;
-
-    let mut birdcage = if strict { Birdcage::new()? } else { permissions::default_sandbox()? };
-
-    // Apply filesystem exceptions.
-    for path in exceptions.read.sandbox_paths().iter() {
-        let path = dirs::expand_home_path(path, &home_dir);
-        permissions::add_exception(&mut birdcage, Exception::Read(path))?;
-    }
-    for path in exceptions.write.sandbox_paths().iter() {
-        let path = dirs::expand_home_path(path, &home_dir);
-        permissions::add_exception(&mut birdcage, Exception::Write(path))?;
-    }
-    for path in exceptions.run.sandbox_paths().iter() {
-        let path = dirs::expand_home_path(path, &home_dir);
-        let absolute_path = permissions::resolve_bin_path(path);
-        permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
+            birdcage.lock().map_err(into_ioerr)?;
+            Ok(())
+        });
     }
 
-    // Apply network exceptions.
-    if let permissions::Permission::Boolean(true) = exceptions.net {
-        birdcage.add_exception(Exception::Networking)?;
-    }
+    let output = command.output().with_context(|| {
+        let cmd = process.cmd;
+        let args = process.args.iter().map(|arg| format!("`{arg}`")).collect::<Vec<_>>().join(" ");
+        format!("Executing sandboxed process failed: `{cmd}` {args}",)
+    })?;
 
-    // Apply environment variable exceptions.
-    let env_exceptions = match &exceptions.env {
-        Permission::Boolean(true) => vec![Exception::FullEnvironment],
-        Permission::Boolean(false) => Vec::new(),
-        Permission::List(keys) => {
-            keys.iter().map(|key| Exception::Environment(key.clone())).collect()
-        },
-    };
-    for exception in env_exceptions {
-        birdcage.add_exception(exception)?;
-    }
-
-    // Lock down the process.
-    birdcage.lock()?;
-
-    Ok(())
+    Ok(ProcessOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        success: output.status.success(),
+        code: output.status.code(),
+        #[cfg(unix)]
+        signal: output.status.signal(),
+        #[cfg(not(unix))]
+        signal: None,
+    })
 }
 
 /// Return error when trying to sandbox on Windows.
@@ -590,6 +453,12 @@ fn lock_process(exceptions: permissions::Permissions, strict: bool) -> Result<()
 #[cfg(not(unix))]
 fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
     Err(anyhow!("Extension sandboxing is not supported on this platform"))
+}
+
+#[op]
+fn permissions(op_state: Rc<RefCell<OpState>>) -> ext_permissions::Permissions {
+    let state = ExtensionState::from(op_state);
+    (*state.extension().permissions()).clone()
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {
@@ -607,5 +476,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),
+        permissions::decl(),
     ]
 }

@@ -31,7 +31,7 @@ const EXTENSION_API: &str = include_str!("./extension_api.ts");
 /// Execute Phylum extension.
 pub async fn run(
     api: BoxFuture<'static, Result<PhylumApi>>,
-    extension: &extension::Extension,
+    extension: extension::Extension,
     args: Vec<String>,
 ) -> CommandResult {
     let phylum_api = Extension::builder()
@@ -97,9 +97,9 @@ pub async fn run(
         MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
 
     // Export shared state.
-    let state = ExtensionState::new(api);
-    worker.js_runtime.op_state().borrow_mut().put(state);
     let permissions = extension.permissions().into_owned();
+    let state = ExtensionState::new(api, extension);
+    worker.js_runtime.op_state().borrow_mut().put(state);
     worker.js_runtime.op_state().borrow_mut().put(permissions);
 
     // Execute extension code.

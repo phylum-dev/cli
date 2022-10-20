@@ -148,7 +148,7 @@ impl Extension {
 
     /// Execute an extension subcommand.
     pub async fn run(
-        &self,
+        self,
         api: BoxFuture<'static, Result<PhylumApi>>,
         args: Vec<String>,
     ) -> CommandResult {
