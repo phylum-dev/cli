@@ -118,7 +118,7 @@ pub async fn get_package_details() {
 }
 
 #[test]
-fn permission_op() {
+fn permissions_op() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     let permissions =
@@ -128,8 +128,11 @@ fn permission_op() {
          const perms = PhylumApi.permissions()
          console.log(perms);";
 
-    let status =
-        test_cli.extension(permissions_ext).with_permissions(permissions).build().run().success();
-
-    println!("{}", String::from_utf8_lossy(&status.get_output().stdout));
+    test_cli
+        .extension(permissions_ext)
+        .with_permissions(permissions)
+        .build()
+        .run()
+        .success()
+        .stdout(predicate::str::contains(r#"read: [ "/tmp" ]"#));
 }

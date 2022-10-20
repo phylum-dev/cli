@@ -457,10 +457,9 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     let Process { cmd, args, stdin, exceptions, .. } = process;
 
     let strict = exceptions.strict;
-    let resolved_permissions = {
-        let state = ExtensionState::from(op_state);
-        permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())
-    }?;
+    let state = ExtensionState::from(op_state);
+    let resolved_permissions =
+        permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())?;
 
     let mut stdout_fds: ProcessStdioFds = process.stdout.try_into()?;
     let mut stderr_fds: ProcessStdioFds = process.stderr.try_into()?;
@@ -592,7 +591,7 @@ fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
 #[op]
 fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     let state = ExtensionState::from(op_state);
-    (*state.extension().permissions()).clone()
+    permissions::Permissions::clone(&state.extension().permissions())
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {
