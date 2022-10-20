@@ -416,7 +416,7 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     }
 
     // Execute sandboxed command.
-    let output = Command::new(env::args().next().unwrap())
+    let output = Command::new(env::current_exe()?)
         .args(sandbox_args.iter_mut().map(|arg| arg.to_mut()))
         .stdin(stdin)
         .stdout(stdout)
