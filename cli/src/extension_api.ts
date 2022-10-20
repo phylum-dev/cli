@@ -360,7 +360,21 @@ export class PhylumApi {
         return Deno.core.opSync('run_sandboxed', process);
     }
 
+    /// Get the extension's manifest permissions.
+    /// 
+    /// # Returns
+    /// 
+    /// The permissions object:
+    /// ```
+    /// {
+    ///   read: ["~/.npm"],
+    ///   write: ["/tmp"],
+    ///   run: ["ls", "echo", "npm"],
+    ///   env: ["HOME", "PATH"],
+    ///   net: false
+    /// }
+    /// ```
     static permissions(): object {
-        return Deno.core.opSync('permissions');
+        return Deno.core.opSync('op_permissions');
     }
 }

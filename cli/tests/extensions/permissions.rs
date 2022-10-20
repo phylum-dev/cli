@@ -124,12 +124,12 @@ fn permission_op() {
     let permissions =
         Permissions { read: Permission::List(vec!["/tmp".to_string()]), ..Permissions::default() };
 
-    let parse_lockfile = "
+    let permissions_ext = "
          const perms = PhylumApi.permissions()
          console.log(perms);";
 
     let status =
-        test_cli.extension(parse_lockfile).with_permissions(permissions).build().run().success();
+        test_cli.extension(permissions_ext).with_permissions(permissions).build().run().success();
 
     println!("{}", String::from_utf8_lossy(&status.get_output().stdout));
 }

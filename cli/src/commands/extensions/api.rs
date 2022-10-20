@@ -460,9 +460,8 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
 
     let strict = exceptions.strict;
     let resolved_permissions = {
-        let mut state = op_state.borrow_mut();
-        let permissions = state.borrow_mut::<permissions::Permissions>();
-        permissions::Permissions::from(exceptions).subset_of(permissions)
+        let state = ExtensionState::from(op_state);
+        permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())
     }?;
 
     let mut stdout_fds: ProcessStdioFds = process.stdout.try_into()?;

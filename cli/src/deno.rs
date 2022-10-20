@@ -97,10 +97,8 @@ pub async fn run(
         MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
 
     // Export shared state.
-    let permissions = extension.permissions().into_owned();
     let state = ExtensionState::new(api, extension);
     worker.js_runtime.op_state().borrow_mut().put(state);
-    worker.js_runtime.op_state().borrow_mut().put(permissions);
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {
