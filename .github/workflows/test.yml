@@ -84,6 +84,19 @@ jobs:
           args: --all-features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+
+  prettier:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actionsx/setup-node@v2
+        with:
+          node-version: 18
+      - run: npm i -g prettier
+      - name: Extensions Style Check
+        if: github.event_name != 'schedule'
+        run: prettier --check extensions
+
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
     #       https://github.com/phylum-dev/cli/issues/467
