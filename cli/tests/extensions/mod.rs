@@ -5,11 +5,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use predicates::prelude::*;
 use lazy_static::lazy_static;
 use phylum_cli::commands::extensions::extension::Extension;
 #[cfg(unix)]
 use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+use predicates::prelude::*;
 #[cfg(unix)]
 use tempfile::NamedTempFile;
 

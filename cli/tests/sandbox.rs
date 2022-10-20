@@ -86,7 +86,5 @@ fn default_deny_net() {
 fn allow_net() {
     let test_cli = TestCli::builder().build();
 
-    test_cli
-        .run(&["sandbox", "--allow-net", "curl", "http://phylum.io"])
-        .success();
+    test_cli.run(&["sandbox", "--allow-net", "curl", "http://phylum.io"]).success();
 }
