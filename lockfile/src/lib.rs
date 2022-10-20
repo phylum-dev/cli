@@ -160,6 +160,8 @@ pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
 
     #[test]
@@ -225,6 +227,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
             ("go", LockfileFormat::Go),
+            ("cargo", LockfileFormat::Cargo),
         ] {
             let actual_name = format.to_string();
             assert_eq!(
@@ -245,6 +248,44 @@ mod tests {
                 "{:?}.name() should be {:?}",
                 format,
                 expected_name,
+            );
+        }
+    }
+
+    /// Ensure no new lockfiles are accidentally picked up by an unrelated
+    /// parser.
+    #[test]
+    fn parsers_only_parse_their_lockfiles() {
+        for (format, lockfile_count) in [
+            (LockfileFormat::Yarn, 4),
+            (LockfileFormat::Npm, 2),
+            (LockfileFormat::Gem, 1),
+            (LockfileFormat::Pipenv, 2),
+            (LockfileFormat::Poetry, 1),
+            (LockfileFormat::Maven, 2),
+            (LockfileFormat::Gradle, 1),
+            (LockfileFormat::Msbuild, 2),
+            (LockfileFormat::Go, 1),
+            (LockfileFormat::Cargo, 3),
+        ] {
+            let mut parsed_lockfiles = Vec::new();
+            for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {
+                let lockfile_path = lockfile.path();
+                let lockfile_content = fs::read_to_string(&lockfile_path).unwrap();
+
+                let packages = match format.parser().parse(&lockfile_content) {
+                    Ok(packages) => packages,
+                    Err(_) => continue,
+                };
+
+                if packages.len() > 0 {
+                    parsed_lockfiles.push(lockfile_path.display().to_string());
+                }
+            }
+            assert_eq!(
+                parsed_lockfiles.len(),
+                lockfile_count,
+                "{format:?} successfully parsed: {parsed_lockfiles:?}"
             );
         }
     }

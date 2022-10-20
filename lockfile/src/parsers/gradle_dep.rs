@@ -1,32 +1,42 @@
-use nom::combinator::{rest, verify};
+use std::result::Result as StdResult;
 
-use super::*;
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_till};
+use nom::combinator::eof;
+use nom::error::VerboseError;
+use phylum_types::types::package::{PackageDescriptor, PackageType};
+
+use crate::parsers::Result;
 
 pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-    let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
+    let mut pkgs = Vec::new();
+    for line in input.lines().filter(filter_line) {
+        pkgs.push(package(line)?);
+    }
     Ok((input, pkgs))
 }
 
-fn group_id(input: &str) -> Result<&str, &str> {
-    recognize(take_until(":"))(input)
+// Filter out comments and non-package lines.
+fn filter_line(line: &&str) -> bool {
+    !line.starts_with('#') && !line.starts_with("empty=") && !line.trim().is_empty()
 }
 
-fn artifact_id_version(input: &str) -> Result<&str, &str> {
-    let (input, artifact_id) = delimited(tag(":"), take_until(":"), tag(":"))(input)?;
-    let (_, version) = take_till(|c| c == '=')(input)?;
-    Ok((artifact_id, version))
+// Take all non-white characters until encountering whitespace or `until`.
+fn not_space_until<'a>(input: &'a str, until: char) -> Result<&'a str, &'a str> {
+    take_till(|c: char| c == until || c.is_whitespace())(input)
 }
 
-fn filter_line(input: &str) -> Result<&str, &str> {
-    verify(rest, |s: &str| !s.starts_with('#') && !s.starts_with("empty="))(input)
-}
+fn package(input: &str) -> StdResult<PackageDescriptor, nom::Err<VerboseError<&str>>> {
+    let (input, group_id) = not_space_until(input, ':')?;
+    let (input, _) = tag(":")(input)?;
 
-fn package(input: &str) -> Option<PackageDescriptor> {
-    let (_, input) = filter_line(input).ok()?;
-    let (input, group_id) = group_id(input).ok()?;
-    let (artifact_id, version) = artifact_id_version(input).ok()?;
+    let (input, artifact_id) = not_space_until(input, ':')?;
+    let (input, _) = tag(":")(input)?;
 
-    Some(PackageDescriptor {
+    let (input, version) = not_space_until(input, '=')?;
+    let _ = alt((tag("="), eof))(input)?;
+
+    Ok(PackageDescriptor {
         name: format!("{}:{}", group_id, artifact_id),
         version: version.to_string(),
         package_type: PackageType::Maven,
