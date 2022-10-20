@@ -375,13 +375,10 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("allow-env")
                     .help("Add environment variable access sandbox exception")
                     .long("allow-env")
-                    .value_name("ENV_VAR"),
-                // TODO: Can we combine this with allow-env?
-                Arg::new("allow-all-env")
-                    .help("Add full environment variable access sandbox exception")
-                    .long("allow-all-env")
-                    .conflicts_with("allow-env")
-                    .action(ArgAction::SetTrue),
+                    .value_name("ENV_VAR")
+                    .num_args(0..=1)
+                    .default_missing_value("*")
+                    .action(ArgAction::Append),
                 Arg::new("allow-net")
                     .help("Add network access sandbox exception")
                     .long("allow-net")

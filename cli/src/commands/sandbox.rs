@@ -53,11 +53,12 @@ fn lock_process(matches: &ArgMatches) -> Result<()> {
     }
 
     // Apply environment variable exceptions.
-    if matches.get_flag("allow-all-env") {
-        birdcage.add_exception(Exception::FullEnvironment)?;
-    }
     for var in matches.get_many::<String>("allow-env").unwrap_or_default() {
-        birdcage.add_exception(Exception::Environment(var.to_owned()))?;
+        if var == "*" {
+            birdcage.add_exception(Exception::FullEnvironment)?;
+        } else {
+            birdcage.add_exception(Exception::Environment(var.to_owned()))?;
+        }
     }
 
     // Lock down the process.

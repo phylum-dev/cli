@@ -468,12 +468,13 @@ fn add_permission_args<'a>(
     // Add environment variable exception arguments.
     match &permissions.env {
         Permission::List(keys) => {
-            for key in keys {
+            // Filter out "*", since the CLI accepts this as allow-all.
+            for key in keys.iter().filter(|key| key != &"*") {
                 sandbox_args.push("--allow-env".into());
                 sandbox_args.push(key.into());
             }
         },
-        Permission::Boolean(true) => sandbox_args.push("--allow-all-env".into()),
+        Permission::Boolean(true) => sandbox_args.push("--allow-env".into()),
         Permission::Boolean(false) => (),
     }
 
