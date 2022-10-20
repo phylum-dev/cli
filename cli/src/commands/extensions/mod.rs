@@ -277,6 +277,7 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
     print_permissions_list("Write", "path", permissions.write.get());
     print_permissions_list("Run", "command", permissions.run.get());
     print_permissions_list("Access", "domain", permissions.net.get());
+    print_permissions_list("Set", "environment variable", permissions.env.get());
 
     if !Confirm::new().with_prompt("\nDo you accept?").default(false).interact()? {
         Err(anyhow!("permissions not granted, aborting"))
