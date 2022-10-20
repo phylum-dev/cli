@@ -37,9 +37,7 @@ use tokio::fs;
 
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
-#[cfg(unix)]
-use crate::commands::extensions::permissions;
-use crate::commands::extensions::permissions::Permission;
+use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
@@ -592,6 +590,7 @@ fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
 }
 
 #[op]
+#[cfg(unix)]
 fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     let state = ExtensionState::from(op_state);
     (*state.extension().permissions()).clone()
