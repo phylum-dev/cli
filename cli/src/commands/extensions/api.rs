@@ -1,10 +1,10 @@
 //! Extension API functions.
 
 #[cfg(unix)]
-use std::env;
-#[cfg(unix)]
 use std::borrow::Cow;
 use std::cell::RefCell;
+#[cfg(unix)]
+use std::env;
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
