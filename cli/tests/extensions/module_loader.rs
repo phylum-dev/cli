@@ -11,6 +11,9 @@
 //
 // These tests are based on the fixtures under
 // `fixtures/module-import-extension`.
+
+use predicates::prelude::*;
+
 use crate::common::*;
 use crate::extensions::fixtures_path;
 
