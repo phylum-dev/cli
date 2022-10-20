@@ -590,7 +590,6 @@ fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
 }
 
 #[op]
-#[cfg(unix)]
 fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     let state = ExtensionState::from(op_state);
     (*state.extension().permissions()).clone()
