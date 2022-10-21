@@ -77,7 +77,7 @@ fn default_deny_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(&["sandbox", "curl", "http://phylum.io"])
+        .run(&["sandbox", "--allow-env", "--", "curl", "http://phylum.io"])
         .failure()
         .stderr(predicate::str::contains("Could not resolve host: phylum.io"));
 }
@@ -86,5 +86,5 @@ fn default_deny_net() {
 fn allow_net() {
     let test_cli = TestCli::builder().build();
 
-    test_cli.run(&["sandbox", "--allow-net", "curl", "http://phylum.io"]).success();
+    test_cli.run(&["sandbox", "--allow-env", "--allow-net", "curl", "http://phylum.io"]).success();
 }
