@@ -300,6 +300,9 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
         add_exception(&mut birdcage, Exception::ExecuteAndRead(path.into()))?;
     }
 
+    // Allow applications to read from `$PATH`.
+    birdcage.add_exception(Exception::Environment("PATH".into()))?;
+
     Ok(birdcage)
 }
 
