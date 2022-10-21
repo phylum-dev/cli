@@ -9,17 +9,22 @@ fn default_deny_fs() {
     let test_file_path = test_file.path().to_str().unwrap();
     let test_cli = TestCli::builder().build();
 
+    #[cfg(target_os = "linux")]
+    let expected_error = "Permission denied";
+    #[cfg(not(target_os = "linux"))]
+    let expected_error = "Operation not permitted";
+
     // Test write access.
     test_cli
         .run(&["sandbox", "bash", "-c", &format!("echo x > {test_file_path}")])
         .failure()
-        .stderr(predicate::str::contains("Permission denied"));
+        .stderr(predicate::str::contains(expected_error));
 
     // Test read access.
     test_cli
         .run(&["sandbox", "cat", test_file_path])
         .failure()
-        .stderr(predicate::str::contains("Permission denied"));
+        .stderr(predicate::str::contains(expected_error));
 }
 
 #[test]
