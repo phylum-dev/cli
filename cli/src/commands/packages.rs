@@ -21,7 +21,7 @@ fn parse_package(matches: &ArgMatches, request_type: PackageType) -> Result<Pack
     // to the global setting
     let package_type = match matches.get_one::<String>("package-type") {
         Some(pt) => {
-            PackageType::from_str(pt).map_err(|()| anyhow!("invalid package type: {}", pt))?
+            PackageType::from_str(pt).map_err(|_| anyhow!("invalid package type: {}", pt))?
         },
         None => request_type,
     };
