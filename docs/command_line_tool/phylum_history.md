@@ -5,14 +5,16 @@ hidden: false
 ---
 
 Return information about historical scans
+
 ```sh
 phylum history [OPTIONS] [JOB_ID]
 ```
+
 `<JOB_ID>`
 &emsp; The job id to query
 
 ### Options
-`--filter <filter>`
+`-f`, `--filter <filter>`
 &emsp; Provide a filter used to limit the issues displayed
 
 `-j`, `--json`
@@ -25,6 +27,7 @@ phylum history [OPTIONS] [JOB_ID]
 &emsp; Increase verbosity of API response
 
 ### Examples
+
 ```sh
 # List the last 30 analysis runs
 $ phylum history
