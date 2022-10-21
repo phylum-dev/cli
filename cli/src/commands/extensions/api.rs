@@ -433,6 +433,7 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
 }
 
 /// Convert [permissions::Permissions] to arguments for `phylum sandbox`.
+#[cfg(unix)]
 fn add_permission_args<'a>(
     sandbox_args: &mut Vec<Cow<'a, str>>,
     permissions: &'a permissions::Permissions,
