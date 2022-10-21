@@ -591,7 +591,7 @@ fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
 #[op]
 fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     let state = ExtensionState::from(op_state);
-    permissions::Permissions::clone(&state.extension().permissions())
+    state.extension().permissions().into_owned()
 }
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {
