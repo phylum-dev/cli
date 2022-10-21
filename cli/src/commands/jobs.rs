@@ -202,9 +202,11 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             group.map(String::from),
         )
         .await?;
-
     log::debug!("Response => {:?}", job_id);
-    print_user_success!("Job ID: {}", job_id);
+
+    if pretty_print {
+        print_user_success!("Job ID: {}", job_id);
+    }
 
     if synch {
         log::debug!("Requesting status...");
