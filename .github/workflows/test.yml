@@ -95,7 +95,7 @@ jobs:
       - run: npm i -g prettier
       - name: Extensions Style Check
         if: github.event_name != 'schedule'
-        run: prettier --check extensions cli/src/extension_api.ts
+        run: prettier --check .
 
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
