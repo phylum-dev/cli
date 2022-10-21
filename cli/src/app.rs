@@ -90,7 +90,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("JOB_ID")
                     .value_name("JOB_ID")
                     .help("The job id to query"),
-                Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
+                Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -205,7 +205,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('j')
                     .long("json")
                     .help("Produce output in json format (default: false)"),
-                Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
+                Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
             ]),
         )
         .subcommand(
@@ -255,8 +255,12 @@ pub fn add_subcommands(command: Command) -> Command {
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
                     ),
-                    Arg::new("label").short('l').value_name("label"),
-                    Arg::new("filter").long("filter").value_name("filter").help(FILTER_ABOUT),
+                    Arg::new("label")
+                        .short('l')
+                        .long("label")
+                        .value_name("label")
+                        .help("Specify a label to use for analysis"),
+                    Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
                     Arg::new("json")
                         .action(ArgAction::SetTrue)
                         .short('j')
@@ -298,11 +302,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
                     ),
-                    Arg::new("low-priority")
-                        .action(ArgAction::SetTrue)
-                        .short('L')
-                        .long("low-priority"),
-                    Arg::new("label").short('l').long("label"),
+                    Arg::new("label")
+                        .short('l')
+                        .long("label")
+                        .help("Label to use for analysis"),
                     Arg::new("project")
                         .short('p')
                         .long("project")
