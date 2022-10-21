@@ -5,13 +5,14 @@ hidden: false
 ---
 
 Retrieve the details of a specific package
+
 ```sh
 phylum package [OPTIONS] <name> <version>
 ```
 
 ### Options
 
-`--filter`
+`-f`, `--filter`
 &emsp; Provide a filter used to limit the issues displayed
 
 `-j`, `--json`
