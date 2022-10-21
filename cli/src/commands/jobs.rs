@@ -121,6 +121,13 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
+        label = matches.get_one::<String>("label");
+        verbose = log::max_level() > LevelFilter::Warn;
+        pretty_print = !matches.get_flag("json");
+        display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
+        is_user = !matches.get_flag("force");
+        synch = true;
+
         (project, group) = cli_project(api, matches).await?;
 
         // Should never get here if `LOCKFILE` was not specified
@@ -129,15 +136,12 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         let res = get_packages_from_lockfile(Path::new(lockfile))
             .context("Unable to locate any valid package in package lockfile")?;
 
-        packages = res.0;
-        request_type = res.1;
+        if !pretty_print {
+            print_user_success!("Succesfully parsed lockfile as type: {}", res.format.name());
+        }
 
-        label = matches.get_one::<String>("label");
-        verbose = log::max_level() > LevelFilter::Warn;
-        pretty_print = !matches.get_flag("json");
-        display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
-        is_user = !matches.get_flag("force");
-        synch = true;
+        packages = res.packages;
+        request_type = res.package_type;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         (project, group) = cli_project(api, matches).await?;
 
