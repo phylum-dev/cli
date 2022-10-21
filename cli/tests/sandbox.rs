@@ -11,7 +11,7 @@ fn default_deny_fs() {
 
     // Test write access.
     test_cli
-        .run(&["sandbox", "--allow-read", "./", "sh", "-c", &format!("echo x > {test_file_path}")])
+        .run(&["sandbox", "bash", "-c", &format!("echo x > {test_file_path}")])
         .failure()
         .stderr(predicate::str::contains("Permission denied"));
 
@@ -32,11 +32,9 @@ fn allow_fs() {
     test_cli
         .run(&[
             "sandbox",
-            "--allow-read",
-            "./",
             "--allow-write",
             &test_file_path,
-            "sh",
+            "bash",
             "-c",
             &format!("echo x > {test_file_path}"),
         ])
@@ -52,12 +50,11 @@ fn default_deny_env() {
 
     test_cli
         .cmd()
-        .args(&["sandbox", "--allow-read", "./", "sh", "-c", "echo $TEST"])
+        .args(&["sandbox", "env"])
         .env("TEST", "VALUE")
         .assert()
         .success()
-        .stdout("\n")
-        .stderr("");
+        .stdout(predicate::str::contains("TEST=VALUE").not());
 }
 
 #[test]
@@ -66,12 +63,11 @@ fn allow_env() {
 
     test_cli
         .cmd()
-        .args(&["sandbox", "--allow-read", "./", "--allow-env", "TEST", "sh", "-c", "echo $TEST"])
+        .args(&["sandbox", "--allow-env", "TEST", "env"])
         .env("TEST", "VALUE")
         .assert()
         .success()
-        .stdout("VALUE\n")
-        .stderr("");
+        .stdout(predicate::str::contains("TEST=VALUE"));
 }
 
 #[test]
