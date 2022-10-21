@@ -22,7 +22,7 @@ fn filter_line(line: &&str) -> bool {
 }
 
 // Take all non-white characters until encountering whitespace or `until`.
-fn not_space_until<'a>(input: &'a str, until: char) -> Result<&'a str, &'a str> {
+fn not_space_until(input: &str, until: char) -> Result<&str, &str> {
     take_till(|c: char| c == until || c.is_whitespace())(input)
 }
 
