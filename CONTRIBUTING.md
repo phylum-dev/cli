@@ -96,13 +96,15 @@ cargo clippy --all-features
 #### Extensions
 
 First-party extensions are written in TypeScript. Extensions code must be
-formatted with [prettier](https://prettier.io/). Install it via `npm`:
+formatted with [Prettier](https://prettier.io/). 
+
+Prettier should be installed globally with a method of your choice. For example, via `npm`:
 
 ```sh
 npm install -g prettier
 ```
 
-`prettier` should be run from the top-level directory of the repository:
+Prettier should be run from the top-level directory of the repository:
 
 ```sh
 prettier --write .
