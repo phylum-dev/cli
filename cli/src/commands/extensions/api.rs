@@ -37,9 +37,7 @@ use tokio::fs;
 
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
-#[cfg(unix)]
-use crate::commands::extensions::permissions;
-use crate::commands::extensions::permissions::Permission;
+use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 use crate::config::{self, ProjectConfig};
@@ -459,11 +457,9 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     let Process { cmd, args, stdin, exceptions, .. } = process;
 
     let strict = exceptions.strict;
-    let resolved_permissions = {
-        let mut state = op_state.borrow_mut();
-        let permissions = state.borrow_mut::<permissions::Permissions>();
-        permissions::Permissions::from(exceptions).subset_of(permissions)
-    }?;
+    let state = ExtensionState::from(op_state);
+    let resolved_permissions =
+        permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())?;
 
     let mut stdout_fds: ProcessStdioFds = process.stdout.try_into()?;
     let mut stderr_fds: ProcessStdioFds = process.stderr.try_into()?;
@@ -592,6 +588,12 @@ fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
     Err(anyhow!("Extension sandboxing is not supported on this platform"))
 }
 
+#[op]
+fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
+    let state = ExtensionState::from(op_state);
+    state.extension().permissions().into_owned()
+}
+
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
@@ -607,5 +609,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         get_package_details::decl(),
         parse_lockfile::decl(),
         run_sandboxed::decl(),
+        op_permissions::decl(),
     ]
 }
