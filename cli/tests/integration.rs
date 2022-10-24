@@ -5,3 +5,5 @@ mod end_to_end;
 
 mod config;
 mod extensions;
+#[cfg(unix)]
+mod sandbox;

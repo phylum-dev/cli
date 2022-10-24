@@ -7,6 +7,8 @@ use clap::ArgMatches;
 use env_logger::Env;
 use log::LevelFilter;
 use phylum_cli::api::PhylumApi;
+#[cfg(unix)]
+use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
@@ -155,6 +157,8 @@ async fn handle_commands() -> CommandResult {
         "uninstall" => uninstall::handle_uninstall(sub_matches),
 
         "extension" => extensions::handle_extensions(Box::pin(api), sub_matches, app_helper).await,
+        #[cfg(unix)]
+        "sandbox" => sandbox::handle_sandbox(sub_matches).await,
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },

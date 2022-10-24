@@ -1,7 +1,7 @@
 use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+use predicates::prelude::*;
 
-use crate::common::*;
-use crate::extensions::fixtures_path;
+use crate::extensions::{fixtures_path, TestCli};
 
 #[test]
 fn permission_dialog_is_shown_without_yes_flag() {
