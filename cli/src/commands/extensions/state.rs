@@ -9,7 +9,7 @@ use deno_runtime::deno_core::OpState;
 use futures::future::BoxFuture;
 use tokio::sync::OnceCell;
 
-use crate::commands::extensions::PhylumApi;
+use crate::commands::extensions::{Extension, PhylumApi};
 
 struct OnceFuture<T> {
     future: Cell<Option<BoxFuture<'static, T>>>,
@@ -54,6 +54,7 @@ impl<T: Unpin> OnceFuture<T> {
 /// Extension state the APIs have access to.
 pub struct ExtensionStateInner {
     api: OnceFuture<Result<PhylumApi>>,
+    extension: Extension,
 }
 
 impl ExtensionStateInner {
@@ -63,6 +64,11 @@ impl ExtensionStateInner {
     /// [`tokio::select`].
     pub async fn api(&self) -> Result<&PhylumApi> {
         self.api.get().await.as_ref().map_err(|e| anyhow!("{:?}", e))
+    }
+
+    /// Returns a reference to the extension.
+    pub fn extension(&self) -> &Extension {
+        &self.extension
     }
 }
 
@@ -75,9 +81,9 @@ impl ExtensionStateInner {
 pub struct ExtensionState(Rc<ExtensionStateInner>);
 
 impl ExtensionState {
-    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>) -> Self {
+    pub fn new(api: BoxFuture<'static, Result<PhylumApi>>, extension: Extension) -> Self {
         let api = OnceFuture::new(api);
-        Self(Rc::new(ExtensionStateInner { api }))
+        Self(Rc::new(ExtensionStateInner { api, extension }))
     }
 }
 

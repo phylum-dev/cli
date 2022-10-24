@@ -14,7 +14,7 @@ phylum analyze [OPTIONS] <lockfile>
 `-F`, `--force`
 &emsp; Force re-processing of packages (even if they already exist in the system)
 
-`--filter <filter>`
+`-f`, `--filter <filter>`
 &emsp; Provide a filter used to limit the issues displayed
 
 `-g`, `--group <group_name>`
@@ -23,7 +23,7 @@ phylum analyze [OPTIONS] <lockfile>
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`-l <label>`
+`-l`, `--label <label>`
 &emsp; Specify a label for a given analysis submission
 
 `-p`, `--project <project_name>`
@@ -42,7 +42,7 @@ $ phylum analyze package-lock.json
 $ phylum analyze --json --verbose effective-pom.xml
 
 # Analyze a PyPI lock file and apply a label
-$ phylum analyze -l test_branch requirements.txt
+$ phylum analyze --label test_branch requirements.txt
 
 # Analyze a Poetry lock file and return the results to the 'sample' project
 $ phylum analyze -p sample poetry.lock
