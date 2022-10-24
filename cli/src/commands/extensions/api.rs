@@ -420,10 +420,10 @@ async fn parse_lockfile(
     let lockfile_type = match lockfile_type {
         Some(lockfile_type) => lockfile_type,
         None => {
-            let (packages, package_type) = parse::get_packages_from_lockfile(Path::new(&lockfile))?;
+            let parsed = parse::get_packages_from_lockfile(Path::new(&lockfile))?;
             return Ok(PackageLock {
-                package_type,
-                packages: packages.into_iter().map(PackageSpecifier::from).collect(),
+                package_type: parsed.package_type,
+                packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
             });
         },
     };
