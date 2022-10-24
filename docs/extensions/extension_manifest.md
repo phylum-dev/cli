@@ -28,6 +28,7 @@ format. Manifest files consist of the following sections:
 [write]: https://docs.phylum.io/docs/extension_manifest#write
 [env]: https://docs.phylum.io/docs/extension_manifest#env
 [run]: https://docs.phylum.io/docs/extension_manifest#run
+[unsandboxed_run]: https://docs.phylum.io/docs/extension_manifest#unsandboxed-run
 [net]: https://docs.phylum.io/docs/extension_manifest#net
 
 ## Name
@@ -171,6 +172,36 @@ run = ["npm", "yarn"]
 [permissions]
 # ...
 run = true
+```
+
+### Unsandboxed Run
+
+Unsandboxed run permissions list executable paths which can be executed without
+**any** sandboxing restrictions. This means they can execute arbitrary code even
+beyond the requested manifest permissions.
+
+This permission is required for executing paths with `Deno.run`.
+
+The executable paths take `$PATH` into account, so it is recommended to avoid
+using absolute paths to improve portability.
+
+The paths also need to match **exactly** with the process executed by the
+extension. `/usr/bin/curl` cannot be executed when `curl` was requested as
+permission and vice versa.
+
+This is an optional key-value pair where the value is either a boolean, or an
+array containing the allowed executables.
+
+```toml
+[permissions]
+# ...
+unsandboxed_run = ["npm", "yarn"]
+```
+
+```toml
+[permissions]
+# ...
+unsandboxed_run = true
 ```
 
 ### Net

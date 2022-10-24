@@ -98,6 +98,7 @@ impl From<ProcessException> for permissions::Permissions {
             run: process_exception.run,
             env: process_exception.env,
             net: Permission::Boolean(process_exception.net),
+            unsandboxed_run: Permission::default(),
         }
     }
 }
