@@ -1,5 +1,5 @@
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take, take_till, take_until};
+use nom::bytes::complete::{tag, take, take_until};
 use nom::character::complete::{line_ending, multispace0, none_of, space0};
 use nom::combinator::{eof, opt, recognize};
 use nom::error::{context, ParseError, VerboseError};
