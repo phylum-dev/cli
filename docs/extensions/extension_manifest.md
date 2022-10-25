@@ -148,6 +148,8 @@ env = true
 
 Run permissions list executable paths which can be executed by the extension.
 
+This permission is required for executing paths with `PhylumApi.runSandboxed`.
+
 The executable paths take `$PATH` into account, so it is recommended to avoid
 using absolute paths to improve portability.
 
@@ -182,15 +184,7 @@ beyond the requested manifest permissions.
 
 This permission is required for executing paths with `Deno.run`.
 
-The executable paths take `$PATH` into account, so it is recommended to avoid
-using absolute paths to improve portability.
-
-The paths also need to match **exactly** with the process executed by the
-extension. `/usr/bin/curl` cannot be executed when `curl` was requested as
-permission and vice versa.
-
-This is an optional key-value pair where the value is either a boolean, or an
-array containing the allowed executables.
+See [run](#run) for more details.
 
 ```toml
 [permissions]
