@@ -347,6 +347,7 @@ mod tests {
             env: Permission::List(vec![]),
             run: Permission::List(vec![]),
             net: Permission::List(vec![]),
+            unsandboxed_run: Permission::List(vec![]),
         };
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
