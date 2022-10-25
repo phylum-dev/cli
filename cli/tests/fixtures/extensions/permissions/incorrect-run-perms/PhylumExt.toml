@@ -1,0 +1,3 @@
+name = "incorrect-run-perms"
+description = "An extension with correctly specified permissions"
+entry_point = "main.ts"
