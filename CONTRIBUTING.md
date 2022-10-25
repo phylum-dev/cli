@@ -73,6 +73,8 @@ documentation available in the `docs/` directory.
 
 ### Style
 
+#### Rust
+
 General code format is maintained using `rustfmt`:
 
 ```sh
@@ -90,6 +92,25 @@ This should also pass for all pre-release features:
 ```sh
 cargo clippy --all-features
 ```
+
+#### Extensions
+
+First-party extensions are written in TypeScript. Extensions code must be
+formatted with [Prettier](https://prettier.io/). 
+
+Prettier should be installed globally with a method of your choice. For example, via `npm`:
+
+```sh
+npm install -g prettier
+```
+
+Prettier should be run from the top-level directory of the repository:
+
+```sh
+prettier --write .
+```
+
+#### Shell scripts
 
 Additionally, there are a couple of script files that are part of the Phylum CLI
 project. These are linted by using [shellcheck]. The following command performs

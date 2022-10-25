@@ -1,5 +1,9 @@
-import { PhylumApi } from "phylum"
-import { red, green, yellow } from "https://deno.land/std@0.150.0/fmt/colors.ts";
+import { PhylumApi } from "phylum";
+import {
+  red,
+  green,
+  yellow,
+} from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
 class FileBackup {
   readonly fileName: string;
@@ -13,7 +17,7 @@ class FileBackup {
   async backup() {
     try {
       this.fileContent = await Deno.readTextFile(this.fileName);
-    } catch (e) { }
+    } catch (e) {}
   }
 
   async restoreOrDelete() {
@@ -23,28 +27,42 @@ class FileBackup {
       } else {
         await Deno.remove(this.fileName);
       }
-    } catch (e) { }
+    } catch (e) {}
   }
 }
 
 // Ensure we're in a poetry root directory.
 try {
-  await Deno.stat('pyproject.toml');
+  await Deno.stat("pyproject.toml");
 } catch (e) {
-  console.error(`[${red("phylum")}] \`pyproject.toml\` was not found in the current directory.`);
-  console.error(`[${red("phylum")}] Please move to the Poetry project's top level directory and try again.`);
+  console.error(
+    `[${red(
+      "phylum"
+    )}] \`pyproject.toml\` was not found in the current directory.`
+  );
+  console.error(
+    `[${red(
+      "phylum"
+    )}] Please move to the Poetry project's top level directory and try again.`
+  );
   Deno.exit(125);
 }
 
 // Store initial package manager file state.
-const packageLockBackup = new FileBackup('poetry.lock');
+const packageLockBackup = new FileBackup("poetry.lock");
 await packageLockBackup.backup();
-const manifestBackup = new FileBackup('pyproject.toml');
+const manifestBackup = new FileBackup("pyproject.toml");
 await manifestBackup.backup();
 
 // If the subcommand modifies the lockfile, process it through Phylum.
-if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])) {
-  const analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1));
+if (
+  Deno.args.length >= 1 &&
+  ["add", "update", "install"].includes(Deno.args[0])
+) {
+  const analysisOutcome = await poetryCheckDryRun(
+    Deno.args[0],
+    Deno.args.slice(1)
+  );
 
   // If the analysis failed, exit with an error.
   if (analysisOutcome !== 0) {
@@ -52,15 +70,15 @@ if (Deno.args.length >= 1 && ['add', 'update', 'install'].includes(Deno.args[0])
   }
 } else {
   let status = PhylumApi.runSandboxed({
-    cmd: 'poetry',
+    cmd: "poetry",
     args: Deno.args,
     exceptions: {
       read: true,
-      write: ['~/.cache/pypoetry', './'],
+      write: ["~/.cache/pypoetry", "./"],
       run: false,
       net: true,
-    }
-  })
+    },
+  });
   Deno.exit(status.code);
 }
 
@@ -69,15 +87,15 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   let status = PhylumApi.runSandboxed({
-    cmd: 'poetry',
-    args: [subcommand, '-n', '--lock', ...args.map(s => s.toString())],
+    cmd: "poetry",
+    args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
     exceptions: {
       read: true,
-      write: ['~/.cache/pypoetry', './'],
+      write: ["~/.cache/pypoetry", "./"],
       run: false,
       net: true,
-    }
-  })
+    },
+  });
 
   // Ensure dry-run update was successful.
   if (!status.success) {
@@ -85,7 +103,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
     abort(status.code);
   }
 
-  const lockfileData = await PhylumApi.parseLockfile('./poetry.lock', 'poetry');
+  const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
 
   // Ensure `checkDryRun` never modifies package manager files,
   // regardless of success.
@@ -95,21 +113,30 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   console.log(`[${green("phylum")}] Analyzing packages…`);
 
   if (lockfileData.packages.length === 0) {
-    console.log(`[${green("phylum")}] No packages found in lockfile.\n`)
+    console.log(`[${green("phylum")}] No packages found in lockfile.\n`);
     return;
   }
 
-  const jobId = await PhylumApi.analyze(lockfileData['package_type'], lockfileData['packages']);
+  const jobId = await PhylumApi.analyze(
+    lockfileData["package_type"],
+    lockfileData["packages"]
+  );
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
   if (jobStatus.pass && jobStatus.status === "complete") {
     console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
     return 0;
   } else if (jobStatus.pass) {
-    console.warn(`[${yellow("phylum")}] Unknown packages were submitted for analysis, please check again later.\n`);
+    console.warn(
+      `[${yellow(
+        "phylum"
+      )}] Unknown packages were submitted for analysis, please check again later.\n`
+    );
     return 126;
   } else {
-    console.error(`[${red("phylum")}] The operation caused a threshold failure.\n`);
+    console.error(
+      `[${red("phylum")}] The operation caused a threshold failure.\n`
+    );
     return 127;
   }
 }
@@ -119,12 +146,12 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
 async function abort(code) {
-    await restoreBackup();
-    Deno.exit(code);
+  await restoreBackup();
+  Deno.exit(code);
 }
 
 // Restore package manager files.
 async function restoreBackup() {
-    await packageLockBackup.restoreOrDelete();
-    await manifestBackup.restoreOrDelete();
+  await packageLockBackup.restoreOrDelete();
+  await manifestBackup.restoreOrDelete();
 }
