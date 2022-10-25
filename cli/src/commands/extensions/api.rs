@@ -401,6 +401,9 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     let resolved_permissions =
         permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())?;
 
+    // Ensure access to the executable was explicitly granted.
+    resolved_permissions.run.validate(&cmd, "executable")?;
+
     // Add sandbox subcommand argument.
     let mut sandbox_args = Vec::with_capacity(args.len());
     sandbox_args.push("sandbox".into());

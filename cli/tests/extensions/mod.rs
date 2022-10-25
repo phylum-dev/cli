@@ -260,9 +260,15 @@ fn net_sandboxing_fail() {
             const output = PhylumApi.runSandboxed({
                 cmd: 'curl',
                 args: ['http://phylum.io'],
+                exceptions: { run: ['curl'], env: ['HOME'], net: false },
             });
             Deno.exit(output.code);
         ")
+        .with_permissions(Permissions {
+            run: Permission::List(vec!["curl".into()]),
+            env: Permission::List(vec!["HOME".into()]),
+            ..Permissions::default()
+        })
         .build()
         .run()
         .failure();
@@ -280,16 +286,15 @@ fn net_sandboxing_success() {
             const output = PhylumApi.runSandboxed({
                 cmd: 'curl',
                 args: ['http://phylum.io'],
-                exceptions: { net: true, env: true },
+                exceptions: { run: ['curl'], env: ['HOME'], net: true },
             });
             Deno.exit(output.code);
         ")
         .with_permissions(Permissions {
-            read: Permission::Boolean(true),
-            write: Permission::Boolean(true),
-            env: Permission::Boolean(true),
-            run: Permission::Boolean(true),
+            run: Permission::List(vec!["curl".into()]),
+            env: Permission::List(vec!["HOME".into()]),
             net: Permission::Boolean(true),
+            ..Permissions::default()
         })
         .build()
         .run()
@@ -311,11 +316,20 @@ fn fs_sandboxing_fail() {
         const output = PhylumApi.runSandboxed({{
             cmd: 'cat',
             args: ['{}'],
+            exceptions: {{ run: ['cat'] }},
         }});
         Deno.exit(output.code);
     ", file.path().to_string_lossy());
 
-    test_cli.extension(&js).build().run().failure();
+    test_cli
+        .extension(&js)
+        .with_permissions(Permissions {
+            run: Permission::List(vec!["cat".into()]),
+            ..Permissions::default()
+        })
+        .build()
+        .run()
+        .failure();
 }
 
 // FS read succeeds with sandbox exception.
@@ -335,7 +349,7 @@ fn fs_sandboxing_success() {
         const output = PhylumApi.runSandboxed({{
             cmd: 'cat',
             args: ['{}'],
-            exceptions: {{ read: ['{0:}'] }},
+            exceptions: {{ run: ['cat'], read: ['{0:}'] }},
         }});
         Deno.exit(output.code);
     ", file_path);
@@ -343,11 +357,9 @@ fn fs_sandboxing_success() {
     test_cli
         .extension(&js)
         .with_permissions(Permissions {
+            run: Permission::List(vec!["cat".into()]),
             read: Permission::List(vec![file_path]),
-            write: Permission::Boolean(true),
-            env: Permission::Boolean(true),
-            run: Permission::Boolean(true),
-            net: Permission::Boolean(true),
+            ..Permissions::default()
         })
         .build()
         .run()

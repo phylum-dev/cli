@@ -5,6 +5,7 @@ let cmd = PhylumApi.runSandboxed({
   args: ['hello'],
   stdout: 'piped',
   stderr: 'piped',
+  exceptions: { run: ['echo'] },
 });
 
 await Deno.stdout.write(new TextEncoder().encode(cmd.stdout));
