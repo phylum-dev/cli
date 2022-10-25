@@ -137,7 +137,7 @@ fn correct_run_permission() {
         .build()
         .run()
         .success()
-        .stdout("hello\n");
+        .stdout(predicate::str::contains("hello"));
 }
 
 #[tokio::test]
