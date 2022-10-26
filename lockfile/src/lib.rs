@@ -261,7 +261,7 @@ mod tests {
             (LockfileFormat::Npm, 2),
             (LockfileFormat::Gem, 1),
             (LockfileFormat::Pipenv, 2),
-            (LockfileFormat::Poetry, 1),
+            (LockfileFormat::Poetry, 2),
             (LockfileFormat::Maven, 2),
             (LockfileFormat::Gradle, 1),
             (LockfileFormat::Msbuild, 2),
