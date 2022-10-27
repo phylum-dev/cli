@@ -88,28 +88,26 @@ pub async fn handle_auth(
     app_helper: &mut Command,
     timeout: Option<u64>,
 ) -> CommandResult {
-    if matches.subcommand_matches("register").is_some() {
-        match handle_auth_register(config, config_path).await {
+    match matches.subcommand() {
+        Some(("register", _)) => match handle_auth_register(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok.into())
             },
             Err(error) => Err(error).context("User registration failed"),
-        }
-    } else if matches.subcommand_matches("login").is_some() {
-        match handle_auth_login(config, config_path).await {
+        },
+        Some(("login", _)) => match handle_auth_login(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok.into())
             },
             Err(error) => Err(error).context("User login failed"),
-        }
-    } else if matches.subcommand_matches("status").is_some() {
-        handle_auth_status(config, timeout).await
-    } else if let Some(matches) = matches.subcommand_matches("token") {
-        handle_auth_token(&config, matches).await
-    } else {
-        print_sc_help(app_helper, &["auth"])?;
-        Ok(ExitCode::Ok.into())
+        },
+        Some(("status", _)) => handle_auth_status(config, timeout).await,
+        Some(("token", matches)) => handle_auth_token(&config, matches).await,
+        _ => {
+            print_sc_help(app_helper, &["auth"])?;
+            Ok(ExitCode::Ok.into())
+        },
     }
 }
