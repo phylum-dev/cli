@@ -278,7 +278,7 @@ mod tests {
                     Err(_) => continue,
                 };
 
-                if packages.len() > 0 {
+                if !packages.is_empty() {
                     parsed_lockfiles.push(lockfile_path.display().to_string());
                 }
             }
