@@ -38,8 +38,8 @@ pub async fn needs_update(prerelease: bool) -> bool {
 }
 
 /// Perform a self-update to the latest version
-pub async fn do_update(prerelease: bool) -> anyhow::Result<String> {
-    let updater = ApplicationUpdater::default();
+pub async fn do_update(prerelease: bool, ignore_certs: bool) -> anyhow::Result<String> {
+    let updater = ApplicationUpdater::default().with_ignore_certs(ignore_certs);
     let ver =
         updater.get_latest_version(prerelease).await.context("Failed to get the latest version")?;
     updater.do_update(ver).await.map(|ver| format!("Successfully updated to {}!", ver.name))
@@ -48,37 +48,51 @@ pub async fn do_update(prerelease: bool) -> anyhow::Result<String> {
 #[derive(Debug)]
 struct ApplicationUpdater {
     github_uri: String,
+    ignore_certs: bool,
 }
 
 impl Default for ApplicationUpdater {
     fn default() -> Self {
-        ApplicationUpdater { github_uri: GITHUB_URI.to_owned() }
+        ApplicationUpdater { github_uri: GITHUB_URI.to_owned(), ignore_certs: false }
     }
 }
 
-/// Generic function for fetching data via HTTP GET.
-async fn http_get(url: &str) -> anyhow::Result<reqwest::Response> {
-    let client = Client::builder().user_agent(USER_AGENT.as_str()).build()?;
-    let response = client.get(url).send().await?;
-    Ok(response)
-}
-
-/// Generic function for fetching JSON structs via HTTP GET.
-async fn http_get_json<T: DeserializeOwned>(url: &str) -> anyhow::Result<T> {
-    let response = http_get(url).await?;
-
-    if let Err(error) = response.error_for_status_ref() {
-        Err(anyhow!(response.text().await?)).context(error)
-    } else {
-        Ok(response.json().await?)
+impl ApplicationUpdater {
+    fn with_ignore_certs(mut self, ignore_certs: bool) -> Self {
+        self.ignore_certs = ignore_certs;
+        self
     }
-}
 
-/// Download the specified Github asset. Returns a bytes object containing the
-/// contents of the asset.
-async fn download_github_asset(latest: &GithubReleaseAsset) -> anyhow::Result<bytes::Bytes> {
-    let r = http_get(&latest.browser_download_url).await?;
-    Ok(r.bytes().await?)
+    /// Generic function for fetching data via HTTP GET.
+    async fn http_get(&self, url: &str) -> anyhow::Result<reqwest::Response> {
+        let client = Client::builder()
+            .user_agent(USER_AGENT.as_str())
+            .danger_accept_invalid_certs(self.ignore_certs)
+            .build()?;
+        let response = client.get(url).send().await?;
+        Ok(response)
+    }
+
+    /// Generic function for fetching JSON structs via HTTP GET.
+    async fn http_get_json<T: DeserializeOwned>(&self, url: &str) -> anyhow::Result<T> {
+        let response = self.http_get(url).await?;
+
+        if let Err(error) = response.error_for_status_ref() {
+            Err(anyhow!(response.text().await?)).context(error)
+        } else {
+            Ok(response.json().await?)
+        }
+    }
+
+    /// Download the specified Github asset. Returns a bytes object containing
+    /// the contents of the asset.
+    async fn download_github_asset(
+        &self,
+        latest: &GithubReleaseAsset,
+    ) -> anyhow::Result<bytes::Bytes> {
+        let r = self.http_get(&latest.browser_download_url).await?;
+        Ok(r.bytes().await?)
+    }
 }
 
 const SUPPORTED_PLATFORMS: &[&str] = &[
@@ -119,19 +133,19 @@ impl ApplicationUpdater {
     /// Build a instance for use in tests
     #[cfg(test)]
     fn build_test_instance(mock_server: MockServer) -> Self {
-        ApplicationUpdater { github_uri: mock_server.uri() }
+        ApplicationUpdater { github_uri: mock_server.uri(), ignore_certs: false }
     }
 
     /// Check for an update by querying the Github releases page.
     async fn get_latest_version(&self, prerelease: bool) -> anyhow::Result<GithubRelease> {
         let ver = if prerelease {
             let url = format!("{}/repos/phylum-dev/cli/releases", self.github_uri);
-            let releases = http_get_json::<Vec<GithubRelease>>(&url).await?;
+            let releases = self.http_get_json::<Vec<GithubRelease>>(&url).await?;
             // Use the first one in the list, which should be the most recent
             releases.first().cloned().ok_or_else(|| anyhow::anyhow!("no releases found"))?
         } else {
             let url = format!("{}/repos/phylum-dev/cli/releases/latest", self.github_uri);
-            http_get_json::<GithubRelease>(&url).await?
+            self.http_get_json::<GithubRelease>(&url).await?
         };
 
         log::debug!("Found latest version: {:?}", ver);
@@ -183,8 +197,8 @@ impl ApplicationUpdater {
             self.find_github_asset(&latest, &format!("{}.zip.signature", archive_name))?;
 
         debug!("Downloading the update files");
-        let zip = download_github_asset(zip_asset).await?;
-        let sig = download_github_asset(sig_asset).await?;
+        let zip = self.download_github_asset(zip_asset).await?;
+        let sig = self.download_github_asset(sig_asset).await?;
 
         spinner.set_message("Verifying binary signatures...").await;
         debug!("Verifying the package signature");
