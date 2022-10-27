@@ -5,5 +5,5 @@ entry_point = "main.ts"
 [permissions]
 write = ["~/.npm", "./"]
 read = true
-run = ["npm"]
+run = true
 net = true

@@ -16,13 +16,13 @@ fn default_deny_fs() {
 
     // Test write access.
     test_cli
-        .run(&["sandbox", "bash", "-c", &format!("echo x > {test_file_path}")])
+        .run(&["sandbox", "--allow-run", "/", "bash", "-c", &format!("echo x > {test_file_path}")])
         .failure()
         .stderr(predicate::str::contains(expected_error));
 
     // Test read access.
     test_cli
-        .run(&["sandbox", "cat", test_file_path])
+        .run(&["sandbox", "--allow-run", "cat", "cat", test_file_path])
         .failure()
         .stderr(predicate::str::contains(expected_error));
 }
@@ -37,6 +37,8 @@ fn allow_fs() {
     test_cli
         .run(&[
             "sandbox",
+            "--allow-run",
+            "/",
             "--allow-write",
             test_file_path,
             "bash",
@@ -46,7 +48,17 @@ fn allow_fs() {
         .success();
 
     // Test read access.
-    test_cli.run(&["sandbox", "--allow-read", test_file_path, "cat", test_file_path]).success();
+    test_cli
+        .run(&[
+            "sandbox",
+            "--allow-run",
+            "cat",
+            "--allow-read",
+            test_file_path,
+            "cat",
+            test_file_path,
+        ])
+        .success();
 }
 
 #[test]
@@ -68,7 +80,7 @@ fn allow_env() {
 
     test_cli
         .cmd()
-        .args(&["sandbox", "--allow-env", "TEST", "env"])
+        .args(&["sandbox", "--allow-run", "/", "--allow-env", "TEST", "env"])
         .env("TEST", "VALUE")
         .assert()
         .success()
@@ -80,7 +92,7 @@ fn default_deny_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(&["sandbox", "--allow-env", "--", "curl", "http://phylum.io"])
+        .run(&["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://phylum.io"])
         .failure()
         .stderr(predicate::str::contains("Could not resolve host: phylum.io"));
 }
@@ -89,5 +101,15 @@ fn default_deny_net() {
 fn allow_net() {
     let test_cli = TestCli::builder().build();
 
-    test_cli.run(&["sandbox", "--allow-env", "--allow-net", "curl", "http://phylum.io"]).success();
+    test_cli
+        .run(&[
+            "sandbox",
+            "--allow-run",
+            "/",
+            "--allow-env",
+            "--allow-net",
+            "curl",
+            "http://phylum.io",
+        ])
+        .success();
 }

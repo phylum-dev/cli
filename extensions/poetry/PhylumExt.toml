@@ -3,7 +3,7 @@ description = "Poetry package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-run = ["poetry"]
+run = ["poetry", "python"]
 read = true
 write = ['~/.cache/pypoetry', './']
 net = true

@@ -71,8 +71,8 @@ if (
     args: [...Deno.args, "--mode=skip-build"],
     exceptions: {
       read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn"],
-      run: false,
+      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn", "/tmp"],
+      run: ["yarn", "node"],
       net: true,
     },
   });
@@ -93,8 +93,8 @@ if (
     args: ["install", "--immutable", "--immutable-cache"],
     exceptions: {
       write: ["/tmp", "./.yarn"],
-      run: ["yarn", "/tmp"],
       read: true,
+      run: true,
       net: false,
     },
   });
@@ -128,8 +128,8 @@ if (
     args: [...Deno.args],
     exceptions: {
       read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./"],
-      run: false,
+      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
+      run: ["yarn", "node"],
       net: true,
     },
   });
@@ -145,8 +145,8 @@ async function checkDryRun(subcommand: string, args: string[]) {
     args: [...Deno.args, "--mode=update-lockfile"],
     exceptions: {
       read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./"],
-      run: false,
+      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
+      run: ["yarn", "node"],
       net: true,
     },
   });

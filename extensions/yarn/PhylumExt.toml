@@ -5,5 +5,5 @@ entry_point = "main.ts"
 [permissions]
 write = ["/tmp", "~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn"]
 read = true
-run = ["yarn", "/tmp"]
+run = true
 net = true

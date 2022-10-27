@@ -91,8 +91,8 @@ if (
     args: ["install"],
     exceptions: {
       write: ["~/.npm/_logs", "./package-lock.json", "./node_modules"],
-      run: ["npm"],
       read: true,
+      run: true,
       net: false,
     },
   });
