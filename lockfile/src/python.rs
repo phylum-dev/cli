@@ -104,7 +104,9 @@ impl Parse for Poetry {
         let mut lock: PoetryLock = toml::from_str(data)?;
 
         // Warn if the version of this lockfile might not be supported.
-        if !lock.metadata.lock_version.starts_with("1.") {
+        if !lock.metadata.lock_version.starts_with("1.")
+            && !lock.metadata.lock_version.starts_with("2.")
+        {
             log::debug!(
                 "Expected poetry lockfile version ^1.0.0, found {}.",
                 lock.metadata.lock_version
