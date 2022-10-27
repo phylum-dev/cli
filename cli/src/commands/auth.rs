@@ -2,6 +2,8 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::Command;
+use phylum_types::types::auth::RefreshToken;
+use tokio::io::{self, AsyncReadExt};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
@@ -80,6 +82,25 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     }
 }
 
+/// Set the current authentication token.
+pub async fn handle_auth_set_token(
+    mut config: Config,
+    matches: &clap::ArgMatches,
+    config_path: &Path,
+) -> CommandResult {
+    let offline_access = match matches.get_one::<String>("token") {
+        Some(t) => RefreshToken::new(t),
+        None => {
+            let mut token = String::new();
+            io::stdin().read_to_string(&mut token).await?;
+            RefreshToken::new(token.trim())
+        },
+    };
+    config.auth_info.set_offline_access(offline_access);
+    save_config(config_path, &config)?;
+    Ok(ExitCode::Ok.into())
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -105,6 +126,7 @@ pub async fn handle_auth(
         },
         Some(("status", _)) => handle_auth_status(config, timeout).await,
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
+        Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
         _ => {
             print_sc_help(app_helper, &["auth"])?;
             Ok(ExitCode::Ok.into())

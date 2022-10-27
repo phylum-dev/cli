@@ -216,6 +216,13 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("status").about("Return the current authentication status"),
                 )
+                .subcommand(Command::new("set-token").about("Set the current authentication token").arg(
+                    Arg::new("token")
+                        .action(ArgAction::Set)
+                        .required(false)
+                        .help("Authentication token to store (read from stdin if omitted)")
+                    ),
+                )
                 .subcommand(
                     Command::new("token").about("Return the current authentication token").arg(
                         Arg::new("bearer")
