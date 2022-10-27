@@ -6,6 +6,6 @@ pub async fn needs_update(_prerelease: bool) -> bool {
 }
 
 /// Perform a self-update to the latest version
-pub async fn do_update(_prerelease: bool) -> anyhow::Result<String> {
+pub async fn do_update(_prerelease: bool, _ignore_certs: bool) -> anyhow::Result<String> {
     anyhow::bail!("Self-update not supported on this platform")
 }

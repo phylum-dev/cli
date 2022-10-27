@@ -140,7 +140,7 @@ async fn handle_commands() -> CommandResult {
             auth::handle_auth(config, &config_path, sub_matches, app_helper, timeout).await
         },
         "version" => handle_version(&app_name, &ver),
-        "update" => handle_update(sub_matches).await,
+        "update" => handle_update(sub_matches, config.ignore_certs()).await,
         "parse" => parse::handle_parse(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
         "project" => project::handle_project(&mut Spinner::wrap(api).await?, sub_matches).await,
@@ -170,8 +170,8 @@ async fn handle_ping(api: PhylumApi) -> CommandResult {
     Ok(ExitCode::Ok.into())
 }
 
-async fn handle_update(matches: &ArgMatches) -> CommandResult {
-    let res = update::do_update(matches.get_flag("prerelease")).await;
+async fn handle_update(matches: &ArgMatches, ignore_certs: bool) -> CommandResult {
+    let res = update::do_update(matches.get_flag("prerelease"), ignore_certs).await;
     let message = res?;
     print_user_success!("{}", message);
     Ok(ExitCode::Ok.into())
