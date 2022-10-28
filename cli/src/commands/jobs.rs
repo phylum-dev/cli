@@ -136,7 +136,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         let res = get_packages_from_lockfile(Path::new(lockfile))
             .context("Unable to locate any valid package in package lockfile")?;
 
-        if !pretty_print {
+        if pretty_print {
             print_user_success!("Succesfully parsed lockfile as type: {}", res.format.name());
         }
 
