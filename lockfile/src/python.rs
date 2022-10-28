@@ -108,7 +108,7 @@ impl Parse for Poetry {
             && !lock.metadata.lock_version.starts_with("2.")
         {
             log::debug!(
-                "Expected poetry lockfile version ^1.0.0, found {}.",
+                "Expected poetry lockfile version ^1.0.0 or ^2.0.0, found {}.",
                 lock.metadata.lock_version
             );
         }
