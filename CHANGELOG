@@ -1,3 +1,4 @@
+* 3.12.1 - Fix to avoid stdout when run with --json
 * 3.12.0 - Permissions extension API
 * 3.11.0 - Extensions API improvements: sandboxing API, environment variables permissions, create and delete projects
 * 3.10.0 - Support legacy poetry dependency source type, remove XDG migration code, send better UA header, and bugfixes
