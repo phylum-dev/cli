@@ -104,9 +104,11 @@ impl Parse for Poetry {
         let mut lock: PoetryLock = toml::from_str(data)?;
 
         // Warn if the version of this lockfile might not be supported.
-        if !lock.metadata.lock_version.starts_with("1.") {
+        if !lock.metadata.lock_version.starts_with("1.")
+            && !lock.metadata.lock_version.starts_with("2.")
+        {
             log::debug!(
-                "Expected poetry lockfile version ^1.0.0, found {}.",
+                "Expected poetry lockfile version ^1.0.0 or ^2.0.0, found {}.",
                 lock.metadata.lock_version
             );
         }
@@ -269,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_poetry_lock() {
+    fn parse_poetry_lock_v1() {
         let pkgs = Poetry.parse(include_str!("../../tests/fixtures/poetry.lock")).unwrap();
         assert_eq!(pkgs.len(), 45);
 
@@ -298,6 +300,34 @@ mod tests {
 
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
+        }
+    }
+
+    #[test]
+    fn parse_poetry_lock_v2() {
+        let pkgs = Poetry.parse(include_str!("../../tests/fixtures/poetry_v2.lock")).unwrap();
+        assert_eq!(pkgs.len(), 9);
+
+        let expected_pkgs = [
+            PackageDescriptor {
+                name: "certifi".into(),
+                version: "2020.12.5".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "pywin32".into(),
+                version: "227".into(),
+                package_type: PackageType::PyPi,
+            },
+            PackageDescriptor {
+                name: "docker".into(),
+                version: "4.3.1".into(),
+                package_type: PackageType::PyPi,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
         }
     }
 
