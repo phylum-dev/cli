@@ -139,7 +139,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   let cmd = await Deno.run({
-    cmd: ["npm", subcommand, "--package-lock-only", ...args],
+    cmd: ["npm", subcommand, "--package-lock-only", "--ignore-scripts", ...args],
     stdout: "inherit",
     stderr: "inherit",
     stdin: "inherit",
