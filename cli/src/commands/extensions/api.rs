@@ -27,6 +27,7 @@ use phylum_types::types::package::{
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use tempfile::TempDir;
 use tokio::fs;
 
 use crate::api::{PhylumApiError, ResponseError};
@@ -401,9 +402,17 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     let resolved_permissions =
         permissions::Permissions::from(exceptions).subset_of(&state.extension().permissions())?;
 
+    let ipc_path = TempDir::new()?;
+    let ipc_path_error = ipc_path.path().join("error");
+
     // Add sandbox subcommand argument.
     let mut sandbox_args = Vec::with_capacity(args.len());
     sandbox_args.push("sandbox".into());
+
+    // Specify an IPC path where the sandboxed process can store its errors, in
+    // order to have them separated from the actual spawned process' errors.
+    sandbox_args.push("--ipc-path".into());
+    sandbox_args.push(ipc_path.path().to_str().unwrap().into());
 
     // Create CLI arguments for `phylum sandbox` permission exceptions.
     add_permission_args(&mut sandbox_args, &resolved_permissions, strict)?;
@@ -422,6 +431,11 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
         .stdout(stdout)
         .stderr(stderr)
         .output()?;
+
+    if !output.status.success() && ipc_path_error.exists() {
+        let error_msg = std::fs::read_to_string(ipc_path_error)?;
+        return Err(anyhow!(error_msg));
+    }
 
     Ok(ProcessOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),

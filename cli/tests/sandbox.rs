@@ -1,5 +1,5 @@
 use predicates::prelude::*;
-use tempfile::NamedTempFile;
+use tempfile::{NamedTempFile, TempDir};
 
 use crate::common::TestCli;
 
@@ -90,4 +90,19 @@ fn allow_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli.run(&["sandbox", "--allow-env", "--allow-net", "curl", "http://phylum.io"]).success();
+}
+
+#[test]
+fn error_exit() {
+    let test_cli = TestCli::builder().build();
+    let ipc_path = TempDir::new().unwrap();
+    let ipc_path_error = ipc_path.path().join("error");
+
+    test_cli
+        .run(&["sandbox", "--ipc-path", ipc_path.path().to_str().unwrap(), "blargle"])
+        .failure();
+
+    // Test that the error IPC file exists, and that it contains an expected value.
+    assert!(ipc_path_error.exists());
+    assert!(std::fs::read_to_string(ipc_path_error).unwrap().contains("Sandbox"));
 }

@@ -354,6 +354,12 @@ pub fn add_subcommands(command: Command) -> Command {
     {
         app = app.subcommand(
             Command::new("sandbox").hide(true).about("Run an application in a sandbox").args(&[
+                Arg::new("ipc-path")
+                    .help("Set directory to store IPC messages in")
+                    .long("ipc-path")
+                    .value_name("PATH")
+                    .value_hint(ValueHint::FilePath)
+                    .action(ArgAction::Set),
                 Arg::new("allow-read")
                     .help("Add filesystem read sandbox exception")
                     .long("allow-read")
