@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::{anyhow, Context, Result};
 use clap::Command;
 use phylum_types::types::auth::RefreshToken;
-use tokio::io::{self, AsyncReadExt};
+use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
@@ -82,6 +82,23 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     }
 }
 
+/// Read a non-empty line from stdin as the token
+async fn stdin_read_token() -> Result<RefreshToken> {
+    let mut reader = BufReader::new(io::stdin());
+    let mut line = String::new();
+
+    loop {
+        if reader.read_line(&mut line).await? == 0 {
+            return Err(anyhow!("unexpected EOF"));
+        }
+
+        match line.trim() {
+            "" => {},
+            line => return Ok(RefreshToken::new(line)),
+        }
+    }
+}
+
 /// Set the current authentication token.
 pub async fn handle_auth_set_token(
     mut config: Config,
@@ -90,11 +107,7 @@ pub async fn handle_auth_set_token(
 ) -> CommandResult {
     let offline_access = match matches.get_one::<String>("token") {
         Some(t) => RefreshToken::new(t),
-        None => {
-            let mut token = String::new();
-            io::stdin().read_to_string(&mut token).await?;
-            RefreshToken::new(token.trim())
-        },
+        None => stdin_read_token().await?,
     };
     config.auth_info.set_offline_access(offline_access);
     save_config(config_path, &config)?;
