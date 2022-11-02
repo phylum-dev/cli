@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 use anyhow::{anyhow, Context, Result};
@@ -55,6 +55,32 @@ async fn api_factory(
     Ok(api)
 }
 
+/// Check for an updated release of the CLI
+async fn check_for_updates(config: &mut Config, config_path: &Path) -> Result<()> {
+    let now = UNIX_EPOCH.elapsed().expect("Time went backwards").as_secs() as usize;
+
+    if let Some(last_update) = config.last_update {
+        const SECS_IN_DAY: usize = 24 * 60 * 60;
+        if now.saturating_sub(last_update) <= SECS_IN_DAY {
+            log::debug!("Skipping update check...");
+            return Ok(());
+        }
+    }
+
+    log::debug!("Checking for updates...");
+
+    // Update last update check timestamp.
+    config.last_update = Some(now);
+    config::save_config(config_path, &config)
+        .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
+
+    if update::needs_update(false).await {
+        print::print_update_message();
+    }
+
+    Ok(())
+}
+
 async fn handle_commands() -> CommandResult {
     // Initialize clap app and read configuration.
     //
@@ -103,29 +129,9 @@ async fn handle_commands() -> CommandResult {
     // We initialize these value here, for later use by the PhylumApi object.
     let timeout = matches.get_one::<String>("timeout").and_then(|t| t.parse::<u64>().ok());
 
-    // Check for updates, if we haven't explicitly invoked `update`.
-    //
-
+    // Check for updates if we haven't explicitly invoked `update`.
     if matches.subcommand_matches("update").is_none() {
-        let now = UNIX_EPOCH.elapsed().expect("Time went backwards").as_secs() as usize;
-
-        let check_for_updates = config.last_update.map_or(true, |last_update| {
-            const SECS_IN_DAY: usize = 24 * 60 * 60;
-            now - last_update > SECS_IN_DAY
-        });
-
-        if check_for_updates {
-            log::debug!("Checking for updates...");
-
-            // Update last update check timestamp.
-            config.last_update = Some(now);
-            config::save_config(&config_path, &config)
-                .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
-
-            if update::needs_update(false).await {
-                print::print_update_message();
-            }
-        }
+        check_for_updates(&mut config, &config_path).await?;
     }
 
     // Get the future, but don't await. Commands that require access to the API will
