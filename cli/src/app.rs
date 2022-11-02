@@ -399,18 +399,14 @@ pub fn add_subcommands(command: Command) -> Command {
                 ),
             )
             .subcommand(
-                Command::new("update")
-                    .about(
-                        "Check for a new release of the Phylum CLI tool and update if one exists",
-                    )
-                    .arg(
-                        Arg::new("prerelease")
-                            .action(ArgAction::SetTrue)
-                            .short('p')
-                            .long("prerelease")
-                            .help("Update to the latest prerelease (vs. stable, default: false)")
-                            .hide(true),
-                    ),
+                Command::new("update").about("Update to the latest release of the Phylum CLI").arg(
+                    Arg::new("prerelease")
+                        .action(ArgAction::SetTrue)
+                        .short('p')
+                        .long("prerelease")
+                        .help("Update to the latest prerelease (vs. stable, default: false)")
+                        .hide(true),
+                ),
             );
     }
 
