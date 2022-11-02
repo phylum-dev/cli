@@ -74,18 +74,6 @@ pub fn app() -> Command {
 pub fn add_subcommands(command: Command) -> Command {
     let mut app = command
         .subcommand(
-            Command::new("update")
-                .about("Check for a new release of the Phylum CLI tool and update if one exists")
-                .arg(
-                    Arg::new("prerelease")
-                        .action(ArgAction::SetTrue)
-                        .short('p')
-                        .long("prerelease")
-                        .help("Update to the latest prerelease (vs. stable, default: false)")
-                        .hide(true),
-                ),
-        )
-        .subcommand(
             Command::new("history").about("Return information about historical jobs").args(&[
                 Arg::new("JOB_ID")
                     .value_name("JOB_ID")
@@ -400,15 +388,26 @@ pub fn add_subcommands(command: Command) -> Command {
 
     #[cfg(feature = "selfmanage")]
     {
-        app = app.subcommand(
-            Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
-                Arg::new("purge")
-                    .action(ArgAction::SetTrue)
-                    .short('p')
-                    .long("purge")
-                    .help("Remove all files, including configuration files (default: false)"),
-            ),
-        );
+        app = app
+            .subcommand(
+                Command::new("uninstall").about("Uninstall the Phylum CLI").arg(
+                    Arg::new("purge")
+                        .action(ArgAction::SetTrue)
+                        .short('p')
+                        .long("purge")
+                        .help("Remove all files, including configuration files (default: false)"),
+                ),
+            )
+            .subcommand(
+                Command::new("update").about("Update to the latest release of the Phylum CLI").arg(
+                    Arg::new("prerelease")
+                        .action(ArgAction::SetTrue)
+                        .short('p')
+                        .long("prerelease")
+                        .help("Update to the latest prerelease (vs. stable, default: false)")
+                        .hide(true),
+                ),
+            );
     }
 
     app
