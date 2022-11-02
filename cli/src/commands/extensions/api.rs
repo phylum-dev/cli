@@ -27,6 +27,7 @@ use phylum_types::types::package::{
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
 use tempfile::TempDir;
 use tokio::fs;
 
