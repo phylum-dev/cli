@@ -433,8 +433,9 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
         .stderr(stderr)
         .output()?;
 
-    if !output.status.success() && ipc_path_error.exists() {
-        let error_msg = std::fs::read_to_string(ipc_path_error)?;
+    let error_msg = std::fs::read_to_string(ipc_path_error)?;
+
+    if !output.status.success() && !error_msg.is_empty() {
         return Err(anyhow!(error_msg));
     }
 
