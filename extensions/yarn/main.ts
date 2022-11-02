@@ -71,7 +71,7 @@ if (
     args: [...Deno.args, "--mode=skip-build"],
     exceptions: {
       read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./"],
+      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn"],
       run: false,
       net: true,
     },
