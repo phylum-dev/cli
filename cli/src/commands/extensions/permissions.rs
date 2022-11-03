@@ -334,7 +334,7 @@ pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
 
     // Return first path in `$PATH` that contains `bin`.
     for path in path.split(':') {
-        let combined = PathBuf::from(path).join(&bin);
+        let combined = PathBuf::from(path).join(bin);
         if combined.exists() {
             return combined;
         }

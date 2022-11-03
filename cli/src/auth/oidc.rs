@@ -64,7 +64,7 @@ impl CodeVerifier {
         let mut hasher = Sha256::new();
         hasher.update(&code_verifier);
         let hash = hasher.finalize();
-        let base_64_url_safe = base64::encode_config(&hash, base64::URL_SAFE_NO_PAD);
+        let base_64_url_safe = base64::encode_config(hash, base64::URL_SAFE_NO_PAD);
         Ok((CodeVerifier(code_verifier), ChallengeCode(base_64_url_safe)))
     }
 }
