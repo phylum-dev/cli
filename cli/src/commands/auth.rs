@@ -2,6 +2,8 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::Command;
+use phylum_types::types::auth::RefreshToken;
+use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
@@ -80,6 +82,38 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     }
 }
 
+/// Read a non-empty line from stdin as the token
+async fn stdin_read_token() -> Result<RefreshToken> {
+    let mut reader = BufReader::new(io::stdin());
+    let mut line = String::new();
+
+    loop {
+        if reader.read_line(&mut line).await? == 0 {
+            return Err(anyhow!("unexpected EOF"));
+        }
+
+        match line.trim() {
+            "" => {},
+            line => return Ok(RefreshToken::new(line)),
+        }
+    }
+}
+
+/// Set the current authentication token.
+pub async fn handle_auth_set_token(
+    mut config: Config,
+    matches: &clap::ArgMatches,
+    config_path: &Path,
+) -> CommandResult {
+    let offline_access = match matches.get_one::<String>("token") {
+        Some(t) => RefreshToken::new(t),
+        None => stdin_read_token().await?,
+    };
+    config.auth_info.set_offline_access(offline_access);
+    save_config(config_path, &config)?;
+    Ok(ExitCode::Ok.into())
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -88,28 +122,27 @@ pub async fn handle_auth(
     app_helper: &mut Command,
     timeout: Option<u64>,
 ) -> CommandResult {
-    if matches.subcommand_matches("register").is_some() {
-        match handle_auth_register(config, config_path).await {
+    match matches.subcommand() {
+        Some(("register", _)) => match handle_auth_register(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok.into())
             },
             Err(error) => Err(error).context("User registration failed"),
-        }
-    } else if matches.subcommand_matches("login").is_some() {
-        match handle_auth_login(config, config_path).await {
+        },
+        Some(("login", _)) => match handle_auth_login(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok.into())
             },
             Err(error) => Err(error).context("User login failed"),
-        }
-    } else if matches.subcommand_matches("status").is_some() {
-        handle_auth_status(config, timeout).await
-    } else if let Some(matches) = matches.subcommand_matches("token") {
-        handle_auth_token(&config, matches).await
-    } else {
-        print_sc_help(app_helper, &["auth"])?;
-        Ok(ExitCode::Ok.into())
+        },
+        Some(("status", _)) => handle_auth_status(config, timeout).await,
+        Some(("token", matches)) => handle_auth_token(&config, matches).await,
+        Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
+        _ => {
+            print_sc_help(app_helper, &["auth"])?;
+            Ok(ExitCode::Ok.into())
+        },
     }
 }

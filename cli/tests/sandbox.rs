@@ -38,7 +38,7 @@ fn allow_fs() {
         .run(&[
             "sandbox",
             "--allow-write",
-            &test_file_path,
+            test_file_path,
             "bash",
             "-c",
             &format!("echo x > {test_file_path}"),
@@ -46,7 +46,7 @@ fn allow_fs() {
         .success();
 
     // Test read access.
-    test_cli.run(&["sandbox", "--allow-read", &test_file_path, "cat", &test_file_path]).success();
+    test_cli.run(&["sandbox", "--allow-read", test_file_path, "cat", test_file_path]).success();
 }
 
 #[test]

@@ -106,7 +106,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("group_name")
                         .help("Group to list projects for"),
                 ])
-                .aliases(&["projects"])
+                .aliases(["projects"])
                 .subcommand(
                     Command::new("create").about("Create a new project").args(&[
                         Arg::new("name")
@@ -121,7 +121,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     ]),
                 )
                 .subcommand(
-                    Command::new("delete").about("Delete a project").aliases(&["rm"]).args(&[
+                    Command::new("delete").about("Delete a project").aliases(["rm"]).args(&[
                         Arg::new("name")
                             .value_name("name")
                             .help("Name of the project")
@@ -203,6 +203,13 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(Command::new("login").about("Login to an existing account"))
                 .subcommand(
                     Command::new("status").about("Return the current authentication status"),
+                )
+                .subcommand(Command::new("set-token").about("Set the current authentication token").arg(
+                    Arg::new("token")
+                        .action(ArgAction::Set)
+                        .required(false)
+                        .help("Authentication token to store (read from stdin if omitted)")
+                    ),
                 )
                 .subcommand(
                     Command::new("token").about("Return the current authentication token").arg(
