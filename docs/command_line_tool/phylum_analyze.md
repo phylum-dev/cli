@@ -32,6 +32,9 @@ phylum analyze [OPTIONS] <lockfile>
 `-v`, `--verbose`
 &emsp; Increase verbosity of API response
 
+`-t`, `--lockfile-type`
+&emsp; The type of the lockfile (default: `auto`): `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
+
 ### Examples
 
 ```sh
