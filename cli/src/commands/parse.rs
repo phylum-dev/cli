@@ -39,7 +39,7 @@ pub fn parse_lockfile(
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
     let format = lockfile_type
-        .filter(|path| !path.eq_ignore_ascii_case("auto"))
+        .filter(|lockfile_type| lockfile_type != &"auto")
         .map(|lockfile_type| lockfile_type.parse::<LockfileFormat>().unwrap())
         .or_else(|| get_path_format(path.as_ref()));
 
