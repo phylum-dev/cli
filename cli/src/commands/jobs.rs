@@ -1,5 +1,4 @@
 use std::io;
-use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
@@ -11,8 +10,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError};
-use crate::commands::parse::get_packages_from_lockfile;
-use crate::commands::{CommandResult, CommandValue, ExitCode};
+use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
 use crate::config::{get_current_project, ProjectConfig};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
@@ -130,14 +128,15 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         (project, group) = cli_project(api, matches).await?;
 
-        // Should never get here if `LOCKFILE` was not specified
-        let lockfile =
-            matches.get_one::<String>("LOCKFILE").ok_or_else(|| anyhow!("Lockfile not found"))?;
-        let res = get_packages_from_lockfile(Path::new(lockfile))
+        let lockfile_type = matches.get_one::<String>("lockfile-type");
+        // LOCKFILE is a required parameter, so .unwrap() is safe.
+        let lockfile = matches.get_one::<String>("LOCKFILE").unwrap();
+
+        let res = parse::parse_lockfile(lockfile, lockfile_type)
             .context("Unable to locate any valid package in package lockfile")?;
 
         if pretty_print {
-            print_user_success!("Succesfully parsed lockfile as type: {}", res.format.name());
+            print_user_success!("Successfully parsed lockfile as type: {}", res.format.name());
         }
 
         packages = res.packages;

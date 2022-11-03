@@ -21,25 +21,45 @@ pub fn lockfile_types() -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let auto_type = String::from("auto");
-    let lockfile_type = matches.get_one::<String>("lockfile-type").unwrap_or(&auto_type);
-    // LOCKFILE is a required parameter, so .unwrap() should be safe.
+    let lockfile_type = matches.get_one::<String>("lockfile-type");
+    // LOCKFILE is a required parameter, so .unwrap() is safe.
     let lockfile = matches.get_one::<String>("LOCKFILE").unwrap();
 
-    let pkgs = if lockfile_type == &auto_type {
-        let parsed = try_get_packages(Path::new(lockfile))?;
-        parsed.packages
-    } else {
-        let parser = lockfile_type.parse::<LockfileFormat>().unwrap().parser();
-
-        let data = read_to_string(lockfile)?;
-        parser.parse(&data)?
-    };
+    let pkgs = parse_lockfile(lockfile, lockfile_type)?.packages;
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
     Ok(ExitCode::Ok.into())
 }
+
+/// Parse a package lockfile.
+pub fn parse_lockfile(
+    path: impl AsRef<Path>,
+    lockfile_type: Option<&String>,
+) -> Result<ParsedLockfile> {
+    // Try and determine lockfile format.
+    let format = lockfile_type
+        .filter(|lockfile_type| lockfile_type != &"auto")
+        .map(|lockfile_type| lockfile_type.parse::<LockfileFormat>().unwrap())
+        .or_else(|| get_path_format(path.as_ref()));
+
+    match format {
+        // Parse with identified parser.
+        Some(format) => {
+            let data = read_to_string(path)?;
+            let parser = format.parser();
+
+            Ok(ParsedLockfile {
+                format,
+                packages: parser.parse(&data)?,
+                package_type: parser.package_type(),
+            })
+        },
+        // Attempt to parse with all parsers until success.
+        None => try_get_packages(path.as_ref()),
+    }
+}
+
 /// Attempt to get packages from an unknown lockfile type
 fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
     let data = read_to_string(path)?;
@@ -59,33 +79,6 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
     }
 
     Err(anyhow!("Failed to identify lockfile type"))
-}
-
-/// Determine the lockfile type based on its name and parse
-/// accordingly to obtain the packages from it
-pub fn get_packages_from_lockfile(path: &Path) -> Result<ParsedLockfile> {
-    let res = match get_path_format(path) {
-        Some(format) => {
-            let data = read_to_string(path)?;
-            let parser = format.parser();
-            ParsedLockfile {
-                format,
-                packages: parser.parse(&data)?,
-                package_type: parser.package_type(),
-            }
-        },
-        None => {
-            log::warn!(
-                "Attempting to obtain packages from unrecognized lockfile type: {}",
-                path.display()
-            );
-            try_get_packages(path)?
-        },
-    };
-
-    log::debug!("Read {} packages from file `{}`", res.packages.len(), path.display());
-
-    Ok(res)
 }
 
 #[cfg(test)]

@@ -13,10 +13,9 @@ use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
-use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
@@ -27,7 +26,6 @@ use phylum_types::types::package::{
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use tokio::fs;
 
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
@@ -356,33 +354,12 @@ async fn parse_lockfile(
         permissions.read.check(Path::new(&lockfile), None)?;
     }
 
-    // Fallback to automatic parser without lockfile type specified.
-    let lockfile_type = match lockfile_type {
-        Some(lockfile_type) => lockfile_type,
-        None => {
-            let parsed = parse::get_packages_from_lockfile(Path::new(&lockfile))?;
-            return Ok(PackageLock {
-                package_type: parsed.package_type,
-                packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
-            });
-        },
-    };
-
     // Attempt to parse as requested lockfile type.
-
-    let parser = lockfile_type
-        .parse::<LockfileFormat>()
-        .with_context(|| format!("Unrecognized lockfile type: `{lockfile_type}`"))?
-        .parser();
-
-    let lockfile_data = fs::read_to_string(&lockfile)
-        .await
-        .with_context(|| format!("Could not read lockfile at '{lockfile}'"))?;
-    let packages = parser.parse(&lockfile_data)?;
+    let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_ref())?;
 
     Ok(PackageLock {
-        package_type: parser.package_type(),
-        packages: packages.into_iter().map(PackageSpecifier::from).collect(),
+        package_type: parsed.package_type,
+        packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
     })
 }
 

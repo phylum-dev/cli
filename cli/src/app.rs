@@ -272,6 +272,12 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("group_name")
                         .help("Specify a group to use for analysis")
                         .requires("project"),
+                    Arg::new("lockfile-type")
+                        .short('t')
+                        .long("lockfile-type")
+                        .value_name("type")
+                        .help("The type of the lock file (default: auto)")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types())),
                 ]),
         )
         .subcommand(
