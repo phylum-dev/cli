@@ -74,7 +74,7 @@ if (
     args: Deno.args,
     exceptions: {
       read: true,
-      write: ["~/.cache/pypoetry", "./", "~/.local/share/virtualenv"],
+      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
       run: ["poetry"],
       net: true,
     },
@@ -88,11 +88,11 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 
   let status = PhylumApi.runSandboxed({
     cmd: "poetry",
-    args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
+    args: [subcommand, "-n", ...args.map((s) => s.toString())],
     exceptions: {
       read: true,
-      write: ["~/.cache/pypoetry", "./", "~/.local/share/virtualenv"],
-      run: ["poetry", "python"],
+      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
+      run: ["poetry", "python", "python3"],
       net: true,
     },
   });
