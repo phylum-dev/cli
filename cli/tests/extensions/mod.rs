@@ -280,7 +280,7 @@ fn net_sandboxing_success() {
             const output = PhylumApi.runSandboxed({
                 cmd: 'curl',
                 args: ['http://phylum.io'],
-                exceptions: { net: true, env: true },
+                exceptions: { env: true, run: true, net: true },
             });
             Deno.exit(output.code);
         ")
@@ -335,7 +335,7 @@ fn fs_sandboxing_success() {
         const output = PhylumApi.runSandboxed({{
             cmd: 'cat',
             args: ['{}'],
-            exceptions: {{ read: ['{0:}'] }},
+            exceptions: {{ run: true, read: ['{0:}'] }},
         }});
         Deno.exit(output.code);
     ", file_path);

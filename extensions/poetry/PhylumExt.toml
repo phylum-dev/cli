@@ -3,7 +3,7 @@ description = "Poetry package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-run = ["poetry"]
+run = ["poetry", "python", "python3"]
 read = true
-write = ['~/.cache/pypoetry', './']
+write = ["./", "~/.cache/pypoetry", "~/.local/share/virtualenv", "~/Library/Caches/pypoetry"]
 net = true
