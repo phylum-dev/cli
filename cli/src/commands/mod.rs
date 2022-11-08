@@ -13,6 +13,7 @@ pub mod project;
 pub mod sandbox;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
+pub mod init;
 
 /// The possible result values of commands
 pub enum CommandValue {

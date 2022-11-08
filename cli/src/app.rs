@@ -349,6 +349,20 @@ pub fn add_subcommands(command: Command) -> Command {
                     ),
                 ),
         )
+        .subcommand(
+            Command::new("init")
+                .about("Setup a new Phylum project")
+                .args(&[
+                    Arg::new("project")
+                        .value_name("PROJECT_NAME")
+                        .help("Phylum project name"),
+                    Arg::new("group")
+                        .short('g')
+                        .long("group")
+                        .value_name("group_name")
+                        .help("Group which will be the owner of the project"),
+                ]),
+        )
         .subcommand(extensions::command());
 
     #[cfg(unix)]
