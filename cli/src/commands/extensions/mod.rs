@@ -15,6 +15,7 @@ use log::error;
 
 use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
+use crate::commands::extensions::permissions::Permission;
 use crate::commands::{CommandResult, CommandValue, ExitCode};
 use crate::print::print_sc_help;
 use crate::{app, print_user_success, print_user_warning};
@@ -273,7 +274,18 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
         }
     }
 
-    print_permissions_list("Read", "path", permissions.read.get());
+    // Calculate effective read permissions
+    let read = match (&permissions.read, &permissions.run) {
+        (Permission::Boolean(true), _) => Permission::Boolean(true),
+        (_, Permission::Boolean(true)) => Permission::Boolean(true),
+        (Permission::Boolean(false), run) => run.clone(),
+        (read, Permission::Boolean(false)) => read.clone(),
+        (Permission::List(ref read), Permission::List(ref run)) => {
+            Permission::List(read.iter().cloned().chain(run.iter().cloned()).collect())
+        },
+    };
+
+    print_permissions_list("Read", "path", read.get());
     print_permissions_list("Write", "path", permissions.write.get());
     print_permissions_list("Run", "command", permissions.run.get());
     print_permissions_list("Access", "domain", permissions.net.get());
