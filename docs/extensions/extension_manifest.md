@@ -157,6 +157,10 @@ permission and vice versa.
 This is an optional key-value pair where the value is either a boolean, or an
 array containing the allowed executables.
 
+**IMPORTANT NOTE:** Granting run permission implicitly grants read permissions
+on the same paths because both permissions are necessary to run an executable.
+This means that using `run = true` implies `read = true`.
+
 ```toml
 [permissions]
 # ...
