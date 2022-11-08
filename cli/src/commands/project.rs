@@ -187,7 +187,11 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 }
 
 /// Create and update the Phylum project.
-pub async fn create_project(api: &PhylumApi, project: &str, group: Option<String>) -> CommandResult {
+pub async fn create_project(
+    api: &PhylumApi,
+    project: &str,
+    group: Option<String>,
+) -> CommandResult {
     let project_id = match api.create_project(project, group.as_deref()).await {
         Ok(project_id) => project_id,
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {

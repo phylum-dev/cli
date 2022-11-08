@@ -31,7 +31,7 @@ impl Histogram {
             }
 
             if bucket_id < values.len() {
-                values[bucket_id as usize] += 1;
+                values[bucket_id] += 1;
             }
         }
         Histogram { min, max, bins, values }

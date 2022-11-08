@@ -5,6 +5,7 @@ use phylum_types::types::job::Action;
 pub mod auth;
 pub mod extensions;
 pub mod group;
+pub mod init;
 pub mod jobs;
 pub mod packages;
 pub mod parse;
@@ -13,7 +14,6 @@ pub mod project;
 pub mod sandbox;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
-pub mod init;
 
 /// The possible result values of commands
 pub enum CommandValue {

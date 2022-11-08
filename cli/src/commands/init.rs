@@ -4,7 +4,7 @@ use std::io;
 
 use clap::ArgMatches;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Input, Confirm};
+use dialoguer::{Confirm, Input};
 
 use crate::api::PhylumApi;
 use crate::commands::{project, CommandResult};
@@ -36,10 +36,8 @@ fn prompt_project() -> io::Result<String> {
 
 // Ask for the desired group.
 fn prompt_group() -> io::Result<Option<String>> {
-    let should_prompt = Confirm::new()
-        .with_prompt("Use a project group?")
-        .default(false)
-        .interact()?;
+    let should_prompt =
+        Confirm::new().with_prompt("Use a project group?").default(false).interact()?;
 
     if !should_prompt {
         return Ok(None);
