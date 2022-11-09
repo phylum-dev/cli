@@ -29,17 +29,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     let cli_group = matches.get_one::<String>("group");
 
     // Interactively prompt for missing information.
-    let (project, group) = match cli_project {
-        Some(project) => (project.clone(), cli_group.cloned()),
-        None => {
-            let project = prompt_project()?;
-            let group = match cli_group {
-                Some(group) => Some(group.clone()),
-                None => prompt_group()?,
-            };
-            (project, group)
-        },
-    };
+    let (project, group) = prompt(cli_project, cli_group)?;
 
     // Attempt to create the project.
     let response = project::create_project(api, &project, group.clone()).await?;
@@ -51,6 +41,27 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
         },
         command_value => Ok(command_value),
     }
+}
+
+/// Interactively ask for missing information.
+fn prompt(
+    cli_project: Option<&String>,
+    cli_group: Option<&String>,
+) -> io::Result<(String, Option<String>)> {
+    if let Some(project) = cli_project {
+        return Ok((project.clone(), cli_group.cloned()));
+    }
+
+    // Prompt for project name.
+    let project = prompt_project()?;
+
+    // Prompt for group name.
+    let group = match cli_group {
+        Some(group) => Some(group.clone()),
+        None => prompt_group()?,
+    };
+
+    Ok((project, group))
 }
 
 /// Ask for the desired project name.
