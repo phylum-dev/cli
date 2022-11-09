@@ -32,7 +32,6 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
                 Err("Threshold must be a number between 0-100 or 'Disabled'".into())
             }
         })
-        .report(true)
         .interact_text()?;
 
     if threshold.eq_ignore_ascii_case("disabled") {

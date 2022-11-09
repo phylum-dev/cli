@@ -5,6 +5,7 @@ use phylum_types::types::job::Action;
 pub mod auth;
 pub mod extensions;
 pub mod group;
+pub mod init;
 pub mod jobs;
 pub mod packages;
 pub mod parse;
@@ -44,6 +45,7 @@ pub enum ExitCode {
     NoHistoryFound,
     JsError,
     FailedThresholds,
+    ProjectAlreadyInitialized,
     Custom(i32),
 }
 
@@ -66,6 +68,7 @@ impl From<&ExitCode> for i32 {
             ExitCode::AlreadyExists => 14,
             ExitCode::NoHistoryFound => 15,
             ExitCode::JsError => 16,
+            ExitCode::ProjectAlreadyInitialized => 17,
             ExitCode::FailedThresholds => 100,
             ExitCode::Custom(code) => *code,
         }
