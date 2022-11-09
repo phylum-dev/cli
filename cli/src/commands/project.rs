@@ -216,3 +216,27 @@ pub async fn create_project(
 
     Ok(ExitCode::Ok.into())
 }
+
+/// Link to an existing project.
+pub async fn link_project(api: &PhylumApi, project: &str, group: Option<String>) -> CommandResult {
+    let uuid = api
+        .get_project_id(project, group.as_deref())
+        .await
+        .context("A project with that name does not exist")?;
+
+    let project_config = ProjectConfig {
+        id: uuid,
+        name: project.into(),
+        created_at: Local::now(),
+        group_name: group,
+    };
+    save_config(Path::new(PROJ_CONF_FILE), &project_config)
+        .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
+
+    print_user_success!(
+        "Linked the current working directory to the project {}.",
+        format!("{}", style(project_config.name).white())
+    );
+
+    Ok(ExitCode::Ok.into())
+}

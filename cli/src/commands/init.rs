@@ -7,7 +7,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input};
 
 use crate::api::PhylumApi;
-use crate::commands::{project, CommandResult};
+use crate::commands::{project, CommandResult, CommandValue, ExitCode};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
@@ -26,7 +26,16 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
         },
     };
 
-    project::create_project(api, &project, group).await
+    // Attempt to create the project.
+    let response = project::create_project(api, &project, group.clone()).await?;
+
+    // If project already exists, just link to it.
+    match response {
+        CommandValue::Code(ExitCode::AlreadyExists) => {
+            project::link_project(api, &project, group).await
+        },
+        command_value => Ok(command_value),
+    }
 }
 
 /// Ask for the desired project name.
