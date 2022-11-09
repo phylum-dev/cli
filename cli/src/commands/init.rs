@@ -1,6 +1,6 @@
 //! Subcommand `phylum init`.
 
-use std::io;
+use std::{io, env};
 
 use clap::ArgMatches;
 use dialoguer::theme::ColorfulTheme;
@@ -40,7 +40,19 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
 
 /// Ask for the desired project name.
 fn prompt_project() -> io::Result<String> {
-    Input::with_theme(&ColorfulTheme::default()).with_prompt("Project Name").interact_text()
+    // Use directory name as default project name.
+    let current_dir = env::current_dir()?;
+    let default_name = current_dir.file_name().and_then(|name| name.to_str());
+
+    let theme = ColorfulTheme::default();
+    let mut prompt = Input::with_theme(&theme);
+    prompt.with_prompt("Project Name");
+
+    if let Some(default_name) = default_name {
+        prompt.default(default_name.to_owned());
+    }
+
+    prompt.interact_text()
 }
 
 // Ask for the desired group.
