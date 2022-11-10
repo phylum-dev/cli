@@ -9,6 +9,7 @@ use std::{env, fs};
 
 use anyhow::Result;
 use chrono::{DateTime, Local};
+use phylum_lockfile::LockfileFormat;
 use phylum_types::types::auth::RefreshToken;
 use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::PackageType;
@@ -96,6 +97,8 @@ pub struct ProjectConfig {
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
+    pub lockfile: Option<String>,
+    pub lockfile_type: Option<LockfileFormat>,
 }
 
 /// Create or open a file. If the file is created, it will restrict permissions

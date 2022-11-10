@@ -227,8 +227,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("LOCKFILE")
                     .value_name("LOCKFILE")
                     .value_hint(ValueHint::FilePath)
-                    .help("The package lock file to submit.")
-                    .required(true),
+                    .help("The package lock file to submit."),
                 Arg::new("lockfile-type")
                     .short('t')
                     .long("lockfile-type")
@@ -244,8 +243,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("LOCKFILE")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock file to submit.")
-                        .required(true),
+                        .help("The package lock file to submit."),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",

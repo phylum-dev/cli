@@ -1,12 +1,13 @@
 use std::path::Path;
+use std::result::Result as StdResult;
 
 use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use console::style;
 use reqwest::StatusCode;
 
-use super::{CommandResult, ExitCode};
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
+use crate::commands::{CommandResult, ExitCode};
 use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
 use crate::format::Format;
 use crate::prompt::prompt_threshold;
@@ -37,7 +38,19 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
         log::info!("Initializing new project: `{}`", name);
 
-        return create_project(api, name, group).await;
+        let project_config = match create_project(api, name, group).await {
+            Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+                print_user_failure!("Project '{}' already exists", name);
+                return Ok(ExitCode::AlreadyExists.into());
+            },
+            project_config => project_config?,
+        };
+
+        save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
+            print_user_failure!("Failed to save project file: {}", err);
+        });
+
+        print_user_success!("Successfully created new project, {}", name);
     } else if let Some(matches) = matches.subcommand_matches("delete") {
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group");
@@ -58,24 +71,15 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group").cloned();
 
-        let proj_uuid = api
-            .get_project_id(project_name, group_name.as_deref())
-            .await
-            .context("A project with that name does not exist")?;
+        let project_config = link_project(api, project_name, group_name).await?;
 
-        let proj_conf = ProjectConfig {
-            id: proj_uuid,
-            name: project_name.into(),
-            created_at: Local::now(),
-            group_name,
-        };
-        save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
+        save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
         });
 
         print_user_success!(
             "Linked the current working directory to the project {}.",
-            format!("{}", style(proj_conf.name).white())
+            format!("{}", style(project_config.name).white())
         );
     } else if let Some(matches) = matches.subcommand_matches("set-thresholds") {
         let mut project_name =
@@ -191,52 +195,36 @@ pub async fn create_project(
     api: &PhylumApi,
     project: &str,
     group: Option<String>,
-) -> CommandResult {
-    let project_id = match api.create_project(project, group.as_deref()).await {
-        Ok(project_id) => project_id,
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            print_user_failure!("Project '{}' already exists", project);
-            return Ok(ExitCode::AlreadyExists.into());
-        },
-        Err(err) => return Err(err.into()),
-    };
+) -> StdResult<ProjectConfig, PhylumApiError> {
+    let project_id = api.create_project(project, group.as_deref()).await?;
 
-    let proj_conf = ProjectConfig {
+    Ok(ProjectConfig {
         id: project_id.to_owned(),
         created_at: Local::now(),
         group_name: group,
         name: project.to_owned(),
-    };
-
-    save_config(Path::new(PROJ_CONF_FILE), &proj_conf).unwrap_or_else(|err| {
-        print_user_failure!("Failed to save project file: {}", err);
-    });
-
-    print_user_success!("Successfully created new project, {}", project);
-
-    Ok(ExitCode::Ok.into())
+        lockfile: None,
+        lockfile_type: None,
+    })
 }
 
 /// Link to an existing project.
-pub async fn link_project(api: &PhylumApi, project: &str, group: Option<String>) -> CommandResult {
+pub async fn link_project(
+    api: &PhylumApi,
+    project: &str,
+    group: Option<String>,
+) -> StdResult<ProjectConfig, PhylumApiError> {
     let uuid = api
         .get_project_id(project, group.as_deref())
         .await
         .context("A project with that name does not exist")?;
 
-    let project_config = ProjectConfig {
+    Ok(ProjectConfig {
         id: uuid,
         name: project.into(),
         created_at: Local::now(),
         group_name: group,
-    };
-    save_config(Path::new(PROJ_CONF_FILE), &project_config)
-        .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
-
-    print_user_success!(
-        "Linked the current working directory to the project {}.",
-        format!("{}", style(project_config.name).white())
-    );
-
-    Ok(ExitCode::Ok.into())
+        lockfile: None,
+        lockfile_type: None,
+    })
 }
