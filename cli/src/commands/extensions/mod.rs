@@ -281,7 +281,13 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
         (Permission::Boolean(false), run) => run.clone(),
         (read, Permission::Boolean(false)) => read.clone(),
         (Permission::List(ref read), Permission::List(ref run)) => {
-            Permission::List(read.iter().cloned().chain(run.iter().cloned()).collect())
+            let mut read = read.clone();
+            for path in run {
+                if !read.contains(path) {
+                    read.push(path.clone());
+                }
+            }
+            Permission::List(read)
         },
     };
 
