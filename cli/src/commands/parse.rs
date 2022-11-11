@@ -29,14 +29,14 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     // Pick lockfile path from CLI and fallback to the current project.
     let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
-        (Some(cli_lockfile), _) => (cli_lockfile, cli_lockfile_type.map(String::as_str)),
+        (Some(cli_lockfile), _) => (cli_lockfile, cli_lockfile_type),
         (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
-            (lockfile, lockfile_type.map(|lockfile_type| lockfile_type.name()))
+            (lockfile, lockfile_type.as_ref())
         },
         (None, _) => return Err(anyhow!("Missing lockfile parameter")),
     };
 
-    let pkgs = parse_lockfile(lockfile, lockfile_type)?.packages;
+    let pkgs = parse_lockfile(lockfile, lockfile_type.map(|t| &**t))?.packages;
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 

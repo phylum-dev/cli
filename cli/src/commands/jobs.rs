@@ -236,10 +236,9 @@ impl JobsProject {
         // Pick lockfile path from CLI and fallback to the current project.
         let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
             (Some(cli_lockfile), _) => (cli_lockfile.clone(), cli_lockfile_type.cloned()),
-            (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => (
-                lockfile.clone(),
-                lockfile_type.map(|lockfile_type| lockfile_type.name().to_owned()),
-            ),
+            (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
+                (lockfile.clone(), lockfile_type.clone())
+            },
             (None, _) => return Err(anyhow!("Missing lockfile parameter")),
         };
 

@@ -357,8 +357,18 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("group")
                         .short('g')
                         .long("group")
-                        .value_name("group_name")
+                        .value_name("GROUP_NAME")
                         .help("Group which will be the owner of the project"),
+                    Arg::new("lockfile")
+                        .short('l')
+                        .long("lockfile")
+                        .value_name("LOCKFILE")
+                        .help("Project lockfile name"),
+                    Arg::new("lockfile-type")
+                        .short('t')
+                        .long("lockfile-type")
+                        .value_name("LOCKFILE_TYPE")
+                        .help("Project lockfile type"),
                 ]),
         )
         .subcommand(extensions::command());

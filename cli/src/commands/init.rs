@@ -27,13 +27,15 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
         if !should_continue {
             return Ok(ExitCode::ProjectAlreadyInitialized.into());
         }
+
+        println!();
     }
 
     let cli_project = matches.get_one::<String>("project");
     let cli_group = matches.get_one::<String>("group");
 
     // Interactively prompt for missing information.
-    let (project, group) = prompt(cli_project, cli_group)?;
+    let (project, group) = prompt_project(cli_project, cli_group)?;
 
     // Attempt to create the project.
     let result = project::create_project(api, &project, group.clone()).await;
@@ -52,9 +54,14 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
         },
     };
 
-    // Add lockfile to project config.
+    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
+    let cli_lockfile = matches.get_one::<String>("lockfile");
+
+    // Add lockfile and its type to the project configuration.
     println!();
-    project_config.lockfile = Some(prompt_lockfile()?);
+    let (lockfile, lockfile_type) = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
+    project_config.lockfile_type = lockfile_type;
+    project_config.lockfile = Some(lockfile);
 
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
@@ -64,8 +71,8 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     Ok(ExitCode::Ok.into())
 }
 
-/// Interactively ask for missing information.
-fn prompt(
+/// Interactively ask for missing project information.
+fn prompt_project(
     cli_project: Option<&String>,
     cli_group: Option<&String>,
 ) -> io::Result<(String, Option<String>)> {
@@ -74,7 +81,7 @@ fn prompt(
     }
 
     // Prompt for project name.
-    let project = prompt_project()?;
+    let project = prompt_project_name()?;
 
     // Prompt for group name.
     let group = match cli_group {
@@ -86,7 +93,7 @@ fn prompt(
 }
 
 /// Ask for the desired project name.
-fn prompt_project() -> io::Result<String> {
+fn prompt_project_name() -> io::Result<String> {
     // Use directory name as default project name.
     let current_dir = env::current_dir()?;
     let default_name = current_dir.file_name().and_then(|name| name.to_str());
@@ -116,8 +123,34 @@ fn prompt_group() -> io::Result<Option<String>> {
     Ok(Some(group))
 }
 
-/// Ask for the lockfile path.
-fn prompt_lockfile() -> io::Result<String> {
+/// Interactively ask for missing lockfile information.
+fn prompt_lockfile(
+    cli_lockfile: Option<&String>,
+    cli_lockfile_type: Option<&String>,
+) -> io::Result<(String, Option<String>)> {
+    if let Some(lockfile) = cli_lockfile {
+        return Ok((lockfile.clone(), cli_lockfile_type.cloned()));
+    }
+
+    // Prompt for lockfile name.
+    let lockfile = prompt_lockfile_name()?;
+
+    // Try to determine lockfile name from known lockfiles.
+    for format in LockfileFormat::iter() {
+        if format.parser().is_path_lockfile(Path::new(&lockfile)) {
+            let lockfile_type = format.name().to_owned();
+            return Ok((lockfile, Some(lockfile_type)));
+        }
+    }
+
+    // Prompt for lockfile type.
+    let lockfile_type = prompt_lockfile_type()?;
+
+    Ok((lockfile, Some(lockfile_type)))
+}
+
+/// Ask for the lockfile name.
+fn prompt_lockfile_name() -> io::Result<String> {
     // Find all known lockfiles in the currenty directory.
     let mut lockfiles: Vec<_> = fs::read_dir("./")?
         .into_iter()
@@ -147,4 +180,16 @@ fn prompt_lockfile() -> io::Result<String> {
 
     // Prompt for lockfile name if none was selected.
     Input::new().with_prompt("Project lockfile name").interact_text()
+}
+
+/// Ask for the lockfile type.
+fn prompt_lockfile_type() -> io::Result<String> {
+    let lockfile_types: Vec<_> = LockfileFormat::iter().map(|format| format.name()).collect();
+
+    let index = FuzzySelect::new()
+        .with_prompt("Select lockfile's type")
+        .items(&lockfile_types)
+        .interact()?;
+
+    Ok(lockfile_types[index].to_owned())
 }
