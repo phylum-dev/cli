@@ -276,11 +276,12 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
 
     // Calculate effective read permissions
     let read = match (&permissions.read, &permissions.run) {
-        (Permission::Boolean(true), _) => Permission::Boolean(true),
-        (_, Permission::Boolean(true)) => Permission::Boolean(true),
+        (Permission::Boolean(true), _) | (_, Permission::Boolean(true)) => {
+            Permission::Boolean(true)
+        },
         (Permission::Boolean(false), run) => run.clone(),
         (read, Permission::Boolean(false)) => read.clone(),
-        (Permission::List(ref read), Permission::List(ref run)) => {
+        (Permission::List(read), Permission::List(run)) => {
             let mut read = read.clone();
             for path in run {
                 if !read.contains(path) {
