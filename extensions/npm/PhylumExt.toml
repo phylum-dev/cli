@@ -7,3 +7,4 @@ write = ["~/.npm", "./"]
 read = true
 run = true
 net = true
+unsandboxed_run = ["npm"]
