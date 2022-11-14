@@ -299,7 +299,8 @@ where
         PackageType::Cargo => "Cargo",
     };
 
-    let date_time = NaiveDateTime::from_timestamp(resp.created_at / 1000, 0);
+    let date_time =
+        NaiveDateTime::from_timestamp_opt(resp.created_at / 1000, 0).unwrap_or_default();
 
     let details = [
         (
