@@ -12,7 +12,7 @@ use reqwest::StatusCode;
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
 use crate::config::PROJ_CONF_FILE;
-use crate::{config, print_user_failure, print_user_success, print_user_warning};
+use crate::{config, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
@@ -43,8 +43,11 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     // If project already exists, just link to it.
     let mut project_config = match result {
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            let project_config = project::link_project(api, &project, group)
+                .await
+                .context("Unable to link project")?;
             print_user_success!("Successfully linked to project {project:?}");
-            project::link_project(api, &project, group).await.context("Unable to link project")?
+            project_config
         },
         project_config => {
             if project_config.is_ok() {
@@ -64,9 +67,8 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     project_config.lockfile = Some(lockfile);
 
     // Save project config.
-    config::save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
-        print_user_failure!("Failed to save project file: {}", err);
-    });
+    config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
+        .context("Failed to save project file")?;
 
     Ok(ExitCode::Ok.into())
 }
@@ -128,12 +130,16 @@ fn prompt_lockfile(
     cli_lockfile: Option<&String>,
     cli_lockfile_type: Option<&String>,
 ) -> io::Result<(String, Option<String>)> {
-    if let Some(lockfile) = cli_lockfile {
-        return Ok((lockfile.clone(), cli_lockfile_type.cloned()));
-    }
+    let cli_lockfile_type = cli_lockfile_type.cloned();
 
-    // Prompt for lockfile name.
-    let lockfile = prompt_lockfile_name()?;
+    let lockfile = match (cli_lockfile.cloned(), &cli_lockfile_type) {
+        // Do not prompt if name and type were specified on CLI.
+        (Some(lockfile), Some(_)) => return Ok((lockfile, cli_lockfile_type)),
+        // Prompt for type if only lockfile was passed.
+        (Some(lockfile), _) => lockfile,
+        // Prompt for lockfile if it wasn't specified.
+        (None, _) => prompt_lockfile_name()?,
+    };
 
     // Try to determine lockfile name from known lockfiles.
     for format in LockfileFormat::iter() {
@@ -144,7 +150,10 @@ fn prompt_lockfile(
     }
 
     // Prompt for lockfile type.
-    let lockfile_type = prompt_lockfile_type()?;
+    let lockfile_type = match cli_lockfile_type {
+        Some(lockfile_type) => lockfile_type,
+        None => prompt_lockfile_type()?,
+    };
 
     Ok((lockfile, Some(lockfile_type)))
 }
@@ -179,7 +188,7 @@ fn prompt_lockfile_name() -> io::Result<String> {
     }
 
     // Prompt for lockfile name if none was selected.
-    Input::new().with_prompt("Project lockfile name").interact_text()
+    Input::new().with_prompt("Project lockfile path").interact_text()
 }
 
 /// Ask for the lockfile type.
