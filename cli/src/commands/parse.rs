@@ -9,6 +9,7 @@ use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, ExitCode};
+use crate::config::{self, ProjectConfig};
 
 pub struct ParsedLockfile {
     pub format: LockfileFormat,
@@ -21,11 +22,21 @@ pub fn lockfile_types() -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let lockfile_type = matches.get_one::<String>("lockfile-type");
-    // LOCKFILE is a required parameter, so .unwrap() is safe.
-    let lockfile = matches.get_one::<String>("LOCKFILE").unwrap();
+    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
+    let cli_lockfile = matches.get_one::<String>("LOCKFILE");
 
-    let pkgs = parse_lockfile(lockfile, lockfile_type)?.packages;
+    let current_project = config::get_current_project();
+
+    // Pick lockfile path from CLI and fallback to the current project.
+    let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
+        (Some(cli_lockfile), _) => (cli_lockfile, cli_lockfile_type),
+        (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
+            (lockfile, lockfile_type.as_ref())
+        },
+        (None, _) => return Err(anyhow!("Missing lockfile parameter")),
+    };
+
+    let pkgs = parse_lockfile(lockfile, lockfile_type.map(|t| &**t))?.packages;
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
@@ -35,7 +46,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 /// Parse a package lockfile.
 pub fn parse_lockfile(
     path: impl AsRef<Path>,
-    lockfile_type: Option<&String>,
+    lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
     let format = lockfile_type
