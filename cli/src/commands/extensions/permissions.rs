@@ -147,6 +147,8 @@ pub struct Permissions {
     pub env: Permission,
     #[serde(default)]
     pub run: Permission,
+    #[serde(default)]
+    pub unsandboxed_run: Permission,
     #[serde(default, deserialize_with = "deserialize_net_permission")]
     pub net: Permission,
 }
@@ -183,6 +185,7 @@ impl Permissions {
             && self.env.get().is_none()
             && self.run.get().is_none()
             && self.net.get().is_none()
+            && self.unsandboxed_run.get().is_none()
     }
 
     /// Build a sandbox matching the requested permissions.
@@ -228,6 +231,7 @@ impl Permissions {
             env: self.env.subset_of(&other.env).map_err(err_ctx("env"))?,
             run: self.run.subset_of(&other.run).map_err(err_ctx("run"))?,
             net: self.net.subset_of(&other.net).map_err(err_ctx("net"))?,
+            unsandboxed_run: Permission::default(),
         })
     }
 }
@@ -242,7 +246,7 @@ impl From<&Permissions> for PermissionsOptions {
 
         let allow_env = value.env.get().cloned();
         let allow_net = value.net.get().cloned();
-        let allow_run = value.run.get().cloned();
+        let allow_run = value.unsandboxed_run.get().cloned();
 
         PermissionsOptions {
             allow_read,
@@ -343,6 +347,7 @@ mod tests {
             env: Permission::List(vec![]),
             run: Permission::List(vec![]),
             net: Permission::List(vec![]),
+            unsandboxed_run: Permission::List(vec![]),
         };
 
         let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();

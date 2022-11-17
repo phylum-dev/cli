@@ -290,6 +290,7 @@ fn net_sandboxing_success() {
             env: Permission::Boolean(true),
             run: Permission::Boolean(true),
             net: Permission::Boolean(true),
+            unsandboxed_run: Permission::Boolean(true),
         })
         .build()
         .run()
@@ -348,6 +349,7 @@ fn fs_sandboxing_success() {
             env: Permission::Boolean(true),
             run: Permission::Boolean(true),
             net: Permission::Boolean(true),
+            unsandboxed_run: Permission::Boolean(true),
         })
         .build()
         .run()
