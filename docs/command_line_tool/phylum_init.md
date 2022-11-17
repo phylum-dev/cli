@@ -17,8 +17,17 @@ phylum init [OPTIONS] [PROJECT_NAME]
 
 ### Options
 
-`-g`, `--group <group_name>`
+`-g`, `--group <GROUP_NAME>`
 &emsp; Group which will be the owner of the project
+
+`-l`, `--lockfile <LOCKFILE>`
+&emsp; Project lockfile name
+
+`-t`, `--lockfile-type <LOCKFILE_TYPE>`
+&emsp; Project lockfile type
+
+`-f`, `--force`
+&emsp; Overwrite existing configurations without confirmation
 
 ### Examples
 
@@ -26,9 +35,6 @@ phylum init [OPTIONS] [PROJECT_NAME]
 # Interactively initialize the Phylum project.
 $ phylum init
 
-# Create the `demo` project without interactivity or associated group.
-$ phylum init demo
-
-# Create the `demo` project without interactivity for the group `users`.
-$ phylum init demo --group users
+# Create the `demo` project with a yarn lockfile and no associated group.
+$ phylum init --lockfile yarn.lock --lockfile-type yarn demo
 ```
