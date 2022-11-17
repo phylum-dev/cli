@@ -158,9 +158,9 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         // If a package type was provided on the command line, prefer that
         //  to the global setting
-        if matches.get_flag("type") {
-            request_type = PackageType::from_str(matches.get_one::<String>("type").unwrap())
-                .unwrap_or(request_type);
+        if let Some(package_type) = matches.get_one::<String>("type") {
+            request_type = PackageType::from_str(package_type)
+                .map_err(|_| anyhow!("invalid package type: {}", package_type))?
         }
         label = matches.get_one::<String>("label");
         is_user = !matches.get_flag("force");
