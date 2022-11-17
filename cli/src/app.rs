@@ -369,6 +369,11 @@ pub fn add_subcommands(command: Command) -> Command {
                         .long("lockfile-type")
                         .value_name("LOCKFILE_TYPE")
                         .help("Project lockfile type"),
+                    Arg::new("force")
+                        .short('f')
+                        .long("force")
+                        .help("Overwrite existing configurations without confirmation")
+                        .action(ArgAction::SetTrue),
                 ]),
         )
         .subcommand(extensions::command());
