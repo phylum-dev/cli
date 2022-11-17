@@ -295,6 +295,7 @@ fn ask_permissions(extension: &Extension) -> Result<()> {
     print_permissions_list("Read", "path", read.get());
     print_permissions_list("Write", "path", permissions.write.get());
     print_permissions_list("Run", "command", permissions.run.get());
+    print_permissions_list("Run", "unsandboxed command", permissions.unsandboxed_run.get());
     print_permissions_list("Access", "domain", permissions.net.get());
     print_permissions_list("Set", "environment variable", permissions.env.get());
 

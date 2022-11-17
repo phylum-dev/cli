@@ -75,7 +75,7 @@ fn incorrect_net_permission_unsuccessful_run() {
 
 #[test]
 #[cfg(unix)]
-fn correct_run_permission_successful_install_and_run() {
+fn correct_sandbox_run_permission_successful_install_and_run() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
@@ -87,7 +87,7 @@ fn correct_run_permission_successful_install_and_run() {
 
 #[test]
 #[cfg(not(unix))]
-fn correct_run_permission_fail_on_windows() {
+fn correct_sandbox_run_permission_fail_on_windows() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
@@ -98,6 +98,46 @@ fn correct_run_permission_fail_on_windows() {
         .run(&["correct-run-perms"])
         .success()
         .stdout(predicate::str::contains("Extension sandboxing is not supported on this platform"));
+}
+
+#[test]
+fn incorrect_run_permission() {
+    let test_cli = TestCli::builder().build();
+
+    #[rustfmt::skip]
+    test_cli
+        .extension("
+            const output = await Deno.run({ cmd: ['echo', 'hello'] });
+            Deno.exit(output.code);
+        ")
+        .with_permissions(Permissions {
+            unsandboxed_run: Permission::Boolean(false),
+            ..Permissions::default()
+        })
+        .build()
+        .run()
+        .failure()
+        .stderr("❗ Error: Requires run access to \"echo\"\n");
+}
+
+#[test]
+fn correct_run_permission() {
+    let test_cli = TestCli::builder().build();
+
+    #[rustfmt::skip]
+    test_cli
+        .extension("
+            const output = await Deno.run({ cmd: ['echo', 'hello'] });
+            Deno.exit(output.code);
+        ")
+        .with_permissions(Permissions {
+            unsandboxed_run: Permission::List(vec!["echo".into()]),
+            ..Permissions::default()
+        })
+        .build()
+        .run()
+        .success()
+        .stdout(predicate::str::contains("hello"));
 }
 
 #[tokio::test]
