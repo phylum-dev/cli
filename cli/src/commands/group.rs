@@ -12,15 +12,15 @@ use crate::{print_user_failure, print_user_success};
 pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
         handle_group_create(api, matches).await
-    } else if let Some(matches) = matches.subcommand_matches("members") {
+    } else if let Some(matches) = matches.subcommand_matches("member") {
         let group = matches.get_one::<String>("group").unwrap();
 
         if let Some(matches) = matches.subcommand_matches("add") {
-            handle_members_add(api, matches, group).await
+            handle_member_add(api, matches, group).await
         } else if let Some(matches) = matches.subcommand_matches("remove") {
-            handle_members_remove(api, matches, group).await
+            handle_member_remove(api, matches, group).await
         } else {
-            handle_members_list(api, matches, group).await
+            handle_member_list(api, matches, group).await
         }
     } else {
         handle_group_list(api, matches).await
@@ -55,8 +55,8 @@ pub async fn handle_group_list(api: &mut PhylumApi, mut matches: &ArgMatches) ->
     Ok(ExitCode::Ok.into())
 }
 
-/// Handle `phylum group members add` subcommand.
-pub async fn handle_members_add(
+/// Handle `phylum group member add` subcommand.
+pub async fn handle_member_add(
     api: &mut PhylumApi,
     matches: &ArgMatches,
     group: &str,
@@ -71,8 +71,8 @@ pub async fn handle_members_add(
     Ok(ExitCode::Ok.into())
 }
 
-/// Handle `phylum group members remove` subcommand.
-pub async fn handle_members_remove(
+/// Handle `phylum group member remove` subcommand.
+pub async fn handle_member_remove(
     api: &mut PhylumApi,
     matches: &ArgMatches,
     group: &str,
@@ -87,8 +87,8 @@ pub async fn handle_members_remove(
     Ok(ExitCode::Ok.into())
 }
 
-/// Handle `phylum group members` subcommand.
-pub async fn handle_members_list(
+/// Handle `phylum group member` subcommand.
+pub async fn handle_member_list(
     api: &mut PhylumApi,
     mut matches: &ArgMatches,
     group: &str,
