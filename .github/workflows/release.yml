@@ -129,12 +129,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - name: Install host dependencies
-        run: |
-          sudo add-apt-repository -y ppa:dysfunctionalprogramming/minisign
-          sudo apt update
-          sudo apt install -yq minisign
-
       - name: Download release artifacts
         uses: actions/download-artifact@v3
         with:
@@ -142,16 +136,12 @@ jobs:
 
       - name: Sign archives
         run: |
-          echo -e $MINISIGN_KEY > minisign.key
           echo "$OPENSSL_KEY" > key.pem
           for archive in phylum-*.zip;
           do
-            echo $MINISIGN_PASSWORD | minisign -Sm ${archive} -s minisign.key -t 'Phylum - The Software Supply Chain Company'
             openssl dgst -sha256 -sign key.pem -out "${archive}.signature" "${archive}"
           done
         env:
-          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
-          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
           OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
 
       - name: Create GitHub release
@@ -163,7 +153,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             phylum-*.zip
-            phylum-*.zip.minisig
             phylum-*.zip.signature
 
   Trigger:
