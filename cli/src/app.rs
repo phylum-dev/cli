@@ -360,7 +360,7 @@ pub fn add_subcommands(command: Command) -> Command {
                             .action(ArgAction::SetTrue)
                             .short('j')
                             .long("json")
-                            .help("Produce group list in json format (default: false)"),
+                            .help("Produce member list in json format (default: false)"),
                         ])
                     .subcommand(
                         Command::new("list").about("List group members").args(&[
@@ -368,7 +368,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .action(ArgAction::SetTrue)
                                 .short('j')
                                 .long("json")
-                                .help("Produce output in json format (default: false)"),
+                                .help("Produce member list in json format (default: false)"),
                         ]),
                     )
                     .subcommand(
