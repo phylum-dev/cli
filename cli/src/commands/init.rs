@@ -63,7 +63,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     // Add lockfile and its type to the project configuration.
     println!();
     let (lockfile, lockfile_type) = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
-    project_config.lockfile_type = lockfile_type;
+    project_config.lockfile_type = Some(lockfile_type);
     project_config.lockfile = Some(lockfile);
 
     // Save project config.
@@ -129,12 +129,10 @@ fn prompt_group() -> io::Result<Option<String>> {
 fn prompt_lockfile(
     cli_lockfile: Option<&String>,
     cli_lockfile_type: Option<&String>,
-) -> io::Result<(String, Option<String>)> {
-    let cli_lockfile_type = cli_lockfile_type.cloned();
-
-    let lockfile = match (cli_lockfile.cloned(), &cli_lockfile_type) {
+) -> io::Result<(String, String)> {
+    let lockfile = match (cli_lockfile.cloned(), cli_lockfile_type) {
         // Do not prompt if name and type were specified on CLI.
-        (Some(lockfile), Some(_)) => return Ok((lockfile, cli_lockfile_type)),
+        (Some(lockfile), Some(lockfile_type)) => return Ok((lockfile, lockfile_type.clone())),
         // Prompt for type if only lockfile was passed.
         (Some(lockfile), _) => lockfile,
         // Prompt for lockfile if it wasn't specified.
@@ -145,17 +143,17 @@ fn prompt_lockfile(
     for format in LockfileFormat::iter() {
         if format.parser().is_path_lockfile(Path::new(&lockfile)) {
             let lockfile_type = format.name().to_owned();
-            return Ok((lockfile, Some(lockfile_type)));
+            return Ok((lockfile, lockfile_type));
         }
     }
 
     // Prompt for lockfile type.
     let lockfile_type = match cli_lockfile_type {
-        Some(lockfile_type) => lockfile_type,
+        Some(lockfile_type) => lockfile_type.clone(),
         None => prompt_lockfile_type()?,
     };
 
-    Ok((lockfile, Some(lockfile_type)))
+    Ok((lockfile, lockfile_type))
 }
 
 /// Ask for the lockfile name.
