@@ -227,8 +227,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("LOCKFILE")
                     .value_name("LOCKFILE")
                     .value_hint(ValueHint::FilePath)
-                    .help("The package lock file to submit.")
-                    .required(true),
+                    .help("The package lock file to submit."),
                 Arg::new("lockfile-type")
                     .short('t')
                     .long("lockfile-type")
@@ -244,8 +243,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("LOCKFILE")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock file to submit.")
-                        .required(true),
+                        .help("The package lock file to submit."),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
@@ -404,8 +402,23 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("group")
                         .short('g')
                         .long("group")
-                        .value_name("group_name")
+                        .value_name("GROUP_NAME")
                         .help("Group which will be the owner of the project"),
+                    Arg::new("lockfile")
+                        .short('l')
+                        .long("lockfile")
+                        .value_name("LOCKFILE")
+                        .help("Project lockfile name"),
+                    Arg::new("lockfile-type")
+                        .short('t')
+                        .long("lockfile-type")
+                        .value_name("LOCKFILE_TYPE")
+                        .help("Project lockfile type"),
+                    Arg::new("force")
+                        .short('f')
+                        .long("force")
+                        .help("Overwrite existing configurations without confirmation")
+                        .action(ArgAction::SetTrue),
                 ]),
         )
         .subcommand(extensions::command());

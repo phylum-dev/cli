@@ -114,8 +114,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     let mut display_filter = None;
     let mut action = Action::None;
     let is_user; // is a user (non-batch) request
-    let project;
-    let group;
+    let jobs_project;
     let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
@@ -126,14 +125,11 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         is_user = !matches.get_flag("force");
         synch = true;
 
-        (project, group) = cli_project(api, matches).await?;
+        jobs_project = JobsProject::new(api, matches).await?;
 
-        let lockfile_type = matches.get_one::<String>("lockfile-type");
-        // LOCKFILE is a required parameter, so .unwrap() is safe.
-        let lockfile = matches.get_one::<String>("LOCKFILE").unwrap();
-
-        let res = parse::parse_lockfile(lockfile, lockfile_type)
-            .context("Unable to locate any valid package in package lockfile")?;
+        let res =
+            parse::parse_lockfile(jobs_project.lockfile, jobs_project.lockfile_type.as_deref())
+                .context("Unable to locate any valid package in package lockfile")?;
 
         if pretty_print {
             print_user_success!("Successfully parsed lockfile as type: {}", res.format.name());
@@ -142,7 +138,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         packages = res.packages;
         request_type = res.package_type;
     } else if let Some(matches) = matches.subcommand_matches("batch") {
-        (project, group) = cli_project(api, matches).await?;
+        jobs_project = JobsProject::new(api, matches).await?;
 
         let mut eof = false;
         let mut line = String::new();
@@ -158,9 +154,9 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         // If a package type was provided on the command line, prefer that
         //  to the global setting
-        if matches.get_flag("type") {
-            request_type = PackageType::from_str(matches.get_one::<String>("type").unwrap())
-                .unwrap_or(request_type);
+        if let Some(package_type) = matches.get_one::<String>("type") {
+            request_type = PackageType::from_str(package_type)
+                .map_err(|_| anyhow!("invalid package type: {}", package_type))?
         }
         label = matches.get_one::<String>("label");
         is_user = !matches.get_flag("force");
@@ -200,9 +196,9 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             &request_type,
             &packages,
             is_user,
-            project,
+            jobs_project.project_id,
             label.map(String::from),
-            group.map(String::from),
+            jobs_project.group,
         )
         .await?;
     log::debug!("Response => {:?}", job_id);
@@ -218,26 +214,58 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     Ok(CommandValue::Action(action))
 }
 
-/// Get the current project.
-///
-/// Assumes that the clap `matches` has a `project` and `group` arguments
-/// option.
-async fn cli_project(
-    api: &mut PhylumApi,
-    matches: &clap::ArgMatches,
-) -> Result<(ProjectId, Option<String>)> {
-    // Prefer `--project` and `--group` if they were specified.
-    if let Some(project_name) = matches.get_one::<String>("project") {
-        let group = matches.get_one::<String>("group").cloned();
-        let project = api.get_project_id(project_name, group.as_deref()).await?;
-        return Ok((project, group));
-    }
+/// Project information for analyze/batch.
+struct JobsProject {
+    project_id: ProjectId,
+    group: Option<String>,
+    lockfile: String,
+    lockfile_type: Option<String>,
+}
 
-    // Retrieve the project from the `.phylum_project` file.
-    get_current_project().map(|p: ProjectConfig| (p.id, p.group_name)).ok_or_else(|| {
-        anyhow!(
-            "Failed to find a valid project configuration. Specify an existing project using the \
-             `--project` flag, or create a new one with `phylum project create <name>`"
-        )
-    })
+impl JobsProject {
+    /// Get the current project.
+    ///
+    /// Assumes that the clap `matches` has a `project` and `group` arguments
+    /// option.
+    async fn new(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
+        let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").ok().flatten();
+        let cli_lockfile = matches.try_get_one::<String>("LOCKFILE").ok().flatten();
+
+        let current_project = get_current_project();
+
+        // Pick lockfile path from CLI and fallback to the current project.
+        let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
+            (Some(cli_lockfile), _) => (cli_lockfile.clone(), cli_lockfile_type.cloned()),
+            (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
+                (lockfile.clone(), lockfile_type.clone())
+            },
+            (None, _) => return Err(anyhow!("Missing lockfile parameter")),
+        };
+
+        match matches.get_one::<String>("project") {
+            // Prefer `--project` and `--group` if they were specified.
+            Some(project_name) => {
+                let group = matches.get_one::<String>("group").cloned();
+                let project = api.get_project_id(project_name, group.as_deref()).await?;
+                Ok(Self { project_id: project, group, lockfile, lockfile_type })
+            },
+            // Retrieve the project from the `.phylum_project` file.
+            None => {
+                let current_project = current_project.ok_or_else(|| {
+                    anyhow!(
+                        "Failed to find a valid project configuration. Specify an existing \
+                         project using the `--project` flag, or create a new one with `phylum \
+                         project create <name>`"
+                    )
+                })?;
+
+                Ok(Self {
+                    project_id: current_project.id,
+                    group: current_project.group_name,
+                    lockfile,
+                    lockfile_type,
+                })
+            },
+        }
+    }
 }

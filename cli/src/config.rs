@@ -96,6 +96,8 @@ pub struct ProjectConfig {
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
+    pub lockfile: Option<String>,
+    pub lockfile_type: Option<String>,
 }
 
 /// Create or open a file. If the file is created, it will restrict permissions

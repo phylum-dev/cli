@@ -38,7 +38,7 @@ phylum-init
 
 ## Install with curl
 
-This script requires `curl`, `mktemp`, `unzip`, and [`minisign`](https://jedisct1.github.io/minisign/):
+This script requires `curl`, `mktemp`, `unzip`, and `openssl`:
 
 ```sh
 curl https://sh.phylum.io/ | sh -

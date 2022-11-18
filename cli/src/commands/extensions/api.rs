@@ -98,6 +98,7 @@ impl From<ProcessException> for permissions::Permissions {
             run: process_exception.run,
             env: process_exception.env,
             net: Permission::Boolean(process_exception.net),
+            unsandboxed_run: Permission::default(),
         }
     }
 }
@@ -355,7 +356,7 @@ async fn parse_lockfile(
     }
 
     // Attempt to parse as requested lockfile type.
-    let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_ref())?;
+    let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_deref())?;
 
     Ok(PackageLock {
         package_type: parsed.package_type,

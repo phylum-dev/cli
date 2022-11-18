@@ -7,10 +7,11 @@ hidden: false
 Submit a request for analysis to the processing system
 
 ```sh
-phylum analyze [OPTIONS] <lockfile>
+phylum analyze [OPTIONS] [LOCKFILE]
 ```
 
 ### Options
+
 `-F`, `--force`
 &emsp; Force re-processing of packages (even if they already exist in the system)
 
