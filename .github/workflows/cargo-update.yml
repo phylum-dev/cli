@@ -42,7 +42,7 @@ jobs:
 
             github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
-              repo: context.repo.owner,
+              repo: context.repo.repo,
               workflow_id: "test.yml",
-              ref: "auto-cargo-update"
+              ref: "auto-cargo-update",
             });
