@@ -30,7 +30,6 @@ jobs:
         if: ${{ steps.commit.outcome == 'success' }}
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
             github.rest.pulls.create({
               owner: context.repo.owner,
@@ -39,4 +38,11 @@ jobs:
               base: context.ref,
               title: "build: Bump Cargo.lock dependencies",
               body: "Bump dependencies in Cargo.lock for all SemVer-compatible updates.",
+            });
+
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.owner,
+              workflow_id: "test.yml",
+              ref: "auto-cargo-update"
             });
