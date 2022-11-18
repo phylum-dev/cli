@@ -11,14 +11,18 @@ phylum group [OPTIONS] [SUBCOMMAND]
 ```
 
 ### Options
+
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
 ### Commands
-* [phylum group create](https://docs.phylum.io/docs/phylum_group_create)
+
 * [phylum group list](https://docs.phylum.io/docs/phylum_group_list)
+* [phylum group create](https://docs.phylum.io/docs/phylum_group_create)
+* [phylum group member](https://docs.phylum.io/docs/phylum_group_member)
 
 ### Examples
+
 ```sh
 # List all groups for the current account
 $ phylum group

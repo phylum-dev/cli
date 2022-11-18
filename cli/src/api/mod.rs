@@ -3,7 +3,9 @@ use std::time::Duration;
 use anyhow::{anyhow, Context};
 use phylum_types::types::auth::TokenResponse;
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::group::{CreateGroupRequest, CreateGroupResponse, ListUserGroupsResponse};
+use phylum_types::types::group::{
+    CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse, ListUserGroupsResponse,
+};
 use phylum_types::types::job::{
     AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
@@ -114,6 +116,16 @@ impl PhylumApi {
         path: U,
         body: Option<B>,
     ) -> Result<T> {
+        let body = self.send_request_raw(method, path, body).await?;
+        serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
+    }
+
+    async fn send_request_raw<B: Serialize, U: IntoUrl>(
+        &self,
+        method: Method,
+        path: U,
+        body: Option<B>,
+    ) -> Result<String> {
         let mut request = self.client.request(method, path);
         if let Some(body) = body {
             request = request.json(&body);
@@ -135,7 +147,7 @@ impl PhylumApi {
             return Err(err.into());
         }
 
-        serde_json::from_str::<T>(&body).map_err(|e| PhylumApiError::Other(e.into()))
+        Ok(body)
     }
 }
 
@@ -353,6 +365,26 @@ impl PhylumApi {
     pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
         let group = CreateGroupRequest { group_name: group_name.into() };
         self.post(endpoints::group_create(&self.config.connection.uri)?, group).await
+    }
+
+    /// Get members of a group.
+    pub async fn group_members(&self, group_name: &str) -> Result<ListGroupMembersResponse> {
+        let url = endpoints::group_members(&self.config.connection.uri, group_name)?;
+        self.get(url).await
+    }
+
+    /// Add user to a group.
+    pub async fn group_add(&self, group_name: &str, user_email: &str) -> Result<()> {
+        let url = endpoints::group_usermod(&self.config.connection.uri, group_name, user_email)?;
+        self.send_request_raw(Method::POST, url, None::<()>).await?;
+        Ok(())
+    }
+
+    /// Remove user from a group.
+    pub async fn group_remove(&self, group_name: &str, user_email: &str) -> Result<()> {
+        let url = endpoints::group_usermod(&self.config.connection.uri, group_name, user_email)?;
+        self.send_request_raw(Method::DELETE, url, None::<()>).await?;
+        Ok(())
     }
 
     pub fn config(&self) -> &Config {

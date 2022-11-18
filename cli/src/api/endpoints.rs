@@ -98,6 +98,20 @@ pub fn group_project_summary(api_uri: &str, group: &str) -> Result<Url, BaseUriE
     Ok(url)
 }
 
+/// POST/DELETE /groups/<groupName>/members/<userEmail>
+pub fn group_usermod(api_uri: &str, group: &str, user: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group, "members", user]);
+    Ok(url)
+}
+
+/// GET /groups/<groupName>/members
+pub fn group_members(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group, "members"]);
+    Ok(url)
+}
+
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)

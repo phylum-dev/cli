@@ -4,7 +4,9 @@ use std::str::{self, FromStr};
 
 use chrono::NaiveDateTime;
 use console::style;
-use phylum_types::types::group::{ListUserGroupsResponse, UserGroup};
+use phylum_types::types::group::{
+    GroupMember, ListGroupMembersResponse, ListUserGroupsResponse, UserGroup,
+};
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor, JobStatusResponse};
 use phylum_types::types::package::{
     Issue, IssuesListItem, Package, PackageStatus, PackageStatusExtended, PackageType, RiskLevel,
@@ -66,6 +68,28 @@ impl Format for ListUserGroupsResponse {
             ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
             ("Owner", |group| print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()),
             ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
+        ]);
+        let _ = writeln!(writer, "{table}");
+    }
+}
+
+impl Format for ListGroupMembersResponse {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        // Maximum length of email column.
+        const MAX_EMAIL_WIDTH: usize = 25;
+        // Maximum length of first name column.
+        const MAX_FIRST_NAME_WIDTH: usize = 15;
+        // Maximum length of last name column.
+        const MAX_LAST_NAME_WIDTH: usize = 15;
+
+        let table = format_table::<fn(&GroupMember) -> String, _>(&self.members, &[
+            ("E-Mail", |member| print::truncate(&member.user_email, MAX_EMAIL_WIDTH).into_owned()),
+            ("First Name", |member| {
+                print::truncate(&member.first_name, MAX_FIRST_NAME_WIDTH).into_owned()
+            }),
+            ("Last Name", |member| {
+                print::truncate(&member.last_name, MAX_LAST_NAME_WIDTH).into_owned()
+            }),
         ]);
         let _ = writeln!(writer, "{table}");
     }

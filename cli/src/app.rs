@@ -345,7 +345,52 @@ pub fn add_subcommands(command: Command) -> Command {
                             .help("Name for the new group")
                             .required(true),
                     ),
-                ),
+                )
+                .subcommand(
+                    Command::new("member").about("Manage group members").args(&[
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("GROUP")
+                            .help("Group to list the members for")
+                            .required(true),
+                        Arg::new("json")
+                            .action(ArgAction::SetTrue)
+                            .short('j')
+                            .long("json")
+                            .help("Produce member list in json format (default: false)"),
+                        ])
+                    .subcommand(
+                        Command::new("list").about("List group members").args(&[
+                            Arg::new("json")
+                                .action(ArgAction::SetTrue)
+                                .short('j')
+                                .long("json")
+                                .help("Produce member list in json format (default: false)"),
+                        ]),
+                    )
+                    .subcommand(
+                        Command::new("add").about("Add user to group").args(&[
+                            Arg::new("user")
+                                .value_name("USER")
+                                .help("User(s) to be added")
+                                .action(ArgAction::Append)
+                                .required(true),
+                        ]),
+                    )
+                    .subcommand(
+                        Command::new("remove")
+                            .alias("rm")
+                            .about("Remove user from group")
+                            .args(&[
+                                Arg::new("user")
+                                    .value_name("USER")
+                                    .help("User(s) to be removed")
+                                    .action(ArgAction::Append)
+                                    .required(true),
+                            ]),
+                    )
+                )
         )
         .subcommand(
             Command::new("init")
