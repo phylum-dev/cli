@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 
 use crate::commands::{extensions, parse};
 
-const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_prefix = "cargo:");
+const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_suffix = "+");
 
 lazy_static! {
     pub static ref USER_AGENT: String = format!("{}/{}", env!("CARGO_PKG_NAME"), VERSION);
