@@ -51,10 +51,13 @@ impl Parse for PackageLock {
                     .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
 
                 // Get dependency version.
-                let version = if resolved.starts_with("https://registry.npmjs.org") {
-                    get_version(keys, name)?
-                } else if let Some(git_url) = resolved.strip_prefix("git+") {
+                let version = if let Some(git_url) = resolved.strip_prefix("git+") {
                     git_url.to_owned()
+                } else if resolved.starts_with("http") {
+                    // NOTE: This accepts packages that are not hosted by NPM and submits them
+                    // pretending they are hosted on npmjs.org. This is currently necessary to
+                    // allow analysis for third-party registries.
+                    get_version(keys, name)?
                 } else {
                     // Filter filesystem dependencies.
                     continue;
