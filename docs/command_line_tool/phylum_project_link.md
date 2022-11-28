@@ -3,17 +3,34 @@ title: phylum project link
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
+
 Link a repository to a project
+
 ```sh
-phylum project link [OPTIONS] <name>
+Usage: phylum project link [OPTIONS] <name>
 ```
-This command will create the appropriate `.phylum_project` file in the current working directory.
+
+### Arguments
+
+<name>
+&emsp; Name of the project
 
 ### Options
-`-g`, `--group <group_name>`
+
+-g, --group <group_name>
 &emsp; Group owning the project
 
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
 ### Examples
+
 ```sh
 # Link current folder to an existing project named 'sample'
 $ phylum project link sample

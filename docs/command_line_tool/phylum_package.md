@@ -7,19 +7,44 @@ hidden: false
 Retrieve the details of a specific package
 
 ```sh
-phylum package [OPTIONS] <name> <version>
+Usage: phylum package [OPTIONS] <name> <version>
 ```
+
+### Arguments
+
+<name>
+&emsp; The name of the package.
+
+<version>
+&emsp; The version of the package.
 
 ### Options
 
-`-f`, `--filter`
-&emsp; Provide a filter used to limit the issues displayed
+-t, --package-type <type>
+&emsp; The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")
 
-`-j`, `--json`
+-j, --json
 &emsp; Produce output in json format (default: false)
 
-`-t`, `--package-type <type>`
-&emsp; The type of package: `npm`, `pypi`, `nuget`, `maven`, `rubygems`
+-f, --filter <filter>
+&emsp; Provide a filter used to limit the issues displayed
+
+EXAMPLES
+\# Show only issues with severity of at least 'high'
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=high
+
+\# Show issues with severity of 'critical' in the 'author'
+and 'engineering' domains
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

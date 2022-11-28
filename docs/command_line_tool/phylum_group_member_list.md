@@ -7,13 +7,22 @@ hidden: false
 List group members
 
 ```sh
-phylum group member --group <GROUP> list [OPTIONS]
+Usage: phylum group member --group <GROUP> list [OPTIONS]
 ```
 
 ### Options
 
-`-j`, `--json`
+-j, --json
 &emsp; Produce member list in json format (default: false)
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

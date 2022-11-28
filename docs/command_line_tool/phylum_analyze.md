@@ -7,34 +7,54 @@ hidden: false
 Submit a request for analysis to the processing system
 
 ```sh
-phylum analyze [OPTIONS] [LOCKFILE]
+Usage: phylum analyze [OPTIONS] [LOCKFILE]
 ```
+
+### Arguments
+
+[LOCKFILE]
+&emsp; The package lock file to submit.
 
 ### Options
 
-`-F`, `--force`
+-F, --force
 &emsp; Force re-processing of packages (even if they already exist in the system)
 
-`-f`, `--filter <filter>`
+-l, --label <label>
+&emsp; Specify a label to use for analysis
+
+-f, --filter <filter>
 &emsp; Provide a filter used to limit the issues displayed
 
-`-g`, `--group <group_name>`
-&emsp; Specify a group to use for analysis
+EXAMPLES
+\# Show only issues with severity of at least 'high'
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=high
 
-`-j`, `--json`
+\# Show issues with severity of 'critical' in the 'author'
+and 'engineering' domains
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
+
+-j, --json
 &emsp; Produce output in json format (default: false)
 
-`-l`, `--label <label>`
-&emsp; Specify a label for a given analysis submission
+-p, --project <project_name>
+&emsp; Specify a project to use for analysis
 
-`-p`, `--project <project_name>`
-&emsp; Specify a project to use for analysis (must already exist)
+-g, --group <group_name>
+&emsp; Specify a group to use for analysis
 
-`-v`, `--verbose`
-&emsp; Increase verbosity of API response
+-t, --lockfile-type <type>
+&emsp; The type of the lock file (default: auto)
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
 
-`-t`, `--lockfile-type`
-&emsp; The type of the lockfile (default: `auto`): `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

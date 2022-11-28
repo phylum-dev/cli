@@ -4,27 +4,44 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Return information about historical scans
+Return information about historical jobs
 
 ```sh
-phylum history [OPTIONS] [JOB_ID]
+Usage: phylum history [OPTIONS] [JOB_ID]
 ```
 
-`<JOB_ID>`
+### Arguments
+
+[JOB_ID]
 &emsp; The job id to query
 
 ### Options
-`-f`, `--filter <filter>`
+
+-f, --filter <filter>
 &emsp; Provide a filter used to limit the issues displayed
 
-`-j`, `--json`
+EXAMPLES
+\# Show only issues with severity of at least 'high'
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=high
+
+\# Show issues with severity of 'critical' in the 'author'
+and 'engineering' domains
+&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
+
+-j, --json
 &emsp; Produce output in json format (default: false)
 
-`-p`, `--project <project_name>`
+-p, --project <project_name>
 &emsp; Project name used to filter jobs
 
-`-v`, `--verbose`
-&emsp; Increase verbosity of API response
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

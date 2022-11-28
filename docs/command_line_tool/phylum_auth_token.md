@@ -4,17 +4,28 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Returns the current authentication token
+Return the current authentication token
 
 ```sh
-phylum auth token [OPTIONS]
+Usage: phylum auth token [OPTIONS]
 ```
 
 ### Options
-`-b`, `--bearer`
+
+-b, --bearer
 &emsp; Output the short-lived bearer token for the Phylum API
 
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
 ### Examples
+
 ```sh
 # Output long-lived refresh token
 $ phylum auth token

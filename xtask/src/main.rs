@@ -8,6 +8,8 @@ use clap_complete::shells::{Bash, Fish, Zsh};
 use log::{info, LevelFilter};
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
 
+mod gendocs;
+
 fn main() -> Result<()> {
     TermLogger::init(
         LevelFilter::Info,
@@ -16,6 +18,7 @@ fn main() -> Result<()> {
         ColorChoice::Auto,
     )?;
     match std::env::args().nth(1).as_deref() {
+        Some("gendocs") => gendocs::gendocs(),
         Some("gencomp") => gencomp::gencomp(),
         Some("test") => cli_args_test::test(),
         None | Some("help") => {
@@ -41,6 +44,7 @@ fn print_help() {
 
     Available tasks:
 
+    gendocs ....... Generate CLI documentation files
     gencomp ....... Generate completion files
     test .......... Run various CLI subcommand paths
     "#

@@ -4,16 +4,31 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Parse a lockfile and output the packages as JSON
+Parse a lockfile
 
 ```sh
-phylum parse [OPTIONS] [LOCKFILE]
+Usage: phylum parse [OPTIONS] [LOCKFILE]
 ```
+
+### Arguments
+
+[LOCKFILE]
+&emsp; The package lock file to submit.
 
 ### Options
 
-`-t`, `--lockfile-type`
-&emsp; The type of the lockfile (default: `auto`): `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
+-t, --lockfile-type <type>
+&emsp; The type of the lock file (default: auto)
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

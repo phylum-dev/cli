@@ -7,13 +7,20 @@ hidden: false
 Create a new extension
 
 ```sh
-phylum extension new <PATH>
+Usage: phylum extension new [OPTIONS] <PATH>
 ```
 
-### Details
+### Arguments
 
-This command will create a "Hello, World!" extension skeleton that can be
-modified for a specific use. See the [Extension Quickstart] guide for more
-detail.
+<PATH>
 
-[Extension Quickstart]: https://docs.phylum.io/docs/extension_quickstart
+### Options
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information

@@ -4,29 +4,32 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Install an extension
+Install extension
 
 ```sh
-phylum extension install [OPTIONS] <PATH>
+Usage: phylum extension install [OPTIONS] <PATH>
 ```
+
+### Arguments
+
+<PATH>
 
 ### Options
-`--accept-permissions`
+
+-y, --yes
+&emsp; Accept permissions and overwrite existing extensions (same as --overwrite --accept-permissions)
+
+--accept-permissions
 &emsp; Automatically accept requested permissions
 
-`--overwrite`
+--overwrite
 &emsp; Overwrite existing extension
 
-`-y`, `--yes`
-&emsp; Accept permissions and overwrite existing (same as `--overwrite --accept-permissions`)
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
 
-### Details
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
 
-The extension will be installed under `$XDG_DATA_HOME/phylum/extensions/<EXT_NAME>`.
-If `$XDG_DATA_HOME` is not set, it will default to `$HOME/.local/share/phylum/extensions/<EXT_NAME>`.
-
-Once installed, the extension will be accessible via the Phylum CLI:
-
-```sh
-phylum <EXT_NAME> [OPTIONS]...
-```
+-h, --help
+&emsp; Print help information

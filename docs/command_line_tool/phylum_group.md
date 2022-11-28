@@ -7,19 +7,28 @@ hidden: false
 Interact with user groups
 
 ```sh
-phylum group [OPTIONS] [SUBCOMMAND]
+Usage: phylum group [OPTIONS] [COMMAND]
 ```
 
 ### Options
 
-`-j`, `--json`
-&emsp; Produce output in json format (default: false)
+-j, --json
+&emsp; Produce group list in json format (default: false)
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Commands
 
-* [phylum group list](https://docs.phylum.io/docs/phylum_group_list)
-* [phylum group create](https://docs.phylum.io/docs/phylum_group_create)
-* [phylum group member](https://docs.phylum.io/docs/phylum_group_member)
+* [phylum group list](./phylum_group_list)
+* [phylum group create](./phylum_group_create)
+* [phylum group member](./phylum_group_member)
 
 ### Examples
 

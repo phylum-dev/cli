@@ -4,37 +4,51 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Interact with the Phylum API
+Client interface to the Phylum system
 
-### Core Commands
-* [phylum analyze](https://docs.phylum.io/docs/phylum_analyze)
-* [phylum auth](https://docs.phylum.io/docs/phylum_auth)
-* [phylum project](https://docs.phylum.io/docs/phylum_project)
-
-### Additional Commands
-* [phylum group](https://docs.phylum.io/docs/phylum_group)
-* [phylum help](https://docs.phylum.io/docs/phylum_help)
-* [phylum history](https://docs.phylum.io/docs/phylum_history)
-* [phylum package](https://docs.phylum.io/docs/phylum_package)
-* [phylum parse](https://docs.phylum.io/docs/phylum_parse)
-* [phylum ping](https://docs.phylum.io/docs/phylum_ping)
-* [phylum uninstall](https://docs.phylum.io/docs/phylum_uninstall)
-* [phylum update](https://docs.phylum.io/docs/phylum_update)
-* [phylum version](https://docs.phylum.io/docs/phylum_version)
+```sh
+Usage: phylum [OPTIONS] [COMMAND]
+```
 
 ### Options
-  `-c`, `--config <FILE>`
-  &emsp; Use a specific configuration file
-  
-  `-h`, `--help`
-  &emsp; Print help information
-  
-  `--no-check-certificate`
-  &emsp; Don't validate the server certificate when performing API requests
-  &emsp; DANGER: this should only be used when SSL termination breaks the Phylum certificate pinning
-  
-  `-t`, `--timeout <TIMEOUT>`
-  &emsp; Set the timeout (in seconds) for requests to the Phylum API
-  
-  `-V`, `--version`
-  &emsp; Print version information
+
+-c, --config <FILE>
+&emsp; Sets a custom config file
+
+-t, --timeout <TIMEOUT>
+&emsp; Set the timeout (in seconds) for requests to the Phylum api
+
+--no-check-certificate
+&emsp; Don't validate the server certificate when performing api requests
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
+-V, --version
+&emsp; Print version information
+
+### Commands
+
+* [phylum history](./phylum_history)
+* [phylum project](./phylum_project)
+* [phylum package](./phylum_package)
+* [phylum auth](./phylum_auth)
+* [phylum ping](./phylum_ping)
+* [phylum parse](./phylum_parse)
+* [phylum analyze](./phylum_analyze)
+* [phylum version](./phylum_version)
+* [phylum group](./phylum_group)
+* [phylum init](./phylum_init)
+* [phylum extension](./phylum_extension)
+* [phylum uninstall](./phylum_uninstall)
+* [phylum update](./phylum_update)
+* [phylum yarn](./phylum_yarn)
+* [phylum npm](./phylum_npm)
+* [phylum poetry](./phylum_poetry)
+* [phylum duplicates](./phylum_duplicates)

@@ -7,13 +7,24 @@ hidden: false
 Add user to group
 
 ```sh
-phylum group member --group <GROUP> add [OPTIONS] <USER>...
+Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 ```
 
 ### Arguments
 
-`<USER>`...
+<USER>
 &emsp; User(s) to be added
+
+### Options
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 
