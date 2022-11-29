@@ -1,4 +1,6 @@
-{CLAP-MARKDOWN}
+{PH-HEADER}
+
+{PH-MARKDOWN}
 ### Examples
 
 ```sh

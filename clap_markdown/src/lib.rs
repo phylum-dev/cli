@@ -70,23 +70,25 @@ impl Markdown {
         let _ = writeln!(markdown, "\n```sh\n{usage}\n```");
 
         // Add positional arguments.
-        let mut positionals = cmd.get_positionals().peekable();
+        let mut positionals = cmd.get_positionals().flat_map(generate_argument).peekable();
         if positionals.peek().is_some() {
             let _ = writeln!(markdown, "\n### Arguments");
         }
         for positional in positionals {
-            let arg = generate_argument(positional);
-            let _ = writeln!(markdown, "\n{arg}");
+            let _ = writeln!(markdown, "\n{positional}");
         }
 
         // Add options.
-        let mut options = cmd.get_arguments().filter(|arg| !arg.is_positional()).peekable();
+        let mut options = cmd
+            .get_arguments()
+            .filter(|arg| !arg.is_positional())
+            .flat_map(generate_argument)
+            .peekable();
         if options.peek().is_some() {
             let _ = writeln!(markdown, "\n### Options");
         }
         for option in options {
-            let arg = generate_argument(option);
-            let _ = writeln!(markdown, "\n{arg}");
+            let _ = writeln!(markdown, "\n{option}");
         }
 
         // Add subcommands.
@@ -109,13 +111,13 @@ impl Markdown {
 }
 
 /// Convert argument to markdown.
-fn generate_argument(arg: &Arg) -> String {
-    let mut markdown = String::new();
-
+fn generate_argument(arg: &Arg) -> Option<String> {
     // Don't show hidden arguments.
     if arg.is_hide_set() {
-        return markdown;
+        return None;
     }
+
+    let mut markdown = String::new();
 
     // Add short option.
     if let Some(short) = arg.get_short() {
@@ -168,14 +170,15 @@ fn generate_argument(arg: &Arg) -> String {
 
     // Add accepted values.
     let possible_values = arg.get_possible_values();
-    if let Some(possible_value) = possible_values.get(0) {
+    let mut possible_values = possible_values.iter().filter(|value| !value.is_hide_set());
+    if let Some(possible_value) = possible_values.next() {
         let _ = write!(markdown, "\n&emsp; Accepted values: `{}`", possible_value.get_name());
     }
-    for possible_value in possible_values.iter().skip(1) {
+    for possible_value in possible_values {
         let _ = write!(markdown, ", `{}`", possible_value.get_name());
     }
 
-    markdown
+    Some(markdown)
 }
 
 /// Escape markdown for proper formatting.

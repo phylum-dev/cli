@@ -14,12 +14,9 @@ const OUTPUT_DIR: &str = "./docs/command_line_tool";
 /// Template directory.
 const TEMPLATE_DIR: &str = "./doc_templates";
 
-/// Default fallback template.
-const DEFAULT_TEMPLATE: &str = "{CLAP-MARKDOWN}";
-
 /// File header inserted at the top of each page.
 const HEADER: &str = "---
-title: {MARKDOWN-TITLE}
+title: {PH-TITLE}
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---\n\n";
@@ -45,6 +42,10 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
     // Find all installed extensions.
     let extensions = extensions::installed_extensions()?;
 
+    // Load default template.
+    let default_template = fs::read_to_string(template_dir.join("default.md"))
+        .expect("missing default.md template");
+
     // Setup Markdown generator.
     let mut cli = app::app();
     let generator = Generator::new(&mut cli);
@@ -60,12 +61,13 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
         let file_name = format!("{}.md", page.command.join("_"));
 
         // Load markdown template.
-        let template = fs::read_to_string(template_dir.join(&file_name))
-            .unwrap_or_else(|_| DEFAULT_TEMPLATE.into());
+        let mut markdown = fs::read_to_string(template_dir.join(&file_name))
+            .unwrap_or_else(|_| default_template.clone());
 
         // Replace template placeholders.
-        let mut markdown = HEADER.replace("{MARKDOWN-TITLE}", &page.command.join(" "));
-        markdown += &template.replace("{CLAP-MARKDOWN}", &page.content);
+        markdown = markdown.replace("{PH-HEADER}", HEADER);
+        markdown = markdown.replace("{PH-TITLE}", &page.command.join(" "));
+        markdown = markdown.replace("{PH-MARKDOWN}", &page.content);
 
         pages.push((target_dir.join(file_name), markdown));
     }

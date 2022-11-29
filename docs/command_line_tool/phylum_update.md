@@ -12,8 +12,6 @@ Usage: phylum update [OPTIONS]
 
 ### Options
 
-
-
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

@@ -11,6 +11,3 @@ edition = "2021"
 
 [dependencies]
 clap = "4.0.26"
-
-[dev-dependencies]
-phylum-cli = { git = "https://github.com/phylum-dev/cli" }

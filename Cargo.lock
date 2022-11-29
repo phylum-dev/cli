@@ -552,7 +552,6 @@ name = "clap_markdown"
 version = "0.1.0"
 dependencies = [
  "clap",
- "phylum-cli 3.12.1 (git+https://github.com/phylum-dev/cli)",
 ]
 
 [[package]]
@@ -3156,7 +3155,7 @@ dependencies = [
  "maplit",
  "once_cell",
  "open",
- "phylum_lockfile 0.1.0",
+ "phylum_lockfile",
  "phylum_types",
  "predicates",
  "prettytable-rs",
@@ -3183,77 +3182,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "phylum-cli"
-version = "3.12.1"
-source = "git+https://github.com/phylum-dev/cli#23f100769873433efabf1e71f1f35184b53bd477"
-dependencies = [
- "anyhow",
- "atty",
- "base64",
- "birdcage",
- "bytes",
- "chrono",
- "cidr",
- "clap",
- "console",
- "deno_ast",
- "deno_core",
- "deno_runtime",
- "dialoguer",
- "env_logger",
- "futures",
- "git-version",
- "home",
- "hyper",
- "lazy_static",
- "libc",
- "log",
- "maplit",
- "once_cell",
- "open",
- "phylum_lockfile 0.1.0 (git+https://github.com/phylum-dev/cli)",
- "phylum_types",
- "prettytable-rs",
- "rand 0.8.5",
- "regex",
- "reqwest",
- "routerify",
- "rsa 0.6.1",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "shellexpand",
- "tempfile",
- "textwrap",
- "thiserror",
- "tokio",
- "toml",
- "unicode-width",
- "url",
- "walkdir",
- "zip",
-]
-
-[[package]]
 name = "phylum_lockfile"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "log",
- "nom",
- "phylum_types",
- "serde",
- "serde-xml-rs",
- "serde_json",
- "serde_yaml",
- "toml",
-]
-
-[[package]]
-name = "phylum_lockfile"
-version = "0.1.0"
-source = "git+https://github.com/phylum-dev/cli#23f100769873433efabf1e71f1f35184b53bd477"
 dependencies = [
  "anyhow",
  "log",
@@ -5837,7 +5767,7 @@ dependencies = [
  "fs_extra",
  "home",
  "log",
- "phylum-cli 3.12.1",
+ "phylum-cli",
  "simplelog",
 ]
 

@@ -29,13 +29,13 @@ Usage: phylum package [OPTIONS] <name> <version>
 -f, --filter <filter>
 &emsp; Provide a filter used to limit the issues displayed
 
-EXAMPLES
-\# Show only issues with severity of at least 'high'
-&nbsp;&nbsp;&nbsp;&nbsp;--filter=high
+&nbsp;&nbsp;&nbsp;&nbsp;EXAMPLES:
+&nbsp;&nbsp;&nbsp;&nbsp;\# Show only issues with severity of at least 'high'
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--filter=high
 
-\# Show issues with severity of 'critical' in the 'author'
-and 'engineering' domains
-&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
+&nbsp;&nbsp;&nbsp;&nbsp;\# Show issues with severity of 'critical' in the 'author'
+&nbsp;&nbsp;&nbsp;&nbsp;and 'engineering' domains
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
 
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
