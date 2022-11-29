@@ -29,6 +29,11 @@ Usage: phylum project set-thresholds [OPTIONS] <name>
 -h, --help
 &emsp; Print help information
 
+### Details
+
+Analysis results scoring at or below the defined projects thresholds will cause
+the analysis to be marked as failure.
+
 ### Examples
 
 ```sh

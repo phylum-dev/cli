@@ -223,7 +223,7 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse a lockfile").args(&[
+            Command::new("parse").about("Parse a lockfile and output its packages as JSON").args(&[
                 Arg::new("LOCKFILE")
                     .value_name("LOCKFILE")
                     .value_hint(ValueHint::FilePath)

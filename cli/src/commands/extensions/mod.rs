@@ -38,7 +38,7 @@ pub fn command() -> Command {
             Command::new("install")
                 .about("Install extension")
                 .arg(
-                    arg!(-y --yes "Accept permissions and overwrite existing extensions (same as --overwrite --accept-permissions)")
+                    arg!(-y --yes "Accept permissions and overwrite existing extensions (same as `--overwrite --accept-permissions`)")
                         .conflicts_with("accept-permissions")
                         .conflicts_with("overwrite")
                 )

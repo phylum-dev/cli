@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Parse a lockfile
+Parse a lockfile and output the packages as JSON
 
 ```sh
 Usage: phylum parse [OPTIONS] [LOCKFILE]

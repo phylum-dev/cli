@@ -17,7 +17,7 @@ Usage: phylum extension install [OPTIONS] <PATH>
 ### Options
 
 -y, --yes
-&emsp; Accept permissions and overwrite existing extensions (same as --overwrite --accept-permissions)
+&emsp; Accept permissions and overwrite existing extensions (same as \`--overwrite --accept-permissions\`)
 
 --accept-permissions
 &emsp; Automatically accept requested permissions
@@ -33,3 +33,14 @@ Usage: phylum extension install [OPTIONS] <PATH>
 
 -h, --help
 &emsp; Print help information
+
+### Details
+
+The extension will be installed under `$XDG_DATA_HOME/phylum/extensions/<EXT_NAME>`.
+If `$XDG_DATA_HOME` is not set, it will default to `$HOME/.local/share/phylum/extensions/<EXT_NAME>`.
+
+Once installed, the extension will be accessible via the Phylum CLI:
+
+```sh
+phylum <EXT_NAME> [OPTIONS]...
+```

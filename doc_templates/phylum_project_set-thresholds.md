@@ -2,6 +2,11 @@
 
 {PH-MARKDOWN}
 
+### Details
+
+Analysis results scoring at or below the defined projects thresholds will cause
+the analysis to be marked as failure.
+
 ### Examples
 
 ```sh
