@@ -4,4 +4,5 @@ members = [
   "cli",
   "lockfile",
   "xtask",
+  "clap_markdown",
 ]

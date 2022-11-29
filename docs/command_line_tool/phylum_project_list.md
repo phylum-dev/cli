@@ -3,19 +3,32 @@ title: phylum project list
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
+
 List all existing projects
+
 ```sh
-phylum project list [OPTIONS]
+Usage: phylum project list [OPTIONS]
 ```
 
 ### Options
-`-j`, `--json`
+
+-j, --json
 &emsp; Produce output in json format (default: false)
 
-`-g`, `--group <group_name>`
+-g, --group <group_name>
 &emsp; Group to list projects for
 
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
 ### Examples
+
 ```sh
 # List all existing projects
 $ phylum project list

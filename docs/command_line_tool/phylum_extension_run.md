@@ -7,13 +7,26 @@ hidden: false
 Run an extension from a directory
 
 ```sh
-phylum extension run [OPTIONS] <PATH> [OPTIONS]...
+Usage: phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 ```
+
+### Arguments
+
+<PATH>
+
+[OPTIONS]
+&emsp; Extension parameters
 
 ### Options
 
-`-y`, `--yes`
+-y, --yes
 &emsp; Automatically accept requested permissions
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
 
 ### Details
 

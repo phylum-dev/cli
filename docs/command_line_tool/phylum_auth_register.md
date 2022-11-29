@@ -3,8 +3,20 @@ title: phylum auth register
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
+
 Register a new account
+
 ```sh
-phylum auth register
+Usage: phylum auth register [OPTIONS]
 ```
-This command will attempt to open a browser window to complete the registration process.
+
+### Options
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information

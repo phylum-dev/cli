@@ -5,15 +5,27 @@ hidden: false
 ---
 
 Uninstall the Phylum CLI
+
 ```sh
-phylum uninstall [OPTIONS]
+Usage: phylum uninstall [OPTIONS]
 ```
 
 ### Options
-`-p`, `--purge`
-&emsp; Remove all installed files, including configuration files (default: false)
+
+-p, --purge
+&emsp; Remove all files, including configuration files (default: false)
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
+
 ```sh
 # Remove installed phylum binary and data files
 $ phylum uninstall

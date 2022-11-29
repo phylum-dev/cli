@@ -7,23 +7,36 @@ hidden: false
 Create, list, link and set thresholds for projects
 
 ```sh
-phylum project [OPTIONS] [SUBCOMMAND]
+Usage: phylum project [OPTIONS] [COMMAND]
 ```
 
 ### Options
-`-j`, `--json`
+
+-j, --json
 &emsp; Produce output in json format (default: false)
 
-`-g`, `--group <group_name>`
+-g, --group <group_name>
 &emsp; Group to list projects for
 
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
 ### Commands
-* [phylum project create](https://docs.phylum.io/docs/phylum_project_create)
-* [phylum project link](https://docs.phylum.io/docs/phylum_project_link)
-* [phylum project list](https://docs.phylum.io/docs/phylum_project_list)
-* [phylum project set-thresholds](https://docs.phylum.io/docs/phylum_project_set-thresholds)
+
+* [phylum project create](./phylum_project_create)
+* [phylum project delete](./phylum_project_delete)
+* [phylum project list](./phylum_project_list)
+* [phylum project link](./phylum_project_link)
+* [phylum project set-thresholds](./phylum_project_set-thresholds)
 
 ### Examples
+
 ```sh
 # List all projects for the current account
 $ phylum project

@@ -13,13 +13,13 @@ lazy_static! {
 
 const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displayed
 
-EXAMPLES
-# Show only issues with severity of at least 'high'
-    --filter=high
+    EXAMPLES:
+    # Show only issues with severity of at least 'high'
+        --filter=high
 
-# Show issues with severity of 'critical' in the 'author'
-and 'engineering' domains
-    --filter=crit,aut,eng
+    # Show issues with severity of 'critical' in the 'author'
+    and 'engineering' domains
+        --filter=crit,aut,eng
 "#;
 
 pub fn app() -> Command {
@@ -223,7 +223,7 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse a lockfile").args(&[
+            Command::new("parse").about("Parse a lockfile and output its packages as JSON").args(&[
                 Arg::new("LOCKFILE")
                     .value_name("LOCKFILE")
                     .value_hint(ValueHint::FilePath)
