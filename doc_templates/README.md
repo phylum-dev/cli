@@ -24,4 +24,5 @@ These placeholers are currently supported:
 | ---------------- | -------------------------------------------------------------------------------------- |
 | `{PH-HEADER}`    | ReadMe.com metadata header; omit this when manually overriding the header              |
 | `{PH-TITLE}`     | Command title (i.e. `phylum init`); use this for the ReadMe.com metadata header title  |
-| `{PH-MARKDOWN}`  | Automatically generated command documentation; this should be present in all templates |
+| `{PH-MARKDOWN}
+`  | Automatically generated command documentation; this should be present in all templates |

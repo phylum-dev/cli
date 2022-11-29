@@ -19,7 +19,7 @@ const HEADER: &str = "---
 title: {PH-TITLE}
 category: 6255e67693d5200013b1fa3e
 hidden: false
----\n\n";
+---";
 
 /// Generate Phylum CLI documentation.
 pub fn gendocs() -> Result<()> {
@@ -43,8 +43,8 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
     let extensions = extensions::installed_extensions()?;
 
     // Load default template.
-    let default_template = fs::read_to_string(template_dir.join("default.md"))
-        .expect("missing default.md template");
+    let default_template =
+        fs::read_to_string(template_dir.join("default.md")).expect("missing default.md template");
 
     // Setup Markdown generator.
     let mut cli = app::app();
@@ -64,10 +64,13 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
         let mut markdown = fs::read_to_string(template_dir.join(&file_name))
             .unwrap_or_else(|_| default_template.clone());
 
+        // Remove trailing newline from markdown.
+        let content = page.content.strip_suffix('\n').unwrap_or(&page.content);
+
         // Replace template placeholders.
         markdown = markdown.replace("{PH-HEADER}", HEADER);
         markdown = markdown.replace("{PH-TITLE}", &page.command.join(" "));
-        markdown = markdown.replace("{PH-MARKDOWN}", &page.content);
+        markdown = markdown.replace("{PH-MARKDOWN}", content);
 
         pages.push((target_dir.join(file_name), markdown));
     }
