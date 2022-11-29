@@ -68,8 +68,15 @@ cargo test --all-features
 Code should be documented where appropriate. The existing code can be used as
 guidance and the general `rustfmt` rules should be followed for formatting.
 
-All user-facing changes made to the CLI must also be documented in the Markdown
-documentation available in the `docs/` directory.
+All user-facing CLI changes require regenerating the CLI documentation. This is
+automatically validated by CI and can be done with the following command:
+
+```sh
+cargo xtask gendocs
+```
+
+You can add a file to the [`doc_templates` directory](./doc_templates) to add
+extra detail to a command's CLI documentation.
 
 ### Style
 

@@ -548,6 +548,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_markdown"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5807,6 +5814,7 @@ dependencies = [
  "anyhow",
  "clap",
  "clap_complete",
+ "clap_markdown",
  "fs_extra",
  "home",
  "log",

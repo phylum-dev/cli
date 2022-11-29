@@ -7,5 +7,16 @@ hidden: false
 List installed extensions
 
 ```sh
-phylum extension list
+Usage: phylum extension list [OPTIONS]
 ```
+
+### Options
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information

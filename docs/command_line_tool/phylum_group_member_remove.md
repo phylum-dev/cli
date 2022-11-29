@@ -7,13 +7,24 @@ hidden: false
 Remove user from group
 
 ```sh
-phylum group member --group <GROUP> remove [OPTIONS] <USER>...
+Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 ```
 
 ### Arguments
 
-`<USER>`...
+<USER>
 &emsp; User(s) to be removed
+
+### Options
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

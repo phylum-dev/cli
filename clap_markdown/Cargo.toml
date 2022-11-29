@@ -1,0 +1,13 @@
+[package]
+name = "clap_markdown"
+description = "Markdown documentation generator for clap"
+repository = "https://github.com/phylum-dev/clap-markdown"
+categories = ["command-line-interface"]
+keywords = ["clap", "cli", "generate", "markdown"]
+license = "GPL-3.0-or-later"
+rust-version = "1.63.0"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = "4.0.26"

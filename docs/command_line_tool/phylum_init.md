@@ -7,27 +7,36 @@ hidden: false
 Setup a new Phylum project
 
 ```sh
-phylum init [OPTIONS] [PROJECT_NAME]
+Usage: phylum init [OPTIONS] [PROJECT_NAME]
 ```
 
 ### Arguments
 
-`[PROJECT_NAME]`
+[PROJECT_NAME]
 &emsp; Phylum project name
 
 ### Options
 
-`-g`, `--group <GROUP_NAME>`
+-g, --group <GROUP_NAME>
 &emsp; Group which will be the owner of the project
 
-`-l`, `--lockfile <LOCKFILE>`
+-l, --lockfile <LOCKFILE>
 &emsp; Project lockfile name
 
-`-t`, `--lockfile-type <LOCKFILE_TYPE>`
+-t, --lockfile-type <LOCKFILE_TYPE>
 &emsp; Project lockfile type
 
-`-f`, `--force`
+-f, --force
 &emsp; Overwrite existing configurations without confirmation
+
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
 
 ### Examples
 

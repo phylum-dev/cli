@@ -7,13 +7,24 @@ hidden: false
 Manage extensions
 
 ```sh
-phylum extension [SUBCOMMAND]
+Usage: phylum extension [OPTIONS] [COMMAND]
 ```
 
-### Subcommands
+### Options
 
-* [install](https://docs.phylum.io/docs/phylum_extension_install)
-* [list](https://docs.phylum.io/docs/phylum_extension_list)
-* [new](https://docs.phylum.io/docs/phylum_extension_new)
-* [run](https://docs.phylum.io/docs/phylum_extension_run)
-* [uninstall](https://docs.phylum.io/docs/phylum_extension_uninstall)
+-v, --verbose...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+-q, --quiet...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+-h, --help
+&emsp; Print help information
+
+### Commands
+
+* [phylum extension install](./phylum_extension_install)
+* [phylum extension uninstall](./phylum_extension_uninstall)
+* [phylum extension new](./phylum_extension_new)
+* [phylum extension run](./phylum_extension_run)
+* [phylum extension list](./phylum_extension_list)
