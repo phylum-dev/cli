@@ -48,7 +48,3 @@ Usage: phylum [OPTIONS] [COMMAND]
 * [phylum extension](./phylum_extension)
 * [phylum uninstall](./phylum_uninstall)
 * [phylum update](./phylum_update)
-* [phylum yarn](./phylum_yarn)
-* [phylum npm](./phylum_npm)
-* [phylum poetry](./phylum_poetry)
-* [phylum duplicates](./phylum_duplicates)

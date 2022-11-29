@@ -1,12 +1,11 @@
 //! Convert Phylum CLI to markdown.
 
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 use anyhow::Result;
 use clap_markdown::Generator;
 use phylum_cli::app;
-use phylum_cli::commands::extensions;
 
 /// Output directory.
 const OUTPUT_DIR: &str = "./docs/command_line_tool";
@@ -39,8 +38,9 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
     let template_dir = Path::new(TEMPLATE_DIR);
     let target_dir = Path::new(OUTPUT_DIR);
 
-    // Find all installed extensions.
-    let extensions = extensions::installed_extensions()?;
+    // Set `XDG_DATA_HOME` to a bogus directory so regardless of installed
+    // extensions, none of them are ever documented.
+    env::set_var("XDG_DATA_HOME", "/i/n/v/a/l/i/d");
 
     // Load default template.
     let default_template =
@@ -53,11 +53,6 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
     let mut pages = Vec::new();
 
     for page in generator.generate() {
-        // Skip documentation for extensions.
-        if page.command.len() == 2 && extensions.iter().any(|ext| ext.name() == page.command[1]) {
-            continue;
-        }
-
         let file_name = format!("{}.md", page.command.join("_"));
 
         // Load markdown template.
