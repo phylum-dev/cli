@@ -1,6 +1,5 @@
 //! Subcommand `phylum group`.
 
-use anyhow::anyhow;
 use clap::ArgMatches;
 use dialoguer::Confirm;
 use reqwest::StatusCode;
@@ -130,13 +129,7 @@ pub async fn handle_group_transfer(api: &mut PhylumApi, matches: &ArgMatches) ->
     }
 
     // Transfer ownership.
-    match api.group_set_owner(group, user).await {
-        // Improve error message for invalid groups.
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::NOT_FOUND, .. })) => {
-            return Err(anyhow!(format!("Group `{group}` does not exist")));
-        },
-        result => result,
-    }?;
+    api.group_set_owner(group, user).await?;
 
     print_user_success!("Successfully transferred group ownership!");
 
