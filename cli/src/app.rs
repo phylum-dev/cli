@@ -391,6 +391,25 @@ pub fn add_subcommands(command: Command) -> Command {
                             ]),
                     )
                 )
+                .subcommand(
+                    Command::new("transfer").about("Transfer group ownership between users").args(&[
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("GROUP")
+                            .help("Group to transfer")
+                            .required(true),
+                        Arg::new("user")
+                            .value_name("USER")
+                            .help("User the group ownership will be transferred to")
+                            .required(true),
+                        Arg::new("force")
+                            .short('f')
+                            .long("force")
+                            .help("Do not prompt for confirmation")
+                            .action(ArgAction::SetTrue),
+                    ])
+                )
         )
         .subcommand(
             Command::new("init")

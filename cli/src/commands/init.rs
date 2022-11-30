@@ -25,7 +25,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
             .interact()?;
 
         if !should_continue {
-            return Ok(ExitCode::ProjectAlreadyInitialized.into());
+            return Ok(ExitCode::ConfirmationFailed.into());
         }
 
         println!();

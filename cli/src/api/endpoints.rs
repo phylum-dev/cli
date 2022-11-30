@@ -112,6 +112,13 @@ pub fn group_members(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
     Ok(url)
 }
 
+/// PUT /groups/<groupName>/owner/<userEmail>
+pub fn set_owner(api_uri: &str, group: &str, owner: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group, "owner", owner]);
+    Ok(url)
+}
+
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
