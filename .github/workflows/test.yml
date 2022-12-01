@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, windows-latest, [self-hosted, macos, arm64]]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
