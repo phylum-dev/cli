@@ -9,7 +9,7 @@ use phylum_lockfile::{get_path_format, LockfileFormat};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, ExitCode};
-use crate::config::{self, ProjectConfig};
+use crate::config;
 
 pub struct ParsedLockfile {
     pub format: LockfileFormat,
@@ -27,12 +27,14 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     let current_project = config::get_current_project();
 
+    let lockfile = current_project.as_ref().and_then(|project| {
+        Some((project.lockfile_path()?.to_str()?.to_owned(), &project.lockfile_type))
+    });
+
     // Pick lockfile path from CLI and fallback to the current project.
-    let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
+    let (lockfile, lockfile_type) = match (cli_lockfile, &lockfile) {
         (Some(cli_lockfile), _) => (cli_lockfile, cli_lockfile_type),
-        (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
-            (lockfile, lockfile_type.as_ref())
-        },
+        (None, Some((lockfile, lockfile_type))) => (lockfile, lockfile_type.as_ref()),
         (None, _) => return Err(anyhow!("Missing lockfile parameter")),
     };
 

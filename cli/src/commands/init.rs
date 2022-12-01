@@ -63,8 +63,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     // Add lockfile and its type to the project configuration.
     println!();
     let (lockfile, lockfile_type) = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
-    project_config.lockfile_type = Some(lockfile_type);
-    project_config.lockfile = Some(lockfile);
+    project_config.set_lockfile(lockfile_type, lockfile);
 
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)

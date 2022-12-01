@@ -96,8 +96,35 @@ pub struct ProjectConfig {
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
-    pub lockfile: Option<String>,
     pub lockfile_type: Option<String>,
+    lockfile_path: Option<String>,
+    #[serde(skip)]
+    root: PathBuf,
+}
+
+impl ProjectConfig {
+    pub fn new(id: ProjectId, name: String, group_name: Option<String>) -> Self {
+        Self {
+            group_name,
+            name,
+            id,
+            root: PathBuf::from("."),
+            created_at: Local::now(),
+            lockfile_type: None,
+            lockfile_path: None,
+        }
+    }
+
+    /// Get path to the lockfile.
+    pub fn lockfile_path(&self) -> Option<PathBuf> {
+        self.lockfile_path.as_ref().map(|lockfile| self.root.join(lockfile))
+    }
+
+    /// Update the lockfile.
+    pub fn set_lockfile(&mut self, lockfile_type: String, lockfile: String) {
+        self.lockfile_type = Some(lockfile_type);
+        self.lockfile_path = Some(lockfile);
+    }
 }
 
 /// Create or open a file. If the file is created, it will restrict permissions
@@ -190,9 +217,11 @@ pub fn find_project_conf(starting_directory: &Path) -> Option<PathBuf> {
 }
 
 pub fn get_current_project() -> Option<ProjectConfig> {
-    find_project_conf(Path::new(".")).and_then(|s| {
-        log::info!("Found project configuration file at {}", s.to_string_lossy());
-        parse_config(&s).ok()
+    find_project_conf(Path::new(".")).and_then(|config_path| {
+        log::info!("Found project configuration file at {config_path:?}");
+        let mut config: ProjectConfig = parse_config(&config_path).ok()?;
+        config.root = config_path.parent()?.to_path_buf();
+        Some(config)
     })
 }
 

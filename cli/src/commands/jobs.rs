@@ -11,7 +11,7 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
-use crate::config::{get_current_project, ProjectConfig};
+use crate::config::get_current_project;
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
 use crate::{print_user_success, print_user_warning};
@@ -233,13 +233,15 @@ impl JobsProject {
 
         let current_project = get_current_project();
 
+        let lockfile = current_project.as_ref().and_then(|project| {
+            Some((project.lockfile_path()?.to_str()?.to_owned(), &project.lockfile_type))
+        });
+
         // Pick lockfile path from CLI and fallback to the current project.
-        let (lockfile, lockfile_type) = match (cli_lockfile, &current_project) {
+        let (lockfile, lockfile_type) = match (cli_lockfile, lockfile) {
             (Some(cli_lockfile), _) => (cli_lockfile.clone(), cli_lockfile_type.cloned()),
-            (None, Some(ProjectConfig { lockfile: Some(lockfile), lockfile_type, .. })) => {
-                (lockfile.clone(), lockfile_type.clone())
-            },
-            (None, _) => return Err(anyhow!("Missing lockfile parameter")),
+            (None, Some((lockfile, lockfile_type))) => (lockfile, lockfile_type.clone()),
+            (None, None) => return Err(anyhow!("Missing lockfile parameter")),
         };
 
         match matches.get_one::<String>("project") {
