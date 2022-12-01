@@ -1,17 +1,20 @@
 //! Subcommand `phylum group`.
 
 use clap::ArgMatches;
+use dialoguer::Confirm;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{CommandResult, ExitCode};
 use crate::format::Format;
-use crate::{print_user_failure, print_user_success};
+use crate::{print_user_failure, print_user_success, print_user_warning};
 
 /// Handle `phylum group` subcommand.
 pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
         handle_group_create(api, matches).await
+    } else if let Some(matches) = matches.subcommand_matches("transfer") {
+        handle_group_transfer(api, matches).await
     } else if let Some(matches) = matches.subcommand_matches("member") {
         let group = matches.get_one::<String>("group").unwrap();
 
@@ -99,6 +102,36 @@ pub async fn handle_member_list(
     let response = api.group_members(group).await?;
 
     response.write_stdout(pretty);
+
+    Ok(ExitCode::Ok.into())
+}
+
+/// Handle `phylum group transfer` subcommand.
+pub async fn handle_group_transfer(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+    let group = matches.get_one::<String>("group").unwrap();
+    let user = matches.get_one::<String>("user").unwrap();
+
+    if !matches.get_flag("force") {
+        // Prompt user to avoid accidental transfer.
+        let should_continue = Confirm::new()
+            .with_prompt(format!(
+                "This will transfer ownership of `{group}` to `{user}`. You will no longer own \
+                 the group. Are you sure?"
+            ))
+            .default(false)
+            .interact()?;
+
+        // Abort if user did not confirm our prompt.
+        if !should_continue {
+            print_user_warning!("Aborting group transfer");
+            return Ok(ExitCode::ConfirmationFailed.into());
+        }
+    }
+
+    // Transfer ownership.
+    api.group_set_owner(group, user).await?;
+
+    print_user_success!("Successfully transferred group ownership!");
 
     Ok(ExitCode::Ok.into())
 }

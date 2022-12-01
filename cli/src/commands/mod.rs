@@ -45,7 +45,7 @@ pub enum ExitCode {
     NoHistoryFound,
     JsError,
     FailedThresholds,
-    ProjectAlreadyInitialized,
+    ConfirmationFailed,
     Custom(i32),
 }
 
@@ -68,7 +68,7 @@ impl From<&ExitCode> for i32 {
             ExitCode::AlreadyExists => 14,
             ExitCode::NoHistoryFound => 15,
             ExitCode::JsError => 16,
-            ExitCode::ProjectAlreadyInitialized => 17,
+            ExitCode::ConfirmationFailed => 17,
             ExitCode::FailedThresholds => 100,
             ExitCode::Custom(code) => *code,
         }
