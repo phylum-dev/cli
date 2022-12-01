@@ -197,27 +197,27 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
     Ok(config)
 }
 
-pub fn find_project_conf(starting_directory: &Path) -> Option<PathBuf> {
-    let mut path: PathBuf = starting_directory.into();
-    let mut attempts = 0;
-    const MAX_DEPTH: u8 = 32;
+pub fn find_project_conf(
+    starting_directory: impl AsRef<Path>,
+    recurse_upwards: bool,
+) -> Option<PathBuf> {
+    let max_depth = if recurse_upwards { 32 } else { 1 };
+    let mut path = starting_directory.as_ref();
 
-    loop {
-        let search_path = path.join(PROJ_CONF_FILE);
-        if search_path.is_file() {
-            return Some(search_path);
+    for _ in 0..max_depth {
+        let conf_path = path.join(PROJ_CONF_FILE);
+        if conf_path.is_file() {
+            return Some(conf_path);
         }
 
-        if attempts > MAX_DEPTH {
-            return None;
-        }
-        path.push("..");
-        attempts += 1;
+        path = path.parent()?;
     }
+
+    None
 }
 
 pub fn get_current_project() -> Option<ProjectConfig> {
-    find_project_conf(Path::new(".")).and_then(|config_path| {
+    find_project_conf(".", true).and_then(|config_path| {
         log::info!("Found project configuration file at {config_path:?}");
         let mut config: ProjectConfig = parse_config(&config_path).ok()?;
         config.root = config_path.parent()?.to_path_buf();
