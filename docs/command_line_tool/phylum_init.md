@@ -25,6 +25,7 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 
 -t, --lockfile-type <LOCKFILE_TYPE>
 &emsp; Project lockfile type
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`
 
 -f, --force
 &emsp; Overwrite existing configurations without confirmation
