@@ -233,7 +233,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .long("lockfile-type")
                     .value_name("type")
                     .help("The type of the lock file (default: auto)")
-                    .value_parser(PossibleValuesParser::new(parse::lockfile_types())),
+                    .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
             ]),
         )
         .subcommand(
@@ -275,7 +275,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .long("lockfile-type")
                         .value_name("type")
                         .help("The type of the lock file (default: auto)")
-                        .value_parser(PossibleValuesParser::new(parse::lockfile_types())),
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 ]),
         )
         .subcommand(
@@ -432,7 +432,8 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("lockfile-type")
                         .value_name("LOCKFILE_TYPE")
-                        .help("Project lockfile type"),
+                        .help("Project lockfile type")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(false))),
                     Arg::new("force")
                         .short('f')
                         .long("force")
