@@ -17,8 +17,15 @@ pub struct ParsedLockfile {
     pub package_type: PackageType,
 }
 
-pub fn lockfile_types() -> Vec<&'static str> {
-    LockfileFormat::iter().map(|format| format.name()).chain(["auto"]).collect()
+pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
+    let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();
+
+    // Add generic lockfile type.
+    if add_auto {
+        lockfile_types.push("auto");
+    }
+
+    lockfile_types
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
