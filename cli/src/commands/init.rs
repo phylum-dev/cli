@@ -50,10 +50,9 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let project_config = project::lookup_project(api, &project, group)
+            project::lookup_project(api, &project, group)
                 .await
-                .context(format!("Could not find project {project:?}"))?;
-            project_config
+                .context(format!("Could not find project {project:?}"))?
         },
         project_config => project_config.context("Unable to create project")?,
     };
