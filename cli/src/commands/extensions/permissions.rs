@@ -79,7 +79,7 @@ impl Permission {
             },
             // Parent set vs child set have to be validated.
             // This will error if child is not subset of parent, and return the child set otherwise.
-            (&Permission::List(ref parent), &Permission::List(ref child)) => {
+            (Permission::List(parent), Permission::List(child)) => {
                 Permission::check_paths_include_children(parent, child)
                     .map(|_| Permission::List(child.clone()))
                     .map_err(|mismatches| {

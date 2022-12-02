@@ -53,14 +53,9 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
             let project_config = project::lookup_project(api, &project, group)
                 .await
                 .context(format!("Could not find project {project:?}"))?;
-            print_user_success!("Successfully linked to project {project:?}");
             project_config
         },
-        Err(err) => return Err(err).context("Unable to create project"),
-        Ok(project_config) => {
-            print_user_success!("Successfully created project {project:?}");
-            project_config
-        },
+        project_config => project_config.context("Unable to create project")?,
     };
 
     // Override project lockfile info.
@@ -69,6 +64,8 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
         .context("Failed to save project file")?;
+
+    print_user_success!("Successfully created project configuration");
 
     Ok(ExitCode::Ok.into())
 }
