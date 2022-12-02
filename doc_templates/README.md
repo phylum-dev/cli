@@ -25,3 +25,10 @@ These placeholers are currently supported:
 | `{PH-HEADER}`    | ReadMe.com metadata header; omit this when manually overriding the header              |
 | `{PH-TITLE}`     | Command title (i.e. `phylum init`); use this for the ReadMe.com metadata header title  |
 | `{PH-MARKDOWN}`  | Automatically generated command documentation; this should be present in all templates |
+
+## ReadMe.com metadata
+
+Some additional metadata can be specified by overriding the ReadMe.com header.
+Available fields can be found in the [ReadMe.com docs].
+
+[ReadMe.com docs]: https://docs.readme.com/main/reference/createdoc
