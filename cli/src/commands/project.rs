@@ -2,7 +2,6 @@ use std::path::Path;
 use std::result::Result as StdResult;
 
 use anyhow::{anyhow, Context, Result};
-use chrono::Local;
 use console::style;
 use reqwest::StatusCode;
 
@@ -198,14 +197,7 @@ pub async fn create_project(
 ) -> StdResult<ProjectConfig, PhylumApiError> {
     let project_id = api.create_project(project, group.as_deref()).await?;
 
-    Ok(ProjectConfig {
-        id: project_id.to_owned(),
-        created_at: Local::now(),
-        group_name: group,
-        name: project.to_owned(),
-        lockfile: None,
-        lockfile_type: None,
-    })
+    Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
 }
 
 /// Link to an existing project.
@@ -219,12 +211,5 @@ pub async fn link_project(
         .await
         .context("A project with that name does not exist")?;
 
-    Ok(ProjectConfig {
-        id: uuid,
-        name: project.into(),
-        created_at: Local::now(),
-        group_name: group,
-        lockfile: None,
-        lockfile_type: None,
-    })
+    Ok(ProjectConfig::new(uuid, project.into(), group))
 }
