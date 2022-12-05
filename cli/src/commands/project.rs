@@ -70,7 +70,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group").cloned();
 
-        let project_config = link_project(api, project_name, group_name).await?;
+        let project_config = lookup_project(api, project_name, group_name).await?;
 
         save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
@@ -200,8 +200,8 @@ pub async fn create_project(
     Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
 }
 
-/// Link to an existing project.
-pub async fn link_project(
+/// Lookup project by name and group.
+pub async fn lookup_project(
     api: &PhylumApi,
     project: &str,
     group: Option<String>,
