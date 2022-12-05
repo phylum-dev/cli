@@ -213,6 +213,8 @@ pub fn find_project_conf(
         path = path.parent()?;
     }
 
+    log::warn!("Max depth exceeded; abandoning search for .phylum_project file");
+
     None
 }
 
