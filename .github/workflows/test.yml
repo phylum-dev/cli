@@ -24,49 +24,31 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          components: clippy
+        run: |
+          rustup toolchain install stable --profile minimal -c clippy
+          rustup default stable
 
       - name: Install Rust nightly toolchain
         if: github.event_name != 'schedule'
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          components: rustfmt
+        run: rustup toolchain install nightly --profile minimal -c rustfmt
 
       - name: Format check
         if: github.event_name != 'schedule'
         run: cargo +nightly fmt --all -- --check
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --locked
+        run: cargo build --locked
 
       - name: Clippy
         if: github.event_name != 'schedule'
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --locked -- -D warnings
+        run: cargo clippy --locked -- -D warnings
 
       - name: Test generating shell completion files
         if: matrix.os == 'ubuntu-latest'
-        uses: actions-rs/cargo@v1
-        with:
-          command: xtask
-          args: gencomp
+        run: cargo xtask gencomp
 
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --locked
+        run: cargo test --locked
 
       - name: Oldstable
         if: matrix.os != 'windows-latest'
@@ -78,12 +60,9 @@ jobs:
       # Skip this step when the secret is unavailable
       - if: github.secret_source == 'Actions'
         name: All Features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+        run: cargo test --all-features
 
   prettier:
     runs-on: ubuntu-22.04
