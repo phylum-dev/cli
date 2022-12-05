@@ -31,43 +31,40 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
         println!();
     }
 
+    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
+    let cli_lockfile = matches.get_one::<String>("lockfile");
     let cli_project = matches.get_one::<String>("project");
     let cli_group = matches.get_one::<String>("group");
 
-    // Interactively prompt for missing information.
+    // Interactively prompt for missing project information.
     let (project, group) = prompt_project(cli_project, cli_group)?;
 
-    // Attempt to create the project.
-    let result = project::create_project(api, &project, group.clone()).await;
-
-    // If project already exists, just link to it.
-    let mut project_config = match result {
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let project_config = project::link_project(api, &project, group)
-                .await
-                .context("Unable to link project")?;
-            print_user_success!("Successfully linked to project {project:?}");
-            project_config
-        },
-        project_config => {
-            if project_config.is_ok() {
-                print_user_success!("Successfully created project {project:?}");
-            }
-            project_config.context("Unable to create project")?
-        },
-    };
-
-    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
-    let cli_lockfile = matches.get_one::<String>("lockfile");
-
-    // Add lockfile and its type to the project configuration.
+    // Interactively prompt for missing lockfile information.
     println!();
     let (lockfile, lockfile_type) = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
+
+    // Attempt to create the project.
+    println!();
+    let result = project::create_project(api, &project, group.clone()).await;
+
+    let mut project_config = match result {
+        // If project already exists, try looking it up to link to it.
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            project::lookup_project(api, &project, group)
+                .await
+                .context(format!("Could not find project {project:?}"))?
+        },
+        project_config => project_config.context("Unable to create project")?,
+    };
+
+    // Override project lockfile info.
     project_config.set_lockfile(lockfile_type, lockfile);
 
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
         .context("Failed to save project file")?;
+
+    print_user_success!("Successfully created project configuration");
 
     Ok(ExitCode::Ok.into())
 }
