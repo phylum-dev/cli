@@ -24,7 +24,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Rust toolchain
-        run: rustup toolchain install stable --profile minimal -c clippy
+        run: |
+          rustup toolchain install stable --profile minimal -c clippy
+          rustup default stable
 
       - name: Install Rust nightly toolchain
         if: github.event_name != 'schedule'
@@ -35,18 +37,18 @@ jobs:
         run: cargo +nightly fmt --all -- --check
 
       - name: Build
-        run: cargo +stable build --locked
+        run: cargo build --locked
 
       - name: Clippy
         if: github.event_name != 'schedule'
-        run: cargo +stable clippy --locked -- -D warnings
+        run: cargo clippy --locked -- -D warnings
 
       - name: Test generating shell completion files
         if: matrix.os == 'ubuntu-latest'
-        run: cargo +stable xtask gencomp
+        run: cargo xtask gencomp
 
       - name: Test
-        run: cargo +stable test --locked
+        run: cargo test --locked
 
       - name: Oldstable
         if: matrix.os != 'windows-latest'
@@ -60,7 +62,7 @@ jobs:
         name: All Features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
-        run: cargo +stable test --all-features
+        run: cargo test --all-features
 
   prettier:
     runs-on: ubuntu-22.04
