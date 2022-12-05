@@ -16,8 +16,8 @@ use crate::{config, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
-    // Prompt for confirmation if there already is a linked project.
-    if !matches.get_flag("force") && config::get_current_project().is_some() {
+    // Prompt for confirmation if a linked project is already in this directory.
+    if !matches.get_flag("force") && config::find_project_conf(".", false).is_some() {
         print_user_warning!("Workspace is already linked to a Phylum project");
         let should_continue = Confirm::new()
             .with_prompt("Overwrite existing project configuration?")
