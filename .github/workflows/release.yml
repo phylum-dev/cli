@@ -59,9 +59,9 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          echo "-$PATH-"
           curl https://sh.rustup.rs -sSf \
             | sh -s -- -y --default-toolchain stable --profile minimal --target ${{ matrix.target }}
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build Distributions
         run: cargo build --release --target ${{ matrix.target }}
