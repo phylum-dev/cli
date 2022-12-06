@@ -36,7 +36,6 @@ if (
   Deno.args.length == 0 ||
   !["add", "update", "install"].includes(Deno.args[0])
 ) {
-} else {
   let status = PhylumApi.runSandboxed({
     cmd: "poetry",
     args: Deno.args,

@@ -38,7 +38,7 @@ if (
 ) {
   let status = PhylumApi.runSandboxed({
     cmd: "yarn",
-    args: [...Deno.args],
+    args: Deno.args,
     exceptions: {
       read: true,
       write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
