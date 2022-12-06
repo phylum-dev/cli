@@ -31,6 +31,25 @@ class FileBackup {
   }
 }
 
+// Find project root directory.
+async function findRoot(manifest: string): string | undefined {
+  let workingDir = Deno.cwd();
+
+  // Traverse up to 32 directories to find the root directory.
+  for (var i = 0; i < 32; i++) {
+    try {
+      // Check if manifest exists at location.
+      await Deno.stat(workingDir + "/" + manifest);
+      return workingDir;
+    } catch (e) {
+      // Pop to parent if manifest doesn't exist.
+      workingDir += "/..";
+    }
+  }
+
+  return undefined;
+}
+
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
@@ -42,26 +61,22 @@ if (
 }
 
 // Ensure we're in a poetry root directory.
-try {
-  await Deno.stat("pyproject.toml");
-} catch (e) {
+// Ensure we're in a yarn root directory.
+const root = await findRoot("pyproject.toml");
+if (!root) {
+  console.error(`[${red("phylum")}] unable to find poetry project root.`);
   console.error(
     `[${red(
       "phylum"
-    )}] \`pyproject.toml\` was not found in the current directory.`
-  );
-  console.error(
-    `[${red(
-      "phylum"
-    )}] Please move to the Poetry project's top level directory and try again.`
+    )}] Please change to a poetry project directory and try again.`
   );
   Deno.exit(125);
 }
 
 // Store initial package manager file state.
-const packageLockBackup = new FileBackup("poetry.lock");
+const packageLockBackup = new FileBackup(root + "/poetry.lock");
 await packageLockBackup.backup();
-const manifestBackup = new FileBackup("pyproject.toml");
+const manifestBackup = new FileBackup(root + "/pyproject.toml");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
