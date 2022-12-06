@@ -7,3 +7,4 @@ run = ["poetry", "python", "python3"]
 read = true
 write = ["./", "~/.cache/pypoetry", "~/.local/share/virtualenv", "~/Library/Caches/pypoetry"]
 net = true
+unsandboxed_run = ["poetry"]
