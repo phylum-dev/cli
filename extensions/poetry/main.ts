@@ -31,6 +31,25 @@ class FileBackup {
   }
 }
 
+// Ignore all commands that shouldn't be intercepted.
+if (
+  Deno.args.length == 0 ||
+  !["add", "update", "install"].includes(Deno.args[0])
+) {
+} else {
+  let status = PhylumApi.runSandboxed({
+    cmd: "poetry",
+    args: Deno.args,
+    exceptions: {
+      read: true,
+      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
+      run: ["poetry"],
+      net: true,
+    },
+  });
+  Deno.exit(status.code);
+}
+
 // Ensure we're in a poetry root directory.
 try {
   await Deno.stat("pyproject.toml");
@@ -54,32 +73,15 @@ await packageLockBackup.backup();
 const manifestBackup = new FileBackup("pyproject.toml");
 await manifestBackup.backup();
 
-// If the subcommand modifies the lockfile, process it through Phylum.
-if (
-  Deno.args.length >= 1 &&
-  ["add", "update", "install"].includes(Deno.args[0])
-) {
-  const analysisOutcome = await poetryCheckDryRun(
-    Deno.args[0],
-    Deno.args.slice(1)
-  );
+// Analyze new dependencies with phylum before install/update.
+const analysisOutcome = await poetryCheckDryRun(
+  Deno.args[0],
+  Deno.args.slice(1)
+);
 
-  // If the analysis failed, exit with an error.
-  if (analysisOutcome !== 0) {
-    Deno.exit(analysisOutcome);
-  }
-} else {
-  let status = PhylumApi.runSandboxed({
-    cmd: "poetry",
-    args: Deno.args,
-    exceptions: {
-      read: true,
-      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
-      run: ["poetry"],
-      net: true,
-    },
-  });
-  Deno.exit(status.code);
+// If the analysis failed, exit with an error.
+if (analysisOutcome !== 0) {
+  Deno.exit(analysisOutcome);
 }
 
 // Analyze new packages.

@@ -31,6 +31,23 @@ class FileBackup {
   }
 }
 
+// Ignore all commands that shouldn't be intercepted.
+if (
+  Deno.args.length == 0 || !["add", "install", "up", "dedupe"].includes(Deno.args[0])
+) {
+  let status = PhylumApi.runSandboxed({
+    cmd: "yarn",
+    args: [...Deno.args],
+    exceptions: {
+      read: true,
+      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
+      run: ["yarn", "node"],
+      net: true,
+    },
+  });
+  Deno.exit(status.code);
+}
+
 // Ensure we're in a yarn root directory.
 try {
   await Deno.stat("package.json");
@@ -55,85 +72,66 @@ const manifestBackup = new FileBackup("./package.json");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
-if (
-  (Deno.args.length >= 1 && Deno.args[0] === "add") ||
-  Deno.args[0] === "install" ||
-  Deno.args[0] === "up" ||
-  Deno.args[0] === "dedupe"
-) {
-  await checkDryRun(Deno.args[0], Deno.args.slice(1));
+await checkDryRun(Deno.args[0], Deno.args.slice(1));
 
-  console.log(`[${green("phylum")}] Downloading packages to cache…`);
+console.log(`[${green("phylum")}] Downloading packages to cache…`);
 
-  // Download packages to cache without sandbox.
-  let status = PhylumApi.runSandboxed({
-    cmd: "yarn",
-    args: [...Deno.args, "--mode=skip-build"],
-    exceptions: {
-      read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn", "/tmp"],
-      run: ["yarn", "node"],
-      net: true,
-    },
-  });
+// Download packages to cache without sandbox.
+let status = PhylumApi.runSandboxed({
+  cmd: "yarn",
+  args: [...Deno.args, "--mode=skip-build"],
+  exceptions: {
+    read: true,
+    write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn", "/tmp"],
+    run: ["yarn", "node"],
+    net: true,
+  },
+});
 
-  // Ensure download worked. Failure is still "safe" for the user.
-  if (!status.success) {
-    console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
-    abort(status.code);
-  } else {
-    console.log(`[${green("phylum")}] Cache updated successfully.\n`);
-  }
-
-  console.log(`[${green("phylum")}] Building packages inside sandbox…`);
-
-  // Run build inside a sandbox.
-  const output = PhylumApi.runSandboxed({
-    cmd: "yarn",
-    args: ["install", "--immutable", "--immutable-cache"],
-    exceptions: {
-      write: ["/tmp", "./.yarn"],
-      read: true,
-      run: true,
-      net: false,
-    },
-  });
-
-  // Failure here could indicate vulnerabilities; report to the user.
-  if (!output.success) {
-    console.log(`[${red("phylum")}] Sandboxed build failed.`);
-    console.log(`[${red("phylum")}]`);
-    console.log(
-      `[${red(
-        "phylum"
-      )}] This could mean one of your packages attempted to access a restricted resource.`
-    );
-    console.log(
-      `[${red("phylum")}] Do not retry installation without Phylum's extension.`
-    );
-    console.log(`[${red("phylum")}]`);
-    console.log(
-      `[${red(
-        "phylum"
-      )}] Please submit your lockfile to Phylum should this error persist.`
-    );
-
-    abort(output.code);
-  } else {
-    console.log(`[${green("phylum")}] Packages built successfully.`);
-  }
+// Ensure download worked. Failure is still "safe" for the user.
+if (!status.success) {
+  console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
+  abort(status.code);
 } else {
-  let status = PhylumApi.runSandboxed({
-    cmd: "yarn",
-    args: [...Deno.args],
-    exceptions: {
-      read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
-      run: ["yarn", "node"],
-      net: true,
-    },
-  });
-  Deno.exit(status.code);
+  console.log(`[${green("phylum")}] Cache updated successfully.\n`);
+}
+
+console.log(`[${green("phylum")}] Building packages inside sandbox…`);
+
+// Run build inside a sandbox.
+const output = PhylumApi.runSandboxed({
+  cmd: "yarn",
+  args: ["install", "--immutable", "--immutable-cache"],
+  exceptions: {
+    write: ["/tmp", "./.yarn"],
+    read: true,
+    run: true,
+    net: false,
+  },
+});
+
+// Failure here could indicate vulnerabilities; report to the user.
+if (!output.success) {
+  console.log(`[${red("phylum")}] Sandboxed build failed.`);
+  console.log(`[${red("phylum")}]`);
+  console.log(
+    `[${red(
+      "phylum"
+    )}] This could mean one of your packages attempted to access a restricted resource.`
+  );
+  console.log(
+    `[${red("phylum")}] Do not retry installation without Phylum's extension.`
+  );
+  console.log(`[${red("phylum")}]`);
+  console.log(
+    `[${red(
+      "phylum"
+    )}] Please submit your lockfile to Phylum should this error persist.`
+  );
+
+  abort(output.code);
+} else {
+  console.log(`[${green("phylum")}] Packages built successfully.`);
 }
 
 // Analyze new packages.
