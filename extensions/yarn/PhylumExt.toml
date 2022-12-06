@@ -7,3 +7,4 @@ write = ["/tmp", "~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/C
 read = true
 run = true
 net = true
+unsandboxed_run = ["yarn"]

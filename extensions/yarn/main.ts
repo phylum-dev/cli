@@ -36,16 +36,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "install", "up", "dedupe"].includes(Deno.args[0])
 ) {
-  let status = PhylumApi.runSandboxed({
-    cmd: "yarn",
-    args: Deno.args,
-    exceptions: {
-      read: true,
-      write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],
-      run: ["yarn", "node"],
-      net: true,
-    },
-  });
+  let cmd = await Deno.run({ cmd: ["yarn", ...Deno.args] });
+  let status = await cmd.status();
   Deno.exit(status.code);
 }
 

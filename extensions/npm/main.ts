@@ -41,16 +41,8 @@ if (
     "udpate".startsWith(Deno.args[0])
   )
 ) {
-  let status = PhylumApi.runSandboxed({
-    cmd: "npm",
-    args: Deno.args,
-    exceptions: {
-      write: ["~/.npm", "./"],
-      read: true,
-      run: ["npm", "node"],
-      net: true,
-    },
-  });
+  let cmd = await Deno.run({ cmd: ["npm", ...Deno.args] });
+  let status = await cmd.status();
   Deno.exit(status.code);
 }
 

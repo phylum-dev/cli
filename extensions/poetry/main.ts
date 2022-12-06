@@ -36,21 +36,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "update", "install"].includes(Deno.args[0])
 ) {
-  let status = PhylumApi.runSandboxed({
-    cmd: "poetry",
-    args: Deno.args,
-    exceptions: {
-      read: true,
-      write: [
-        "./",
-        "~/.local/share/virtualenv",
-        "~/.cache/pypoetry",
-        "~/Library/Caches/pypoetry",
-      ],
-      run: ["poetry"],
-      net: true,
-    },
-  });
+  let cmd = await Deno.run({ cmd: ["poetry", ...Deno.args] });
+  let status = await cmd.status();
   Deno.exit(status.code);
 }
 
