@@ -33,7 +33,8 @@ class FileBackup {
 
 // Ignore all commands that shouldn't be intercepted.
 if (
-  Deno.args.length == 0 || !["add", "install", "up", "dedupe"].includes(Deno.args[0])
+  Deno.args.length == 0 ||
+  !["add", "install", "up", "dedupe"].includes(Deno.args[0])
 ) {
   let status = PhylumApi.runSandboxed({
     cmd: "yarn",
@@ -82,7 +83,14 @@ let status = PhylumApi.runSandboxed({
   args: [...Deno.args, "--mode=skip-build"],
   exceptions: {
     read: true,
-    write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "~/Library/Caches/Yarn", "/tmp"],
+    write: [
+      "~/.cache/node",
+      "~/.cache/yarn",
+      "~/.yarn",
+      "./",
+      "~/Library/Caches/Yarn",
+      "/tmp",
+    ],
     run: ["yarn", "node"],
     net: true,
   },

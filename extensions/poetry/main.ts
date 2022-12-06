@@ -42,7 +42,12 @@ if (
     args: Deno.args,
     exceptions: {
       read: true,
-      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
+      write: [
+        "./",
+        "~/.local/share/virtualenv",
+        "~/.cache/pypoetry",
+        "~/Library/Caches/pypoetry",
+      ],
       run: ["poetry"],
       net: true,
     },
@@ -93,7 +98,12 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
     args: [subcommand, "-n", ...args.map((s) => s.toString())],
     exceptions: {
       read: true,
-      write: ["./", "~/.local/share/virtualenv", "~/.cache/pypoetry", "~/Library/Caches/pypoetry"],
+      write: [
+        "./",
+        "~/.local/share/virtualenv",
+        "~/.cache/pypoetry",
+        "~/Library/Caches/pypoetry",
+      ],
       run: ["poetry", "python", "python3"],
       net: true,
     },

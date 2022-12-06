@@ -34,10 +34,12 @@ class FileBackup {
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
-  !("install".startsWith(Deno.args[0]) ||
+  !(
+    "install".startsWith(Deno.args[0]) ||
     "isntall".startsWith(Deno.args[0]) ||
     "update".startsWith(Deno.args[0]) ||
-    "udpate".startsWith(Deno.args[0]))
+    "udpate".startsWith(Deno.args[0])
+  )
 ) {
   let status = PhylumApi.runSandboxed({
     cmd: "npm",
@@ -140,7 +142,13 @@ async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   let cmd = await Deno.run({
-    cmd: ["npm", subcommand, "--package-lock-only", "--ignore-scripts", ...args],
+    cmd: [
+      "npm",
+      subcommand,
+      "--package-lock-only",
+      "--ignore-scripts",
+      ...args,
+    ],
     stdout: "inherit",
     stderr: "inherit",
     stdin: "inherit",
