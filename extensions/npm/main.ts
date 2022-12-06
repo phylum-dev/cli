@@ -31,6 +31,29 @@ class FileBackup {
   }
 }
 
+// Ignore all commands that shouldn't be intercepted.
+if (
+  Deno.args.length == 0 ||
+  !(
+    "install".startsWith(Deno.args[0]) ||
+    "isntall".startsWith(Deno.args[0]) ||
+    "update".startsWith(Deno.args[0]) ||
+    "udpate".startsWith(Deno.args[0])
+  )
+) {
+  let status = PhylumApi.runSandboxed({
+    cmd: "npm",
+    args: Deno.args,
+    exceptions: {
+      write: ["~/.npm", "./"],
+      read: true,
+      run: ["npm", "node"],
+      net: true,
+    },
+  });
+  Deno.exit(status.code);
+}
+
 // Ensure we're in an npm root directory.
 try {
   await Deno.stat("package.json");
@@ -55,83 +78,63 @@ const manifestBackup = new FileBackup("./package.json");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
-if (
-  Deno.args.length >= 1 &&
-  ("install".startsWith(Deno.args[0]) ||
-    "isntall".startsWith(Deno.args[0]) ||
-    "update".startsWith(Deno.args[0]) ||
-    "udpate".startsWith(Deno.args[0]))
-) {
-  await checkDryRun(Deno.args[0], Deno.args.slice(1));
+await checkDryRun(Deno.args[0], Deno.args.slice(1));
 
-  console.log(`[${green("phylum")}] Installing without build scripts…`);
+console.log(`[${green("phylum")}] Installing without build scripts…`);
 
-  // Install packages without executing build scripts.
-  let cmd = await Deno.run({
-    cmd: ["npm", ...Deno.args, "--ignore-scripts"],
-    stdout: "inherit",
-    stderr: "inherit",
-    stdin: "inherit",
-  });
-  let status = await cmd.status();
+// Install packages without executing build scripts.
+let cmd = await Deno.run({
+  cmd: ["npm", ...Deno.args, "--ignore-scripts"],
+  stdout: "inherit",
+  stderr: "inherit",
+  stdin: "inherit",
+});
+let status = await cmd.status();
 
-  // Ensure install worked. Failure is still "safe" for the user.
-  if (!status.success) {
-    console.error(`[${red("phylum")}] Installing packges failed.\n`);
-    abort(status.code);
-  } else {
-    console.log(`[${green("phylum")}] Packages installed successfully.\n`);
-  }
-
-  console.log(`[${green("phylum")}] Running build scripts inside sandbox…`);
-
-  // Run build scripts inside a sandbox.
-  const output = PhylumApi.runSandboxed({
-    cmd: "npm",
-    args: ["install"],
-    exceptions: {
-      write: ["~/.npm/_logs", "./package-lock.json", "./node_modules"],
-      read: true,
-      run: true,
-      net: false,
-    },
-  });
-
-  // Failure here could indicate vulnerabilities; report to the user.
-  if (!output.success) {
-    console.log(`[${red("phylum")}] Sandboxed build failed.`);
-    console.log(`[${red("phylum")}]`);
-    console.log(
-      `[${red(
-        "phylum"
-      )}] This could mean one of your packages attempted to access a restricted resource.`
-    );
-    console.log(
-      `[${red("phylum")}] Do not retry installation without Phylum's extension.`
-    );
-    console.log(`[${red("phylum")}]`);
-    console.log(
-      `[${red(
-        "phylum"
-      )}] Please submit your lockfile to Phylum should this error persist.`
-    );
-
-    abort(output.code);
-  } else {
-    console.log(`[${green("phylum")}] Packages built successfully.`);
-  }
+// Ensure install worked. Failure is still "safe" for the user.
+if (!status.success) {
+  console.error(`[${red("phylum")}] Installing packges failed.\n`);
+  abort(status.code);
 } else {
-  let status = PhylumApi.runSandboxed({
-    cmd: "npm",
-    args: Deno.args,
-    exceptions: {
-      write: ["~/.npm", "./"],
-      read: true,
-      run: ["npm"],
-      net: true,
-    },
-  });
-  Deno.exit(status.code);
+  console.log(`[${green("phylum")}] Packages installed successfully.\n`);
+}
+
+console.log(`[${green("phylum")}] Running build scripts inside sandbox…`);
+
+// Run build scripts inside a sandbox.
+const output = PhylumApi.runSandboxed({
+  cmd: "npm",
+  args: ["install"],
+  exceptions: {
+    write: ["~/.npm/_logs", "./package-lock.json", "./node_modules"],
+    read: true,
+    run: true,
+    net: false,
+  },
+});
+
+// Failure here could indicate vulnerabilities; report to the user.
+if (!output.success) {
+  console.log(`[${red("phylum")}] Sandboxed build failed.`);
+  console.log(`[${red("phylum")}]`);
+  console.log(
+    `[${red(
+      "phylum"
+    )}] This could mean one of your packages attempted to access a restricted resource.`
+  );
+  console.log(
+    `[${red("phylum")}] Do not retry installation without Phylum's extension.`
+  );
+  console.log(`[${red("phylum")}]`);
+  console.log(
+    `[${red(
+      "phylum"
+    )}] Please submit your lockfile to Phylum should this error persist.`
+  );
+
+  abort(output.code);
+} else {
+  console.log(`[${green("phylum")}] Packages built successfully.`);
 }
 
 // Analyze new packages.
@@ -139,7 +142,13 @@ async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   let cmd = await Deno.run({
-    cmd: ["npm", subcommand, "--package-lock-only", "--ignore-scripts", ...args],
+    cmd: [
+      "npm",
+      subcommand,
+      "--package-lock-only",
+      "--ignore-scripts",
+      ...args,
+    ],
     stdout: "inherit",
     stderr: "inherit",
     stdin: "inherit",
