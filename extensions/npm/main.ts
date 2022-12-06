@@ -31,6 +31,25 @@ class FileBackup {
   }
 }
 
+// Find project root directory.
+async function findRoot(manifest: string): string | undefined {
+  let workingDir = Deno.cwd();
+
+  // Traverse up to 32 directories to find the root directory.
+  for (var i = 0; i < 32; i++) {
+    try {
+      // Check if manifest exists at location.
+      await Deno.stat(workingDir + "/" + manifest);
+      return workingDir;
+    } catch (e) {
+      // Pop to parent if manifest doesn't exist.
+      workingDir += "/..";
+    }
+  }
+
+  return undefined;
+}
+
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
@@ -47,26 +66,19 @@ if (
 }
 
 // Ensure we're in an npm root directory.
-try {
-  await Deno.stat("package.json");
-} catch (e) {
+const root = await findRoot("package.json");
+if (!root) {
+  console.error(`[${red("phylum")}] unable to find npm project root.`);
   console.error(
-    `[${red(
-      "phylum"
-    )}] \`package.json\` was not found in the current directory.`
-  );
-  console.error(
-    `[${red(
-      "phylum"
-    )}] Please move to the npm project's top level directory and try again.`
+    `[${red("phylum")}] Please change to a npm project directory and try again.`
   );
   Deno.exit(125);
 }
 
 // Store initial package manager file state.
-const packageLockBackup = new FileBackup("./package-lock.json");
+const packageLockBackup = new FileBackup(root + "/package-lock.json");
 await packageLockBackup.backup();
-const manifestBackup = new FileBackup("./package.json");
+const manifestBackup = new FileBackup(root + "/package.json");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
