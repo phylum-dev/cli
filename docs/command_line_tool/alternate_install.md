@@ -36,10 +36,3 @@ pipx install phylum
 phylum-init
 ```
 
-## Install with curl
-
-This script requires `curl`, `mktemp`, `unzip`, and `openssl`:
-
-```sh
-curl https://sh.phylum.io/ | sh -
-```

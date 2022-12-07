@@ -15,35 +15,26 @@ The command line interface (CLI) allows users to submit their project package de
 
 [![asciicast](https://asciinema.org/a/431262.svg)](https://asciinema.org/a/431262)
 
+## Install phylum
+
+### Install on Linux
+
+Install on Linux with the following command:
+
+```sh
+curl https://sh.phylum.io/ | sh -
+```
+
+### Install on macOS
+
+On macOS, we recommend installing phylum with [Homebrew](https://brew.sh/):
+
+```sh
+brew tap phylum-dev/cli
+brew install phylum
+```
+
 ## Quickstart for Linux or macOS
-
-1. Download the latest release package and signature file for your target:
-
-   | Target | Package |
-   | --- | --- |
-   | x86_64-unknown-linux-gnu | [phylum-x86_64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip) <br /> [phylum-x86_64-unknown-linux-gnu.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-unknown-linux-gnu.zip.signature) |
-   | aarch64-unknown-linux-gnu | [phylum-aarch64-unknown-linux-gnu.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip) <br /> [phylum-aarch64-unknown-linux-gnu.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-unknown-linux-gnu.zip.signature) |
-   | x86_64-apple-darwin | [phylum-x86_64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip) <br /> [phylum-x86_64-apple-darwin.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-x86_64-apple-darwin.zip.signature) |
-   | aarch64-apple-darwin | [phylum-aarch64-apple-darwin.zip](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip) <br /> [phylum-aarch64-apple-darwin.zip.signature](https://github.com/phylum-dev/cli/releases/latest/download/phylum-aarch64-apple-darwin.zip.signature) |
-
-1. Confirm the signature of the archive with `openssl` and the [public key for Phylum](https://raw.githubusercontent.com/phylum-dev/cli/main/scripts/signing-key.pub):
-
-   ```sh
-   $ openssl dgst -sha256 -verify signing-key.pub -signature phylum-*.zip.signature phylum-*.zip
-   Verified OK
-   ```
-
-1. Unzip the archive
-
-   ```sh
-   unzip phylum-*.zip
-   ```
-
-1. Run the installer script for installation
-
-   ```sh
-   ./install.sh
-   ```
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
 
