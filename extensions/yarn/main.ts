@@ -79,7 +79,12 @@ const manifestBackup = new FileBackup(root + "/package.json");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
-await checkDryRun(Deno.args[0], Deno.args.slice(1));
+try {
+  await checkDryRun(Deno.args[0], Deno.args.slice(1));
+} catch (e) {
+  await restoreBackup();
+  throw e;
+}
 
 console.log(`[${green("phylum")}] Downloading packages to cache…`);
 
@@ -105,7 +110,7 @@ let status = PhylumApi.runSandboxed({
 // Ensure download worked. Failure is still "safe" for the user.
 if (!status.success) {
   console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
-  abort(status.code);
+  await abort(status.code);
 } else {
   console.log(`[${green("phylum")}] Cache updated successfully.\n`);
 }
@@ -143,7 +148,7 @@ if (!output.success) {
     )}] Please submit your lockfile to Phylum should this error persist.`
   );
 
-  abort(output.code);
+  await abort(output.code);
 } else {
   console.log(`[${green("phylum")}] Packages built successfully.`);
 }
@@ -166,7 +171,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   // Ensure lockfile update was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    abort(status.code);
+    await abort(status.code);
   }
 
   const lockfile = await PhylumApi.parseLockfile("./yarn.lock", "yarn");
