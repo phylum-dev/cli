@@ -24,13 +24,13 @@ export class PhylumApi {
    *
    * Analyze Job ID, which can later be queried with `getJobStatus`.
    */
-  static async analyze(
+  static analyze(
     package_type: string,
-    packages: [object],
+    packages: object[],
     project?: string,
     group?: string
-  ): string {
-    return await Deno.core.opAsync(
+  ): Promise<string> {
+    return Deno.core.opAsync(
       "analyze",
       package_type,
       packages,
@@ -58,18 +58,18 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async getUserInfo(): object {
-    return await Deno.core.opAsync("get_user_info");
+  static getUserInfo(): Promise<object> {
+    return Deno.core.opAsync("get_user_info");
   }
 
   /** Get the current short-lived API access token. */
-  static async getAccessToken(): string {
-    return await Deno.core.opAsync("get_access_token");
+  static getAccessToken(): Promise<string> {
+    return Deno.core.opAsync("get_access_token");
   }
 
   /** Get the long-lived user refresh token. */
-  static async getRefreshToken(): string {
-    return await Deno.core.opAsync("get_refresh_token");
+  static getRefreshToken(): Promise<string> {
+    return Deno.core.opAsync("get_refresh_token");
   }
 
   /**
@@ -123,8 +123,8 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async getJobStatus(jobId: string): object {
-    return await Deno.core.opAsync("get_job_status", jobId);
+  static getJobStatus(jobId: string): Promise<object> {
+    return Deno.core.opAsync("get_job_status", jobId);
   }
 
   /**
@@ -171,7 +171,7 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async getGroups(): object {
+  static getGroups(): Promise<object> {
     return Deno.core.opAsync("get_groups");
   }
 
@@ -195,7 +195,7 @@ export class PhylumApi {
    * ]
    * ```
    */
-  static async getProjects(group?: string): object {
+  static getProjects(group?: string): Promise<object> {
     return Deno.core.opAsync("get_projects", group);
   }
 
@@ -221,7 +221,7 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async createProject(name: string, group?: string): string {
+  static createProject(name: string, group?: string): Promise<string> {
     return Deno.core.opAsync("create_project", name, group);
   }
 
@@ -232,7 +232,7 @@ export class PhylumApi {
    *
    * Nothing if successful; throws an error if unsuccessful.
    */
-  static async deleteProject(name: string, group?: string): string {
+  static deleteProject(name: string, group?: string): Promise<string> {
     return Deno.core.opAsync("delete_project", name, group);
   }
 
@@ -289,12 +289,12 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async getPackageDetails(
+  static getPackageDetails(
     name: string,
     version: string,
     packageType: string
-  ): object {
-    return await Deno.core.opAsync(
+  ): Promise<object> {
+    return Deno.core.opAsync(
       "get_package_details",
       name,
       version,
@@ -321,8 +321,8 @@ export class PhylumApi {
    * }
    * ```
    */
-  static async parseLockfile(lockfile: string, lockfileType?: string): object {
-    return await Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
+  static parseLockfile(lockfile: string, lockfileType?: string): Promise<object> {
+    return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
   }
 
   /**
