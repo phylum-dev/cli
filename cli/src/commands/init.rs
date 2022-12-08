@@ -108,17 +108,12 @@ fn prompt_project_name() -> io::Result<String> {
 
 /// Ask for the desired group.
 fn prompt_group() -> io::Result<Option<String>> {
-    let should_prompt =
-        Confirm::new().with_prompt("Use a project group?").default(false).interact()?;
+    let group: String = Input::new()
+        .with_prompt("Project Group [default: no group]")
+        .allow_empty(true)
+        .interact_text()?;
 
-    if !should_prompt {
-        return Ok(None);
-    }
-
-    let group: String =
-        Input::new().with_prompt("Project Group (default: none)").interact_text()?;
-
-    Ok(Some(group))
+    Ok((!group.is_empty()).then_some(group))
 }
 
 /// Interactively ask for missing lockfile information.
