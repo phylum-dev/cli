@@ -1,3 +1,5 @@
+// deno-lint-ignore-file ban-types
+
 export class PhylumApi {
   /**
    * Analyze dependencies in a lockfile.
@@ -24,14 +26,14 @@ export class PhylumApi {
     package_type: string,
     packages: object[],
     project?: string,
-    group?: string
+    group?: string,
   ): Promise<string> {
-    return Deno.core.opAsync(
+    return opAsync(
       "analyze",
       package_type,
       packages,
       project,
-      group
+      group,
     );
   }
 
@@ -54,17 +56,17 @@ export class PhylumApi {
    * ```
    */
   static getUserInfo(): Promise<object> {
-    return Deno.core.opAsync("get_user_info");
+    return opAsync("get_user_info");
   }
 
   /** Get the current short-lived API access token. */
   static getAccessToken(): Promise<string> {
-    return Deno.core.opAsync("get_access_token");
+    return opAsync("get_access_token");
   }
 
   /** Get the long-lived user refresh token. */
   static getRefreshToken(): Promise<string> {
-    return Deno.core.opAsync("get_refresh_token");
+    return opAsync("get_refresh_token");
   }
 
   /**
@@ -118,7 +120,7 @@ export class PhylumApi {
    * ```
    */
   static getJobStatus(jobId: string): Promise<object> {
-    return Deno.core.opAsync("get_job_status", jobId);
+    return opAsync("get_job_status", jobId);
   }
 
   /**
@@ -136,8 +138,8 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getCurrentProject(): object {
-    return Deno.core.opSync("get_current_project");
+  static getCurrentProject(): object | null {
+    return opSync("get_current_project");
   }
 
   /**
@@ -162,7 +164,7 @@ export class PhylumApi {
    * ```
    */
   static getGroups(): Promise<object> {
-    return Deno.core.opAsync("get_groups");
+    return opAsync("get_groups");
   }
 
   /**
@@ -184,8 +186,8 @@ export class PhylumApi {
    * ]
    * ```
    */
-  static getProjects(group?: string): Promise<object> {
-    return Deno.core.opAsync("get_projects", group);
+  static getProjects(group?: string): Promise<object[]> {
+    return opAsync("get_projects", group);
   }
 
   /**
@@ -193,8 +195,11 @@ export class PhylumApi {
    *
    * @return Project ID and status indication
    */
-  static createProject(name: string, group?: string): Promise<string> {
-    return Deno.core.opAsync("create_project", name, group);
+  static createProject(
+    name: string,
+    group?: string,
+  ): Promise<{ id: string; status: "created" | "existed" }> {
+    return opAsync("create_project", name, group);
   }
 
   /**
@@ -202,8 +207,8 @@ export class PhylumApi {
    *
    * Throws an error if unsuccessful.
    */
-  static deleteProject(name: string, group?: string): Promise<string> {
-    return Deno.core.opAsync("delete_project", name, group);
+  static deleteProject(name: string, group?: string): Promise<void> {
+    return opAsync("delete_project", name, group);
   }
 
   /**
@@ -261,13 +266,13 @@ export class PhylumApi {
   static getPackageDetails(
     name: string,
     version: string,
-    packageType: string
+    packageType: string,
   ): Promise<object> {
-    return Deno.core.opAsync(
+    return opAsync(
       "get_package_details",
       name,
       version,
-      packageType
+      packageType,
     );
   }
 
@@ -289,8 +294,11 @@ export class PhylumApi {
    * }
    * ```
    */
-  static parseLockfile(lockfile: string, lockfileType?: string): Promise<object> {
-    return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
+  static parseLockfile(
+    lockfile: string,
+    lockfileType?: string,
+  ): Promise<object> {
+    return opAsync("parse_lockfile", lockfile, lockfileType);
   }
 
   /**
@@ -359,7 +367,7 @@ export class PhylumApi {
    * ```
    */
   static runSandboxed(process: object): object {
-    return Deno.core.opSync("run_sandboxed", process);
+    return opSync("run_sandboxed", process);
   }
 
   /**
@@ -379,6 +387,16 @@ export class PhylumApi {
    * ```
    */
   static permissions(): object {
-    return Deno.core.opSync("op_permissions");
+    return opSync("op_permissions");
   }
+}
+
+function opSync<T>(op: string, ...args: unknown[]): T {
+  // deno-lint-ignore no-explicit-any
+  return (Deno as any).core.opSync(op, ...args) as T;
+}
+
+function opAsync<T>(op: string, ...args: unknown[]): Promise<T> {
+  // deno-lint-ignore no-explicit-any
+  return (Deno as any).core.opAsync(op, ...args) as Promise<T>;
 }
