@@ -4,6 +4,62 @@
 
 export class PhylumApi {
   /**
+   * Get the Phylum REST API base URL.
+   *
+   * This will usually return `https://api.phylum.io/api`.
+   */
+  static async apiBaseUrl(): string {
+    return Deno.core.opAsync("api_base_url");
+  }
+
+  /**
+   * Send a request to the Phylum REST API.
+   *
+   * See https://api.staging.phylum.io/api/v0/swagger/index.html for available API endpoints.
+   *
+   * The `options` parameter matches the `options` parameter of the `fetch` function:
+   * https://developer.mozilla.org/en-US/docs/Web/API/fetch
+   */
+  static async fetchPhylum(
+    apiVersion: ApiVersion,
+    endpoint: string,
+    options?: object
+  ): object {
+    // Ensure header object is initialized.
+    const fetchOptions = options ?? {};
+    fetchOptions.headers = fetchOptions.headers ?? {};
+
+    // Set Authorization/Content-Type headers if they are missing.
+    if (fetchOptions.headers instanceof Headers) {
+      if (!fetchOptions.headers.has("Authorization")) {
+        const token = await PhylumApi.getAccessToken();
+        fetchOptions.headers.set("Authorization", `Bearer ${token}`);
+      }
+
+      if (fetchOptions.headers.has("Content-Type")) {
+        fetchOptions.headers.set("Content-Type", "application/json");
+      }
+    } else {
+      if (!fetchOptions.headers["Authorization"]) {
+        const token = await PhylumApi.getAccessToken();
+        fetchOptions.headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      if (!fetchOptions.headers["Content-Type"]) {
+        fetchOptions.headers["Content-Type"] = "application/json";
+      }
+    }
+
+    // Set Content-Type header if it is missing.
+
+    // Get API base URI without version.
+    const baseUrl = await PhylumApi.apiBaseUrl();
+
+    // Send fetch request.
+    return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchOptions);
+  }
+
+  /**
    * Analyze dependencies in a lockfile.
    *
    * Packages are expected in the following format:
@@ -28,7 +84,7 @@ export class PhylumApi {
     package_type: string,
     packages: object[],
     project?: string,
-    group?: string,
+    group?: string
   ): Promise<string> {
     return Deno.core.opAsync(
       "analyze",
@@ -199,7 +255,7 @@ export class PhylumApi {
    */
   static createProject(
     name: string,
-    group?: string,
+    group?: string
   ): Promise<{ id: string; status: "created" | "existed" }> {
     return Deno.core.opAsync("create_project", name, group);
   }
@@ -268,7 +324,7 @@ export class PhylumApi {
   static getPackageDetails(
     name: string,
     version: string,
-    packageType: string,
+    packageType: string
   ): Promise<object> {
     return Deno.core.opAsync(
       "get_package_details",
@@ -298,7 +354,7 @@ export class PhylumApi {
    */
   static parseLockfile(
     lockfile: string,
-    lockfileType?: string,
+    lockfileType?: string
   ): Promise<object> {
     return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
   }
@@ -391,4 +447,9 @@ export class PhylumApi {
   static permissions(): object {
     return Deno.core.ops.op_permissions();
   }
+}
+
+/** Available Phylum REST API versions. **/
+export enum ApiVersion {
+  V0 = "v0",
 }
