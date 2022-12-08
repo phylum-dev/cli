@@ -15,7 +15,7 @@ export class PhylumApi {
    * ]
    * ```
    *
-   * @param package_type - Accepted package types are "npm", "pypi", "maven", "rubygems", and "nuget"
+   * @param package_type - Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
