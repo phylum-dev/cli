@@ -2,13 +2,6 @@ export class PhylumApi {
   /**
    * Analyze dependencies in a lockfile.
    *
-   * This expects a `.phylum_project` file to be present if the `project`
-   * parameter is undefined.
-   *
-   * # Parameters
-   *
-   * Accepted package types are "npm", "pypi", "maven", "rubygems", and "nuget".
-   *
    * Packages are expected in the following format:
    *
    * ```
@@ -20,9 +13,12 @@ export class PhylumApi {
    * ]
    * ```
    *
-   * # Returns
+   * @param package_type - Accepted package types are "npm", "pypi", "maven", "rubygems", and "nuget"
+   * @param packages - List of packages to analyze
+   * @param project - Project name. If undefined, the `.phylum_project` file will be used
+   * @param group - Group name
    *
-   * Analyze Job ID, which can later be queried with `getJobStatus`.
+   * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
     package_type: string,
@@ -42,10 +38,9 @@ export class PhylumApi {
   /**
    * Get info about the logged in user.
    *
-   * # Returns
+   * @returns User information
    *
-   * Object containing user information:
-   *
+   * User information object example:
    * ```
    * {
    *   email: "user@phylum.io",
@@ -75,10 +70,9 @@ export class PhylumApi {
   /**
    * Get job results.
    *
-   * # Returns
+   * @returns Job analysis results
    *
-   * Job analysis results:
-   *
+   * Job analysis results example:
    * ```
    * {
    *   job_id: "de2d74b1-3925-4de9-9b8f-0c7b27f9b3c8",
@@ -130,10 +124,9 @@ export class PhylumApi {
   /**
    * Get currently linked project.
    *
-   * # Returns
+   * @returns Linked project information or null
    *
-   * Project information:
-   *
+   * Project information example:
    * ```
    * {
    *   id: "a3a898bc-e954-4ff6-ea36-6a19beefedaa",
@@ -142,8 +135,6 @@ export class PhylumApi {
    *   group_name: null
    * }
    * ```
-   *
-   * If no project is linked, this will return `null`.
    */
   static getCurrentProject(): object {
     return Deno.core.opSync("get_current_project");
@@ -152,10 +143,9 @@ export class PhylumApi {
   /**
    * List the user's groups.
    *
-   * # Returns
+   * @returns Accessible groups
    *
-   * Accessible groups:
-   *
+   * Accessible groups example:
    * ```
    * {
    *   groups: [
@@ -178,10 +168,9 @@ export class PhylumApi {
   /**
    * List the user's projects.
    *
-   * # Returns
+   * @returns Accessible projects
    *
-   * Accessible projects:
-   *
+   * Accessible projects example
    * ```
    * [
    *   {
@@ -202,24 +191,7 @@ export class PhylumApi {
   /**
    * Create a project.
    *
-   * # Returns
-   *
-   * An object containing the id of the project, and an indication
-   * stating whether the project was just created or already existing.
-   *
-   * ```
-   * {
-   *   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
-   *   "status": "created"
-   * }
-   * ```
-   *
-   * ```
-   * {
-   *   "id": "5d6eaa97-dff8-dead-a619-bcafffefeef0",
-   *   "status": "exists"
-   * }
-   * ```
+   * @return Project ID and status indication
    */
   static createProject(name: string, group?: string): Promise<string> {
     return Deno.core.opAsync("create_project", name, group);
@@ -228,9 +200,7 @@ export class PhylumApi {
   /**
    * Delete a project.
    *
-   * # Returns
-   *
-   * Nothing if successful; throws an error if unsuccessful.
+   * Throws an error if unsuccessful.
    */
   static deleteProject(name: string, group?: string): Promise<string> {
     return Deno.core.opAsync("delete_project", name, group);
@@ -242,10 +212,9 @@ export class PhylumApi {
    * This will not start a new package analysis, but only retrieve previous
    * analysis results.
    *
-   * # Returns
+   * @returns Package analysis results
    *
-   * Package analysis results:
-   *
+   * Package analysis results example:
    * ```
    * {
    *   id: "npm:typescript:4.7.4",
@@ -305,10 +274,9 @@ export class PhylumApi {
   /**
    * Get dependencies inside a lockfile.
    *
-   * # Returns
+   * @returns Lockfile dependencies
    *
-   * List of dependencies:
-   *
+   * Lockfile dependencies example:
    * ```
    * {
    *   package_type: "npm",
@@ -333,11 +301,9 @@ export class PhylumApi {
    * that could potentially misbehave. This API allows restricting
    * filesystem and network access for those processes.
    *
-   * # Parameters
+   * @param process - The command which shall be executed and its restrictions
    *
-   * The `process` parameter contains the command which shall be executed
-   * and its restrictions:
-   *
+   * Process example:
    * ```
    * {
    *   cmd: "ls",
@@ -368,10 +334,9 @@ export class PhylumApi {
    * to `true` and no exceptions will be added without explicitly specifying
    * them.
    *
-   * # Returns
+   * @return Process status and output
    *
-   * Process status and output:
-   *
+   * Process status and output example:
    * ```
    * {
    *   stdout: "Hello, World!",
@@ -400,9 +365,9 @@ export class PhylumApi {
   /**
    * Get the extension's manifest permissions.
    *
-   * # Returns
+   * @returns Extension permissions
    *
-   * The permissions object:
+   * Permissions object example:
    * ```
    * {
    *   read: ["~/.npm"],
