@@ -36,10 +36,13 @@ pipx install phylum
 phylum-init
 ```
 
-## Install with curl
+## Install from GitHub release
 
-This script requires `curl`, `mktemp`, `unzip`, and `openssl`:
+Pre-built binaries for select targets are available in our [GitHub releases](https://github.com/phylum-dev/cli/releases).
+
+Archives can be manually verified by their signature file (which has the `.signature` extension) with `openssl` and the [public key for Phylum](https://raw.githubusercontent.com/phylum-dev/cli/main/scripts/signing-key.pub):
 
 ```sh
-curl https://sh.phylum.io/ | sh -
+$ openssl dgst -sha256 -verify signing-key.pub -signature phylum-*.zip.signature phylum-*.zip
+Verified OK
 ```
