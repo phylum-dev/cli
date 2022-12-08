@@ -80,10 +80,13 @@ const manifestBackup = new FileBackup(root + "/pyproject.toml");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
-const analysisOutcome = await poetryCheckDryRun(
-  Deno.args[0],
-  Deno.args.slice(1)
-);
+const analysisOutcome;
+try {
+  analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1));
+} catch (e) {
+  await restoreBackup();
+  throw e;
+}
 
 // If the analysis failed, exit with an error.
 if (analysisOutcome !== 0) {
@@ -113,7 +116,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
   // Ensure dry-run update was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    abort(status.code);
+    await abort(status.code);
   }
 
   const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
