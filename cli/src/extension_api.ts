@@ -1,5 +1,7 @@
 // deno-lint-ignore-file ban-types
 
+/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.28.3/core/lib.deno_core.d.ts" />
+
 export class PhylumApi {
   /**
    * Analyze dependencies in a lockfile.
@@ -28,7 +30,7 @@ export class PhylumApi {
     project?: string,
     group?: string,
   ): Promise<string> {
-    return opAsync(
+    return Deno.core.opAsync(
       "analyze",
       package_type,
       packages,
@@ -56,17 +58,17 @@ export class PhylumApi {
    * ```
    */
   static getUserInfo(): Promise<object> {
-    return opAsync("get_user_info");
+    return Deno.core.opAsync("get_user_info");
   }
 
   /** Get the current short-lived API access token. */
   static getAccessToken(): Promise<string> {
-    return opAsync("get_access_token");
+    return Deno.core.opAsync("get_access_token");
   }
 
   /** Get the long-lived user refresh token. */
   static getRefreshToken(): Promise<string> {
-    return opAsync("get_refresh_token");
+    return Deno.core.opAsync("get_refresh_token");
   }
 
   /**
@@ -120,7 +122,7 @@ export class PhylumApi {
    * ```
    */
   static getJobStatus(jobId: string): Promise<object> {
-    return opAsync("get_job_status", jobId);
+    return Deno.core.opAsync("get_job_status", jobId);
   }
 
   /**
@@ -139,7 +141,7 @@ export class PhylumApi {
    * ```
    */
   static getCurrentProject(): object | null {
-    return opSync("get_current_project");
+    return Deno.core.ops.get_current_project();
   }
 
   /**
@@ -164,7 +166,7 @@ export class PhylumApi {
    * ```
    */
   static getGroups(): Promise<object> {
-    return opAsync("get_groups");
+    return Deno.core.opAsync("get_groups");
   }
 
   /**
@@ -187,7 +189,7 @@ export class PhylumApi {
    * ```
    */
   static getProjects(group?: string): Promise<object[]> {
-    return opAsync("get_projects", group);
+    return Deno.core.opAsync("get_projects", group);
   }
 
   /**
@@ -199,7 +201,7 @@ export class PhylumApi {
     name: string,
     group?: string,
   ): Promise<{ id: string; status: "created" | "existed" }> {
-    return opAsync("create_project", name, group);
+    return Deno.core.opAsync("create_project", name, group);
   }
 
   /**
@@ -208,7 +210,7 @@ export class PhylumApi {
    * Throws an error if unsuccessful.
    */
   static deleteProject(name: string, group?: string): Promise<void> {
-    return opAsync("delete_project", name, group);
+    return Deno.core.opAsync("delete_project", name, group);
   }
 
   /**
@@ -268,7 +270,7 @@ export class PhylumApi {
     version: string,
     packageType: string,
   ): Promise<object> {
-    return opAsync(
+    return Deno.core.opAsync(
       "get_package_details",
       name,
       version,
@@ -298,7 +300,7 @@ export class PhylumApi {
     lockfile: string,
     lockfileType?: string,
   ): Promise<object> {
-    return opAsync("parse_lockfile", lockfile, lockfileType);
+    return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
   }
 
   /**
@@ -367,7 +369,7 @@ export class PhylumApi {
    * ```
    */
   static runSandboxed(process: object): object {
-    return opSync("run_sandboxed", process);
+    return Deno.core.ops.run_sandboxed(process);
   }
 
   /**
@@ -387,16 +389,6 @@ export class PhylumApi {
    * ```
    */
   static permissions(): object {
-    return opSync("op_permissions");
+    return Deno.core.ops.op_permissions();
   }
-}
-
-function opSync<T>(op: string, ...args: unknown[]): T {
-  // deno-lint-ignore no-explicit-any
-  return (Deno as any).core.opSync(op, ...args) as T;
-}
-
-function opAsync<T>(op: string, ...args: unknown[]): Promise<T> {
-  // deno-lint-ignore no-explicit-any
-  return (Deno as any).core.opAsync(op, ...args) as Promise<T>;
 }
