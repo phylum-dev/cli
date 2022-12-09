@@ -361,7 +361,12 @@ mod tests {
         assert!(permissions_options.allow_write.is_none());
         assert!(permissions_options.allow_env.is_none());
         assert!(permissions_options.allow_run.is_none());
-        assert!(permissions_options.allow_net.is_none());
+
+        // NOTE: Net is an exception since we allow our own API domains by default.
+        assert_eq!(
+            permissions_options.allow_net,
+            Some(vec!["api.staging.phylum.io".into(), "api.phylum.io".into()])
+        );
     }
 
     #[test]
