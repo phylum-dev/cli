@@ -1,0 +1,12 @@
+{
+  "lint": {
+    "files": {
+      "include": ["extensions/", "cli/src/extension_api.ts"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["extensions/", "cli/src/extension_api.ts"]
+    }
+  }
+}
