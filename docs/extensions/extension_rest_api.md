@@ -36,9 +36,11 @@ const projects = await reply.json();
 console.log(projects);
 ```
 
-Allowed options match the `fetch` API and can be overwritten to send more
-complicated requests. The following example creates a new Phylum project through
-the API:
+The last parameter matches [Deno's `fetch` function] and can be overwritten to
+send more complicated requests. The following example creates a new Phylum
+project through the API:
+
+[Deno's `fetch` function]: https://deno.land/api@latest?s=fetch
 
 ```ts
 import { PhylumApi, ApiVersion } from "phylum";

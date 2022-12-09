@@ -8,37 +8,30 @@ export class PhylumApi {
    *
    * See https://api.staging.phylum.io/api/v0/swagger/index.html for available API endpoints.
    *
-   * The `options` parameter matches the `options` parameter of the `fetch` function:
-   * https://developer.mozilla.org/en-US/docs/Web/API/fetch
+   * The `init` parameter matches the `init` parameter of the Deno `fetch` function:
+   * https://deno.land/api@latest?s=fetch
    */
   static async fetch(
     apiVersion: ApiVersion | string,
     endpoint: string,
-    options?: RequestInit,
+    init?: RequestInit,
   ): Promise<object> {
     // Ensure header object is initialized.
-    const fetchOptions = options ?? {};
-    fetchOptions.headers = fetchOptions.headers ?? {};
+    const fetchInit = init ?? {};
+    fetchInit.headers = fetchInit.headers ?? {};
 
-    // Set Authorization/Content-Type headers if they are missing.
-    if (fetchOptions.headers instanceof Headers) {
-      if (!fetchOptions.headers.has("Authorization")) {
-        const token = await PhylumApi.getAccessToken();
-        fetchOptions.headers.set("Authorization", `Bearer ${token}`);
-      }
+    // Ensure consistent headers type.
+    fetchInit.headers = new Headers(fetchInit.headers);
 
-      if (fetchOptions.headers.has("Content-Type")) {
-        fetchOptions.headers.set("Content-Type", "application/json");
-      }
-    } else {
-      if (!fetchOptions.headers["Authorization"]) {
-        const token = await PhylumApi.getAccessToken();
-        fetchOptions.headers["Authorization"] = `Bearer ${token}`;
-      }
+    // Set Authorization header if it is missing.
+    if (!fetchInit.headers.has("Authorization")) {
+      const token = await PhylumApi.getAccessToken();
+      fetchInit.headers.set("Authorization", `Bearer ${token}`);
+    }
 
-      if (!fetchOptions.headers["Content-Type"]) {
-        fetchOptions.headers["Content-Type"] = "application/json";
-      }
+    // Set Content-Type header if it is missing.
+    if (fetchInit.headers.has("Content-Type")) {
+      fetchInit.headers.set("Content-Type", "application/json");
     }
 
     // Set Content-Type header if it is missing.
@@ -47,7 +40,7 @@ export class PhylumApi {
     const baseUrl = await PhylumApi.apiBaseUrl();
 
     // Send fetch request.
-    return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchOptions);
+    return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchInit);
   }
 
   /**
