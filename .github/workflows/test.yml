@@ -64,17 +64,16 @@ jobs:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
         run: cargo test --all-features
 
-  prettier:
-    runs-on: ubuntu-22.04
+  deno-checks:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    container: denoland/deno
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - run: npm i -g prettier
-      - name: Extensions Style Check
-        if: github.event_name != 'schedule'
-        run: prettier --check .
+      - name: deno fmt
+        run: deno fmt --check
+      - name: deno lint
+        run: deno lint
 
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
