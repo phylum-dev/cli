@@ -1,6 +1,6 @@
 import {
-  red,
   green,
+  red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 import { PhylumApi } from "phylum";
@@ -65,9 +65,11 @@ const root = await findRoot("package.json");
 if (!root) {
   console.error(`[${red("phylum")}] unable to find yarn project root.`);
   console.error(
-    `[${red(
-      "phylum"
-    )}] Please change to a yarn project directory and try again.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] Please change to a yarn project directory and try again.`,
   );
   Deno.exit(125);
 }
@@ -134,18 +136,22 @@ if (!output.success) {
   console.log(`[${red("phylum")}] Sandboxed build failed.`);
   console.log(`[${red("phylum")}]`);
   console.log(
-    `[${red(
-      "phylum"
-    )}] This could mean one of your packages attempted to access a restricted resource.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] This could mean one of your packages attempted to access a restricted resource.`,
   );
   console.log(
-    `[${red("phylum")}] Do not retry installation without Phylum's extension.`
+    `[${red("phylum")}] Do not retry installation without Phylum's extension.`,
   );
   console.log(`[${red("phylum")}]`);
   console.log(
-    `[${red(
-      "phylum"
-    )}] Please submit your lockfile to Phylum should this error persist.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] Please submit your lockfile to Phylum should this error persist.`,
   );
 
   await abort(output.code);
@@ -195,14 +201,16 @@ async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
   } else if (jobStatus.pass) {
     console.warn(
-      `[${yellow(
-        "phylum"
-      )}] Unknown packages were submitted for analysis, please check again later.\n`
+      `[${
+        yellow(
+          "phylum",
+        )
+      }] Unknown packages were submitted for analysis, please check again later.\n`,
     );
     Deno.exit(126);
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`
+      `[${red("phylum")}] The operation caused a threshold failure.\n`,
     );
     Deno.exit(127);
   }

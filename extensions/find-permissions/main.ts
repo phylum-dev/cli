@@ -1,7 +1,7 @@
 import {
-  red,
-  green,
   blue,
+  green,
+  red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 import { PhylumApi } from "phylum";
@@ -20,22 +20,22 @@ if (
   console.log();
   console.log("OPTIONS:");
   console.log(
-    "    --read               Check if tested paths need to be readable or executable"
+    "    --read               Check if tested paths need to be readable or executable",
   );
   console.log(
-    "    --write              Check if tested paths need to be writable"
+    "    --write              Check if tested paths need to be writable",
   );
   console.log(
-    "    --pre-bin <PATH>     Executable to be run before test execution"
+    "    --pre-bin <PATH>     Executable to be run before test execution",
   );
   console.log(
-    "    --bin <PATH>         Executable to be run to test path necessity"
+    "    --bin <PATH>         Executable to be run to test path necessity",
   );
   console.log(
-    "    --post-bin <PATH>    Executable to be run after test execution"
+    "    --post-bin <PATH>    Executable to be run after test execution",
   );
   console.log(
-    "    --skip-files         Only check directories, speeding up the process"
+    "    --skip-files         Only check directories, speeding up the process",
   );
   console.log("    --strict             Use strict sandboxing mode");
   Deno.exit(0);
@@ -128,7 +128,7 @@ async function checkPath(allowed: [string], path: string) {
     if (skipFiles) {
       // Add entire directory if any file is required and we're skipping file checks.
       console.log(
-        `${red(`${path}: Required directory due to skipping files`)}`
+        `${red(`${path}: Required directory due to skipping files`)}`,
       );
       requiredPaths.push(path);
       return;
@@ -152,7 +152,7 @@ async function checkPath(allowed: [string], path: string) {
     // Check all child directories.
     for (const directory of directories) {
       const withoutDirectory = allowedAndChildren.filter(
-        (entry) => entry != directory
+        (entry) => entry != directory,
       );
       await checkPath(withoutDirectory, directory);
     }

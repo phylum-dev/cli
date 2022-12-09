@@ -1,7 +1,7 @@
 import { PhylumApi } from "phylum";
 import {
-  red,
   green,
+  red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
@@ -66,9 +66,11 @@ const root = await findRoot("pyproject.toml");
 if (!root) {
   console.error(`[${red("phylum")}] unable to find poetry project root.`);
   console.error(
-    `[${red(
-      "phylum"
-    )}] Please change to a poetry project directory and try again.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] Please change to a poetry project directory and try again.`,
   );
   Deno.exit(125);
 }
@@ -135,7 +137,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 
   const jobId = await PhylumApi.analyze(
     lockfileData["package_type"],
-    lockfileData["packages"]
+    lockfileData["packages"],
   );
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
@@ -144,14 +146,16 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
     return 0;
   } else if (jobStatus.pass) {
     console.warn(
-      `[${yellow(
-        "phylum"
-      )}] Unknown packages were submitted for analysis, please check again later.\n`
+      `[${
+        yellow(
+          "phylum",
+        )
+      }] Unknown packages were submitted for analysis, please check again later.\n`,
     );
     return 126;
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`
+      `[${red("phylum")}] The operation caused a threshold failure.\n`,
     );
     return 127;
   }

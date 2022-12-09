@@ -10,9 +10,9 @@
 //
 
 import {
-  describe,
   afterAll,
   beforeAll,
+  describe,
   it,
 } from "https://deno.land/std@0.148.0/testing/bdd.ts";
 import { copy } from "https://deno.land/std@0.148.0/fs/mod.ts";
@@ -47,7 +47,7 @@ class Phylum {
   async runExt(args: string[], cwd?: string) {
     return await this.run(
       ["extension", "run", "-y", this.extDir, ...args],
-      cwd
+      cwd,
     );
   }
 
@@ -74,7 +74,7 @@ describe("Poetry extension", async () => {
   it("correctly handles the `--dry-run` argument", async () => {
     let status = await phylum.runExt(
       ["add", "--dry-run", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });
@@ -87,7 +87,7 @@ describe("Poetry extension", async () => {
   it("correctly denies a known bad package", async () => {
     let status = await phylum.runExt(
       ["add", "cffi==1.15.0"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code !== 0);
   });
@@ -95,7 +95,7 @@ describe("Poetry extension", async () => {
   it("allows duplicating the `--dry-run` flag", async () => {
     let status = await phylum.runExt(
       ["add", "--dry-run", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });
@@ -103,7 +103,7 @@ describe("Poetry extension", async () => {
   it("allows duplicating the `--lock` flag", async () => {
     let status = await phylum.runExt(
       ["add", "--lock", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });
