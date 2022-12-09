@@ -4,15 +4,6 @@
 
 export class PhylumApi {
   /**
-   * Get the Phylum REST API base URL.
-   *
-   * This will usually return `https://api.phylum.io/api`.
-   */
-  static async apiBaseUrl(): string {
-    return Deno.core.opAsync("api_base_url");
-  }
-
-  /**
    * Send a request to the Phylum REST API.
    *
    * See https://api.staging.phylum.io/api/v0/swagger/index.html for available API endpoints.
@@ -20,11 +11,11 @@ export class PhylumApi {
    * The `options` parameter matches the `options` parameter of the `fetch` function:
    * https://developer.mozilla.org/en-US/docs/Web/API/fetch
    */
-  static async fetchPhylum(
-    apiVersion: ApiVersion,
+  static fetch(
+    apiVersion: ApiVersion | string,
     endpoint: string,
     options?: object
-  ): object {
+  ): Promise<object> {
     // Ensure header object is initialized.
     const fetchOptions = options ?? {};
     fetchOptions.headers = fetchOptions.headers ?? {};
@@ -57,6 +48,15 @@ export class PhylumApi {
 
     // Send fetch request.
     return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchOptions);
+  }
+
+  /**
+   * Get the Phylum REST API base URL.
+   *
+   * This will usually return `https://api.phylum.io/api`.
+   */
+  static async apiBaseUrl(): Promise<URL> {
+    return new Url(await opAsync("api_base_url"));
   }
 
   /**

@@ -16,15 +16,15 @@ https://api.staging.phylum.io/api/v0/swagger/index.html
 ## Extension API requests
 
 To make a Request to Phylum's REST API, you can use the built-in
-`PhylumApi.fetchPhylum` function, which takes care of authentication and finding
-the correct base URI. The following example retrieves projects owned by the
-user which do not belong to any group:
+`PhylumApi.fetch` function, which takes care of authentication and finding the
+correct base URI. The following example retrieves projects owned by the user
+which do not belong to any group:
 
 ```ts
 import { PhylumApi, ApiVersion } from "phylum";
 
 // Create a fetch request to the `/data/projects/overview` endpoint.
-const reply = await PhylumApi.fetchPhylum(
+const reply = await PhylumApi.fetch(
     ApiVersion.V0,
     '/data/projects/overview',
 );
@@ -44,7 +44,7 @@ the API:
 import { PhylumApi, ApiVersion } from "phylum";
 
 // Create a fetch request to the `/data/projects` endpoint.
-const reply = await PhylumApi.fetchPhylum(
+const reply = await PhylumApi.fetch(
     ApiVersion.V0,
     '/data/projects',
     {
