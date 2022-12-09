@@ -244,16 +244,20 @@ impl From<&Permissions> for PermissionsOptions {
         let allow_write =
             value.write.get().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
 
-        let allow_env = value.env.get().cloned();
-        let allow_net = value.net.get().cloned();
+        let mut allow_net = value.net.get().cloned().unwrap_or_default();
         let allow_run = value.unsandboxed_run.get().cloned();
+        let allow_env = value.env.get().cloned();
+
+        // Add net exceptions to phylum.io's domains by default.
+        allow_net.push("api.staging.phylum.io".into());
+        allow_net.push("api.phylum.io".into());
 
         PermissionsOptions {
             allow_read,
             allow_write,
-            allow_net,
             allow_run,
             allow_env,
+            allow_net: Some(allow_net),
             allow_sys: None,
             allow_ffi: None,
             allow_hrtime: false,

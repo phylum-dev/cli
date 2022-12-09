@@ -11,10 +11,10 @@ export class PhylumApi {
    * The `options` parameter matches the `options` parameter of the `fetch` function:
    * https://developer.mozilla.org/en-US/docs/Web/API/fetch
    */
-  static fetch(
+  static async fetch(
     apiVersion: ApiVersion | string,
     endpoint: string,
-    options?: object
+    options?: RequestInit,
   ): Promise<object> {
     // Ensure header object is initialized.
     const fetchOptions = options ?? {};
@@ -56,7 +56,7 @@ export class PhylumApi {
    * This will usually return `https://api.phylum.io/api`.
    */
   static async apiBaseUrl(): Promise<URL> {
-    return new Url(await opAsync("api_base_url"));
+    return new URL(await opAsync("api_base_url"));
   }
 
   /**
