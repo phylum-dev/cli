@@ -96,7 +96,10 @@ if (analysisOutcome !== 0) {
 }
 
 // Analyze new packages.
-async function poetryCheckDryRun(subcommand: string, args: string[]): Promise<number> {
+async function poetryCheckDryRun(
+  subcommand: string,
+  args: string[],
+): Promise<number> {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   const status = PhylumApi.runSandboxed({
