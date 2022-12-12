@@ -42,8 +42,8 @@ if (
 }
 
 // Permissions types to be checked.
-let check_write = Deno.args.includes("--write");
-let check_read = Deno.args.includes("--read");
+const check_write = Deno.args.includes("--write");
+const check_read = Deno.args.includes("--read");
 
 // Ensure at least one type of permission is specified.
 if (!check_write && !check_read) {
@@ -59,10 +59,10 @@ if (!test_bin_path) {
 }
 
 // Get absolute test executable path.
-let test_bin;
+let test_bin: string;
 try {
   test_bin = await Deno.realPath(test_bin_path);
-} catch (e) {
+} catch (_e) {
   console.error(`Invalid executable path: ${test_bin_path}`);
   Deno.exit(333);
 }
@@ -78,7 +78,7 @@ const skipFiles = Deno.args.includes("--skip-files");
 const strict = Deno.args.includes("--strict");
 
 // Required sandboxing exceptions.
-const requiredPaths = [];
+const requiredPaths: string[] = [];
 
 // Run analysis and report results.
 await checkPath([], "/");
@@ -89,11 +89,11 @@ for (const path of requiredPaths) {
 console.log("]");
 
 // Recursively check the path for required sandboxing exceptions.
-async function checkPath(allowed: [string], path: string) {
+async function checkPath(allowed: string[], path: string) {
   console.log(`${blue(`Scanning "${path}"...`)}`);
 
   // Return immediately if it works without the path.
-  if (await test(allowed)) {
+  if (test(allowed)) {
     console.log(`${green(`${path}: Unnecessary directory`)}`);
     return;
   }
@@ -116,7 +116,7 @@ async function checkPath(allowed: [string], path: string) {
 
   // Add path if it doesn't work with all directories and files.
   const allowedAndChildren = allowed.concat(files).concat(directories);
-  if (!(await test(allowedAndChildren))) {
+  if (!(test(allowedAndChildren))) {
     console.log(`${red(`${path}: Required directory`)}`);
     requiredPaths.push(path);
     return;
@@ -124,7 +124,7 @@ async function checkPath(allowed: [string], path: string) {
 
   // Check if any file is required.
   const allowedAndDirectories = allowed.concat(directories);
-  if (!(await test(allowedAndDirectories))) {
+  if (!(test(allowedAndDirectories))) {
     if (skipFiles) {
       // Add entire directory if any file is required and we're skipping file checks.
       console.log(
@@ -136,7 +136,7 @@ async function checkPath(allowed: [string], path: string) {
       // Add all required files.
       for (const file of files) {
         const withoutFile = allowedAndChildren.filter((entry) => entry != file);
-        if (!(await test(withoutFile))) {
+        if (!(test(withoutFile))) {
           console.log(`${red(`${file}: Required file`)}`);
           requiredPaths.push(file);
         } else {
@@ -148,7 +148,7 @@ async function checkPath(allowed: [string], path: string) {
 
   // Check if any directory is required.
   const allowedAndFiles = allowed.concat(files);
-  if (!(await test(allowedAndFiles))) {
+  if (!(test(allowedAndFiles))) {
     // Check all child directories.
     for (const directory of directories) {
       const withoutDirectory = allowedAndChildren.filter(
@@ -160,7 +160,7 @@ async function checkPath(allowed: [string], path: string) {
 }
 
 // Check if execution with the specified directories works.
-async function test(directories: [string]): bool {
+function test(directories: string[]): boolean {
   // Use directories for enabled permission types, allow everything otherwise.
   let write = ["/"];
   let read = ["/"];
@@ -173,7 +173,7 @@ async function test(directories: [string]): bool {
 
   // Run pre-test setup executable.
   if (pre_test_bin) {
-    let pre_status = PhylumApi.runSandboxed({
+    const pre_status = PhylumApi.runSandboxed({
       cmd: pre_test_bin,
       stdout: "null",
       stderr: "null",
@@ -217,7 +217,7 @@ async function test(directories: [string]): bool {
 
   // Run post-test cleanup executable.
   if (post_test_bin) {
-    let post_status = PhylumApi.runSandboxed({
+    const post_status = PhylumApi.runSandboxed({
       cmd: post_test_bin,
       stdout: "null",
       stderr: "null",
@@ -242,7 +242,7 @@ async function test(directories: [string]): bool {
 
 // Get the value of a CLI argument.
 function getArgOption(option: string): string | undefined {
-  let option_index = Deno.args.findIndex((arg) => arg === option);
+  const option_index = Deno.args.findIndex((arg) => arg === option);
   if (option_index !== -1) {
     return Deno.args[option_index + 1];
   } else {

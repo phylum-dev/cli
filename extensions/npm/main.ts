@@ -7,7 +7,7 @@ import { PhylumApi } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
-  readonly fileContent: string | null;
+  fileContent: string | null;
 
   constructor(fileName: string) {
     this.fileName = fileName;
@@ -17,7 +17,7 @@ class FileBackup {
   async backup() {
     try {
       this.fileContent = await Deno.readTextFile(this.fileName);
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 
   async restoreOrDelete() {
@@ -27,21 +27,21 @@ class FileBackup {
       } else {
         await Deno.remove(this.fileName);
       }
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 }
 
 // Find project root directory.
-async function findRoot(manifest: string): string | undefined {
+async function findRoot(manifest: string): Promise<string | undefined> {
   let workingDir = Deno.cwd();
 
   // Traverse up to 32 directories to find the root directory.
-  for (var i = 0; i < 32; i++) {
+  for (let i = 0; i < 32; i++) {
     try {
       // Check if manifest exists at location.
       await Deno.stat(workingDir + "/" + manifest);
       return workingDir;
-    } catch (e) {
+    } catch (_e) {
       // Pop to parent if manifest doesn't exist.
       workingDir += "/..";
     }
@@ -60,8 +60,8 @@ if (
     "udpate".startsWith(Deno.args[0])
   )
 ) {
-  let cmd = await Deno.run({ cmd: ["npm", ...Deno.args] });
-  let status = await cmd.status();
+  const cmd = Deno.run({ cmd: ["npm", ...Deno.args] });
+  const status = await cmd.status();
   Deno.exit(status.code);
 }
 
@@ -94,13 +94,13 @@ try {
 console.log(`[${green("phylum")}] Installing without build scripts…`);
 
 // Install packages without executing build scripts.
-let cmd = await Deno.run({
+const cmd = Deno.run({
   cmd: ["npm", ...Deno.args, "--ignore-scripts"],
   stdout: "inherit",
   stderr: "inherit",
   stdin: "inherit",
 });
-let status = await cmd.status();
+const status = await cmd.status();
 
 // Ensure install worked. Failure is still "safe" for the user.
 if (!status.success) {
@@ -156,7 +156,7 @@ if (!output.success) {
 async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  let cmd = await Deno.run({
+  const cmd = Deno.run({
     cmd: [
       "npm",
       subcommand,
@@ -168,7 +168,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     stderr: "inherit",
     stdin: "inherit",
   });
-  let status = await cmd.status();
+  const status = await cmd.status();
 
   // Ensure lockfile update was successful.
   if (!status.success) {
@@ -216,7 +216,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code) {
+async function abort(code: number) {
   await restoreBackup();
   Deno.exit(code);
 }

@@ -7,7 +7,7 @@ import { PhylumApi } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
-  readonly fileContent: string | null;
+  fileContent: string | null;
 
   constructor(fileName: string) {
     this.fileName = fileName;
@@ -17,7 +17,7 @@ class FileBackup {
   async backup() {
     try {
       this.fileContent = await Deno.readTextFile(this.fileName);
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 
   async restoreOrDelete() {
@@ -27,21 +27,21 @@ class FileBackup {
       } else {
         await Deno.remove(this.fileName);
       }
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 }
 
 // Find project root directory.
-async function findRoot(manifest: string): string | undefined {
+async function findRoot(manifest: string): Promise<string | undefined> {
   let workingDir = Deno.cwd();
 
   // Traverse up to 32 directories to find the root directory.
-  for (var i = 0; i < 32; i++) {
+  for (let i = 0; i < 32; i++) {
     try {
       // Check if manifest exists at location.
       await Deno.stat(workingDir + "/" + manifest);
       return workingDir;
-    } catch (e) {
+    } catch (_e) {
       // Pop to parent if manifest doesn't exist.
       workingDir += "/..";
     }
@@ -55,8 +55,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "install", "up", "dedupe"].includes(Deno.args[0])
 ) {
-  let cmd = await Deno.run({ cmd: ["yarn", ...Deno.args] });
-  let status = await cmd.status();
+  const cmd = Deno.run({ cmd: ["yarn", ...Deno.args] });
+  const status = await cmd.status();
   Deno.exit(status.code);
 }
 
@@ -82,7 +82,7 @@ await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
 try {
-  await checkDryRun(Deno.args[0], Deno.args.slice(1));
+  await checkDryRun();
 } catch (e) {
   await restoreBackup();
   throw e;
@@ -91,7 +91,7 @@ try {
 console.log(`[${green("phylum")}] Downloading packages to cache…`);
 
 // Download packages to cache without sandbox.
-let status = PhylumApi.runSandboxed({
+const status = PhylumApi.runSandboxed({
   cmd: "yarn",
   args: [...Deno.args, "--mode=skip-build"],
   exceptions: {
@@ -160,10 +160,10 @@ if (!output.success) {
 }
 
 // Analyze new packages.
-async function checkDryRun(subcommand: string, args: string[]) {
+async function checkDryRun() {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  let status = PhylumApi.runSandboxed({
+  const status = PhylumApi.runSandboxed({
     cmd: "yarn",
     args: [...Deno.args, "--mode=update-lockfile"],
     exceptions: {
@@ -220,7 +220,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code) {
+async function abort(code: number) {
   await restoreBackup();
   Deno.exit(code);
 }
