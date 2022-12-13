@@ -106,7 +106,7 @@ First-party extensions are written in TypeScript. Extensions code must be
 formatted and checked with `deno`. See [the deno manual] for installation
 instructions.
 
-[the deno manual]: https://deno.land/manual
+[the deno manual]: https://deno.land/manual/getting_started/installation
 
 To apply formatting
 
