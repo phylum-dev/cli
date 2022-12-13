@@ -18,7 +18,6 @@ export class PhylumApi {
   ): Promise<object> {
     // Ensure header object is initialized.
     const fetchInit = init ?? {};
-    fetchInit.headers = fetchInit.headers ?? {};
 
     // Ensure consistent headers type.
     fetchInit.headers = new Headers(fetchInit.headers);
@@ -77,7 +76,7 @@ export class PhylumApi {
     package_type: string,
     packages: object[],
     project?: string,
-    group?: string
+    group?: string,
   ): Promise<string> {
     return Deno.core.opAsync(
       "analyze",
@@ -248,7 +247,7 @@ export class PhylumApi {
    */
   static createProject(
     name: string,
-    group?: string
+    group?: string,
   ): Promise<{ id: string; status: "created" | "existed" }> {
     return Deno.core.opAsync("create_project", name, group);
   }
@@ -317,7 +316,7 @@ export class PhylumApi {
   static getPackageDetails(
     name: string,
     version: string,
-    packageType: string
+    packageType: string,
   ): Promise<object> {
     return Deno.core.opAsync(
       "get_package_details",
@@ -347,7 +346,7 @@ export class PhylumApi {
    */
   static parseLockfile(
     lockfile: string,
-    lockfileType?: string
+    lockfileType?: string,
   ): Promise<object> {
     return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
   }
