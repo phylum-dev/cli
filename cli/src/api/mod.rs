@@ -10,7 +10,7 @@ use phylum_types::types::job::{
     AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageStatus, PackageStatusExtended, PackageType,
+    Package, PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended, PackageType,
 };
 use phylum_types::types::preferences::{CorePreferences, ProjectPreferences};
 use phylum_types::types::project::{
@@ -37,6 +37,14 @@ type Result<T> = std::result::Result<T, PhylumApiError>;
 pub struct PhylumApi {
     config: Config,
     client: Client,
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
+#[serde(tag = "status", content = "data")]
+pub enum PackageSubmitResponse {
+    AlreadyProcessed(Package),
+    AlreadySubmitted,
+    New,
 }
 
 /// Phylum Api Error type
@@ -311,7 +319,7 @@ impl PhylumApi {
         };
         log::debug!("==> Sending package submission: {:?}", req);
         let resp: SubmitPackageResponse =
-            self.post(endpoints::post_submit_package(&self.config.connection.uri)?, req).await?;
+            self.post(endpoints::post_submit_job(&self.config.connection.uri)?, req).await?;
         Ok(resp.job_id)
     }
 
@@ -353,9 +361,9 @@ impl PhylumApi {
             .map(|project| project.id)
     }
 
-    /// Get package details
-    pub async fn get_package_details(&self, pkg: &PackageDescriptor) -> Result<Package> {
-        self.get(endpoints::get_package_status(&self.config.connection.uri, pkg)?).await
+    /// Submit a single package
+    pub async fn submit_package(&self, pkg: &PackageSpecifier) -> Result<PackageSubmitResponse> {
+        self.post(endpoints::post_submit_package(&self.config.connection.uri)?, pkg).await
     }
 
     /// Get all groups the user is part of.
@@ -576,63 +584,66 @@ mod tests {
     async fn get_package_details() -> Result<()> {
         let body = r#"
         {
-          "id": "npm:@schematics/angular:9.1.9",
-          "name": "@schematics/angular",
-          "version": "9.1.9",
-          "registry": "npm",
-          "publishedDate": "1970-01-01T00:00:00+00:00",
-          "latestVersion": null,
-          "versions": [],
-          "description": null,
-          "license": null,
-          "depSpecs": [],
-          "dependencies": [],
-          "downloadCount": 0,
-          "riskScores": {
-            "total": 1,
-            "vulnerability": 1,
-            "malicious_code": 1,
-            "author": 1,
-            "engineering": 1,
-            "license": 1
-          },
-          "totalRiskScoreDynamics": null,
-          "issuesDetails": [],
-          "issues": [],
-          "authors": [],
-          "developerResponsiveness": {
-            "open_issue_count": 167,
-            "total_issue_count": 393,
-            "open_issue_avg_duration": 980,
-            "open_pull_request_count": 50,
-            "total_pull_request_count": 476,
-            "open_pull_request_avg_duration": 474
-          },
-          "issueImpacts": {
-            "low": 0,
-            "medium": 0,
-            "high": 0,
-            "critical": 0
-          },
-          "complete": false
+          "status": "AlreadyProcessed",
+          "data": {
+            "id": "npm:@schematics/angular:9.1.9",
+            "name": "@schematics/angular",
+            "version": "9.1.9",
+            "registry": "npm",
+            "publishedDate": "1970-01-01T00:00:00+00:00",
+            "latestVersion": null,
+            "versions": [],
+            "description": null,
+            "license": null,
+            "depSpecs": [],
+            "dependencies": [],
+            "downloadCount": 0,
+            "riskScores": {
+                "total": 1,
+                "vulnerability": 1,
+                "malicious_code": 1,
+                "author": 1,
+                "engineering": 1,
+                "license": 1
+            },
+            "totalRiskScoreDynamics": null,
+            "issuesDetails": [],
+            "issues": [],
+            "authors": [],
+            "developerResponsiveness": {
+                "open_issue_count": 167,
+                "total_issue_count": 393,
+                "open_issue_avg_duration": 980,
+                "open_pull_request_count": 50,
+                "total_pull_request_count": 476,
+                "open_pull_request_avg_duration": 474
+            },
+            "issueImpacts": {
+                "low": 0,
+                "medium": 0,
+                "high": 0,
+                "critical": 0
+            },
+            "complete": false
+          }
         }
         "#;
 
         let mock_server = build_mock_server().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v0/data/packages/npm/@schematics%2Fangular/9.1.9"))
+        Mock::given(method("POST"))
+            .and(path("/api/v0/data/packages/submit"))
             .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
             .mount(&mock_server)
             .await;
 
         let client = build_phylum_api(&mock_server).await?;
 
-        let pkg = PackageDescriptor {
+        let pkg = PackageSpecifier {
             name: "@schematics/angular".to_string(),
             version: "9.1.9".to_string(),
-            package_type: PackageType::Npm,
+            registry: "npm".to_string(),
         };
-        client.get_package_details(&pkg).await?;
+        client.submit_package(&pkg).await?;
 
         Ok(())
     }
