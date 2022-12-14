@@ -201,8 +201,10 @@ impl PhylumApi {
         mut auth_info: AuthInfo,
         ignore_certs: bool,
         api_uri: &str,
+        reauth: bool,
     ) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Login, ignore_certs, api_uri).await?;
+        let action = if reauth { AuthAction::Reauth } else { AuthAction::Login };
+        let tokens = handle_auth_flow(&action, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(tokens.refresh_token);
         Ok(auth_info)
     }

@@ -200,7 +200,15 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("auth")
                 .about("Manage authentication, registration, and API keys")
                 .subcommand(Command::new("register").about("Register a new account"))
-                .subcommand(Command::new("login").about("Login to an existing account"))
+                .subcommand(
+                    Command::new("login").about("Login to an existing account").arg(
+                        Arg::new("reauth")
+                            .action(ArgAction::SetTrue)
+                            .short('r')
+                            .long("reauth")
+                            .help("Force a login prompt"),
+                    ),
+                )
                 .subcommand(
                     Command::new("status").about("Return the current authentication status"),
                 )

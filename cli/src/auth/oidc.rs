@@ -26,6 +26,7 @@ pub const OIDC_CLIENT_ID: &str = "phylum_cli";
 
 pub enum AuthAction {
     Login,
+    Reauth,
     Register,
 }
 
@@ -107,7 +108,7 @@ pub fn build_auth_url(
 ) -> Result<Url> {
     let mut auth_url = match *action {
         // Login uses the oidc defined /auth endpoint as is
-        AuthAction::Login => oidc_settings.authorization_endpoint.to_owned(),
+        AuthAction::Login | AuthAction::Reauth => oidc_settings.authorization_endpoint.to_owned(),
         // Register uses the non-standard /registrations endpoint
         AuthAction::Register => {
             let mut auth_url = oidc_settings.authorization_endpoint.to_owned();
@@ -131,6 +132,10 @@ pub fn build_auth_url(
         .append_pair("response_mode", "query")
         .append_pair("scope", &OIDC_SCOPES.join(" "))
         .append_pair("state", state.as_ref());
+
+    if matches!(*action, AuthAction::Reauth) {
+        auth_url.query_pairs_mut().append_pair("prompt", "login");
+    }
 
     Ok(auth_url)
 }
