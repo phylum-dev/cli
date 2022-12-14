@@ -13,6 +13,9 @@ Usage: phylum auth login [OPTIONS]
 
 ### Options
 
+-r, --reauth
+&emsp; Force a login prompt
+
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
