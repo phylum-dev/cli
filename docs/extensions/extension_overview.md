@@ -29,6 +29,7 @@ look at the [CLI's extension documentation].
 * [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
 * [Extension API](https://docs.phylum.io/docs/extension_api)
 * [Example](https://docs.phylum.io/docs/extension_example)
+* [Direct Phylum API Requests](https://docs.phylum.io/docs/extension_rest_api)
 
 ## Official Extensions
 

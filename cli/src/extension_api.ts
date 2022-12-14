@@ -4,6 +4,54 @@
 
 export class PhylumApi {
   /**
+   * Send a request to the Phylum REST API.
+   *
+   * See https://api.staging.phylum.io/api/v0/swagger/index.html for available API endpoints.
+   *
+   * The `init` parameter matches the `init` parameter of the Deno `fetch` function:
+   * https://deno.land/api@latest?s=fetch
+   */
+  static async fetch(
+    apiVersion: ApiVersion | string,
+    endpoint: string,
+    init?: RequestInit,
+  ): Promise<object> {
+    // Ensure header object is initialized.
+    const fetchInit = init ?? {};
+
+    // Ensure consistent headers type.
+    fetchInit.headers = new Headers(fetchInit.headers);
+
+    // Set Authorization header if it is missing.
+    if (!fetchInit.headers.has("Authorization")) {
+      const token = await PhylumApi.getAccessToken();
+      fetchInit.headers.set("Authorization", `Bearer ${token}`);
+    }
+
+    // Set Content-Type header if it is missing.
+    if (fetchInit.headers.has("Content-Type")) {
+      fetchInit.headers.set("Content-Type", "application/json");
+    }
+
+    // Set Content-Type header if it is missing.
+
+    // Get API base URI without version.
+    const baseUrl = await PhylumApi.apiBaseUrl();
+
+    // Send fetch request.
+    return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchInit);
+  }
+
+  /**
+   * Get the Phylum REST API base URL.
+   *
+   * This will usually return `https://api.phylum.io/api`.
+   */
+  static async apiBaseUrl(): Promise<URL> {
+    return new URL(await Deno.core.opAsync("api_base_url"));
+  }
+
+  /**
    * Analyze dependencies in a lockfile.
    *
    * Packages are expected in the following format:
@@ -391,4 +439,9 @@ export class PhylumApi {
   static permissions(): object {
     return Deno.core.ops.op_permissions();
   }
+}
+
+/** Available Phylum REST API versions. **/
+export enum ApiVersion {
+  V0 = "v0",
 }

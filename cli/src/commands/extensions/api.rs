@@ -473,6 +473,14 @@ fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     state.extension().permissions().into_owned()
 }
 
+#[op]
+async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+    let url = api.config().connection.uri.clone() + "/api";
+    Ok(url)
+}
+
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
@@ -489,5 +497,6 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         parse_lockfile::decl(),
         run_sandboxed::decl(),
         op_permissions::decl(),
+        api_base_url::decl(),
     ]
 }

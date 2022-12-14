@@ -185,3 +185,21 @@ pub fn async_state() {
         .run()
         .success();
 }
+
+#[tokio::test]
+pub async fn rest_api() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension(
+            "
+            const reply = await PhylumApi.fetch(ApiVersion.V0, '/health');
+            console.log(await reply.json());
+        ",
+        )
+        .with_permissions(Permissions { net: Permission::Boolean(true), ..Permissions::default() })
+        .build()
+        .run()
+        .success()
+        .stdout("{ response: \"alive!\" }\n");
+}
