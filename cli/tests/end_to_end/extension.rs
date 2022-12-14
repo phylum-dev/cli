@@ -193,7 +193,7 @@ pub async fn rest_api() {
     test_cli
         .extension(
             "
-            const reply = await PhylumApi.fetchPhylum(ApiVersion.V0, '/health');
+            const reply = await PhylumApi.fetch(ApiVersion.V0, '/health');
             console.log(await reply.json());
         ",
         )

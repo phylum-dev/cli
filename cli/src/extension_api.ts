@@ -48,7 +48,7 @@ export class PhylumApi {
    * This will usually return `https://api.phylum.io/api`.
    */
   static async apiBaseUrl(): Promise<URL> {
-    return new URL(await opAsync("api_base_url"));
+    return new URL(await Deno.core.opAsync("api_base_url"));
   }
 
   /**
