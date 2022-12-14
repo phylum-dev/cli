@@ -46,6 +46,13 @@ Usage: phylum package [OPTIONS] <name> <version>
 -h, --help
 &emsp; Print help information
 
+### Details
+
+If the requested package has not yet been analyzed by Phylum, it will
+automatically be submitted for [processing].
+
+[processing]: https://docs.phylum.io/docs/processing
+
 ### Examples
 
 ```sh

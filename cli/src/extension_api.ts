@@ -264,8 +264,8 @@ export class PhylumApi {
   /**
    * Get analysis results for a single package.
    *
-   * This will not start a new package analysis, but only retrieve previous
-   * analysis results.
+   * If the requested package has not yet been analyzed by Phylum, it will
+   * automatically be submitted for processing.
    *
    * @returns Package analysis results
    *
