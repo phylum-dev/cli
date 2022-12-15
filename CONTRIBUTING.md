@@ -103,18 +103,21 @@ cargo clippy --all-features
 #### Extensions
 
 First-party extensions are written in TypeScript. Extensions code must be
-formatted with [Prettier](https://prettier.io/). 
+formatted and checked with `deno`. See [the deno manual] for installation
+instructions.
 
-Prettier should be installed globally with a method of your choice. For example, via `npm`:
+[the deno manual]: https://deno.land/manual/getting_started/installation
+
+To apply formatting
 
 ```sh
-npm install -g prettier
+deno fmt
 ```
 
-Prettier should be run from the top-level directory of the repository:
+To run lint checks
 
 ```sh
-prettier --write .
+deno lint
 ```
 
 #### Shell scripts

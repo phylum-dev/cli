@@ -10,9 +10,9 @@
 //
 
 import {
-  describe,
   afterAll,
   beforeAll,
+  describe,
   it,
 } from "https://deno.land/std@0.148.0/testing/bdd.ts";
 import { copy } from "https://deno.land/std@0.148.0/fs/mod.ts";
@@ -30,16 +30,16 @@ class Phylum {
   }
 
   async run(args: string[], cwd?: string) {
-    let process = Deno.run({
+    const process = Deno.run({
       cmd: ["phylum", ...args],
-      env: { XDG_DATA_HOME: await this.tempDir },
+      env: { XDG_DATA_HOME: this.tempDir },
       cwd,
       stdout: "inherit",
       stderr: "inherit",
     });
 
     const status = await process.status();
-    await process.close();
+    process.close();
 
     return status;
   }
@@ -47,7 +47,7 @@ class Phylum {
   async runExt(args: string[], cwd?: string) {
     return await this.run(
       ["extension", "run", "-y", this.extDir, ...args],
-      cwd
+      cwd,
     );
   }
 
@@ -68,42 +68,42 @@ afterAll(async () => {
   await phylum.cleanup();
 });
 
-describe("Poetry extension", async () => {
+describe("Poetry extension", () => {
   // These tests may fail if the packages aren't processed on staging.
 
   it("correctly handles the `--dry-run` argument", async () => {
-    let status = await phylum.runExt(
+    const status = await phylum.runExt(
       ["add", "--dry-run", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });
 
   it("correctly allows a valid package", async () => {
-    let status = await phylum.runExt(["add", "numpy"], phylum.fixturesDir);
+    const status = await phylum.runExt(["add", "numpy"], phylum.fixturesDir);
     assert(status.code === 0);
   });
 
   it("correctly denies a known bad package", async () => {
-    let status = await phylum.runExt(
+    const status = await phylum.runExt(
       ["add", "cffi==1.15.0"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code !== 0);
   });
 
   it("allows duplicating the `--dry-run` flag", async () => {
-    let status = await phylum.runExt(
+    const status = await phylum.runExt(
       ["add", "--dry-run", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });
 
   it("allows duplicating the `--lock` flag", async () => {
-    let status = await phylum.runExt(
+    const status = await phylum.runExt(
       ["add", "--lock", "numpy"],
-      phylum.fixturesDir
+      phylum.fixturesDir,
     );
     assert(status.code === 0);
   });

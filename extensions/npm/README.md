@@ -1,7 +1,7 @@
 # Phylum npm extension
 
-A [Phylum CLI][phylum-cli] extension that checks your [npm][npm]
-dependencies through [Phylum][phylum] before installing them.
+A [Phylum CLI][phylum-cli] extension that checks your [npm][npm] dependencies
+through [Phylum][phylum] before installing them.
 
 ## Installation
 
@@ -41,14 +41,14 @@ When invoking `phylum npm`, subcommands that would modify the `package.json` or
   meet the required project thresholds, the command will fail.
 - If the analysis is waiting for Phylum to process one or more of the submitted
   packages, the command will fail and the changes will _not_ be applied.
-- Commands that modify neither `package.json` nor `package-lock.json` will be passed
-  through to `npm` directly.
+- Commands that modify neither `package.json` nor `package-lock.json` will be
+  passed through to `npm` directly.
 
 ## Caveats
 
-Unlike the `npm` CLI, this extension needs to be launched in the directory
-that contains the `package.json` and `package-lock.json` files. Launching it from
-any of its subdirectories will result in an error.
+Unlike the `npm` CLI, this extension needs to be launched in the directory that
+contains the `package.json` and `package-lock.json` files. Launching it from any
+of its subdirectories will result in an error.
 
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli

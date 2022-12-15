@@ -1,7 +1,7 @@
 # Phylum yarn extension
 
-A [Phylum CLI][phylum-cli] extension that checks your [yarn][yarn]
-dependencies through [Phylum][phylum] before installing them.
+A [Phylum CLI][phylum-cli] extension that checks your [yarn][yarn] dependencies
+through [Phylum][phylum] before installing them.
 
 ## Installation
 
@@ -46,9 +46,9 @@ When invoking `phylum yarn`, subcommands that would modify the `package.json` or
 
 ## Caveats
 
-Unlike the `yarn` CLI, this extension needs to be launched in the directory
-that contains the `package.json` and `yarn.lock` files. Launching it from
-any of its subdirectories will result in an error.
+Unlike the `yarn` CLI, this extension needs to be launched in the directory that
+contains the `package.json` and `yarn.lock` files. Launching it from any of its
+subdirectories will result in an error.
 
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli

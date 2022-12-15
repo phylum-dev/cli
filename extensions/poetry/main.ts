@@ -1,13 +1,13 @@
 import { PhylumApi } from "phylum";
 import {
-  red,
   green,
+  red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
 class FileBackup {
   readonly fileName: string;
-  readonly fileContent: string | null;
+  fileContent: string | null;
 
   constructor(fileName: string) {
     this.fileName = fileName;
@@ -17,7 +17,7 @@ class FileBackup {
   async backup() {
     try {
       this.fileContent = await Deno.readTextFile(this.fileName);
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 
   async restoreOrDelete() {
@@ -27,21 +27,21 @@ class FileBackup {
       } else {
         await Deno.remove(this.fileName);
       }
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 }
 
 // Find project root directory.
-async function findRoot(manifest: string): string | undefined {
+async function findRoot(manifest: string): Promise<string | undefined> {
   let workingDir = Deno.cwd();
 
   // Traverse up to 32 directories to find the root directory.
-  for (var i = 0; i < 32; i++) {
+  for (let i = 0; i < 32; i++) {
     try {
       // Check if manifest exists at location.
       await Deno.stat(workingDir + "/" + manifest);
       return workingDir;
-    } catch (e) {
+    } catch (_e) {
       // Pop to parent if manifest doesn't exist.
       workingDir += "/..";
     }
@@ -55,8 +55,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "update", "install"].includes(Deno.args[0])
 ) {
-  let cmd = await Deno.run({ cmd: ["poetry", ...Deno.args] });
-  let status = await cmd.status();
+  const cmd = Deno.run({ cmd: ["poetry", ...Deno.args] });
+  const status = await cmd.status();
   Deno.exit(status.code);
 }
 
@@ -66,9 +66,11 @@ const root = await findRoot("pyproject.toml");
 if (!root) {
   console.error(`[${red("phylum")}] unable to find poetry project root.`);
   console.error(
-    `[${red(
-      "phylum"
-    )}] Please change to a poetry project directory and try again.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] Please change to a poetry project directory and try again.`,
   );
   Deno.exit(125);
 }
@@ -80,7 +82,7 @@ const manifestBackup = new FileBackup(root + "/pyproject.toml");
 await manifestBackup.backup();
 
 // Analyze new dependencies with phylum before install/update.
-const analysisOutcome;
+let analysisOutcome: number;
 try {
   analysisOutcome = await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1));
 } catch (e) {
@@ -94,10 +96,13 @@ if (analysisOutcome !== 0) {
 }
 
 // Analyze new packages.
-async function poetryCheckDryRun(subcommand: string, args: string[]): number {
+async function poetryCheckDryRun(
+  subcommand: string,
+  args: string[],
+): Promise<number> {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  let status = PhylumApi.runSandboxed({
+  const status = PhylumApi.runSandboxed({
     cmd: "poetry",
     args: [subcommand, "-n", ...args.map((s) => s.toString())],
     exceptions: {
@@ -130,12 +135,12 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 
   if (lockfileData.packages.length === 0) {
     console.log(`[${green("phylum")}] No packages found in lockfile.\n`);
-    return;
+    return 0;
   }
 
   const jobId = await PhylumApi.analyze(
     lockfileData["package_type"],
-    lockfileData["packages"]
+    lockfileData["packages"],
   );
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
@@ -144,14 +149,16 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
     return 0;
   } else if (jobStatus.pass) {
     console.warn(
-      `[${yellow(
-        "phylum"
-      )}] Unknown packages were submitted for analysis, please check again later.\n`
+      `[${
+        yellow(
+          "phylum",
+        )
+      }] Unknown packages were submitted for analysis, please check again later.\n`,
     );
     return 126;
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`
+      `[${red("phylum")}] The operation caused a threshold failure.\n`,
     );
     return 127;
   }
@@ -161,7 +168,7 @@ async function poetryCheckDryRun(subcommand: string, args: string[]): number {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code) {
+async function abort(code: number) {
   await restoreBackup();
   Deno.exit(code);
 }

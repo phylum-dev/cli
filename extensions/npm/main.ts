@@ -1,13 +1,13 @@
 import {
-  red,
   green,
+  red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 import { PhylumApi } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
-  readonly fileContent: string | null;
+  fileContent: string | null;
 
   constructor(fileName: string) {
     this.fileName = fileName;
@@ -17,7 +17,7 @@ class FileBackup {
   async backup() {
     try {
       this.fileContent = await Deno.readTextFile(this.fileName);
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 
   async restoreOrDelete() {
@@ -27,21 +27,21 @@ class FileBackup {
       } else {
         await Deno.remove(this.fileName);
       }
-    } catch (e) {}
+    } catch (_e) { /* Do nothing */ }
   }
 }
 
 // Find project root directory.
-async function findRoot(manifest: string): string | undefined {
+async function findRoot(manifest: string): Promise<string | undefined> {
   let workingDir = Deno.cwd();
 
   // Traverse up to 32 directories to find the root directory.
-  for (var i = 0; i < 32; i++) {
+  for (let i = 0; i < 32; i++) {
     try {
       // Check if manifest exists at location.
       await Deno.stat(workingDir + "/" + manifest);
       return workingDir;
-    } catch (e) {
+    } catch (_e) {
       // Pop to parent if manifest doesn't exist.
       workingDir += "/..";
     }
@@ -60,8 +60,8 @@ if (
     "udpate".startsWith(Deno.args[0])
   )
 ) {
-  let cmd = await Deno.run({ cmd: ["npm", ...Deno.args] });
-  let status = await cmd.status();
+  const cmd = Deno.run({ cmd: ["npm", ...Deno.args] });
+  const status = await cmd.status();
   Deno.exit(status.code);
 }
 
@@ -70,7 +70,9 @@ const root = await findRoot("package.json");
 if (!root) {
   console.error(`[${red("phylum")}] unable to find npm project root.`);
   console.error(
-    `[${red("phylum")}] Please change to a npm project directory and try again.`
+    `[${
+      red("phylum")
+    }] Please change to a npm project directory and try again.`,
   );
   Deno.exit(125);
 }
@@ -92,13 +94,13 @@ try {
 console.log(`[${green("phylum")}] Installing without build scripts…`);
 
 // Install packages without executing build scripts.
-let cmd = await Deno.run({
+const cmd = Deno.run({
   cmd: ["npm", ...Deno.args, "--ignore-scripts"],
   stdout: "inherit",
   stderr: "inherit",
   stdin: "inherit",
 });
-let status = await cmd.status();
+const status = await cmd.status();
 
 // Ensure install worked. Failure is still "safe" for the user.
 if (!status.success) {
@@ -127,18 +129,22 @@ if (!output.success) {
   console.log(`[${red("phylum")}] Sandboxed build failed.`);
   console.log(`[${red("phylum")}]`);
   console.log(
-    `[${red(
-      "phylum"
-    )}] This could mean one of your packages attempted to access a restricted resource.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] This could mean one of your packages attempted to access a restricted resource.`,
   );
   console.log(
-    `[${red("phylum")}] Do not retry installation without Phylum's extension.`
+    `[${red("phylum")}] Do not retry installation without Phylum's extension.`,
   );
   console.log(`[${red("phylum")}]`);
   console.log(
-    `[${red(
-      "phylum"
-    )}] Please submit your lockfile to Phylum should this error persist.`
+    `[${
+      red(
+        "phylum",
+      )
+    }] Please submit your lockfile to Phylum should this error persist.`,
   );
 
   await abort(output.code);
@@ -150,7 +156,7 @@ if (!output.success) {
 async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  let cmd = await Deno.run({
+  const cmd = Deno.run({
     cmd: [
       "npm",
       subcommand,
@@ -162,7 +168,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     stderr: "inherit",
     stdin: "inherit",
   });
-  let status = await cmd.status();
+  const status = await cmd.status();
 
   // Ensure lockfile update was successful.
   if (!status.success) {
@@ -191,14 +197,16 @@ async function checkDryRun(subcommand: string, args: string[]) {
     console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
   } else if (jobStatus.pass) {
     console.warn(
-      `[${yellow(
-        "phylum"
-      )}] Unknown packages were submitted for analysis, please check again later.\n`
+      `[${
+        yellow(
+          "phylum",
+        )
+      }] Unknown packages were submitted for analysis, please check again later.\n`,
     );
     Deno.exit(126);
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`
+      `[${red("phylum")}] The operation caused a threshold failure.\n`,
     );
     Deno.exit(127);
   }
@@ -208,7 +216,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code) {
+async function abort(code: number) {
   await restoreBackup();
   Deno.exit(code);
 }
