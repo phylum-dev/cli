@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
-use clap::Command;
+use clap::{ArgMatches, Command};
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
@@ -23,10 +23,16 @@ async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-async fn handle_auth_login(mut config: Config, config_path: &Path, reauth: bool) -> Result<()> {
+async fn handle_auth_login(
+    mut config: Config,
+    config_path: &Path,
+    matches: &ArgMatches,
+) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
-    config.auth_info = PhylumApi::login(config.auth_info, ignore_certs, api_uri, reauth).await?;
+    config.auth_info =
+        PhylumApi::login(config.auth_info, ignore_certs, api_uri, matches.get_flag("reauth"))
+            .await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -130,14 +136,12 @@ pub async fn handle_auth(
             },
             Err(error) => Err(error).context("User registration failed"),
         },
-        Some(("login", matches)) => {
-            match handle_auth_login(config, config_path, matches.get_flag("reauth")).await {
-                Ok(_) => {
-                    print_user_success!("{}", "User login successful");
-                    Ok(ExitCode::Ok.into())
-                },
-                Err(error) => Err(error).context("User login failed"),
-            }
+        Some(("login", matches)) => match handle_auth_login(config, config_path, matches).await {
+            Ok(_) => {
+                print_user_success!("{}", "User login successful");
+                Ok(ExitCode::Ok.into())
+            },
+            Err(error) => Err(error).context("User login failed"),
         },
         Some(("status", _)) => handle_auth_status(config, timeout).await,
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
