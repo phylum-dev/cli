@@ -131,7 +131,7 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
 /// which then need to passed on to the /token endpoint to obtain tokens
 async fn spawn_server_and_get_auth_code(
     oidc_settings: &OidcServerSettings,
-    redirect_type: &AuthAction,
+    redirect_type: AuthAction,
     code_challenge: &ChallengeCode,
     state: impl AsRef<str> + 'static,
 ) -> Result<(AuthorizationCode, Url)> {
@@ -219,7 +219,7 @@ async fn spawn_server_and_get_auth_code(
 
 /// Handle the user login/registration flow.
 pub async fn handle_auth_flow(
-    auth_action: &AuthAction,
+    auth_action: AuthAction,
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<TokenResponse> {
@@ -252,7 +252,7 @@ mod test {
         let state: String =
             thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
-        spawn_server_and_get_auth_code(&oidc_settings, &AuthAction::Login, &challenge, state)
+        spawn_server_and_get_auth_code(&oidc_settings, AuthAction::Login, &challenge, state)
             .await?;
 
         Ok(())
@@ -267,7 +267,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Login, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Login, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
@@ -283,7 +283,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(&AuthAction::Register, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Register, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 

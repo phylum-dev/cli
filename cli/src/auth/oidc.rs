@@ -24,8 +24,10 @@ pub const OIDC_SCOPES: [&str; 4] = ["openid", "offline_access", "profile", "emai
 /// OIDC Client id used to identify this client to the oidc server
 pub const OIDC_CLIENT_ID: &str = "phylum_cli";
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AuthAction {
     Login,
+    Reauth,
     Register,
 }
 
@@ -99,15 +101,15 @@ pub struct OidcServerSettings {
 
 /// Using config information, build the url for the keycloak login page.
 pub fn build_auth_url(
-    action: &AuthAction,
+    action: AuthAction,
     oidc_settings: &OidcServerSettings,
     callback_url: &Url,
     code_challenge: &ChallengeCode,
     state: impl AsRef<str>,
 ) -> Result<Url> {
-    let mut auth_url = match *action {
+    let mut auth_url = match action {
         // Login uses the oidc defined /auth endpoint as is
-        AuthAction::Login => oidc_settings.authorization_endpoint.to_owned(),
+        AuthAction::Login | AuthAction::Reauth => oidc_settings.authorization_endpoint.to_owned(),
         // Register uses the non-standard /registrations endpoint
         AuthAction::Register => {
             let mut auth_url = oidc_settings.authorization_endpoint.to_owned();
@@ -131,6 +133,10 @@ pub fn build_auth_url(
         .append_pair("response_mode", "query")
         .append_pair("scope", &OIDC_SCOPES.join(" "))
         .append_pair("state", state.as_ref());
+
+    if action == AuthAction::Reauth {
+        auth_url.query_pairs_mut().append_pair("prompt", "login");
+    }
 
     Ok(auth_url)
 }
