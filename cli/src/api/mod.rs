@@ -166,7 +166,7 @@ impl PhylumApi {
                     .context("Token refresh failed")?
             },
             None => {
-                handle_auth_flow(&AuthAction::Login, config.ignore_certs(), &config.connection.uri)
+                handle_auth_flow(AuthAction::Login, config.ignore_certs(), &config.connection.uri)
                     .await
                     .context("User login failed")?
             },
@@ -204,7 +204,7 @@ impl PhylumApi {
         reauth: bool,
     ) -> Result<AuthInfo> {
         let action = if reauth { AuthAction::Reauth } else { AuthAction::Login };
-        let tokens = handle_auth_flow(&action, ignore_certs, api_uri).await?;
+        let tokens = handle_auth_flow(action, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(tokens.refresh_token);
         Ok(auth_info)
     }
@@ -217,7 +217,7 @@ impl PhylumApi {
         ignore_certs: bool,
         api_uri: &str,
     ) -> Result<AuthInfo> {
-        let tokens = handle_auth_flow(&AuthAction::Register, ignore_certs, api_uri).await?;
+        let tokens = handle_auth_flow(AuthAction::Register, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(tokens.refresh_token);
         Ok(auth_info)
     }
