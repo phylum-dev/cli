@@ -1,15 +1,15 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 use serde_xml_rs::Deserializer;
 
-use crate::{Parse, ParseResult};
+use crate::{Package, PackageVersion, Parse};
 
 pub struct CSProj;
 
-const INVALID_CHAR: &str = "\u{feff}";
+const UTF8_BOM: &str = "\u{feff}";
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct PackageReference {
@@ -32,28 +32,20 @@ struct Project {
     pub item_groups: Vec<ItemGroup>,
 }
 
-impl From<PackageReference> for PackageDescriptor {
+impl From<PackageReference> for Package {
     fn from(pkg_ref: PackageReference) -> Self {
-        PackageDescriptor {
-            name: pkg_ref.name,
-            version: pkg_ref.version,
-            package_type: PackageType::Nuget,
-        }
+        Self { name: pkg_ref.name, version: PackageVersion::FirstParty(pkg_ref.version) }
     }
 }
 
-impl From<Project> for Vec<PackageDescriptor> {
+impl From<Project> for Vec<Package> {
     fn from(proj: Project) -> Self {
         let mut deps = Vec::new();
 
         for item_group in proj.item_groups {
             if !item_group.dependencies.is_empty() {
                 deps.extend(
-                    item_group
-                        .dependencies
-                        .into_iter()
-                        .map(PackageDescriptor::from)
-                        .collect::<Vec<_>>(),
+                    item_group.dependencies.into_iter().map(Package::from).collect::<Vec<_>>(),
                 );
             }
         }
@@ -63,8 +55,8 @@ impl From<Project> for Vec<PackageDescriptor> {
 
 impl Parse for CSProj {
     /// Parses `.csproj` files into a vec of packages
-    fn parse(&self, data: &str) -> ParseResult {
-        let data = data.trim_start_matches(INVALID_CHAR);
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        let data = data.trim_start_matches(UTF8_BOM);
         let mut de =
             Deserializer::new_from_reader(data.as_bytes()).non_contiguous_seq_elements(true);
         let parsed = Project::deserialize(&mut de)?;
@@ -90,17 +82,15 @@ mod tests {
 
         assert_eq!(pkgs.len(), 5);
         assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
-        assert_eq!(pkgs[0].version, "1.0.0");
-        assert_eq!(pkgs[0].package_type, PackageType::Nuget);
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.0.0".into()));
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "System.ValueTuple");
-        assert_eq!(last.version, "4.5.0");
-        assert_eq!(last.package_type, PackageType::Nuget);
+        assert_eq!(last.version, PackageVersion::FirstParty("4.5.0".into()));
     }
 
     #[test]
-    fn lock_parse_another_invalid_char() {
+    fn strips_utf8_bom() {
         let pkgs = CSProj.parse(include_str!("../../tests/fixtures/Calculator.csproj")).unwrap();
         assert!(!pkgs.is_empty());
     }

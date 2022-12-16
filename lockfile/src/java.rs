@@ -5,18 +5,18 @@ use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 
 use super::parsers::gradle_dep;
-use crate::{Parse, ParseResult};
+use crate::{Package, PackageVersion, Parse};
 
 pub struct Pom;
 pub struct GradleLock;
 
 impl Parse for GradleLock {
     /// Parses `gradle.lockfile` files into a vec of packages
-    fn parse(&self, data: &str) -> ParseResult {
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let (_, entries) = gradle_dep::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -33,9 +33,43 @@ impl Parse for GradleLock {
     }
 }
 
+impl Parse for Pom {
+    /// Parses maven effective-pom files into a vec of packages
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        // Parse effective-pom.xml.
+        let pom: EffectivePom = serde_xml_rs::from_str(data)?;
+
+        // Retrieve all dependencies.
+        match pom {
+            EffectivePom::Project(project) => self.project_dependencies(*project),
+            EffectivePom::Workspace(workspace) => {
+                // Retrieve all dependencies.
+                let mut packages = Vec::new();
+                for project in workspace.projects {
+                    packages.append(&mut self.project_dependencies(project)?);
+                }
+
+                // Deduplicate between projects.
+                packages.sort_unstable();
+                packages.dedup();
+
+                Ok(packages)
+            },
+        }
+    }
+
+    fn package_type(&self) -> PackageType {
+        PackageType::Maven
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("effective-pom.xml"))
+    }
+}
+
 impl Pom {
     /// Get dependencies of a single project.
-    fn project_dependencies(&self, project: Project) -> ParseResult {
+    fn project_dependencies(&self, project: Project) -> anyhow::Result<Vec<Package>> {
         // Get project dependencies
         let mut dependencies = project.dependencies.unwrap_or_default().dependencies;
 
@@ -93,18 +127,17 @@ impl Pom {
             .iter()
             .filter_map(|dep| {
                 dep.version.as_ref().map(|s| {
-                    Ok(PackageDescriptor {
+                    Ok(Package {
                         name: format!(
                             "{}:{}",
                             &dep.group_id.clone().unwrap_or_default(),
                             &dep.artifact_id.clone().unwrap_or_default()
                         ),
-                        version: s.into(),
-                        package_type: self.package_type(),
+                        version: PackageVersion::FirstParty(s.into()),
                     })
                 })
             })
-            .collect::<Result<Vec<_>, _>>()
+            .collect()
     }
 
     /// Get plugin dependencies.
@@ -144,40 +177,6 @@ struct Workspace {
     projects: Vec<Project>,
 }
 
-impl Parse for Pom {
-    /// Parses maven effective-pom files into a vec of packages
-    fn parse(&self, data: &str) -> ParseResult {
-        // Parse effective-pom.xml.
-        let pom: EffectivePom = serde_xml_rs::from_str(data)?;
-
-        // Retrieve all dependencies.
-        match pom {
-            EffectivePom::Project(project) => self.project_dependencies(*project),
-            EffectivePom::Workspace(workspace) => {
-                // Retrieve all dependencies.
-                let mut packages = Vec::new();
-                for project in workspace.projects {
-                    packages.append(&mut self.project_dependencies(project)?);
-                }
-
-                // Deduplicate between projects.
-                packages.sort_unstable();
-                packages.dedup();
-
-                Ok(packages)
-            },
-        }
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Maven
-    }
-
-    fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("effective-pom.xml"))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -189,16 +188,13 @@ mod tests {
         assert_eq!(pkgs.len(), 6);
 
         assert_eq!(pkgs[0].name, "com.google.code.findbugs:jsr305");
-        assert_eq!(pkgs[0].version, "1.3.9");
-        assert_eq!(pkgs[0].package_type, PackageType::Maven);
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.3.9".into()));
 
         assert_eq!(pkgs[2].name, "com.google.guava:guava");
-        assert_eq!(pkgs[2].version, "23.3-jre");
-        assert_eq!(pkgs[2].package_type, PackageType::Maven);
+        assert_eq!(pkgs[2].version, PackageVersion::FirstParty("23.3-jre".into()));
 
         assert_eq!(pkgs[5].name, "org.springframework:spring-core");
-        assert_eq!(pkgs[5].version, "5.2.15.RELEASE");
-        assert_eq!(pkgs[5].package_type, PackageType::Maven);
+        assert_eq!(pkgs[5].version, PackageVersion::FirstParty("5.2.15.RELEASE".into()));
     }
 
     #[test]
@@ -208,17 +204,14 @@ mod tests {
         pkgs.sort_by(|a, b| a.version.cmp(&b.version));
         assert_eq!(pkgs.len(), 16);
         assert_eq!(pkgs[0].name, "com.bitalino:bitalino-java-sdk");
-        assert_eq!(pkgs[0].version, "1.1.0");
-        assert_eq!(pkgs[0].package_type, PackageType::Maven);
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.1.0".into()));
 
         assert_eq!(pkgs[1].name, "org.codehaus.mojo:exec-maven-plugin");
-        assert_eq!(pkgs[1].version, "1.2.1");
-        assert_eq!(pkgs[1].package_type, PackageType::Maven);
+        assert_eq!(pkgs[1].version, PackageVersion::FirstParty("1.2.1".into()));
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "org.apache.maven.plugins:maven-site-plugin");
-        assert_eq!(last.version, "3.3");
-        assert_eq!(last.package_type, PackageType::Maven);
+        assert_eq!(last.version, PackageVersion::FirstParty("3.3".into()));
     }
 
     #[test]
@@ -228,10 +221,9 @@ mod tests {
 
         assert_eq!(pkgs.len(), 88);
 
-        let additional_dependency = PackageDescriptor {
+        let additional_dependency = Package {
             name: "io.phylum:fake-dependency".into(),
-            version: "1.2.3".into(),
-            package_type: PackageType::Maven,
+            version: PackageVersion::FirstParty("1.2.3".into()),
         };
 
         assert!(pkgs.contains(&additional_dependency));

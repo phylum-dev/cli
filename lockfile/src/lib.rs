@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 pub use cargo::Cargo;
@@ -137,7 +137,7 @@ pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
 pub trait Parse {
     /// Parse from a string.
-    fn parse(&self, data: &str) -> ParseResult;
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>>;
 
     /// Indicate the type of packages parsed by this parser.
     fn package_type(&self) -> PackageType;
@@ -146,6 +146,37 @@ pub trait Parse {
     ///
     /// The file does not need to exist.
     fn is_path_lockfile(&self, path: &Path) -> bool;
+}
+
+/// Single package parsed from a lockfile.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct Package {
+    pub name: String,
+    pub version: PackageVersion,
+}
+
+/// Version for a lockfile's package.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum PackageVersion {
+    /// Version from the ecosystem's first-party registry.
+    FirstParty(String),
+    /// Version from a foreign package registry.
+    ThirdParty(ThirdPartyVersion),
+    /// Version available through the filesystem.
+    Path(Option<PathBuf>),
+    /// Version distributed through GIT.
+    Git(String),
+    /// TODO: Naming?
+    /// TODO: Need it?
+    /// Version distributed over HTTP(S).
+    Internet(String),
+}
+
+/// Version from a foreign package registry.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct ThirdPartyVersion {
+    pub version: String,
+    pub registry: String,
 }
 
 /// Get the expected format of a potential lock file.
@@ -174,7 +205,6 @@ mod tests {
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),
             ("requirements.txt", LockfileFormat::Pip),
-            ("Pipfile", LockfileFormat::Pipenv),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
             ("go.sum", LockfileFormat::Go),
@@ -260,7 +290,7 @@ mod tests {
             (LockfileFormat::Yarn, 4),
             (LockfileFormat::Npm, 2),
             (LockfileFormat::Gem, 1),
-            (LockfileFormat::Pipenv, 2),
+            (LockfileFormat::Pipenv, 1),
             (LockfileFormat::Poetry, 2),
             (LockfileFormat::Maven, 2),
             (LockfileFormat::Gradle, 1),

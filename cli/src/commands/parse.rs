@@ -5,7 +5,9 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use phylum_lockfile::{get_path_format, LockfileFormat};
+use phylum_lockfile::{
+    get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
+};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, ExitCode};
@@ -69,11 +71,10 @@ pub fn parse_lockfile(
             let data = read_to_string(path)?;
             let parser = format.parser();
 
-            Ok(ParsedLockfile {
-                format,
-                packages: parser.parse(&data)?,
-                package_type: parser.package_type(),
-            })
+            let package_type = parser.package_type();
+            let packages = filter_packages(parser.parse(&data)?, package_type);
+
+            Ok(ParsedLockfile { package_type, packages, format })
         },
         // Attempt to parse with all parsers until success.
         None => try_get_packages(path.as_ref()),
@@ -86,19 +87,48 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
 
     for format in LockfileFormat::iter() {
         let parser = format.parser();
-        if let Ok(packages) = parser.parse(data.as_str()) {
-            if !packages.is_empty() {
-                log::info!("Identified lockfile type: {}", format);
-                return Ok(ParsedLockfile {
-                    format,
-                    packages,
-                    package_type: parser.package_type(),
-                });
-            }
+        if let Some(packages) = parser.parse(data.as_str()).ok().filter(|pkgs| !pkgs.is_empty()) {
+            log::info!("Identified lockfile type: {}", format);
+
+            let package_type = parser.package_type();
+            let packages = filter_packages(packages, package_type);
+
+            return Ok(ParsedLockfile { package_type, packages, format });
         }
     }
 
     Err(anyhow!("Failed to identify lockfile type"))
+}
+
+/// Filter packages for submission.
+fn filter_packages(
+    mut packages: Vec<Package>,
+    package_type: PackageType,
+) -> Vec<PackageDescriptor> {
+    packages
+        .drain(..)
+        .filter_map(|package| {
+            // Check if package should be submitted based on version format.
+            let version = match package.version {
+                PackageVersion::FirstParty(version) => version,
+                PackageVersion::ThirdParty(ThirdPartyVersion { registry, version }) => {
+                    log::debug!("Using registry {registry:?} for {} ({version})", package.name);
+                    version
+                },
+                PackageVersion::Git(url) => url,
+                PackageVersion::Path(path) => {
+                    log::debug!("Ignoring filesystem dependency {} ({path:?})", package.name);
+                    return None;
+                },
+                PackageVersion::Internet(url) => {
+                    log::debug!("Ignoring remote dependency {} ({url:?})", package.name);
+                    return None;
+                },
+            };
+
+            Some(PackageDescriptor { package_type, version, name: package.name })
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -112,7 +142,10 @@ mod tests {
             ("../tests/fixtures/yarn-v1.lock", PackageType::Npm, LockfileFormat::Yarn),
             ("../tests/fixtures/yarn.lock", PackageType::Npm, LockfileFormat::Yarn),
             ("../tests/fixtures/package-lock.json", PackageType::Npm, LockfileFormat::Npm),
+            ("../tests/fixtures/package-lock-v6.json", PackageType::Npm, LockfileFormat::Npm),
+            ("../tests/fixtures/Calculator.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
             ("../tests/fixtures/sample.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
+            ("../tests/fixtures/Calculator.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
             ("../tests/fixtures/gradle.lockfile", PackageType::Maven, LockfileFormat::Gradle),
             ("../tests/fixtures/effective-pom.xml", PackageType::Maven, LockfileFormat::Maven),
             (
@@ -120,11 +153,13 @@ mod tests {
                 PackageType::Maven,
                 LockfileFormat::Maven,
             ),
-            ("../tests/fixtures/requirements.txt", PackageType::PyPi, LockfileFormat::Pip),
-            ("../tests/fixtures/Pipfile", PackageType::PyPi, LockfileFormat::Pipenv),
+            ("../tests/fixtures/requirements-locked.txt", PackageType::PyPi, LockfileFormat::Pip),
             ("../tests/fixtures/Pipfile.lock", PackageType::PyPi, LockfileFormat::Pipenv),
             ("../tests/fixtures/poetry.lock", PackageType::PyPi, LockfileFormat::Poetry),
+            ("../tests/fixtures/poetry_v2.lock", PackageType::PyPi, LockfileFormat::Poetry),
             ("../tests/fixtures/go.sum", PackageType::Golang, LockfileFormat::Go),
+            ("../tests/fixtures/Cargo_v1.lock", PackageType::Cargo, LockfileFormat::Cargo),
+            ("../tests/fixtures/Cargo_v2.lock", PackageType::Cargo, LockfileFormat::Cargo),
             ("../tests/fixtures/Cargo_v3.lock", PackageType::Cargo, LockfileFormat::Cargo),
         ];
 

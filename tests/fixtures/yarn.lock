@@ -485,15 +485,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"~@link:./src::locator=consumer-native-app%40workspace%3Aapp":
+"xxx@link:../xxx::locator=xxx%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "~@link:./src::locator=consumer-native-app%40workspace%3Aapp"
+  resolution: "xxx@link:../xxx::locator=xxx%40workspace%3A."
   languageName: node
   linkType: soft
 
-"ondisk@file:/home/user/ondisk::locator=xxx%40workspace%3A.":
+"ondisk@file:/home/user/ondisk::locator=testing%40workspace%3A.":
   version: 0.0.0
-  resolution: "ondisk@file:/home/user/ondisk#/home/user/ondisk::hash=4cecb0&locator=xxx%40workspace%3A."
+  resolution: "ondisk@file:/home/user/ondisk#/home/user/ondisk::hash=4cecb0&locator=testing%40workspace%3A."
   checksum: f8bf09ed12ed5629de7aa255d18ad8d517598ab65f0023a95d0b81ce27f4492cc176daa6ed97cdeb014cdca2003c8fc8b47f6946be1c438cf8ed56b46ec1f357
+  languageName: node
+  linkType: hard
+
+"testing@file:../../testing::locator=workspace-a%40workspace%3Aworkspace-a":
+  version: 0.0.0
+  resolution: "testing@file:../../testing#../../testing::hash=2d4eff&locator=workspace-a%40workspace%3Aworkspace-a"
+  checksum: a8e81befeb5ec051d0caebf0b09023d35b2a5ce8966bc3ecf6648dc11cc0249b83e16cbce645741fc6fc3c50c675eea74b0c824b7d1b9d159c2aa2b34bcc5123
   languageName: node
   linkType: hard
