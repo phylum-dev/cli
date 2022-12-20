@@ -7,12 +7,12 @@ use nom::Finish;
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::go_sum;
-use crate::{Parse, ParseResult};
+use crate::{Package, Parse};
 
 pub struct GoSum;
 
 impl Parse for GoSum {
-    fn parse(&self, data: &str) -> ParseResult {
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let (_, entries) = go_sum::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
@@ -31,9 +31,8 @@ impl Parse for GoSum {
 
 #[cfg(test)]
 mod tests {
-    use phylum_types::types::package::PackageType;
-
     use super::*;
+    use crate::PackageVersion;
 
     #[test]
     fn parse_go_sum() {
@@ -42,13 +41,14 @@ mod tests {
 
         // check the first package in the example go.sum
         assert_eq!(pkgs[0].name, "cloud.google.com/go");
-        assert_eq!(pkgs[0].version, "v0.72.0");
-        assert_eq!(pkgs[0].package_type, PackageType::Golang);
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("v0.72.0".into()));
 
         // check the last package in the example go.sum
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "sourcegraph.com/sourcegraph/appdash");
-        assert_eq!(last.version, "v0.0.0-20190731080439-ebfcffb1b5c0");
-        assert_eq!(last.package_type, PackageType::Golang);
+        assert_eq!(
+            last.version,
+            PackageVersion::FirstParty("v0.0.0-20190731080439-ebfcffb1b5c0".into())
+        );
     }
 }

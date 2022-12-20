@@ -1,59 +1,34 @@
-#
-####### example-requirements.txt #######
-#
-###### Requirements without Version Specifiers ######
 nose
 nose-cov
 beautifulsoup4
-#
-###### Requirements with Version Specifiers ######
-#   See https://www.python.org/dev/peps/pep-0440/#version-specifiers
-docopt==0.6.1             # Version Matching. Must be version 0.6.1
 keyring >= 4.1.1            # Minimum version 4.1.1
 coverage != 3.5             # Version Exclusion. Anything except version 3.5
 Mopidy-Dirble ~= 1.1        # Compatible release. Same as >= 1.1, == 1.*
-#
-###### Refer to other requirements files ######
 -r other-requirements.txt
-#
-#
-###### A particular file ######
 ./downloads/numpy-1.9.2-cp34-none-win32.whl
 http://wxpython.org/Phoenix/snapshot-builds/wxPython_Phoenix-3.0.3.dev1820+49a8884-cp34-none-win_amd64.whl
-#
-###### Additional Requirements without Version Specifiers ######
-#   Same as 1st section, just here to show that you can put things in any order.
 rejected
 green
-#
-
 SomeProject1
-SomeProject2 == 1.3
 SomeProject3 >=1.*,!=2.0
 SomeProject4[foo, bar]
 SomeProject5~=1.4.2
-SomeProject6 ==5.4 ; python_version < '3.8'
 SomeProject7; sys_platform == 'win32'
 SomeProject8 == 1.*
-SomeProject9 @ file:///somewhere/...
 SomeProject10 >= 1.2 --global-option="--no-user-cfg" \
                   --install-option="--prefix='/usr/local'" \
                   --install-option="--no-compile"
 SomeProject11 == 1.2 --hash=sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 \
                   --hash=sha256:486ea46224d1bb4fb680f34f7c9ad96a8f24ec88be73ea8e5a6c65260e9cb8a7
-
 requests != 2.12.3,>2.12.1
 requests [security,tests] >= 2.8.1, != 2.8.2 ; python_version < "2.7"
-
 FooProject1 >1.0
 FooProject2 < 1.2
 FooProject3 <= 1.3
 FooProject4 >= 1.4
-FooProject5 == 1.5
 FooProject6 != 1.6
 FooProject7 ~= 1.7
 FooProject8 > 1.8.*
 FooProject9 > 2.0.*, !=2.1
--e https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0#egg=my-git-package
+FooProject10==1.2.3 --random-flag
 git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0#egg=my-git-package
-git-for-pip-example @ git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0

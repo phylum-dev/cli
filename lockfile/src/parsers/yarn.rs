@@ -1,6 +1,7 @@
 use super::*;
+use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
+pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     let (i, _) = yarn_lock_header(input)?;
     many1(entry)(i)
 }
@@ -9,7 +10,7 @@ fn yarn_lock_header(input: &str) -> Result<&str, &str> {
     recognize(tuple((count(take_till_line_end, 2), multispace0)))(input)
 }
 
-fn entry(input: &str) -> Result<&str, PackageDescriptor> {
+fn entry(input: &str) -> Result<&str, Package> {
     let (i, capture) = recognize(many_till(
         take_till_line_end,
         recognize(tuple((space0, alt((line_ending, eof))))),
@@ -19,13 +20,12 @@ fn entry(input: &str) -> Result<&str, PackageDescriptor> {
     Ok((i, my_entry))
 }
 
-fn parse_entry(input: &str) -> Result<&str, PackageDescriptor> {
+fn parse_entry(input: &str) -> Result<&str, Package> {
     context("entry", tuple((entry_name, entry_version)))(input).map(|(next_input, res)| {
         let (name, version) = res;
-        (next_input, PackageDescriptor {
+        (next_input, Package {
             name: name.to_string(),
-            version: version.to_string(),
-            package_type: PackageType::Npm,
+            version: PackageVersion::FirstParty(version.to_string()),
         })
     })
 }

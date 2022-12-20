@@ -1,35 +1,88 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use anyhow::anyhow;
+use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 
-use crate::{Parse, ParseResult};
+use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
+
+/// Default cargo registry URI.
+const CARGO_REGISTRY: &str = "registry+https://github.com/rust-lang/crates.io-index";
 
 #[derive(Deserialize, Debug, Clone)]
 struct CargoLock {
     #[serde(rename = "package")]
-    packages: Vec<Package>,
+    packages: Vec<CargoPackage>,
+
+    // NOTE: This is used to try and parse the lockfile as a Poetry and Cargo manifest
+    // simultaneously, since both use toml with a list of [[package]].
+    //
+    // Everything in a minimal Cargo lockfile is also found in a Poetry lockfile, so we instead use
+    // data found only in a Poetry lockfile to detect an invalid lockfile.
+    //
+    // We need to actually parse a field from the metadata struct since early versions of Cargo
+    // lockfiles used it for hashes.
+    #[serde(rename = "metadata")]
+    python_metadata: Option<PoetryMetadata>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
-struct Package {
+struct CargoPackage {
     name: String,
     version: String,
     source: Option<String>,
 }
 
+/// Metadata field of Poetry's lockfile.
+#[derive(Deserialize, Debug, Clone)]
+struct PoetryMetadata {
+    #[serde(rename = "python-versions")]
+    python_version: Option<String>,
+}
+
 pub struct Cargo;
 
 impl Parse for Cargo {
-    /// Parses `Cargo.lock` files into a vec of packages.
-    fn parse(&self, data: &str) -> ParseResult {
+    /// Parse a `Cargo.lock` file into an array of packages.
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let mut lock: CargoLock = toml::from_str(data)?;
-        Ok(lock
-            .packages
+
+        // Abort if we identified this as a Poetry lockfile.
+        if lock.python_metadata.and_then(|metadata| metadata.python_version).is_some() {
+            return Err(anyhow!("Cannot parse Poetry lockfile with Cargo.lock parser"));
+        }
+
+        lock.packages
             .drain(..)
-            .filter_map(|package| PackageDescriptor::try_from(package).ok())
-            .collect())
+            .map(|package| {
+                let source = match package.source {
+                    Some(source) => source,
+                    // No package source means it's a local dependency.
+                    None => {
+                        return Ok(Package {
+                            name: package.name,
+                            version: PackageVersion::Path(None),
+                        })
+                    },
+                };
+
+                let version = if source == CARGO_REGISTRY {
+                    PackageVersion::FirstParty(package.version)
+                } else if let Some(registry) = source.strip_prefix("registry+") {
+                    PackageVersion::ThirdParty(ThirdPartyVersion {
+                        registry: registry.into(),
+                        version: package.version,
+                    })
+                } else if source.starts_with("git+") {
+                    PackageVersion::Git(source)
+                } else {
+                    return Err(anyhow!(format!("Unknown cargo package source: {:?}", source)));
+                };
+
+                Ok(Package { name: package.name, version })
+            })
+            .collect()
     }
 
     fn package_type(&self) -> PackageType {
@@ -41,21 +94,6 @@ impl Parse for Cargo {
     }
 }
 
-impl TryFrom<Package> for PackageDescriptor {
-    type Error = ();
-
-    fn try_from(package: Package) -> Result<Self, Self::Error> {
-        let source = package.source.ok_or(())?;
-        let version = if let Some(git_version) = source.strip_prefix("git+") {
-            git_version.into()
-        } else {
-            package.version
-        };
-
-        Ok(Self { name: package.name, package_type: PackageType::Cargo, version })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,18 +101,13 @@ mod tests {
     #[test]
     fn parse_cargo_lock_v1() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v1.lock")).unwrap();
-        assert_eq!(pkgs.len(), 136);
+        assert_eq!(pkgs.len(), 141);
         let expected_pkgs = [
-            PackageDescriptor {
+            Package {
                 name: "core-foundation".into(),
-                version: "0.6.4".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::FirstParty("0.6.4".into()),
             },
-            PackageDescriptor {
-                name: "adler32".into(),
-                version: "1.0.4".into(),
-                package_type: PackageType::Cargo,
-            },
+            Package { name: "adler32".into(), version: PackageVersion::FirstParty("1.0.4".into()) },
         ];
 
         for expected_pkg in expected_pkgs {
@@ -85,12 +118,11 @@ mod tests {
     #[test]
     fn parse_cargo_lock_v2() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v2.lock")).unwrap();
-        assert_eq!(pkgs.len(), 24);
+        assert_eq!(pkgs.len(), 25);
 
-        let expected_pkgs = [PackageDescriptor {
+        let expected_pkgs = [Package {
             name: "form_urlencoded".into(),
-            version: "1.0.1".into(),
-            package_type: PackageType::Cargo,
+            version: PackageVersion::FirstParty("1.0.1".into()),
         }];
 
         for expected_pkg in expected_pkgs {
@@ -100,48 +132,44 @@ mod tests {
     #[test]
     fn parse_cargo_lock_v3() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
-        assert_eq!(pkgs.len(), 530);
+        assert_eq!(pkgs.len(), 533);
 
         let expected_pkgs = [
-            PackageDescriptor {
+            Package {
                 name: "Inflector".into(),
-                version: "0.11.4".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::FirstParty("0.11.4".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "adler".into(),
-                version: "1.0.2".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::FirstParty("1.0.2".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "aead".into(),
-                version: "0.5.1".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::FirstParty("0.5.1".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "aes".into(),
-                version: "0.8.1".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::FirstParty("0.8.1".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "landlock".into(),
-                version: "https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into(),
-                package_type: PackageType::Cargo,
+                version: PackageVersion::Git("git+https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into()),
+            },
+            Package {
+                name: "xtask".into(),
+                version: PackageVersion::Path(None),
+            },
+            Package {
+                name: "zstd-sys".into(),
+                version: PackageVersion::ThirdParty(ThirdPartyVersion {
+                    registry: "https://phylum.io/foreign-registry-example".into(),
+                    version: "1.6.3+zstd.1.5.2".into(),
+                }),
             },
         ];
 
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
-        }
-    }
-    /// Ensure sources other than Cargo are ignored.
-    #[test]
-    fn cargo_ignore_other_sources() {
-        let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
-
-        let invalid_package_names = ["xtask", "phylum-cli", "phylum_lockfile"];
-        for pkg in pkgs {
-            assert!(!invalid_package_names.contains(&pkg.name.as_str()));
         }
     }
 }

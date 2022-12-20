@@ -4,19 +4,19 @@ use std::path::Path;
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageType;
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
 use super::parsers::yarn;
-use crate::{Parse, ParseResult};
+use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
 
 pub struct PackageLock;
 pub struct YarnLock;
 
 impl Parse for PackageLock {
     /// Parses `package-lock.json` files into a vec of packages
-    fn parse(&self, data: &str) -> ParseResult {
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let parsed: JsonValue = serde_json::from_str(data)?;
 
         // Get a field as string from a JSON object.
@@ -35,7 +35,18 @@ impl Parse for PackageLock {
 
             let mut packages = Vec::new();
             for (name, keys) in deps {
-                // Ignore local filesystem dependencies.
+                // Discard version information of local packages.
+                //
+                // In NPM, versions for filesystem dependencies are in the object with the
+                // `name` corresponding to the path of the module, without any mention of the
+                // module's name itself.
+                //
+                // The module's name then shows up as a separate package with the `name` as
+                // `node_modules/<NAME>`, the path as `resolved`, `"link": true` and no version.
+                //
+                // Since we care more about the name of a local dependency than its package, we
+                // discard the version here and include the package later when it's mentioned by
+                // name.
                 let name = match name.rsplit_once("node_modules/") {
                     Some((_, name)) => name,
                     None => continue,
@@ -51,23 +62,31 @@ impl Parse for PackageLock {
                     .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
 
                 // Get dependency version.
-                let version = if let Some(git_url) = resolved.strip_prefix("git+") {
-                    git_url.to_owned()
+                let version = if resolved.starts_with("https://registry.npmjs.org/") {
+                    PackageVersion::FirstParty(get_version(keys, name)?)
+                } else if resolved.starts_with("git+") {
+                    PackageVersion::Git(resolved)
                 } else if resolved.starts_with("http") {
-                    // NOTE: This accepts packages that are not hosted by NPM and submits them
-                    // pretending they are hosted on npmjs.org. This is currently necessary to
-                    // allow analysis for third-party registries.
-                    get_version(keys, name)?
+                    // Split off `http(s)://`.
+                    let mut split = resolved.split('/');
+                    let _ = split.next();
+                    let _ = split.next();
+
+                    // Find registry's domain name.
+                    match split.next() {
+                        Some(registry) => PackageVersion::ThirdParty(ThirdPartyVersion {
+                            version: get_version(keys, name)?,
+                            registry: registry.into(),
+                        }),
+                        None => {
+                            return Err(anyhow!("Invalid third party registry: {:?}", resolved));
+                        },
+                    }
                 } else {
-                    // Filter filesystem dependencies.
-                    continue;
+                    PackageVersion::Path(Some(resolved.into()))
                 };
 
-                packages.push(PackageDescriptor {
-                    version,
-                    package_type: self.package_type(),
-                    name: name.into(),
-                });
+                packages.push(Package { version, name: name.into() });
             }
             Ok(packages)
         } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
@@ -75,9 +94,8 @@ impl Parse for PackageLock {
 
             deps.into_iter()
                 .map(|(name, keys)| {
-                    Ok(PackageDescriptor {
-                        package_type: self.package_type(),
-                        version: get_version(keys, name)?,
+                    Ok(Package {
+                        version: PackageVersion::FirstParty(get_version(keys, name)?),
                         name: name.into(),
                     })
                 })
@@ -106,7 +124,7 @@ fn is_yarn_v2(yaml: &&serde_yaml::Mapping) -> bool {
 
 impl Parse for YarnLock {
     /// Parses `yarn.lock` files into a vec of packages
-    fn parse(&self, data: &str) -> ParseResult {
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let yaml = serde_yaml::from_str::<YamlValue>(data).ok();
         let yaml_mapping = yaml.as_ref().and_then(|yaml| yaml.as_mapping());
 
@@ -166,24 +184,32 @@ impl Parse for YarnLock {
                 resolver = resolver.replace("%25", "%");
             }
 
-            let (name, version) = if resolver.starts_with("workspace:")
+            let version = if resolver.starts_with("workspace:")
                 || resolver.starts_with("file:")
                 || resolver.starts_with("link:")
             {
-                // Ignore filesystem dependencies like the project ("project@workspace:.").
-                continue;
+                // Ignore project itself.
+                if resolver == "workspace:." {
+                    continue;
+                }
+
+                PackageVersion::Path(None)
             } else if resolver.starts_with("npm:") {
                 let version = package
                     .get(&"version".to_string())
                     .and_then(YamlValue::as_str)
                     .ok_or_else(|| anyhow!("Failed to parse yarn version for '{}'", resolution))?;
 
-                (name, version.to_owned())
+                PackageVersion::FirstParty(version.into())
             } else if resolver.starts_with("http:")
                 || resolver.starts_with("https:")
                 || resolver.starts_with("ssh:")
             {
-                (name, resolver)
+                if resolver.contains("#commit=") {
+                    PackageVersion::Git(resolver)
+                } else {
+                    PackageVersion::DownloadUrl(resolver)
+                }
             } else {
                 return Err(anyhow!(
                     "Failed to parse yarn dependency resolver for '{}'",
@@ -191,11 +217,7 @@ impl Parse for YarnLock {
                 ));
             };
 
-            packages.push(PackageDescriptor {
-                package_type: self.package_type(),
-                name: name.to_owned(),
-                version,
-            });
+            packages.push(Package { name: name.to_owned(), version });
         }
 
         Ok(packages)
@@ -221,13 +243,11 @@ mod tests {
 
         assert_eq!(pkgs.len(), 17);
         assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
-        assert_eq!(pkgs[0].version, "1.1.0");
-        assert_eq!(pkgs[0].package_type, PackageType::Npm);
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.1.0".into()));
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "yargs-parser");
-        assert_eq!(last.version, "20.2.4");
-        assert_eq!(last.package_type, PackageType::Npm);
+        assert_eq!(last.version, PackageVersion::FirstParty("20.2.4".into()));
     }
 
     #[test]
@@ -235,36 +255,31 @@ mod tests {
         let pkgs =
             PackageLock.parse(include_str!("../../tests/fixtures/package-lock.json")).unwrap();
 
-        assert_eq!(pkgs.len(), 53);
+        assert_eq!(pkgs.len(), 54);
 
         let expected_pkgs = [
-            PackageDescriptor {
-                name: "accepts".into(),
-                version: "1.3.8".into(),
-                package_type: PackageType::Npm,
-            },
-            PackageDescriptor {
-                name: "vary".into(),
-                version: "1.1.2".into(),
-                package_type: PackageType::Npm,
-            },
-            PackageDescriptor {
+            Package { name: "accepts".into(), version: PackageVersion::FirstParty("1.3.8".into()) },
+            Package { name: "vary".into(), version: PackageVersion::FirstParty("1.1.2".into()) },
+            Package {
                 name: "typescript".into(),
-                version: "ssh://git@github.com/Microsoft/TypeScript.git#\
-                          9189e42b1c8b1a91906a245a24697da5e0c11a08"
-                    .into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::Git(
+                    "git+ssh://git@github.com/Microsoft/TypeScript.git#\
+                     9189e42b1c8b1a91906a245a24697da5e0c11a08"
+                        .into(),
+                ),
             },
-            PackageDescriptor {
+            Package {
                 name: "form-data".into(),
-                version: "2.3.3".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::FirstParty("2.3.3".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "match-sorter".into(),
-                version: "3.1.1".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::ThirdParty(ThirdPartyVersion {
+                    registry: "custom-registry.org".into(),
+                    version: "3.1.1".into(),
+                }),
             },
+            Package { name: "test".into(), version: PackageVersion::Path(Some("../test".into())) },
         ];
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
@@ -282,10 +297,9 @@ mod tests {
         let pkgs =
             YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
-        assert_eq!(pkgs, vec![PackageDescriptor {
+        assert_eq!(pkgs, vec![Package {
             name: "@yarnpkg/lockfile".to_string(),
-            version: "1.1.0".to_string(),
-            package_type: PackageType::Npm,
+            version: PackageVersion::FirstParty("1.1.0".into()),
         }]);
     }
 
@@ -300,17 +314,14 @@ mod tests {
             assert_eq!(pkgs.len(), 17);
 
             assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
-            assert_eq!(pkgs[0].version, "1.1.0");
-            assert_eq!(pkgs[0].package_type, PackageType::Npm);
+            assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.1.0".into()));
 
             assert_eq!(pkgs[3].name, "cliui");
-            assert_eq!(pkgs[3].version, "7.0.4");
-            assert_eq!(pkgs[3].package_type, PackageType::Npm);
+            assert_eq!(pkgs[3].version, PackageVersion::FirstParty("7.0.4".into()));
 
             let last = pkgs.last().unwrap();
             assert_eq!(last.name, "yargs");
-            assert_eq!(last.version, "16.2.0");
-            assert_eq!(last.package_type, PackageType::Npm);
+            assert_eq!(last.version, PackageVersion::FirstParty("16.2.0".into()));
         }
     }
 
@@ -324,42 +335,44 @@ mod tests {
     fn lock_parse_yarn() {
         let pkgs = YarnLock.parse(include_str!("../../tests/fixtures/yarn.lock")).unwrap();
 
-        assert_eq!(pkgs.len(), 53);
+        assert_eq!(pkgs.len(), 56);
 
         let expected_pkgs = [
-            PackageDescriptor {
+            Package {
                 name: "accepts".into(),
-                version: "1.3.8".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::FirstParty("1.3.8".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "mime-types".into(),
-                version: "2.1.35".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::FirstParty("2.1.35".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "statuses".into(),
-                version: "1.5.0".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::FirstParty("1.5.0".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "@fake/package".into(),
-                version: "1.2.3".into(),
-                package_type: PackageType::Npm,
+                version: PackageVersion::FirstParty("1.2.3".into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "ethereumjs-abi".into(),
-                version: "https://github.com/ethereumjs/ethereumjs-abi.git\
+                version: PackageVersion::Git("https://github.com/ethereumjs/ethereumjs-abi.git\
                     #commit=ee3994657fa7a427238e6ba92a84d0b529bbcde0"
-                    .into(),
-                package_type: PackageType::Npm,
+                    .into()),
             },
-            PackageDescriptor {
+            Package {
                 name: "@me/remote-patch".into(),
-                version: "ssh://git@github.com:phylum/remote-patch\
+                version: PackageVersion::Git("ssh://git@github.com:phylum/remote-patch\
                     #commit=d854c43ea177d1faeea56189249fff8c24a764bd"
-                    .into(),
-                package_type: PackageType::Npm,
+                    .into()),
+            },
+            Package {
+                name: "xxx".into(),
+                version: PackageVersion::Path(None),
+            },
+            Package {
+                name: "testing".into(),
+                version: PackageVersion::Path(None),
             },
         ];
 

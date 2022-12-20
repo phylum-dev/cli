@@ -4,26 +4,25 @@ use nom::character::complete::{alphanumeric1, line_ending, space0, space1};
 use nom::combinator::{opt, recognize};
 use nom::multi::many1;
 use nom::sequence::{preceded, tuple};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use super::Result;
+use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
+pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     let (input, pkg_options) = many1(package)(input)?;
     let pkgs = pkg_options.iter().flatten().cloned().collect::<Vec<_>>();
 
     Ok((input, pkgs))
 }
 
-fn package(input: &str) -> Result<&str, Option<PackageDescriptor>> {
+fn package(input: &str) -> Result<&str, Option<Package>> {
     let (input, name) = package_name(input)?;
     let (input, version) = package_version(input)?;
     let (input, _hash) = package_hash(input)?;
 
-    let package = version.map(|version| PackageDescriptor {
+    let package = version.map(|version| Package {
         name: name.to_string(),
-        version: version.to_string(),
-        package_type: PackageType::Golang,
+        version: PackageVersion::FirstParty(version.to_string()),
     });
 
     Ok((input, package))

@@ -1,20 +1,134 @@
+use std::path::PathBuf;
+
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_until};
-use nom::character::complete::{alphanumeric1, char, not_line_ending};
-use nom::combinator::{opt, recognize, rest, verify};
+use nom::bytes::complete::{tag, take_till, take_until};
+use nom::character::complete::{alphanumeric1, char, not_line_ending, space0};
+use nom::combinator::{eof, opt, recognize, rest, verify};
+use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
 use nom::sequence::{delimited, pair, terminated};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use nom::Err as NomErr;
 
-use super::{ws, Result};
+use crate::parsers::Result;
+use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> Result<&str, Vec<PackageDescriptor>> {
-    let pkgs = input.lines().filter_map(package).collect::<Vec<_>>();
+pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
+    let mut pkgs = Vec::new();
+
+    // Iterate over all non-empty lines.
+    for line in input.lines().filter(|line| !line.starts_with('#') && !line.trim().is_empty()) {
+        let (_, pkg) = package(line)?;
+        pkgs.push(pkg);
+    }
+
     Ok((input, pkgs))
 }
 
-fn filter_package_name(input: &str) -> Result<&str, &str> {
+fn package(input: &str) -> Result<&str, Package> {
+    // Ignore everything after `;`.
+    let (_, input) = recognize(alt((take_until(";"), not_line_ending)))(input)?;
+
+    // Parse for `-e` dependencies.
+    if let Ok(editable) = editable(input) {
+        return Ok(editable);
+    }
+
+    let (input, name) = package_name(input)?;
+    let name = name.trim().to_string();
+
+    // Parse URI versions like files/git/etc.
+    if let Ok((input, uri_version)) = uri_version(input) {
+        // Ensure line is empty after the dependency.
+        line_done(input)?;
+
+        let version = if uri_version.starts_with("file:") {
+            PackageVersion::Path(Some(uri_version.into()))
+        } else if uri_version.starts_with("git+") {
+            PackageVersion::Git(uri_version.into())
+        } else {
+            PackageVersion::DownloadUrl(uri_version.into())
+        };
+
+        return Ok((input, Package { name, version }));
+    }
+
+    // Parse first-party dependencies.
+    let (input, version) = package_version(input)?;
+    let version = PackageVersion::FirstParty(version.trim().into());
+
+    // Ensure line is empty after the dependency.
+    line_done(input)?;
+
+    Ok((input, Package { name, version }))
+}
+
+/// Recognize local package overrides like `-e /tmp/editable`.
+///
+/// We'll use `/tmp/editable` as name here, since there's no other identifier
+/// attached. The path is left empty since this is usually just a git
+/// repository, which does not have any path.
+fn editable(input: &str) -> Result<&str, Package> {
+    // Ensure `-e` is present and skip it.
+    let (input, _) = ws(tag("-e"))(input)?;
+
+    // Parse everything until the next whitespace.
+    let (input, uri) = take_till(|c: char| c.is_whitespace())(input)?;
+
+    // Detect version based on URI prefix.
+    let (name, version) = if uri.starts_with("git+") {
+        // Split up git URI and dependency name.
+        match uri.rsplit_once("#egg=") {
+            Some((uri, egg)) => {
+                // Replace last `@` in URI with `#`
+                // git+ssh://github.com:org/project@HASH
+                //   -> git+ssh://github.com:org/project#HASH
+                let uri = uri
+                    .rsplit_once('@')
+                    .map(|(head, tail)| format!("{head}#{tail}"))
+                    .unwrap_or_else(|| uri.into());
+
+                (egg.into(), PackageVersion::Git(uri))
+            },
+            None => {
+                let kind = VerboseErrorKind::Context("Missing egg name in git URI");
+                let error = VerboseError { errors: vec![(input, kind)] };
+                return Err(NomErr::Failure(error));
+            },
+        }
+    } else {
+        // Assume non-git editable dependencies are paths.
+        let path = PathBuf::from(uri);
+        let name = path.file_name().unwrap_or(path.as_os_str());
+        (name.to_string_lossy().into(), PackageVersion::Path(Some(path)))
+    };
+
+    // Ensure line is empty after the dependency.
+    line_done(input)?;
+
+    Ok((input, Package { name, version }))
+}
+
+/// Find URI dependencies.
+///
+/// This includes path, git and internet dependencies.
+fn uri_version(input: &str) -> Result<&str, &str> {
+    let (uri, _) = ws(tag("@"))(input)?;
+    Ok(("", uri))
+}
+
+fn package_name(input: &str) -> Result<&str, &str> {
     terminated(ws(identifier), opt(ws(package_extras)))(input)
+}
+
+fn package_version(input: &str) -> Result<&str, &str> {
+    // Ensure no `*` is in the version.
+    let (_, input) = verify(rest, |s: &str| !s.contains('*'))(input)?;
+
+    // Skip exact version indicator.
+    let (input, _) = tag("==")(input)?;
+
+    // Take all valid semver character.
+    recognize(many1(alt((alphanumeric1, tag(".")))))(input)
 }
 
 fn identifier(input: &str) -> Result<&str, &str> {
@@ -23,121 +137,25 @@ fn identifier(input: &str) -> Result<&str, &str> {
     )
 }
 
-fn identifier_list(input: &str) -> Result<&str, &str> {
-    recognize(separated_list0(char(','), ws(identifier)))(input)
-}
-
 fn package_extras(input: &str) -> Result<&str, &str> {
     delimited(char('['), identifier_list, char(']'))(input)
 }
 
-fn filter_git_repo(input: &str) -> Result<&str, &str> {
-    let (x, input) = verify(rest, |s: &str| {
-        s.contains("https://") || s.contains("http://") || s.starts_with("-e")
-    })(input)?;
-    Ok((x, input))
+fn identifier_list(input: &str) -> Result<&str, &str> {
+    recognize(separated_list0(char(','), ws(identifier)))(input)
 }
 
-fn filter_egg_name(input: &str) -> Result<&str, &str> {
-    let (_, input) = verify(rest, |s: &str| s.contains("#egg="))(input)?;
-    recognize(alt((take_until("#egg="), not_line_ending)))(input)
+fn line_done(input: &str) -> Result<&str, &str> {
+    let (input, _) = space0(input)?;
+    eof(input)
 }
 
-fn filter_pip_name(input: &str) -> Result<&str, &str> {
-    let (_, input) = verify(rest, |s: &str| {
-        s.contains('@') && (s.contains("http://") || s.contains("https://"))
-    })(input)?;
-    recognize(alt((take_until("@"), not_line_ending)))(input)
-}
-
-fn get_package_version(input: &str) -> Result<&str, &str> {
-    let (_, input) = verify(rest, |s: &str| !s.contains('*'))(input)?;
-    delimited(
-        tag("=="),
-        recognize(many1(alt((alphanumeric1, recognize(char('.')), tag(" "))))),
-        rest,
-    )(input)
-}
-
-fn get_git_version(input: &str) -> Result<&str, &str> {
-    verify(rest, |s: &str| s.contains("http://") || s.contains("https://"))(input)
-}
-
-fn filter_line(input: &str) -> Result<&str, &str> {
-    // filter out comments, features, and install options
-    let (_, input) = verify(rest, |s: &str| !s.starts_with('#'))(input)?;
-    recognize(alt((take_until(";"), take_until("--"), not_line_ending)))(input)
-}
-
-fn package(input: &str) -> Option<PackageDescriptor> {
-    let (_, name) = filter_line(input).ok()?;
-    let (name, version) = match filter_git_repo(name).ok() {
-        Some((_, s)) => match filter_egg_name(s).ok() {
-            Some((n, v)) => {
-                (n.trim_start_matches("#egg=").to_string(), v.trim_start_matches("-e").to_string())
-            },
-            None => {
-                let (version, pkg) = filter_pip_name(s).ok()?;
-                let (_, name) = filter_package_name(pkg).ok()?;
-                (name.to_string(), version.trim_start_matches('@').to_string())
-            },
-        },
-        None => {
-            let (version, name) = filter_package_name(name).ok()?;
-            let name: String = name.to_string().split_whitespace().collect();
-            (name, version.to_string())
-        },
-    };
-
-    let version: String = match get_package_version(version.trim()).ok() {
-        Some((_, version)) => Some(version.to_string().split_whitespace().collect()),
-        None => match get_git_version(&version).ok() {
-            Some((_, s)) => Some(s.to_string()),
-            None => {
-                log::debug!("Could not determine version for package: {}", name);
-                None
-            },
-        },
-    }?;
-
-    Some(PackageDescriptor {
-        name: name.trim().to_lowercase(),
-        version: version.trim().to_string(),
-        package_type: PackageType::PyPi,
-    })
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn package_with_extras() {
-        assert_eq!(
-            package("celery [ redis ] == 5.0.5"),
-            Some(PackageDescriptor {
-                name: "celery".into(),
-                version: "5.0.5".into(),
-                package_type: PackageType::PyPi,
-            })
-        );
-
-        assert_eq!(
-            package("requests[security,socks]==2.27.1"),
-            Some(PackageDescriptor {
-                name: "requests".into(),
-                version: "2.27.1".into(),
-                package_type: PackageType::PyPi,
-            })
-        );
-
-        assert_eq!(
-            package("git-for-pip-example[PDF] @ git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0"),
-            Some(PackageDescriptor {
-                name: "git-for-pip-example".into(),
-                version: "git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0".into(),
-                package_type: PackageType::PyPi,
-            })
-        );
-    }
+/// A combinator that takes a parser `inner` and produces a parser that also
+/// consumes both leading and trailing whitespace, returning the output of
+/// `inner`.
+fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> Result<&str, &str>
+where
+    F: Fn(&'a str) -> Result<&str, &str>,
+{
+    delimited(space0, inner, space0)
 }
