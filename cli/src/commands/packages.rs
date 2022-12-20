@@ -19,7 +19,7 @@ fn parse_package(matches: &ArgMatches, request_type: PackageType) -> Result<Pack
     // If a package type was provided on the command line, prefer that
     // to the global setting
     let registry = match matches.get_one::<String>("package-type") {
-        Some(pt) => pt.clone(),
+        Some(package_type) => package_type.clone(),
         None => request_type.to_string(),
     };
 
