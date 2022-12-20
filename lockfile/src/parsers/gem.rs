@@ -118,10 +118,8 @@ impl<'a> Section<'a> {
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
-            let kind = VerboseErrorKind::Context(
-                "Invalid number of packages listed
-        in git dependency",
-            );
+            let kind =
+                VerboseErrorKind::Context("Invalid number of packages listed in git dependency");
             let error = VerboseError { errors: vec![(input, kind)] };
             return Err(NomErr::Failure(error));
         }
@@ -148,10 +146,8 @@ impl<'a> Section<'a> {
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
-            let kind = VerboseErrorKind::Context(
-                "Invalid number of packages listed
-        in path dependency",
-            );
+            let kind =
+                VerboseErrorKind::Context("Invalid number of packages listed in path dependency");
             let error = VerboseError { errors: vec![(input, kind)] };
             return Err(NomErr::Failure(error));
         }
