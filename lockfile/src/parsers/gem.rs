@@ -1,6 +1,8 @@
+use std::result::Result as StdResult;
+
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
-use nom::character::complete::{line_ending, none_of, space0};
+use nom::character::complete::{line_ending, satisfy, space0};
 use nom::combinator::recognize;
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
@@ -10,7 +12,14 @@ use nom::Err as NomErr;
 use crate::parsers::{take_till_blank_line, Result};
 use crate::{Package, PackageVersion, ThirdPartyVersion};
 
+/// URL of the first-party ruby registry.
 const DEFAULT_REGISTRY: &str = "https://rubygems.org/";
+
+/// Legal non-alphanumeric characters in loose version specifications.
+const LOOSE_VERSION_CHARS: &[char] = &[' ', ',', '<', '>', '=', '~', '!', '.', '-', '+'];
+
+/// Legal non-alphanumeric characters in strict version specifications.
+const STRICT_VERSION_CHARS: &[char] = &['.', '-', '+'];
 
 #[derive(Debug)]
 struct Section<'a> {
@@ -25,16 +34,10 @@ impl<'a> Section<'a> {
 
         while !input.is_empty() {
             // Find next section head.
-            let header_result = recognize(many_till(
+            let (new_input, consumed) = recognize(many_till(
                 take_till_line_end,
-                alt((tag("GEM"), tag("GIT"), tag("PATH"))),
-            ))(input);
-
-            // Stop if no more headers can be found.
-            let (new_input, consumed) = match header_result {
-                Ok(header_result) => header_result,
-                Err(_) => break,
-            };
+                alt((tag("GEM"), tag("GIT"), tag("PATH"), tag("BUNDLED WITH"))),
+            ))(input)?;
 
             // Check for type of section head.
             let section_type = if consumed.ends_with("GEM") {
@@ -43,8 +46,11 @@ impl<'a> Section<'a> {
                 SectionType::Git
             } else if consumed.ends_with("PATH") {
                 SectionType::Path
-            } else {
+            } else if consumed.ends_with("BUNDLED WITH") {
                 break;
+            } else {
+                // Unreachable since our parser fails if none of the headers are found.
+                unreachable!();
             };
 
             // Find end of section.
@@ -73,10 +79,12 @@ impl<'a> Section<'a> {
         let (input, remote) = remote(self.content).unwrap_or((self.content, DEFAULT_REGISTRY));
 
         let (input, _) = specs(input)?;
+
         let pkgs = input
             .lines()
-            .filter_map(|line| {
-                let SpecsPackage { name, version } = package(line)?;
+            .filter_map(|line| package(line).transpose())
+            .map(|pkg| {
+                let SpecsPackage { name, version } = pkg?;
 
                 let version = if remote == DEFAULT_REGISTRY {
                     PackageVersion::FirstParty(version)
@@ -87,9 +95,9 @@ impl<'a> Section<'a> {
                     })
                 };
 
-                Some(Package { name, version })
+                Ok(Package { name, version })
             })
-            .collect::<Vec<_>>();
+            .collect::<StdResult<_, _>>()?;
 
         Ok((input, pkgs))
     }
@@ -103,12 +111,17 @@ impl<'a> Section<'a> {
 
         // Parse specs section.
         let (input, _) = specs(input)?;
-        let mut specs_packages = input.lines().filter_map(package).collect::<Vec<_>>();
+        let mut specs_packages: Vec<SpecsPackage> = input
+            .lines()
+            .filter_map(|line| package(line).transpose())
+            .collect::<StdResult<_, _>>()?;
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
-            let kind =
-                VerboseErrorKind::Context("Invalid number of packages listed in git dependency");
+            let kind = VerboseErrorKind::Context(
+                "Invalid number of packages listed
+        in git dependency",
+            );
             let error = VerboseError { errors: vec![(input, kind)] };
             return Err(NomErr::Failure(error));
         }
@@ -128,12 +141,17 @@ impl<'a> Section<'a> {
 
         // Parse specs section.
         let (input, _) = specs(input)?;
-        let mut specs_packages = input.lines().filter_map(package).collect::<Vec<_>>();
+        let mut specs_packages: Vec<SpecsPackage> = input
+            .lines()
+            .filter_map(|line| package(line).transpose())
+            .collect::<StdResult<_, _>>()?;
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
-            let kind =
-                VerboseErrorKind::Context("Invalid number of packages listed in path dependency");
+            let kind = VerboseErrorKind::Context(
+                "Invalid number of packages listed
+        in path dependency",
+            );
             let error = VerboseError { errors: vec![(input, kind)] };
             return Err(NomErr::Failure(error));
         }
@@ -187,10 +205,23 @@ fn specs(input: &str) -> Result<&str, &str> {
     )
 }
 
-fn package(input: &str) -> Option<SpecsPackage> {
-    let (input, name) = package_name(input).ok()?;
-    let (_, version) = package_version(input).ok()?;
-    Some(SpecsPackage { name: name.to_string(), version: version.into() })
+fn package(input: &str) -> StdResult<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {
+    let (input, name) = package_name(input)?;
+    let (_, version) = loose_package_version(input)?;
+
+    // Skip loose dependencies.
+    //
+    // NOTE: Loose dependencies in the Gemfile parser are not an indication that
+    // this is not a proper lockfile. The lockfile specifies the loose dependencies
+    // for each strict dependency beneath the strict requirement. Each of these
+    // loose dependencies is also separately listed as strict dependency with
+    // all its loose dependencies.
+    let version = match strict_package_version(version) {
+        Ok((_, version)) => version,
+        Err(_) => return Ok(None),
+    };
+
+    Ok(Some(SpecsPackage { name: name.to_string(), version: version.into() }))
 }
 
 fn package_name(input: &str) -> Result<&str, &str> {
@@ -198,9 +229,25 @@ fn package_name(input: &str) -> Result<&str, &str> {
     recognize(take_until(" "))(input)
 }
 
-fn package_version(input: &str) -> Result<&str, &str> {
+/// Parser allowing for loose `(>= 1.2.0, < 2.0, != 1.2.3)` and strict
+/// `(1.2.3-alpha+build3)` versions.
+fn loose_package_version(input: &str) -> Result<&str, &str> {
     let (input, _) = space0(input)?;
-    delimited(tag("("), recognize(many1(none_of(" \t()"))), tag(")"))(input)
+    delimited(
+        tag("("),
+        recognize(many1(satisfy(|c: char| {
+            c.is_ascii_alphanumeric() || LOOSE_VERSION_CHARS.contains(&c)
+        }))),
+        tag(")"),
+    )(input)
+}
+
+/// Parser allowing only strict `1.2.3-alpha+build3` versions.
+fn strict_package_version(input: &str) -> Result<&str, &str> {
+    let (input, _) = space0(input)?;
+    recognize(many1(satisfy(|c: char| {
+        c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c)
+    })))(input)
 }
 
 /// Get the value for a key in a `   key: value` line.
@@ -215,12 +262,4 @@ fn take_till_line_end(input: &str) -> Result<&str, &str> {
     let (input, consumed) = recognize(alt((take_until("\n"), take_until("\r\n"))))(input)?;
     let (input, _) = alt((tag("\n"), tag("\r\n")))(input)?;
     Ok((input, consumed))
-}
-
-#[test]
-fn test() {
-    let input = "Test\ning";
-    let (input, consumed) = take_till_line_end(input).unwrap();
-    assert_eq!(consumed, "Test");
-    assert_eq!(input, "ing");
 }

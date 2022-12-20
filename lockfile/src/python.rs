@@ -53,7 +53,7 @@ impl Parse for PipFile {
                 } else if let Some(path) = package.path {
                     PackageVersion::Path(Some(path.into()))
                 } else if let Some(url) = package.file {
-                    PackageVersion::Internet(url)
+                    PackageVersion::DownloadUrl(url)
                 } else {
                     let version = package.version.ok_or_else(|| {
                         anyhow!("Registry dependency {name:?} is missing version")
@@ -173,7 +173,7 @@ impl TryFrom<PoetryPackage> for Package {
                     .ok_or_else(|| anyhow!("Git dependency missing resolved_reference field"))?;
                 PackageVersion::Git(format!("{}#{}", source.url, reference))
             },
-            "url" => PackageVersion::Internet(source.url),
+            "url" => PackageVersion::DownloadUrl(source.url),
             source_type => return Err(anyhow!("Unknown package source_type: {source_type:?}")),
         };
 
@@ -233,20 +233,20 @@ mod tests {
             },
             Package {
                 name: "tomli".into(),
-                version: PackageVersion::Internet("https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl".into()),
+                version: PackageVersion::DownloadUrl("https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl".into()),
             },
             Package {
-                name: "git+ssh://git@github.com/phylum-dev/phylum-ci.git@7d6d859ad368d1ab0a933f24679e3d3c08a40eac#egg=phylum".into(),
-                version: PackageVersion::Path(None),
+                name: "phylum".into(),
+                version: PackageVersion::Git("git+ssh://git@github.com/phylum-dev/phylum-ci.git#7d6d859ad368d1ab0a933f24679e3d3c08a40eac".into()),
             },
             Package {
-                name: "/tmp/editable".into(),
-                version: PackageVersion::Path(None),
+                name: "editable".into(),
+                version: PackageVersion::Path(Some("/tmp/editable".into())),
             },
         ];
 
         for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
+            assert!(pkgs.contains(&expected_pkg), "missing package: {expected_pkg:?}");
         }
     }
 
@@ -292,7 +292,7 @@ mod tests {
             Package { name: "e1839a8".into(), version: PackageVersion::Path(Some(".".into())) },
             Package {
                 name: "e682b37".into(),
-                version: PackageVersion::Internet(
+                version: PackageVersion::DownloadUrl(
                     "https://github.com/divio/django-cms/archive/release/3.4.x.zip".into(),
                 ),
             },
@@ -338,7 +338,7 @@ mod tests {
             },
             Package {
                 name: "toml".into(),
-                version: PackageVersion::Internet("https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz".into()),
+                version: PackageVersion::DownloadUrl("https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz".into()),
             },
         ];
 

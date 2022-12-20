@@ -74,8 +74,8 @@ impl Parse for Cargo {
                         registry: registry.into(),
                         version: package.version,
                     })
-                } else if let Some(uri) = source.strip_prefix("git+") {
-                    PackageVersion::Git(uri.into())
+                } else if source.starts_with("git+") {
+                    PackageVersion::Git(source)
                 } else {
                     return Err(anyhow!(format!("Unknown cargo package source: {:?}", source)));
                 };
@@ -153,7 +153,7 @@ mod tests {
             },
             Package {
                 name: "landlock".into(),
-                version: PackageVersion::Git("https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into()),
+                version: PackageVersion::Git("git+https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into()),
             },
             Package {
                 name: "xtask".into(),

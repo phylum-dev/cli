@@ -166,10 +166,8 @@ pub enum PackageVersion {
     Path(Option<PathBuf>),
     /// Version distributed through GIT.
     Git(String),
-    /// TODO: Naming?
-    /// TODO: Need it?
     /// Version distributed over HTTP(S).
-    Internet(String),
+    DownloadUrl(String),
 }
 
 /// Version from a foreign package registry.

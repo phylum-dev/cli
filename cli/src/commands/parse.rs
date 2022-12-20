@@ -115,12 +115,15 @@ fn filter_packages(
                     log::debug!("Using registry {registry:?} for {} ({version})", package.name);
                     version
                 },
-                PackageVersion::Git(url) => url,
+                PackageVersion::Git(url) => {
+                    log::debug!("Git dependency {} will not be analyzed ({url:?})", package.name);
+                    url
+                },
                 PackageVersion::Path(path) => {
                     log::debug!("Ignoring filesystem dependency {} ({path:?})", package.name);
                     return None;
                 },
-                PackageVersion::Internet(url) => {
+                PackageVersion::DownloadUrl(url) => {
                     log::debug!("Ignoring remote dependency {} ({url:?})", package.name);
                     return None;
                 },

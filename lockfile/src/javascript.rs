@@ -64,15 +64,15 @@ impl Parse for PackageLock {
                 // Get dependency version.
                 let version = if resolved.starts_with("https://registry.npmjs.org/") {
                     PackageVersion::FirstParty(get_version(keys, name)?)
-                } else if let Some(git_url) = resolved.strip_prefix("git+") {
-                    PackageVersion::Git(git_url.to_owned())
+                } else if resolved.starts_with("git+") {
+                    PackageVersion::Git(resolved)
                 } else if resolved.starts_with("http") {
                     // Split off `http(s)://`.
                     let mut split = resolved.split('/');
                     let _ = split.next();
                     let _ = split.next();
 
-                    // Find registrie's domain name.
+                    // Find registry's domain name.
                     match split.next() {
                         Some(registry) => PackageVersion::ThirdParty(ThirdPartyVersion {
                             version: get_version(keys, name)?,
@@ -208,7 +208,7 @@ impl Parse for YarnLock {
                 if resolver.contains("#commit=") {
                     PackageVersion::Git(resolver)
                 } else {
-                    PackageVersion::Internet(resolver)
+                    PackageVersion::DownloadUrl(resolver)
                 }
             } else {
                 return Err(anyhow!(
@@ -263,7 +263,7 @@ mod tests {
             Package {
                 name: "typescript".into(),
                 version: PackageVersion::Git(
-                    "ssh://git@github.com/Microsoft/TypeScript.git#\
+                    "git+ssh://git@github.com/Microsoft/TypeScript.git#\
                      9189e42b1c8b1a91906a245a24697da5e0c11a08"
                         .into(),
                 ),

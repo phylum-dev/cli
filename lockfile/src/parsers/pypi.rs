@@ -1,9 +1,13 @@
+use std::path::PathBuf;
+
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until};
 use nom::character::complete::{alphanumeric1, char, not_line_ending, space0};
 use nom::combinator::{eof, opt, recognize, rest, verify};
+use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
 use nom::sequence::{delimited, pair, terminated};
+use nom::Err as NomErr;
 
 use crate::parsers::Result;
 use crate::{Package, PackageVersion};
@@ -42,7 +46,7 @@ fn package(input: &str) -> Result<&str, Package> {
         } else if uri_version.starts_with("git+") {
             PackageVersion::Git(uri_version.into())
         } else {
-            PackageVersion::Internet(uri_version.into())
+            PackageVersion::DownloadUrl(uri_version.into())
         };
 
         return Ok((input, Package { name, version }));
@@ -68,14 +72,40 @@ fn editable(input: &str) -> Result<&str, Package> {
     let (input, _) = ws(tag("-e"))(input)?;
 
     // Parse everything until the next whitespace.
-    // let (input, name) = recognize(alt((take_until(" "), take_until("\t"),
-    // take_until(eof))))(input)?;
-    let (input, name) = take_till(|c: char| c.is_whitespace())(input)?;
+    let (input, uri) = take_till(|c: char| c.is_whitespace())(input)?;
+
+    // Detect version based on URI prefix.
+    let (name, version) = if uri.starts_with("git+") {
+        // Split up git URI and dependency name.
+        match uri.rsplit_once("#egg=") {
+            Some((uri, egg)) => {
+                // Replace last `@` in URI with `#`
+                // git+ssh://github.com:org/project@HASH
+                //   -> git+ssh://github.com:org/project#HASH
+                let uri = uri
+                    .rsplit_once('@')
+                    .map(|(head, tail)| format!("{head}#{tail}"))
+                    .unwrap_or_else(|| uri.into());
+
+                (egg.into(), PackageVersion::Git(uri))
+            },
+            None => {
+                let kind = VerboseErrorKind::Context("Missing egg name in git URI");
+                let error = VerboseError { errors: vec![(input, kind)] };
+                return Err(NomErr::Failure(error));
+            },
+        }
+    } else {
+        // Assume non-git editable dependencies are paths.
+        let path = PathBuf::from(uri);
+        let name = path.file_name().unwrap_or(path.as_os_str());
+        (name.to_string_lossy().into(), PackageVersion::Path(Some(path)))
+    };
 
     // Ensure line is empty after the dependency.
     line_done(input)?;
 
-    Ok((input, Package { name: name.into(), version: PackageVersion::Path(None) }))
+    Ok((input, Package { name, version }))
 }
 
 /// Find URI dependencies.
