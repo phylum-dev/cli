@@ -22,13 +22,13 @@ use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageStatusExtended,
-    PackageType,
+    PackageSubmitResponse, PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::api::{PackageSubmitResponse, PhylumApiError, ResponseError};
+use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;

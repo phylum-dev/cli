@@ -10,7 +10,8 @@ use phylum_types::types::job::{
     AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended, PackageType,
+    PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended,
+    PackageSubmitResponse, PackageType,
 };
 use phylum_types::types::preferences::{CorePreferences, ProjectPreferences};
 use phylum_types::types::project::{
@@ -37,14 +38,6 @@ type Result<T> = std::result::Result<T, PhylumApiError>;
 pub struct PhylumApi {
     config: Config,
     client: Client,
-}
-
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
-#[serde(tag = "status", content = "data")]
-pub enum PackageSubmitResponse {
-    AlreadyProcessed(Package),
-    AlreadySubmitted,
-    New,
 }
 
 /// Phylum Api Error type

@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use clap::ArgMatches;
-use phylum_types::types::package::{PackageSpecifier, PackageType};
+use phylum_types::types::package::{PackageSpecifier, PackageSubmitResponse, PackageType};
 use reqwest::StatusCode;
 
-use crate::api::{PackageSubmitResponse, PhylumApi};
+use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
