@@ -1,6 +1,7 @@
 // deno-lint-ignore-file ban-types
 
 /// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.28.3/core/lib.deno_core.d.ts" />
+/// <reference lib="deno.window" />
 
 export class PhylumApi {
   /**
