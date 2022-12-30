@@ -1,0 +1,6 @@
+# This file is a temporary fix to appease the Phylum GitHub App.
+# The format of this data is likely to change in the near future.
+
+lock_files:
+  - path: Cargo.lock
+    format: cargo
