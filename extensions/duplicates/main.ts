@@ -19,7 +19,7 @@ const groupedDeps = groupBy(lockfile.packages, (dep) => dep.name);
 // Reduce each dependency to a list of its versions.
 const reducedDeps = mapValues(
   groupedDeps,
-  (deps) => deps.map((dep) => dep.version),
+  (deps) => deps!.map((dep) => dep.version),
 );
 
 for (const [dep, versions] of Object.entries(reducedDeps)) {
