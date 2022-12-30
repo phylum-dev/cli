@@ -216,7 +216,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code: number | undefined) {
+async function abort(code: number | null) {
   await restoreBackup();
   Deno.exit(code ?? -1);
 }

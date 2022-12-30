@@ -15,8 +15,8 @@ type ProcessOutput = {
   stdout: string;
   stderr: string;
   success: boolean;
-  signal?: number;
-  code?: number;
+  signal: number | null;
+  code: number | null;
 };
 
 export class PhylumApi {
