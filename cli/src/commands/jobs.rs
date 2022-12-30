@@ -253,20 +253,16 @@ impl JobsProject {
             },
             // Retrieve the project from the `.phylum_project` file.
             None => {
-                let current_project = current_project.ok_or_else(|| {
-                    anyhow!(
-                        "Failed to find a valid project configuration. Specify an existing \
-                         project using the `--project` flag, or create a new one with `phylum \
-                         project create <name>`"
-                    )
-                })?;
+                let (project_id, group) =
+                    current_project.and_then(|c| c.project_group()).ok_or_else(|| {
+                        anyhow!(
+                            "Failed to find a valid project configuration. Specify an existing \
+                             project using the `--project` flag, or create a new one with `phylum \
+                             project create <name>`"
+                        )
+                    })?;
 
-                Ok(Self {
-                    project_id: current_project.id,
-                    group: current_project.group_name,
-                    lockfile,
-                    lockfile_type,
-                })
+                Ok(Self { project_id, group, lockfile, lockfile_type })
             },
         }
     }

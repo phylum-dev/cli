@@ -157,13 +157,9 @@ async fn analyze(
 
     let (project, group) = match (project, group) {
         (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
-        (None, _) => {
-            if let Some(p) = config::get_current_project() {
-                (p.id, p.group_name)
-            } else {
-                return Err(anyhow!("Failed to find a valid project configuration"));
-            }
-        },
+        (None, _) => config::get_current_project()
+            .and_then(|c| c.project_group())
+            .ok_or_else(|| anyhow!("Failed to find a valid project configuration"))?,
     };
 
     let packages = packages

@@ -92,8 +92,8 @@ where
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectConfig {
-    pub id: ProjectId,
-    pub name: String,
+    pub id: Option<ProjectId>,
+    pub name: Option<String>,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
     pub lockfile_type: Option<String>,
@@ -106,8 +106,8 @@ impl ProjectConfig {
     pub fn new(id: ProjectId, name: String, group_name: Option<String>) -> Self {
         Self {
             group_name,
-            name,
-            id,
+            name: Some(name),
+            id: Some(id),
             root: PathBuf::from("."),
             created_at: Local::now(),
             lockfile_type: None,
@@ -124,6 +124,11 @@ impl ProjectConfig {
     pub fn set_lockfile(&mut self, lockfile_type: String, lockfile: String) {
         self.lockfile_type = Some(lockfile_type);
         self.lockfile_path = Some(lockfile);
+    }
+
+    /// Get project ID and group, if present.
+    pub fn project_group(self) -> Option<(ProjectId, Option<String>)> {
+        self.id.map(|id| (id, self.group_name))
     }
 }
 
