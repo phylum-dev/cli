@@ -21,7 +21,8 @@ use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageStatusExtended, PackageType,
+    Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageStatusExtended,
+    PackageSubmitResponse, PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
@@ -329,15 +330,17 @@ async fn get_package_details(
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    let package_type = PackageType::from_str(&package_type)
-        .map_err(|e| anyhow!("Unrecognized package type `{package_type}`: {e:?}"))?;
-    api.get_package_details(&PackageDescriptor {
+    api.submit_package(&PTPackageSpecifier {
         name: name.to_string(),
         version: version.to_string(),
-        package_type,
+        registry: package_type,
     })
     .await
     .map_err(Error::from)
+    .and_then(|resp| match resp {
+        PackageSubmitResponse::AlreadyProcessed(data) => Ok(data),
+        _ => Err(anyhow!("Package has not yet been processed.")),
+    })
 }
 
 /// Parse a lockfile and return the package descriptors contained therein.

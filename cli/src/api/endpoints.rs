@@ -2,7 +2,7 @@
 use thiserror::Error as ThisError;
 use url::{ParseError, Url};
 
-use super::{JobId, PackageDescriptor};
+use super::JobId;
 
 const API_PATH: &str = "api/v0/";
 
@@ -13,7 +13,7 @@ const API_PATH: &str = "api/v0/";
 pub struct BaseUriError(#[from] pub ParseError);
 
 /// POST /data/jobs
-pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
+pub fn post_submit_job(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/jobs")?)
 }
 
@@ -41,20 +41,9 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Ur
     Ok(url)
 }
 
-/// GET /data/packages/<type>/<name>/<version>
-pub fn get_package_status(api_uri: &str, pkg: &PackageDescriptor) -> Result<Url, BaseUriError> {
-    let mut url = get_api_path(api_uri)?;
-
-    let PackageDescriptor { name, package_type, version, .. } = pkg;
-    url.path_segments_mut().unwrap().pop_if_empty().extend([
-        "data",
-        "packages",
-        &package_type.to_string(),
-        name,
-        version,
-    ]);
-
-    Ok(url)
+/// POST /data/packages/submit
+pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
 }
 
 /// GET /data/projects/name/<pkg_id>
@@ -152,8 +141,6 @@ fn get_api_path(api_uri: &str) -> Result<Url, BaseUriError> {
 
 #[cfg(test)]
 mod test {
-    use phylum_types::types::package::PackageType;
-
     use super::*;
 
     const API_URI: &str = "https://example.com/a";
@@ -178,9 +165,9 @@ mod test {
     }
 
     #[test]
-    fn put_submit_package_is_correct() {
+    fn put_submit_job_is_correct() {
         assert_eq!(
-            post_submit_package(API_URI).unwrap().as_str(),
+            post_submit_job(API_URI).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/jobs"),
         );
     }
@@ -214,15 +201,10 @@ mod test {
     }
 
     #[test]
-    fn get_package_status_is_correct() {
-        let pkg = PackageDescriptor {
-            name: "@acme/widgets".to_owned(),
-            version: "1.2.3-final+build4".to_owned(),
-            package_type: PackageType::Npm,
-        };
+    fn post_submit_package_is_correct() {
         assert_eq!(
-            get_package_status(API_URI, &pkg).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/packages/npm/@acme%2Fwidgets/1.2.3-final+build4"),
+            post_submit_package(API_URI).unwrap().as_str(),
+            format!("{API_URI}/{API_PATH}data/packages/submit"),
         );
     }
 
