@@ -7,7 +7,7 @@ pub use csharp::CSProj;
 pub use golang::GoSum;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageType;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
@@ -132,8 +132,6 @@ impl Iterator for LockfileFormatIter {
         Some(item)
     }
 }
-
-pub type ParseResult = anyhow::Result<Vec<PackageDescriptor>>;
 
 pub trait Parse {
     /// Parse from a string.
