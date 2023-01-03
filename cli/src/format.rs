@@ -13,7 +13,7 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use prettytable::format::Alignment;
-use prettytable::{cell, color as table_color, row, table, Attr, Cell, Row, Table};
+use prettytable::{color as table_color, row, table, Attr, Cell, Row, Table};
 use serde::Serialize;
 use unicode_width::UnicodeWidthStr;
 
