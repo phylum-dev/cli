@@ -1,18 +1,21 @@
 use std::env::VarError;
 #[cfg(unix)]
 use std::fs::DirBuilder;
+#[cfg(unix)]
+use std::fs::Permissions;
 use std::io::{self, Write};
 #[cfg(unix)]
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
 use phylum_types::types::auth::RefreshToken;
 use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
+use tempfile::NamedTempFile;
 
 use crate::{dirs, print_user_warning};
 
@@ -127,28 +130,7 @@ impl ProjectConfig {
     }
 }
 
-/// Create or open a file. If the file is created, it will restrict permissions
-/// to allow read/write access only to the current user.
-fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
-    // Use OpenOptions so that we can specify the permission bits
-    let mut opts = fs::OpenOptions::new();
-    opts.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    {
-        opts.mode(0o600);
-    }
-
-    // Windows file permissions are complicated and home folders aren't usually
-    // globally readable, so we can ignore Windows for now.
-
-    opts.open(path)
-}
-
-// TODO: define explicit error types
-// TODO: This is NOT atomic, and file corruption can occur
-// TODO: Config should be saved to temp file first, then rename() used to 'move'
-// it to new location Rename is guaranteed atomic. Need to handle case when
-// files are on different mount point
+/// Atomically overwrite the configuration file.
 pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
@@ -162,7 +144,23 @@ where
     }
     let yaml = serde_yaml::to_string(config)?;
 
-    create_private_file(path)?.write_all(yaml.as_ref())?;
+    // Create a tempfile in the config's directory.
+    //
+    // It's not possible to create the tempfile on tmpfs since the configuration
+    // file is usually not on the same device, which causes `NamedTempFile::persist`
+    // to fail.
+    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
+    let mut file = NamedTempFile::new_in(config_dir)?;
+
+    // Deny file access to non-owners.
+    #[cfg(unix)]
+    file.as_file().set_permissions(Permissions::from_mode(0o600))?;
+
+    // Write new config to the temporary file.
+    file.write_all(yaml.as_bytes())?;
+
+    // Atomically move the new config into place.
+    file.persist(path)?;
 
     Ok(())
 }
