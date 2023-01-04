@@ -1,11 +1,10 @@
 use std::env::VarError;
 #[cfg(unix)]
 use std::fs::DirBuilder;
-#[cfg(unix)]
-use std::fs::Permissions;
+use std::fs::OpenOptions;
 use std::io::{self, Write};
 #[cfg(unix)]
-use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
+use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
@@ -15,7 +14,6 @@ use phylum_types::types::auth::RefreshToken;
 use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
-use tempfile::NamedTempFile;
 
 use crate::{dirs, print_user_warning};
 
@@ -144,23 +142,29 @@ where
     }
     let yaml = serde_yaml::to_string(config)?;
 
-    // Create a tempfile in the config's directory.
+    // Use target directory for temporary file path.
     //
-    // It's not possible to create the tempfile on tmpfs since the configuration
-    // file is usually not on the same device, which causes `NamedTempFile::persist`
-    // to fail.
+    // It's not possible to create the file on tmpfs since the configuration file is
+    // usually not on the same device, which causes `fs::rename` to fail.
     let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
-    let mut file = NamedTempFile::new_in(config_dir)?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow!("invalid config name"))?;
+    let tmp_path = config_dir.join(format!(".{file_name}.new"));
 
-    // Deny file access to non-owners.
+    // Create the temporary file for the new config.
+    let mut options = OpenOptions::new();
+    options.write(true).create(true).truncate(true);
     #[cfg(unix)]
-    file.as_file().set_permissions(Permissions::from_mode(0o600))?;
+    options.mode(0o600);
+    let mut file = options.open(&tmp_path)?;
 
     // Write new config to the temporary file.
     file.write_all(yaml.as_bytes())?;
 
     // Atomically move the new config into place.
-    file.persist(path)?;
+    fs::rename(tmp_path, path)?;
 
     Ok(())
 }
