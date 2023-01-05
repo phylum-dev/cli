@@ -11,7 +11,7 @@ REST API can be used directly by extensions if there is no TypeScript API
 available.
 
 All endpoins are documented here:
-https://api.staging.phylum.io/api/v0/swagger/index.html
+https://api.phylum.io/api/v0/swagger/index.html
 
 ## Extension API requests
 
