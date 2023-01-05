@@ -1,3 +1,4 @@
+* 4.2.0 - Single package submit
 * 4.1.0 - Group transfer; Extension REST API access
 * 4.0.1 - Use a lower version of GLIBC
 * 4.0.0 - Extensions are sandboxed by default
