@@ -9,5 +9,6 @@
     "files": {
       "include": ["extensions/", "cli/src/extension_api.ts"]
     }
-  }
+  },
+  "lock": false
 }
