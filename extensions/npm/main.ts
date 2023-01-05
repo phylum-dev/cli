@@ -147,7 +147,7 @@ if (!output.success) {
     }] Please submit your lockfile to Phylum should this error persist.`,
   );
 
-  await abort(output.code);
+  await abort(output.code ?? 255);
 } else {
   console.log(`[${green("phylum")}] Packages built successfully.`);
 }
@@ -216,9 +216,9 @@ async function checkDryRun(subcommand: string, args: string[]) {
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code: number | null) {
+async function abort(code: number) {
   await restoreBackup();
-  Deno.exit(code ?? -1);
+  Deno.exit(code);
 }
 
 // Restore package manager files.

@@ -121,7 +121,7 @@ async function poetryCheckDryRun(
   // Ensure dry-run update was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    await abort(status.code);
+    await abort(status.code ?? 255);
   }
 
   const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
@@ -168,9 +168,9 @@ async function poetryCheckDryRun(
 //
 // This assumes that execution was not successful and it will automatically
 // revert to the last stored package manager files.
-async function abort(code: number | null) {
+async function abort(code: number) {
   await restoreBackup();
-  Deno.exit(code ?? -1);
+  Deno.exit(code);
 }
 
 // Restore package manager files.
