@@ -44,12 +44,6 @@ When invoking `phylum poetry`, subcommands that would modify the
 - Commands that modify neither `pyproject.toml` nor `poetry.lock` will be passed
   through to `poetry` directly.
 
-## Caveats
-
-Unlike the `poetry` CLI, this extension needs to be launched in the directory
-that contains the `pyproject.toml` and `poetry.lock` files. Launching it from
-any of its subdirectories will result in an error.
-
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli
 [poetry]: https://python-poetry.org/

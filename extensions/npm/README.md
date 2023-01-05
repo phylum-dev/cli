@@ -44,12 +44,6 @@ When invoking `phylum npm`, subcommands that would modify the `package.json` or
 - Commands that modify neither `package.json` nor `package-lock.json` will be
   passed through to `npm` directly.
 
-## Caveats
-
-Unlike the `npm` CLI, this extension needs to be launched in the directory that
-contains the `package.json` and `package-lock.json` files. Launching it from any
-of its subdirectories will result in an error.
-
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli
 [npm]: https://www.npmjs.com/
