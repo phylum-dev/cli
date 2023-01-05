@@ -1,7 +1,8 @@
 use std::env::VarError;
+#[cfg(not(unix))]
+use std::fs::File;
 #[cfg(unix)]
-use std::fs::DirBuilder;
-use std::fs::OpenOptions;
+use std::fs::{DirBuilder, OpenOptions};
 use std::io::{self, Write};
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
@@ -129,24 +130,21 @@ impl ProjectConfig {
 }
 
 /// Atomically overwrite the configuration file.
+#[cfg(unix)]
 pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
-    if let Some(config_dir) = path.parent() {
-        #[cfg(not(unix))]
-        fs::create_dir_all(config_dir)?;
-
-        #[cfg(unix)]
-        DirBuilder::new().recursive(true).mode(0o700).create(config_dir)?;
-    }
     let yaml = serde_yaml::to_string(config)?;
+
+    // Ensure config directory and its parents exist.
+    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
+    DirBuilder::new().recursive(true).mode(0o700).create(config_dir)?;
 
     // Use target directory for temporary file path.
     //
     // It's not possible to create the file on tmpfs since the configuration file is
     // usually not on the same device, which causes `fs::rename` to fail.
-    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
     let file_name = path
         .file_name()
         .and_then(|name| name.to_str())
@@ -165,6 +163,25 @@ where
 
     // Atomically move the new config into place.
     fs::rename(tmp_path, path)?;
+
+    Ok(())
+}
+
+/// Unatomically overwrite the configuration file.
+#[cfg(not(unix))]
+pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
+where
+    T: Serialize,
+{
+    let yaml = serde_yaml::to_string(config)?;
+
+    // Ensure config directory and its parents exist.
+    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
+    fs::create_dir_all(config_dir)?;
+
+    // Write new configuration to the file.
+    let mut file = File::create(path)?;
+    file.write_all(yaml.as_bytes())?;
 
     Ok(())
 }
