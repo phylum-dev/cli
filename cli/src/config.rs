@@ -1,13 +1,15 @@
 use std::env::VarError;
+#[cfg(not(unix))]
+use std::fs::File;
 #[cfg(unix)]
-use std::fs::DirBuilder;
+use std::fs::{DirBuilder, OpenOptions};
 use std::io::{self, Write};
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local};
 use phylum_types::types::auth::RefreshToken;
 use phylum_types::types::common::ProjectId;
@@ -127,42 +129,59 @@ impl ProjectConfig {
     }
 }
 
-/// Create or open a file. If the file is created, it will restrict permissions
-/// to allow read/write access only to the current user.
-fn create_private_file<P: AsRef<Path>>(path: P) -> io::Result<fs::File> {
-    // Use OpenOptions so that we can specify the permission bits
-    let mut opts = fs::OpenOptions::new();
-    opts.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    {
-        opts.mode(0o600);
-    }
-
-    // Windows file permissions are complicated and home folders aren't usually
-    // globally readable, so we can ignore Windows for now.
-
-    opts.open(path)
-}
-
-// TODO: define explicit error types
-// TODO: This is NOT atomic, and file corruption can occur
-// TODO: Config should be saved to temp file first, then rename() used to 'move'
-// it to new location Rename is guaranteed atomic. Need to handle case when
-// files are on different mount point
+/// Atomically overwrite the configuration file.
+#[cfg(unix)]
 pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
 where
     T: Serialize,
 {
-    if let Some(config_dir) = path.parent() {
-        #[cfg(not(unix))]
-        fs::create_dir_all(config_dir)?;
-
-        #[cfg(unix)]
-        DirBuilder::new().recursive(true).mode(0o700).create(config_dir)?;
-    }
     let yaml = serde_yaml::to_string(config)?;
 
-    create_private_file(path)?.write_all(yaml.as_ref())?;
+    // Ensure config directory and its parents exist.
+    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
+    DirBuilder::new().recursive(true).mode(0o700).create(config_dir)?;
+
+    // Use target directory for temporary file path.
+    //
+    // It's not possible to create the file on tmpfs since the configuration file is
+    // usually not on the same device, which causes `fs::rename` to fail.
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow!("invalid config name"))?;
+    let tmp_path = config_dir.join(format!(".{file_name}.new"));
+
+    // Create the temporary file for the new config.
+    let mut options = OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    options.mode(0o600);
+    let mut file = options.open(&tmp_path)?;
+
+    // Write new config to the temporary file.
+    file.write_all(yaml.as_bytes())?;
+
+    // Atomically move the new config into place.
+    fs::rename(tmp_path, path)?;
+
+    Ok(())
+}
+
+/// Unatomically overwrite the configuration file.
+#[cfg(not(unix))]
+pub fn save_config<T>(path: &Path, config: &T) -> Result<()>
+where
+    T: Serialize,
+{
+    let yaml = serde_yaml::to_string(config)?;
+
+    // Ensure config directory and its parents exist.
+    let config_dir = path.parent().ok_or_else(|| anyhow!("config path is a directory"))?;
+    fs::create_dir_all(config_dir)?;
+
+    // Write new configuration to the file.
+    let mut file = File::create(path)?;
+    file.write_all(yaml.as_bytes())?;
 
     Ok(())
 }
