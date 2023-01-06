@@ -44,12 +44,6 @@ When invoking `phylum yarn`, subcommands that would modify the `package.json` or
 - Commands that modify neither `package.json` nor `yarn.lock` will be passed
   through to `yarn` directly.
 
-## Caveats
-
-Unlike the `yarn` CLI, this extension needs to be launched in the directory that
-contains the `package.json` and `yarn.lock` files. Launching it from any of its
-subdirectories will result in an error.
-
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli
 [yarn]: https://yarnpkg.com/
