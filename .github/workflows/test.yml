@@ -74,6 +74,8 @@ jobs:
         run: deno fmt --check
       - name: deno lint
         run: deno lint
+      - name: deno check
+        run: deno check --no-lock cli/src/extension_api.ts extensions/**/*.ts
 
   shellcheck:
     # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.

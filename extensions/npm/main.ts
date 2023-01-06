@@ -147,7 +147,7 @@ if (!output.success) {
     }] Please submit your lockfile to Phylum should this error persist.`,
   );
 
-  await abort(output.code);
+  await abort(output.code ?? 255);
 } else {
   console.log(`[${green("phylum")}] Packages built successfully.`);
 }

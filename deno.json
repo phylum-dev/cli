@@ -1,4 +1,5 @@
 {
+  "importMap": "import_map.json",
   "lint": {
     "files": {
       "include": ["extensions/", "cli/src/extension_api.ts"]
@@ -8,5 +9,6 @@
     "files": {
       "include": ["extensions/", "cli/src/extension_api.ts"]
     }
-  }
+  },
+  "lock": false
 }

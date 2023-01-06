@@ -112,7 +112,7 @@ const status = PhylumApi.runSandboxed({
 // Ensure download worked. Failure is still "safe" for the user.
 if (!status.success) {
   console.error(`[${red("phylum")}] Downloading packages to cache failed.\n`);
-  await abort(status.code);
+  await abort(status.code ?? 255);
 } else {
   console.log(`[${green("phylum")}] Cache updated successfully.\n`);
 }
@@ -154,7 +154,7 @@ if (!output.success) {
     }] Please submit your lockfile to Phylum should this error persist.`,
   );
 
-  await abort(output.code);
+  await abort(output.code ?? 255);
 } else {
   console.log(`[${green("phylum")}] Packages built successfully.`);
 }
@@ -177,7 +177,7 @@ async function checkDryRun() {
   // Ensure lockfile update was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    await abort(status.code);
+    await abort(status.code ?? 255);
   }
 
   const lockfile = await PhylumApi.parseLockfile("./yarn.lock", "yarn");

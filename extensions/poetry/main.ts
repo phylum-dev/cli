@@ -121,7 +121,7 @@ async function poetryCheckDryRun(
   // Ensure dry-run update was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    await abort(status.code);
+    await abort(status.code ?? 255);
   }
 
   const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
