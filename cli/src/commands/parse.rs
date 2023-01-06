@@ -11,7 +11,7 @@ use phylum_lockfile::{
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, ExitCode};
-use crate::config;
+use crate::config::{self, LockfileConfig};
 
 pub struct ParsedLockfile {
     pub format: LockfileFormat,
@@ -34,20 +34,30 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
     let cli_lockfile = matches.get_one::<String>("LOCKFILE");
 
-    let current_project = config::get_current_project();
-
-    let lockfile = current_project.as_ref().and_then(|project| {
-        Some((project.lockfile_path()?.to_str()?.to_owned(), &project.lockfile_type))
-    });
-
     // Pick lockfile path from CLI and fallback to the current project.
-    let (lockfile, lockfile_type) = match (cli_lockfile, &lockfile) {
-        (Some(cli_lockfile), _) => (cli_lockfile, cli_lockfile_type),
-        (None, Some((lockfile, lockfile_type))) => (lockfile, lockfile_type.as_ref()),
-        (None, _) => return Err(anyhow!("Missing lockfile parameter")),
+    let lockfiles = match cli_lockfile {
+        Some(cli_lockfile) => {
+            vec![LockfileConfig::new(
+                cli_lockfile.clone(),
+                cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into()),
+            )]
+        },
+        None => {
+            let current_project = config::get_current_project();
+            let lockfiles =
+                current_project.as_ref().map(|project| project.lockfiles()).unwrap_or_default();
+            if lockfiles.is_empty() {
+                return Err(anyhow!("Missing lockfile parameter"));
+            }
+            lockfiles
+        },
     };
 
-    let pkgs = parse_lockfile(lockfile, lockfile_type.map(|t| &**t))?.packages;
+    let mut pkgs: Vec<PackageDescriptor> = Vec::new();
+
+    for lockfile in lockfiles {
+        pkgs.extend(parse_lockfile(lockfile.path(), Some(&lockfile.lockfile_type))?.packages);
+    }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 

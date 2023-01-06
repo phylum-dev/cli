@@ -92,12 +92,33 @@ where
     Ok(Option::<bool>::deserialize(deserializer)?.unwrap_or_default())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LockfileConfig {
+    path: String,
+    #[serde(rename = "type")]
+    pub lockfile_type: String,
+    #[serde(skip)]
+    root: PathBuf,
+}
+
+impl LockfileConfig {
+    pub fn new(path: String, lockfile_type: String) -> LockfileConfig {
+        LockfileConfig { path, lockfile_type, root: PathBuf::from(".") }
+    }
+
+    pub fn path(&self) -> PathBuf {
+        self.root.join(&self.path)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectConfig {
     pub id: ProjectId,
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
+    #[serde(default)]
+    pub lockfiles: Vec<LockfileConfig>,
     pub lockfile_type: Option<String>,
     lockfile_path: Option<String>,
     #[serde(skip)]
@@ -114,18 +135,34 @@ impl ProjectConfig {
             created_at: Local::now(),
             lockfile_type: None,
             lockfile_path: None,
+            lockfiles: Default::default(),
         }
     }
 
-    /// Get path to the lockfile.
-    pub fn lockfile_path(&self) -> Option<PathBuf> {
-        self.lockfile_path.as_ref().map(|lockfile| self.root.join(lockfile))
+    /// Get all lockfiles.
+    pub fn lockfiles(&self) -> Vec<LockfileConfig> {
+        let lockfile = match (&self.lockfile_path, &self.lockfile_type) {
+            (Some(path), Some(lockfile_type)) => Some(LockfileConfig {
+                path: path.clone(),
+                lockfile_type: lockfile_type.clone(),
+                root: self.root.clone(),
+            }),
+            _ => None,
+        };
+        lockfile
+            .into_iter()
+            .chain(
+                self.lockfiles
+                    .iter()
+                    .cloned()
+                    .map(|lockfile| LockfileConfig { root: self.root.clone(), ..lockfile }),
+            )
+            .collect()
     }
 
     /// Update the lockfile.
-    pub fn set_lockfile(&mut self, lockfile_type: String, lockfile: String) {
-        self.lockfile_type = Some(lockfile_type);
-        self.lockfile_path = Some(lockfile);
+    pub fn set_lockfile(&mut self, lockfile_type: String, path: String) {
+        self.lockfiles = vec![LockfileConfig { path, lockfile_type, root: self.root.clone() }];
     }
 }
 

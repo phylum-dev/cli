@@ -11,7 +11,7 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
-use crate::config::get_current_project;
+use crate::config::{get_current_project, LockfileConfig};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
 use crate::{print_user_success, print_user_warning};
@@ -126,17 +126,21 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         synch = true;
 
         jobs_project = JobsProject::new(api, matches).await?;
-
-        let res =
-            parse::parse_lockfile(jobs_project.lockfile, jobs_project.lockfile_type.as_deref())
-                .context("Unable to locate any valid package in package lockfile")?;
-
-        if pretty_print {
-            print_user_success!("Successfully parsed lockfile as type: {}", res.format.name());
+        if jobs_project.lockfiles.is_empty() {
+            return Err(anyhow!("Missing lockfile parameter"));
         }
 
-        packages = res.packages;
-        request_type = res.package_type;
+        for lockfile in jobs_project.lockfiles {
+            let res = parse::parse_lockfile(lockfile.path(), Some(&lockfile.lockfile_type))
+                .context("Unable to locate any valid package in package lockfile")?;
+
+            if pretty_print {
+                print_user_success!("Successfully parsed lockfile as type: {}", res.format.name());
+            }
+
+            request_type = res.package_type;
+            packages.extend(res.packages.into_iter());
+        }
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         jobs_project = JobsProject::new(api, matches).await?;
 
@@ -218,8 +222,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 struct JobsProject {
     project_id: ProjectId,
     group: Option<String>,
-    lockfile: String,
-    lockfile_type: Option<String>,
+    lockfiles: Vec<LockfileConfig>,
 }
 
 impl JobsProject {
@@ -233,15 +236,15 @@ impl JobsProject {
 
         let current_project = get_current_project();
 
-        let lockfile = current_project.as_ref().and_then(|project| {
-            Some((project.lockfile_path()?.to_str()?.to_owned(), &project.lockfile_type))
-        });
-
         // Pick lockfile path from CLI and fallback to the current project.
-        let (lockfile, lockfile_type) = match (cli_lockfile, lockfile) {
-            (Some(cli_lockfile), _) => (cli_lockfile.clone(), cli_lockfile_type.cloned()),
-            (None, Some((lockfile, lockfile_type))) => (lockfile, lockfile_type.clone()),
-            (None, None) => return Err(anyhow!("Missing lockfile parameter")),
+        let lockfiles = match cli_lockfile {
+            Some(cli_lockfile) => {
+                vec![LockfileConfig::new(
+                    cli_lockfile.clone(),
+                    cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into()),
+                )]
+            },
+            None => current_project.as_ref().map(|project| project.lockfiles()).unwrap_or_default(),
         };
 
         match matches.get_one::<String>("project") {
@@ -249,7 +252,7 @@ impl JobsProject {
             Some(project_name) => {
                 let group = matches.get_one::<String>("group").cloned();
                 let project = api.get_project_id(project_name, group.as_deref()).await?;
-                Ok(Self { project_id: project, group, lockfile, lockfile_type })
+                Ok(Self { project_id: project, group, lockfiles })
             },
             // Retrieve the project from the `.phylum_project` file.
             None => {
@@ -264,8 +267,7 @@ impl JobsProject {
                 Ok(Self {
                     project_id: current_project.id,
                     group: current_project.group_name,
-                    lockfile,
-                    lockfile_type,
+                    lockfiles,
                 })
             },
         }
