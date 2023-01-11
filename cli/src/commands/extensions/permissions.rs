@@ -1,8 +1,8 @@
 #[cfg(unix)]
 use std::borrow::Cow;
-use std::env;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
+use std::{env, fs};
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
@@ -317,8 +317,8 @@ pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxRe
 pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
     let bin: &Path = bin.as_ref();
 
-    // Do not transform absolute paths.
-    if bin.has_root() {
+    // Early-return on known paths so we don't waste time crawling `$PATH`.
+    if bin.has_root() || bin.components().count() > 1 {
         return bin.to_owned();
     }
 
@@ -330,9 +330,14 @@ pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
 
     // Return first path in `$PATH` that contains `bin`.
     for path in path.split(':') {
-        let combined = PathBuf::from(path).join(bin);
-        if combined.exists() {
-            return combined;
+        let mut dir_entries = match fs::read_dir(path) {
+            Ok(dir_entries) => dir_entries.flatten(),
+            Err(_) => continue,
+        };
+
+        // Return the first directory entry with a file name matching `bin`.
+        if let Some(entry) = dir_entries.find(|entry| entry.file_name() == bin.as_os_str()) {
+            return entry.path();
         }
     }
 
@@ -507,5 +512,15 @@ mod tests {
         let parent = Permission::Boolean(false);
         let child = Permission::Boolean(false);
         assert!(matches!(&child.subset_of(&parent), Ok(Permission::Boolean(false))));
+    }
+
+    #[test]
+    fn resolve_bin_paths() {
+        // Ensure none of these paths are accidentally resolved.
+        assert_eq!(resolve_bin_path("."), PathBuf::from("."));
+        assert_eq!(resolve_bin_path(".."), PathBuf::from(".."));
+        assert_eq!(resolve_bin_path("./"), PathBuf::from("./"));
+        assert_eq!(resolve_bin_path("../"), PathBuf::from("../"));
+        assert_eq!(resolve_bin_path("/"), PathBuf::from("/"));
     }
 }
