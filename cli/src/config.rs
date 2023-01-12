@@ -151,7 +151,7 @@ impl ProjectConfig {
         if let Some((path, lockfile_type)) =
             self.lockfile_path.as_ref().zip(self.lockfile_type.as_ref())
         {
-            return vec![LockfileConfig::new(self.root.join(&path), lockfile_type.clone())];
+            return vec![LockfileConfig::new(self.root.join(path), lockfile_type.clone())];
         }
 
         // Default to no lockfiles.
