@@ -11,7 +11,7 @@ use phylum_lockfile::{
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 
 use crate::commands::{CommandResult, ExitCode};
-use crate::config::{self, LockfileConfig};
+use crate::config;
 
 pub struct ParsedLockfile {
     pub format: LockfileFormat,
@@ -31,32 +31,12 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
-    let cli_lockfile = matches.get_one::<String>("LOCKFILE");
-
-    // Pick lockfile path from CLI and fallback to the current project.
-    let lockfiles = match cli_lockfile {
-        Some(cli_lockfile) => {
-            vec![LockfileConfig::new(
-                cli_lockfile.clone(),
-                cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into()),
-            )]
-        },
-        None => {
-            let current_project = config::get_current_project();
-            let lockfiles =
-                current_project.as_ref().map(|project| project.lockfiles()).unwrap_or_default();
-            if lockfiles.is_empty() {
-                return Err(anyhow!("Missing lockfile parameter"));
-            }
-            lockfiles
-        },
-    };
+    let lockfiles = config::lockfiles(matches, config::get_current_project().as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptor> = Vec::new();
 
     for lockfile in lockfiles {
-        pkgs.extend(parse_lockfile(lockfile.path(), Some(&lockfile.lockfile_type))?.packages);
+        pkgs.extend(parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?.packages);
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;

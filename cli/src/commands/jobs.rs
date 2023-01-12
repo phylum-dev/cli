@@ -11,7 +11,7 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
-use crate::config::{get_current_project, LockfileConfig};
+use crate::config::{self, LockfileConfig};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
 use crate::{print_user_success, print_user_warning};
@@ -131,7 +131,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         }
 
         for lockfile in jobs_project.lockfiles {
-            let res = parse::parse_lockfile(lockfile.path(), Some(&lockfile.lockfile_type))
+            let res = parse::parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))
                 .context("Unable to locate any valid package in package lockfile")?;
 
             if pretty_print {
@@ -231,21 +231,8 @@ impl JobsProject {
     /// Assumes that the clap `matches` has a `project` and `group` arguments
     /// option.
     async fn new(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
-        let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").ok().flatten();
-        let cli_lockfile = matches.try_get_one::<String>("LOCKFILE").ok().flatten();
-
-        let current_project = get_current_project();
-
-        // Pick lockfile path from CLI and fallback to the current project.
-        let lockfiles = match cli_lockfile {
-            Some(cli_lockfile) => {
-                vec![LockfileConfig::new(
-                    cli_lockfile.clone(),
-                    cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into()),
-                )]
-            },
-            None => current_project.as_ref().map(|project| project.lockfiles()).unwrap_or_default(),
-        };
+        let current_project = config::get_current_project();
+        let lockfiles = config::lockfiles(matches, current_project.as_ref())?;
 
         match matches.get_one::<String>("project") {
             // Prefer `--project` and `--group` if they were specified.
