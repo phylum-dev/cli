@@ -111,8 +111,9 @@ pub struct ProjectConfig {
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     lockfile_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     lockfile_path: Option<String>,
     lockfiles: Vec<LockfileConfig>,
     #[serde(skip)]
