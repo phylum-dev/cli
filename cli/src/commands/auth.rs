@@ -83,7 +83,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
         println!("{}", tokens.access_token);
         Ok(ExitCode::Ok.into())
     } else {
-        println!("{}", refresh_token);
+        println!("{refresh_token}");
         Ok(ExitCode::Ok.into())
     }
 }

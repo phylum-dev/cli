@@ -337,7 +337,7 @@ where
             "Proj Score",
             (100.0 * resp.score).round().to_string(),
             "Date",
-            format!("{} UTC", date_time),
+            format!("{date_time} UTC"),
         ),
         ("Num Deps", resp.packages.len().to_string(), "Job ID", resp.job_id.to_string()),
     ];

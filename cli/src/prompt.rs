@@ -17,7 +17,7 @@ pub fn prompt_threshold(name: &str) -> Result<Threshold, std::io::Error> {
         .validate_with(|input: &String| -> Result<(), String> {
             if input.eq_ignore_ascii_case("disabled") {
                 if ALWAYS_ENABLED_THRESHOLDS.contains(&name) {
-                    Err(format!("Cannot disable {} threshold", name))
+                    Err(format!("Cannot disable {name} threshold"))
                 } else {
                     Ok(())
                 }
