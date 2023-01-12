@@ -141,10 +141,8 @@ impl ProjectConfig {
                 .lockfiles
                 .iter()
                 .map(|lockfile| {
-                    LockfileConfig::new(
-                        self.root.join(&lockfile.path),
-                        lockfile.lockfile_type.clone(),
-                    )
+                    let path = self.root.join(&lockfile.path);
+                    LockfileConfig::new(path, lockfile.lockfile_type.clone())
                 })
                 .collect();
         }
