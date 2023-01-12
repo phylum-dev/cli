@@ -240,6 +240,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('t')
                     .long("lockfile-type")
                     .value_name("type")
+                    .requires("LOCKFILE")
                     .help("The type of the lock file (default: auto)")
                     .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
             ]),
@@ -248,10 +249,6 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("analyze")
                 .about("Submit a request for analysis to the processing system")
                 .args(&[
-                    Arg::new("LOCKFILE")
-                        .value_name("LOCKFILE")
-                        .value_hint(ValueHint::FilePath)
-                        .help("The package lock file to submit."),
                     Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
                         "Force re-processing of packages (even if they already exist in the \
                          system)",
@@ -278,10 +275,15 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("group_name")
                         .help("Specify a group to use for analysis")
                         .requires("project"),
+                    Arg::new("LOCKFILE")
+                        .value_name("LOCKFILE")
+                        .value_hint(ValueHint::FilePath)
+                        .help("The package lock file to submit."),
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
+                        .requires("LOCKFILE")
                         .help("The type of the lock file (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 ]),
@@ -448,6 +450,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("lockfile-type")
                         .value_name("LOCKFILE_TYPE")
+                        .requires("lockfile")
                         .help("Project lockfile type")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(false))),
                     Arg::new("force")

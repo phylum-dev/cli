@@ -5,14 +5,14 @@ use std::{env, fs, io};
 
 use anyhow::Context;
 use clap::ArgMatches;
-use dialoguer::{Confirm, FuzzySelect, Input};
+use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
-use crate::config::PROJ_CONF_FILE;
-use crate::{config, print_user_success, print_user_warning};
+use crate::config::{self, LockfileConfig, PROJ_CONF_FILE};
+use crate::{print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
@@ -41,7 +41,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
 
     // Interactively prompt for missing lockfile information.
     println!();
-    let (lockfile, lockfile_type) = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
+    let lockfiles = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
 
     // Attempt to create the project.
     println!();
@@ -58,7 +58,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     };
 
     // Override project lockfile info.
-    project_config.set_lockfile(lockfile_type, lockfile);
+    project_config.set_lockfiles(lockfiles);
 
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
@@ -120,35 +120,42 @@ fn prompt_group() -> io::Result<Option<String>> {
 fn prompt_lockfile(
     cli_lockfile: Option<&String>,
     cli_lockfile_type: Option<&String>,
-) -> io::Result<(String, String)> {
-    let lockfile = match (cli_lockfile.cloned(), cli_lockfile_type) {
+) -> io::Result<Vec<LockfileConfig>> {
+    let mut lockfiles = match (cli_lockfile.cloned(), cli_lockfile_type) {
         // Do not prompt if name and type were specified on CLI.
-        (Some(lockfile), Some(lockfile_type)) => return Ok((lockfile, lockfile_type.clone())),
+        (Some(lockfile), Some(lockfile_type)) => {
+            let lockfiles = vec![LockfileConfig::new(lockfile, lockfile_type.into())];
+            return Ok(lockfiles);
+        },
         // Prompt for type if only lockfile was passed.
-        (Some(lockfile), _) => lockfile,
+        (Some(lockfile), _) => vec![lockfile],
         // Prompt for lockfile if it wasn't specified.
         (None, _) => prompt_lockfile_name()?,
     };
 
-    // Try to determine lockfile name from known lockfiles.
-    for format in LockfileFormat::iter() {
-        if format.parser().is_path_lockfile(Path::new(&lockfile)) {
+    // Find lockfile type for each lockfile.
+    let mut lockfile_configs = Vec::new();
+    for lockfile in lockfiles.drain(..) {
+        // Try to determine lockfile type from known formats.
+        if let Some(format) = LockfileFormat::iter()
+            .find(|format| format.parser().is_path_lockfile(Path::new(&lockfile)))
+        {
             let lockfile_type = format.name().to_owned();
-            return Ok((lockfile, lockfile_type));
+            lockfile_configs.push(LockfileConfig::new(lockfile, lockfile_type));
+            continue;
         }
+
+        // Prompt for lockfile type.
+        let lockfile_type = prompt_lockfile_type(&lockfile)?;
+
+        lockfile_configs.push(LockfileConfig::new(lockfile, lockfile_type));
     }
 
-    // Prompt for lockfile type.
-    let lockfile_type = match cli_lockfile_type {
-        Some(lockfile_type) => lockfile_type.clone(),
-        None => prompt_lockfile_type()?,
-    };
-
-    Ok((lockfile, lockfile_type))
+    Ok(lockfile_configs)
 }
 
 /// Ask for the lockfile name.
-fn prompt_lockfile_name() -> io::Result<String> {
+fn prompt_lockfile_name() -> io::Result<Vec<String>> {
     // Find all known lockfiles in the currenty directory.
     let mut lockfiles: Vec<_> = fs::read_dir("./")?
         .flatten()
@@ -158,35 +165,59 @@ fn prompt_lockfile_name() -> io::Result<String> {
         .flat_map(|entry| entry.file_name().to_str().map(str::to_owned))
         .collect();
 
-    // Prompt if a lockfile was found.
+    // Prompt for selection any lockfile was found.
     if !lockfiles.is_empty() {
-        // Add choice to specify an unknown lockfile.
-        lockfiles.push(String::from("other"));
+        // Add choice to specify additional unidentified lockfiles.
+        lockfiles.push(String::from("others"));
 
-        // Ask user for lockfile.
-        let index = FuzzySelect::new()
+        // Ask user for lockfiles.
+        let indices = MultiSelect::new()
             .with_prompt("Select your project's lockfile")
             .items(&lockfiles)
             .interact()?;
 
-        // Return selected lockfile unless `other` was chosen.
-        if index + 1 != lockfiles.len() {
-            return Ok(lockfiles.remove(index));
-        }
+        // Remove unselected lockfiles.
+        let mut indices = indices.iter().peekable();
+        let mut lockfiles_index = 0;
+        lockfiles.retain(|_| {
+            // Check if lockfile index is in the selected indices.
+            let retain = indices.peek().map_or(false, |index| **index <= lockfiles_index);
+
+            // Go to next selection index if current index was found.
+            if retain {
+                indices.next();
+            }
+
+            lockfiles_index += 1;
+
+            retain
+        });
+
+        // Return lockfiles if we found at least one and no others were requested.
+        match lockfiles.last().map_or("others", |lockfile| lockfile.as_str()) {
+            "others" => lockfiles.pop(),
+            _ => return Ok(lockfiles),
+        };
     }
 
-    // Prompt for lockfile name if none was selected.
-    Input::new().with_prompt("Project lockfile path").interact_text()
+    // Prompt for additional lockfiles.
+    let prompt = "Other lockfiles (comma separated)";
+    let other_lockfiles: String = Input::new().with_prompt(prompt).interact_text()?;
+
+    // Remove whitespace around lockfiles and add them to our list.
+    for lockfile in other_lockfiles.split(',') {
+        lockfiles.push(lockfile.trim().into());
+    }
+
+    Ok(lockfiles)
 }
 
 /// Ask for the lockfile type.
-fn prompt_lockfile_type() -> io::Result<String> {
+fn prompt_lockfile_type(lockfile: &str) -> io::Result<String> {
     let lockfile_types: Vec<_> = LockfileFormat::iter().map(|format| format.name()).collect();
 
-    let index = FuzzySelect::new()
-        .with_prompt("Select lockfile's type")
-        .items(&lockfile_types)
-        .interact()?;
+    let prompt = format!("Select type for lockfile {lockfile:?}");
+    let index = FuzzySelect::new().with_prompt(prompt).items(&lockfile_types).interact()?;
 
     Ok(lockfile_types[index].to_owned())
 }
