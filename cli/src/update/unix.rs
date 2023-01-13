@@ -119,7 +119,7 @@ fn current_platform() -> anyhow::Result<String> {
         "unsupported"
     };
 
-    let platform = format!("{}-{}", arch, os);
+    let platform = format!("{arch}-{os}");
     if SUPPORTED_PLATFORMS.contains(&platform.as_str()) {
         Ok(platform)
     } else {
@@ -174,7 +174,7 @@ impl ApplicationUpdater {
             Some(x) => Ok(x),
             _ => Err(io::Error::new(
                 io::ErrorKind::Other,
-                format!("Failed to download update file: {}", name),
+                format!("Failed to download update file: {name}"),
             )),
         }
     }
@@ -192,9 +192,9 @@ impl ApplicationUpdater {
 
         // Get the URL for each asset from the Github JSON response in `latest`.
         debug!("Finding the github assets in the Github JSON response");
-        let zip_asset = self.find_github_asset(&latest, &format!("{}.zip", archive_name))?;
+        let zip_asset = self.find_github_asset(&latest, &format!("{archive_name}.zip"))?;
         let sig_asset =
-            self.find_github_asset(&latest, &format!("{}.zip.signature", archive_name))?;
+            self.find_github_asset(&latest, &format!("{archive_name}.zip.signature"))?;
 
         debug!("Downloading the update files");
         let zip = self.download_github_asset(zip_asset).await?;

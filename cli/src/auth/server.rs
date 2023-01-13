@@ -181,7 +181,7 @@ async fn spawn_server_and_get_auth_code(
     let auth_scheme = authorization_url.scheme();
     let fallback_port: u16 = if auth_scheme == "https" { 443 } else { 80 };
     let port = authorization_url.port().unwrap_or(fallback_port);
-    let is_routable = check_if_routable(format!("{}:{}", auth_host, port))?;
+    let is_routable = check_if_routable(format!("{auth_host}:{port}"))?;
     if is_routable && auth_scheme == "http" {
         return Err(anyhow!(
             "Authorization host {} is publically routable, must use https to connect.",
@@ -191,8 +191,7 @@ async fn spawn_server_and_get_auth_code(
 
     println!("Please use browser window to complete login process");
     println!(
-        "If browser window doesn't open, you can use the link below:\n    {}",
-        authorization_url
+        "If browser window doesn't open, you can use the link below:\n    {authorization_url}"
     );
 
     // Open browser pointing at this server's /redirect url

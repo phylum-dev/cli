@@ -116,7 +116,7 @@ impl Spinner {
                     eprint!("{}", ansi::CLEAR_LINE);
                     eprint!("{}", dots.next().unwrap());
                     if let Some(msg) = msg.as_ref() {
-                        eprint!(" {}", msg)
+                        eprint!(" {msg}")
                     }
                     interval.tick().await;
                 },

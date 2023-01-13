@@ -255,7 +255,7 @@ impl PhylumApi {
         let _: IgnoredAny = self
             .delete(endpoints::delete_project(
                 &self.config.connection.uri,
-                &format!("{}", project_id),
+                &format!("{project_id}"),
             )?)
             .await?;
         Ok(())
