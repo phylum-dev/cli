@@ -289,7 +289,7 @@ pub fn lockfiles(
     matches: &clap::ArgMatches,
     project: Option<&ProjectConfig>,
 ) -> Result<Vec<LockfileConfig>> {
-    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
+    let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").unwrap_or(None);
     let cli_lockfile = matches.get_one::<String>("LOCKFILE");
 
     match cli_lockfile {
