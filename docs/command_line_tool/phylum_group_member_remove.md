@@ -31,5 +31,5 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 
 ```sh
 # Remove user `demo@phylum.io` from the `sample` group
-$ phylum group member --group remove demo@phylum.io
+$ phylum group member --group sample remove demo@phylum.io
 ```
