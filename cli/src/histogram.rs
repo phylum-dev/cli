@@ -64,10 +64,10 @@ impl fmt::Display for Histogram {
 
             let bar = "█".repeat(scale(*count));
 
-            let _ = write!(histogram, "\n{:>4} - {:<4} [{:>5}] {}", bar_min, bar_max, count, bar);
+            let _ = write!(histogram, "\n{bar_min:>4} - {bar_max:<4} [{count:>5}] {bar}");
         }
 
         write!(f, "{:^10} {:>8}", "Score", "Count")?;
-        write!(f, "{}", histogram)
+        write!(f, "{histogram}")
     }
 }

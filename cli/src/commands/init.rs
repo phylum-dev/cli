@@ -151,7 +151,6 @@ fn prompt_lockfile(
 fn prompt_lockfile_name() -> io::Result<String> {
     // Find all known lockfiles in the currenty directory.
     let mut lockfiles: Vec<_> = fs::read_dir("./")?
-        .into_iter()
         .flatten()
         .filter(|entry| {
             LockfileFormat::iter().any(|format| format.parser().is_path_lockfile(&entry.path()))

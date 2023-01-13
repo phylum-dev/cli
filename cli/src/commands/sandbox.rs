@@ -18,7 +18,7 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
     // Start subprocess.
     let cmd = matches.get_one::<String>("cmd").unwrap();
     let args: Vec<&String> = matches.get_many("args").unwrap_or_default().collect();
-    let status = Command::new(cmd).args(&args).status()?;
+    let status = Command::new(cmd).args(args).status()?;
 
     if let Some(code) = status.code() {
         Ok(CommandValue::Code(ExitCode::Custom(code)))
