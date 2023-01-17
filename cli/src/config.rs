@@ -115,6 +115,7 @@ pub struct ProjectConfig {
     lockfile_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     lockfile_path: Option<String>,
+    #[serde(default)]
     lockfiles: Vec<LockfileConfig>,
     #[serde(skip)]
     root: PathBuf,
