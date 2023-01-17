@@ -80,6 +80,13 @@ pub(crate) fn group_create(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("groups")?)
 }
 
+/// DELETE /groups/<groupName>
+pub(crate) fn group_delete(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group]);
+    Ok(url)
+}
+
 /// GET /groups/<groupName>/projects
 pub fn group_project_summary(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;

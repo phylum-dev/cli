@@ -13,6 +13,8 @@ use crate::{print_user_failure, print_user_success, print_user_warning};
 pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
         handle_group_create(api, matches).await
+    } else if let Some(matches) = matches.subcommand_matches("delete") {
+        handle_group_delete(api, matches).await
     } else if let Some(matches) = matches.subcommand_matches("transfer") {
         handle_group_transfer(api, matches).await
     } else if let Some(matches) = matches.subcommand_matches("member") {
@@ -44,6 +46,16 @@ pub async fn handle_group_create(api: &mut PhylumApi, matches: &ArgMatches) -> C
         },
         Err(err) => Err(err.into()),
     }
+}
+
+/// Handle `phylum group delete` subcommand.
+pub async fn handle_group_delete(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+    let group_name = matches.get_one::<String>("group_name").unwrap();
+    api.delete_group(group_name).await?;
+
+    print_user_success!("Successfully deleted group {}", group_name);
+
+    Ok(ExitCode::Ok.into())
 }
 
 /// Handle `phylum group list` subcommand.

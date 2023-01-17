@@ -355,6 +355,14 @@ pub fn add_subcommands(command: Command) -> Command {
                     ),
                 )
                 .subcommand(
+                    Command::new("delete").about("Delete a group").arg(
+                        Arg::new("group_name")
+                            .value_name("group_name")
+                            .help("Name for the group to be deleted")
+                            .required(true),
+                    ),
+                )
+                .subcommand(
                     Command::new("member").about("Manage group members").args(&[
                         Arg::new("group")
                             .short('g')
