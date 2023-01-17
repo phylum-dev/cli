@@ -26,7 +26,7 @@ Usage: phylum project list [OPTIONS]
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
 -h, --help
-&emsp; Print help information
+&emsp; Print help
 
 ### Examples
 

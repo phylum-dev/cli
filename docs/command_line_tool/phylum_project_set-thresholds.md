@@ -28,7 +28,7 @@ Usage: phylum project set-thresholds [OPTIONS] <name>
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
 -h, --help
-&emsp; Print help information
+&emsp; Print help
 
 ### Details
 
