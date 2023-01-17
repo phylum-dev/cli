@@ -92,14 +92,31 @@ where
     Ok(Option::<bool>::deserialize(deserializer)?.unwrap_or_default())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LockfileConfig {
+    pub path: PathBuf,
+    #[serde(rename = "type")]
+    pub lockfile_type: String,
+}
+
+impl LockfileConfig {
+    pub fn new(path: impl Into<PathBuf>, lockfile_type: String) -> LockfileConfig {
+        LockfileConfig { path: path.into(), lockfile_type }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectConfig {
     pub id: ProjectId,
     pub name: String,
     pub created_at: DateTime<Local>,
     pub group_name: Option<String>,
-    pub lockfile_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    lockfile_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     lockfile_path: Option<String>,
+    #[serde(default)]
+    lockfiles: Vec<LockfileConfig>,
     #[serde(skip)]
     root: PathBuf,
 }
@@ -114,18 +131,38 @@ impl ProjectConfig {
             created_at: Local::now(),
             lockfile_type: None,
             lockfile_path: None,
+            lockfiles: Default::default(),
         }
     }
 
-    /// Get path to the lockfile.
-    pub fn lockfile_path(&self) -> Option<PathBuf> {
-        self.lockfile_path.as_ref().map(|lockfile| self.root.join(lockfile))
+    /// Get all lockfiles.
+    pub fn lockfiles(&self) -> Vec<LockfileConfig> {
+        // Return new lockfile format if present.
+        if !self.lockfiles.is_empty() {
+            return self
+                .lockfiles
+                .iter()
+                .map(|lockfile| {
+                    let path = self.root.join(&lockfile.path);
+                    LockfileConfig::new(path, lockfile.lockfile_type.clone())
+                })
+                .collect();
+        }
+
+        // Fallback to old format.
+        if let Some((path, lockfile_type)) =
+            self.lockfile_path.as_ref().zip(self.lockfile_type.as_ref())
+        {
+            return vec![LockfileConfig::new(self.root.join(path), lockfile_type.clone())];
+        }
+
+        // Default to no lockfiles.
+        Vec::new()
     }
 
     /// Update the lockfile.
-    pub fn set_lockfile(&mut self, lockfile_type: String, lockfile: String) {
-        self.lockfile_type = Some(lockfile_type);
-        self.lockfile_path = Some(lockfile);
+    pub fn set_lockfile(&mut self, lockfile_type: String, path: String) {
+        self.lockfiles = vec![LockfileConfig::new(path, lockfile_type)];
     }
 }
 
@@ -246,6 +283,29 @@ pub fn get_current_project() -> Option<ProjectConfig> {
         config.root = config_path.parent()?.to_path_buf();
         Some(config)
     })
+}
+
+/// Get lockfiles from CLI, falling back to the current project when missing.
+pub fn lockfiles(
+    matches: &clap::ArgMatches,
+    project: Option<&ProjectConfig>,
+) -> Result<Vec<LockfileConfig>> {
+    let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").unwrap_or(None);
+    let cli_lockfile = matches.get_one::<String>("LOCKFILE");
+
+    match cli_lockfile {
+        Some(cli_lockfile) => {
+            let lockfile_type = cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into());
+            Ok(vec![LockfileConfig::new(cli_lockfile, lockfile_type)])
+        },
+        None => {
+            let lockfiles = project.map(|project| project.lockfiles()).unwrap_or_default();
+            if lockfiles.is_empty() {
+                return Err(anyhow!("Missing lockfile parameter"));
+            }
+            Ok(lockfiles)
+        },
+    }
 }
 
 pub fn get_home_settings_path() -> Result<PathBuf> {
