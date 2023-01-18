@@ -28,13 +28,13 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
 ```sh
-phylum analyze <package-lock-file.ext>
+phylum analyze
 ```
 
 The default response will provide you with a high-level overview of your packages, including the total project score, score distributions across all packages, whether or not this analysis was a pass or fail and the total number of packages still processing.
 
 ```
-$ phylum analyze package-lock.json
+$ phylum analyze
 ✅ Job ID: 3cd30a5b-eeee-4ba1-b8e1-276c61e6502c
 
 
@@ -63,13 +63,13 @@ $ phylum analyze package-lock.json
 You can get more detailed output from the analysis, to include specific issues and their severity, by using the `--verbose` flag:
 
 ```sh
-phylum analyze --verbose <package-lock-file.ext>
+phylum analyze --verbose
 ```
 
 If you prefer JSON formatted output, you can leverage the `--json` flag.
 
 ```sh
-phylum analyze --verbose --json <package-lock-file.ext> > output.json
+phylum analyze --verbose --json > output.json
 ```
 
 If the analysis failed to meet the project's thresholds, the command's exit code will be set to `100`.
