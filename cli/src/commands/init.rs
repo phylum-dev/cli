@@ -121,7 +121,7 @@ fn prompt_lockfile(
     cli_lockfile: Option<&String>,
     cli_lockfile_type: Option<&String>,
 ) -> io::Result<Vec<LockfileConfig>> {
-    let mut lockfiles = match (cli_lockfile.cloned(), cli_lockfile_type) {
+    let lockfiles = match (cli_lockfile.cloned(), cli_lockfile_type) {
         // Do not prompt if name and type were specified on CLI.
         (Some(lockfile), Some(lockfile_type)) => {
             let lockfiles = vec![LockfileConfig::new(lockfile, lockfile_type.into())];
@@ -129,13 +129,13 @@ fn prompt_lockfile(
         },
         // Prompt for type if only lockfile was passed.
         (Some(lockfile), _) => vec![lockfile],
-        // Prompt for lockfile if it wasn't specified.
-        (None, _) => prompt_lockfile_name()?,
+        // Prompt for lockfiles if it wasn't specified.
+        (None, _) => prompt_lockfile_names()?,
     };
 
     // Find lockfile type for each lockfile.
     let mut lockfile_configs = Vec::new();
-    for lockfile in lockfiles.drain(..) {
+    for lockfile in &lockfiles {
         // Try to determine lockfile type from known formats.
         if let Some(format) = LockfileFormat::iter()
             .find(|format| format.parser().is_path_lockfile(Path::new(&lockfile)))
@@ -154,8 +154,8 @@ fn prompt_lockfile(
     Ok(lockfile_configs)
 }
 
-/// Ask for the lockfile name.
-fn prompt_lockfile_name() -> io::Result<Vec<String>> {
+/// Ask for the lockfile names.
+fn prompt_lockfile_names() -> io::Result<Vec<String>> {
     // Find all known lockfiles in the currenty directory.
     let mut lockfiles: Vec<_> = fs::read_dir("./")?
         .flatten()
@@ -165,7 +165,7 @@ fn prompt_lockfile_name() -> io::Result<Vec<String>> {
         .flat_map(|entry| entry.file_name().to_str().map(str::to_owned))
         .collect();
 
-    // Prompt for selection any lockfile was found.
+    // Prompt for selection if any lockfile was found.
     if !lockfiles.is_empty() {
         // Add choice to specify additional unidentified lockfiles.
         lockfiles.push(String::from("others"));
