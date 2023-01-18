@@ -364,10 +364,17 @@ impl PhylumApi {
         self.get(endpoints::group_list(&self.config.connection.uri)?).await
     }
 
-    /// Get all groups the user is part of.
+    /// Create a new group.
     pub async fn create_group(&self, group_name: &str) -> Result<CreateGroupResponse> {
         let group = CreateGroupRequest { group_name: group_name.into() };
         self.post(endpoints::group_create(&self.config.connection.uri)?, group).await
+    }
+
+    /// Delete an existing group.
+    pub async fn delete_group(&self, group_name: &str) -> Result<()> {
+        let url = endpoints::group_delete(&self.config.connection.uri, group_name)?;
+        self.send_request_raw(Method::DELETE, url, None::<()>).await?;
+        Ok(())
     }
 
     /// Get members of a group.

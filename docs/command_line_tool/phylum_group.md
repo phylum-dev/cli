@@ -28,6 +28,7 @@ Usage: phylum group [OPTIONS] [COMMAND]
 
 * [phylum group list](./phylum_group_list)
 * [phylum group create](./phylum_group_create)
+* [phylum group delete](./phylum_group_delete)
 * [phylum group member](./phylum_group_member)
 * [phylum group transfer](./phylum_group_transfer)
 
