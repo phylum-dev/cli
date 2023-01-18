@@ -50,6 +50,49 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
+// List with all of poetry's subcommands.
+const knownSubcommands = [
+  "about",
+  "add",
+  "build",
+  "check",
+  "config",
+  "export",
+  "help",
+  "init",
+  "install",
+  "list",
+  "lock",
+  "new",
+  "publish",
+  "remove",
+  "run",
+  "search",
+  "shell",
+  "show",
+  "update",
+  "version",
+  "cache",
+  "debug",
+  "env",
+  "self",
+  "source",
+];
+
+// Ensure the first argument is a known subcommand.
+//
+// This prevents us from skipping the analysis when an argument is passed before
+// the first subcommand (i.e.: `poetry --no-color add package`).
+const subcommand = Deno.args[0];
+if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+  console.error(
+    `[${
+      red("phylum")
+    }] This extension does not support arguments before the first subcommand. Please open an issue if "${subcommand}" is not an argument.`,
+  );
+  Deno.exit(125);
+}
+
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
