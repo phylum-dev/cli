@@ -146,7 +146,7 @@ fn prompt_lockfile(
         }
 
         // Prompt for lockfile type.
-        let lockfile_type = prompt_lockfile_type(&lockfile)?;
+        let lockfile_type = prompt_lockfile_type(lockfile)?;
 
         lockfile_configs.push(LockfileConfig::new(lockfile, lockfile_type));
     }
