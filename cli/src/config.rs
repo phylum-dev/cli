@@ -161,8 +161,8 @@ impl ProjectConfig {
     }
 
     /// Update the lockfile.
-    pub fn set_lockfile(&mut self, lockfile_type: String, path: String) {
-        self.lockfiles = vec![LockfileConfig::new(path, lockfile_type)];
+    pub fn set_lockfiles(&mut self, lockfiles: Vec<LockfileConfig>) {
+        self.lockfiles = lockfiles;
     }
 }
 
