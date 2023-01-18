@@ -25,7 +25,7 @@ The Phylum CLI natively supports processing the lock/requirements files for seve
 * Cargo
     * `Cargo.lock`
 
-After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_project) , you can begin analysis by running:
+After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
 ```sh
 phylum analyze <package-lock-file.ext>
