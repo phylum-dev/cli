@@ -50,16 +50,16 @@ brew install phylum
    phylum auth login
    ```
 
-1. [Create a new Phylum project](https://docs.phylum.io/docs/phylum_project_create) in your project directory
+1. [Setup your Phylum project](https://docs.phylum.io/docs/phylum_init) in your project directory
 
    ```
-   phylum project create <project-name>
+   phylum init
    ```
 
 1. [Submit your package lock file](https://docs.phylum.io/docs/phylum_analyze)
 
    ```
-   phylum analyze <package-lock-file.ext>
+   phylum analyze
    ```
 
 1. (Optional) View the analysis results in the [Phylum UI](https://app.phylum.io/auth/login)

@@ -5,8 +5,8 @@
 ### Examples
 
 ```sh
-# Analyze an npm lock file
-$ phylum analyze package-lock.json
+# Analyze your project's default lockfile
+$ phylum analyze
 
 # Analyze a Maven lock file with a verbose json response
 $ phylum analyze --json --verbose effective-pom.xml
