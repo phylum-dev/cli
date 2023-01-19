@@ -2,7 +2,7 @@ use std::result::Result as StdResult;
 
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
-use nom::character::complete::{line_ending, satisfy, space0};
+use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
 use nom::combinator::recognize;
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
@@ -222,12 +222,17 @@ fn package(input: &str) -> StdResult<Option<SpecsPackage>, NomErr<VerboseError<&
 
 fn package_name(input: &str) -> Result<&str, &str> {
     let (input, _) = recognize(space0)(input)?;
-    recognize(take_until(" "))(input)
+    recognize(alt((take_until(" "), not_line_ending)))(input)
 }
 
 /// Parser allowing for loose `(>= 1.2.0, < 2.0, != 1.2.3)` and strict
 /// `(1.2.3-alpha+build3)` versions.
 fn loose_package_version(input: &str) -> Result<&str, &str> {
+    // Versions can be completely omitted for sub-dependencies.
+    if input.is_empty() {
+        return Ok(("", ""));
+    }
+
     let (input, _) = space0(input)?;
     delimited(
         tag("("),
