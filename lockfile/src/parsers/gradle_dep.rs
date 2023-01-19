@@ -37,7 +37,7 @@ fn package(input: &str) -> StdResult<Package, nom::Err<VerboseError<&str>>> {
     let _ = alt((tag("="), eof))(input)?;
 
     Ok(Package {
-        name: format!("{}:{}", group_id, artifact_id),
+        name: format!("{group_id}:{artifact_id}"),
         version: PackageVersion::FirstParty(version.to_string()),
     })
 }

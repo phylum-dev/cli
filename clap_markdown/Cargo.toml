@@ -1,7 +1,7 @@
 [package]
 name = "clap_markdown"
 description = "Markdown documentation generator for clap"
-repository = "https://github.com/phylum-dev/clap-markdown"
+repository = "https://github.com/phylum-dev/cli"
 categories = ["command-line-interface"]
 keywords = ["clap", "cli", "generate", "markdown"]
 license = "GPL-3.0-or-later"

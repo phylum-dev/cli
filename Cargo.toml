@@ -5,4 +5,5 @@ members = [
   "lockfile",
   "xtask",
   "clap_markdown",
+  "phylum_project",
 ]

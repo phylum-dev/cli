@@ -4,6 +4,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Result};
 use console::style;
 use log::LevelFilter;
+use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::job::{Action, JobStatusResponse};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -11,10 +12,9 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError};
 use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
-use crate::config::{self, LockfileConfig};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
-use crate::{print_user_success, print_user_warning};
+use crate::{config, print_user_success, print_user_warning};
 
 fn handle_status<T>(
     resp: Result<JobStatusResponse<T>, PhylumApiError>,
@@ -231,7 +231,7 @@ impl JobsProject {
     /// Assumes that the clap `matches` has a `project` and `group` arguments
     /// option.
     async fn new(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
-        let current_project = config::get_current_project();
+        let current_project = phylum_project::get_current_project();
         let lockfiles = config::lockfiles(matches, current_project.as_ref())?;
 
         match matches.get_one::<String>("project") {

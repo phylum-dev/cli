@@ -7,17 +7,17 @@ use anyhow::Context;
 use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
+use phylum_project::{LockfileConfig, PROJ_CONF_FILE};
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
-use crate::config::{self, LockfileConfig, PROJ_CONF_FILE};
-use crate::{print_user_success, print_user_warning};
+use crate::{config, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
     // Prompt for confirmation if a linked project is already in this directory.
-    if !matches.get_flag("force") && config::find_project_conf(".", false).is_some() {
+    if !matches.get_flag("force") && phylum_project::find_project_conf(".", false).is_some() {
         print_user_warning!("Workspace is already linked to a Phylum project");
         let should_continue = Confirm::new()
             .with_prompt("Overwrite existing project configuration?")

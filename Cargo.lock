@@ -3147,6 +3147,7 @@ dependencies = [
  "once_cell",
  "open",
  "phylum_lockfile",
+ "phylum_project",
  "phylum_types",
  "predicates",
  "prettytable-rs",
@@ -3185,6 +3186,17 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "toml",
+]
+
+[[package]]
+name = "phylum_project"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "log",
+ "phylum_types",
+ "serde",
+ "serde_yaml",
 ]
 
 [[package]]

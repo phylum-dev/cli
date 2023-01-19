@@ -77,7 +77,7 @@ impl Parse for Cargo {
                 } else if source.starts_with("git+") {
                     PackageVersion::Git(source)
                 } else {
-                    return Err(anyhow!(format!("Unknown cargo package source: {:?}", source)));
+                    return Err(anyhow!(format!("Unknown cargo package source: {source:?}")));
                 };
 
                 Ok(Package { name: package.name, version })
