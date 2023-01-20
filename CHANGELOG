@@ -1,3 +1,4 @@
+* 4.4.0 - group delete subcommand; multi-lockfile support in init; bug fixes
 * 4.3.0 - Fix sandbox executable path resolution
 * 4.2.0 - Single package submit
 * 4.1.0 - Group transfer; Extension REST API access
