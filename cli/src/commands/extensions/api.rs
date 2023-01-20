@@ -16,6 +16,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
+use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
@@ -33,7 +34,6 @@ use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
-use crate::config::{self, ProjectConfig};
 #[cfg(unix)]
 use crate::dirs;
 
@@ -159,7 +159,7 @@ async fn analyze(
     let (project, group) = match (project, group) {
         (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
         (None, _) => {
-            if let Some(p) = config::get_current_project() {
+            if let Some(p) = phylum_project::get_current_project() {
                 (p.id, p.group_name)
             } else {
                 return Err(anyhow!("Failed to find a valid project configuration"));
@@ -245,7 +245,7 @@ async fn get_job_status(
 /// Show the user's currently linked project.
 #[op]
 fn get_current_project() -> Option<ProjectConfig> {
-    config::get_current_project()
+    phylum_project::get_current_project()
 }
 
 /// List all of the user's/group's project.

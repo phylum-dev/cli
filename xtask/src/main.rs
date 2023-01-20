@@ -141,7 +141,7 @@ mod cli_args_test {
         let workdir = project_root().join("target").join("tmp").join("test-project");
         let mut args = vec!["run", "--quiet", "--bin", "phylum", "--"];
         args.extend(phylum_args);
-        let status = Command::new("cargo").current_dir(&workdir).args(&args).status()?;
+        let status = Command::new("cargo").current_dir(workdir).args(&args).status()?;
 
         if !status.success() {
             Err(Error::msg("cargo run failed"))

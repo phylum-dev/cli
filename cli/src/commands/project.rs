@@ -3,11 +3,12 @@ use std::result::Result as StdResult;
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
+use phylum_project::{ProjectConfig, PROJ_CONF_FILE};
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{CommandResult, ExitCode};
-use crate::config::{get_current_project, save_config, ProjectConfig, PROJ_CONF_FILE};
+use crate::config::save_config;
 use crate::format::Format;
 use crate::prompt::prompt_threshold;
 use crate::{print_user_failure, print_user_success};
@@ -85,8 +86,11 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             matches.get_one::<String>("name").cloned().unwrap_or_else(|| String::from("current"));
         let group_name = matches.get_one::<String>("group");
 
-        let proj =
-            if project_name == "current" { get_current_project().map(|p| p.name) } else { None };
+        let proj = if project_name == "current" {
+            phylum_project::get_current_project().map(|p| p.name)
+        } else {
+            None
+        };
 
         project_name = proj.unwrap_or(project_name);
         log::debug!("Setting thresholds for project `{}`", project_name);
