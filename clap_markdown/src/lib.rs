@@ -103,7 +103,7 @@ impl Markdown {
             let name = cmd.get_name();
             let human_path = format!("{} {name}", parents.join(" "));
             let link_path = format!("{}_{name}", parents.join("_"));
-            let _ = writeln!(markdown, "* [{}](./{})", human_path, link_path);
+            let _ = writeln!(markdown, "* [{human_path}](./{link_path})");
         }
 
         Self { command: parents, content: markdown }

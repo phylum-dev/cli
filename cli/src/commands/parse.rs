@@ -31,7 +31,7 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let lockfiles = config::lockfiles(matches, config::get_current_project().as_ref())?;
+    let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptor> = Vec::new();
 
