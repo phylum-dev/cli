@@ -150,14 +150,35 @@ async function poetryCheckDryRun(
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   const status = PhylumApi.runSandboxed({
-      cmd: "poetry",
-      args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
-      exceptions: {
-          run: ["./", "/bin", "/usr/bin", "~/.pyenv", "~/.local/bin/poetry", "~/Library/Application Support/pypoetry", "~/.local/share/pypoetry"],
-          write: ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv"],
-          read: ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv", "~/Library/Preferences/pypoetry", "~/.config/pypoetry", "/etc/passwd"],
-          net: true,
-      },
+    cmd: "poetry",
+    args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
+    exceptions: {
+      run: [
+        "./",
+        "/bin",
+        "/usr/bin",
+        "~/.pyenv",
+        "~/.local/bin/poetry",
+        "~/Library/Application Support/pypoetry",
+        "~/.local/share/pypoetry",
+      ],
+      write: [
+        "./",
+        "~/.cache/pypoetry",
+        "~/Library/Caches/pypoetry",
+        "~/.pyenv",
+      ],
+      read: [
+        "./",
+        "~/.cache/pypoetry",
+        "~/Library/Caches/pypoetry",
+        "~/.pyenv",
+        "~/Library/Preferences/pypoetry",
+        "~/.config/pypoetry",
+        "/etc/passwd",
+      ],
+      net: true,
+    },
   });
 
   // Ensure dry-run update was successful.
