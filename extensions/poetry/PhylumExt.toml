@@ -3,8 +3,8 @@ description = "Poetry package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-run = ["poetry", "python", "python3"]
-read = true
-write = ["./", "~/.cache/pypoetry", "~/.local/share/virtualenv", "~/Library/Caches/pypoetry"]
+run = ["./", "/bin", "/usr/bin", "~/.pyenv", "~/.local/bin/poetry", "~/Library/Application Support/pypoetry", "~/.local/share/pypoetry"]
+write = ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv"]
+read = ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv", "~/Library/Preferences/pypoetry", "~/.config/pypoetry", "/etc/passwd"]
 net = true
 unsandboxed_run = ["poetry"]

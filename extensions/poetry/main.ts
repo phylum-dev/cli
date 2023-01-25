@@ -104,7 +104,6 @@ if (
 }
 
 // Ensure we're in a poetry root directory.
-// Ensure we're in a yarn root directory.
 const root = await findRoot("pyproject.toml");
 if (!root) {
   console.error(`[${red("phylum")}] unable to find poetry project root.`);
@@ -138,6 +137,11 @@ if (analysisOutcome !== 0) {
   Deno.exit(analysisOutcome);
 }
 
+// Execute install without sandboxing after successful analysis.
+const cmd = Deno.run({ cmd: ["poetry", ...Deno.args] });
+const status = await cmd.status();
+Deno.exit(status.code);
+
 // Analyze new packages.
 async function poetryCheckDryRun(
   subcommand: string,
@@ -146,19 +150,14 @@ async function poetryCheckDryRun(
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   const status = PhylumApi.runSandboxed({
-    cmd: "poetry",
-    args: [subcommand, "-n", ...args.map((s) => s.toString())],
-    exceptions: {
-      read: true,
-      write: [
-        "./",
-        "~/.local/share/virtualenv",
-        "~/.cache/pypoetry",
-        "~/Library/Caches/pypoetry",
-      ],
-      run: ["poetry", "python", "python3"],
-      net: true,
-    },
+      cmd: "poetry",
+      args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
+      exceptions: {
+          run: ["./", "/bin", "/usr/bin", "~/.pyenv", "~/.local/bin/poetry", "~/Library/Application Support/pypoetry", "~/.local/share/pypoetry"],
+          write: ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv"],
+          read: ["./", "~/.cache/pypoetry", "~/Library/Caches/pypoetry", "~/.pyenv", "~/Library/Preferences/pypoetry", "~/.config/pypoetry", "/etc/passwd"],
+          net: true,
+      },
   });
 
   // Ensure dry-run update was successful.
