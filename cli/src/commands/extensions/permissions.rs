@@ -283,9 +283,6 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/opt/homebrew".into()))?;
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/local".into()))?;
 
-    // Allow `env` exec to resolve binary paths.
-    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
-
     // Allow access to DNS list.
     //
     // While this is required to send DNS requests for network queries, this does
@@ -295,6 +292,12 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     // Allow reading SSL certificates.
     add_exception(&mut birdcage, Exception::Read("/etc/ca-certificates".into()))?;
     add_exception(&mut birdcage, Exception::Read("/etc/ssl".into()))?;
+
+    // Allow `env` exec to resolve binary paths.
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
+
+    // Allow write access to null-sink.
+    add_exception(&mut birdcage, Exception::Write("/dev/null".into()))?;
 
     // Allow applications to read from `$PATH`.
     birdcage.add_exception(Exception::Environment("PATH".into()))?;
