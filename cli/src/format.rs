@@ -312,16 +312,31 @@ fn response_to_table<T>(resp: &JobStatusResponse<T>) -> Table
 where
     T: Scored,
 {
-    let ecosystem = PackageType::from_str(&resp.ecosystem).unwrap_or(PackageType::Npm);
-    let ecosystem_label = match ecosystem {
-        PackageType::Npm => "NPM",
-        PackageType::RubyGems => "RubyGems",
-        PackageType::PyPi => "PyPI",
-        PackageType::Maven => "Maven",
-        PackageType::Nuget => "NuGet",
-        PackageType::Golang => "Golang",
-        PackageType::Cargo => "Cargo",
-    };
+    // Combine all ecosystems into a comma-separated string.
+    let ecosystems = resp
+        .ecosystems
+        .iter()
+        .flat_map(|ecosystem| {
+            Some(match PackageType::from_str(ecosystem).ok()? {
+                PackageType::Npm => "NPM",
+                PackageType::RubyGems => "RubyGems",
+                PackageType::PyPi => "PyPI",
+                PackageType::Maven => "Maven",
+                PackageType::Nuget => "NuGet",
+                PackageType::Golang => "Golang",
+                PackageType::Cargo => "Cargo",
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut ecosystems_value = ecosystems.join(", ");
+
+    // Add fallback if no ecosystem could be identified.
+    if ecosystems_value.is_empty() {
+        ecosystems_value = "Unknown".into();
+    }
+
+    // Perform correct pluralization for ecosystems title.
+    let ecosystems_title = if ecosystems.len() >= 2 { "Ecosystems" } else { "Ecosystem" };
 
     let date_time =
         NaiveDateTime::from_timestamp_opt(resp.created_at / 1000, 0).unwrap_or_default();
@@ -344,7 +359,7 @@ where
     let mut summary = details.iter().fold("".to_string(), |acc, x| {
         format!("{}\n{:>16}: {:<36} {:>24}: {:<36}", acc, x.0, x.1, x.2, x.3)
     });
-    summary = format!("{}\n{:>16}: {}", summary, "Ecosystem", ecosystem_label);
+    summary = format!("{summary}\n{ecosystems_title:>16}: {ecosystems_value}");
 
     let status = if resp.num_incomplete > 0 {
         format!("{:>16}: {}", "Status", style("INCOMPLETE").yellow())
