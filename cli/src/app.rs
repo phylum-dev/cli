@@ -231,20 +231,22 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse a lockfile and output its packages as JSON").args(&[
-                Arg::new("lockfile")
-                    .value_name("LOCKFILE")
-                    .value_hint(ValueHint::FilePath)
-                    .help("The package lock file to submit.")
-                    .action(ArgAction::Append),
-                Arg::new("lockfile-type")
-                    .short('t')
-                    .long("lockfile-type")
-                    .value_name("type")
-                    .requires("lockfile")
-                    .help("Lock file type used for all lock files (default: auto)")
-                    .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-            ]),
+            Command::new("parse")
+                .about("Parse lock files and output their packages as JSON")
+                .args(&[
+                    Arg::new("lockfile")
+                        .value_name("LOCKFILE")
+                        .value_hint(ValueHint::FilePath)
+                        .help("The package lock files to submit")
+                        .action(ArgAction::Append),
+                    Arg::new("lockfile-type")
+                        .short('t')
+                        .long("lockfile-type")
+                        .value_name("type")
+                        .requires("lockfile")
+                        .help("Lock file type used for all lock files (default: auto)")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                ]),
         )
         .subcommand(
             Command::new("analyze")
@@ -279,7 +281,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("lockfile")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock file to submit.")
+                        .help("The package lock files to submit")
                         .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
@@ -447,7 +449,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('l')
                         .long("lockfile")
                         .value_name("LOCKFILE")
-                        .help("Project lockfile name")
+                        .help("Project-relative lock file path")
                         .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
