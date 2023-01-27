@@ -241,7 +241,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('t')
                     .long("lockfile-type")
                     .value_name("type")
-                    .requires("LOCKFILE")
+                    .requires("lockfile")
                     .help("The type of the lock files (default: auto)")
                     .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
             ]),
@@ -285,7 +285,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
-                        .requires("LOCKFILE")
+                        .requires("lockfile")
                         .help("The type of the lock files (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 ]),
@@ -453,7 +453,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
-                        .requires("LOCKFILE")
+                        .requires("lockfile")
                         .help("The type of the lock files (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                     Arg::new("force")
