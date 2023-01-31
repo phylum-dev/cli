@@ -147,44 +147,49 @@ async function poetryCheckDryRun(
   subcommand: string,
   args: string[],
 ): Promise<number> {
-  console.log(`[${green("phylum")}] Updating lockfile…`);
+  // Skip lockfile update on install, since it doesn't have the `--lock` flag.
+  if (subcommand !== "install") {
+    console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  const status = PhylumApi.runSandboxed({
-    cmd: "poetry",
-    args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
-    exceptions: {
-      run: [
-        "./",
-        "/bin",
-        "/usr/bin",
-        "~/.pyenv",
-        "~/.local/bin/poetry",
-        "~/Library/Application Support/pypoetry",
-        "~/.local/share/pypoetry",
-      ],
-      write: [
-        "./",
-        "~/.cache/pypoetry",
-        "~/Library/Caches/pypoetry",
-        "~/.pyenv",
-      ],
-      read: [
-        "./",
-        "~/.cache/pypoetry",
-        "~/Library/Caches/pypoetry",
-        "~/.pyenv",
-        "~/Library/Preferences/pypoetry",
-        "~/.config/pypoetry",
-        "/etc/passwd",
-      ],
-      net: true,
-    },
-  });
+    const status = PhylumApi.runSandboxed({
+      cmd: "poetry",
+      args: [subcommand, "-n", "--lock", ...args.map((s) => s.toString())],
+      exceptions: {
+        run: [
+          "./",
+          "/bin",
+          "/usr/bin",
+          "~/.pyenv",
+          "~/.local/bin/poetry",
+          "~/Library/Application Support/pypoetry",
+          "~/.local/share/pypoetry",
+        ],
+        write: [
+          "./",
+          "~/.cache/pypoetry",
+          "~/Library/Caches/pypoetry",
+          "~/.pyenv",
+        ],
+        read: [
+          "./",
+          "~/.cache/pypoetry",
+          "~/Library/Caches/pypoetry",
+          "~/.pyenv",
+          "~/Library/Preferences/pypoetry",
+          "~/.config/pypoetry",
+          "/etc/passwd",
+        ],
+        net: true,
+      },
+    });
 
-  // Ensure dry-run update was successful.
-  if (!status.success) {
-    console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-    await abort(status.code ?? 255);
+    // Ensure dry-run update was successful.
+    if (!status.success) {
+      console.error(`[${red("phylum")}] Lockfile update failed.\n`);
+      await abort(status.code ?? 255);
+    }
+
+    console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   }
 
   const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
@@ -193,7 +198,6 @@ async function poetryCheckDryRun(
   // regardless of success.
   await restoreBackup();
 
-  console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
 
   if (lockfileData.packages.length === 0) {
