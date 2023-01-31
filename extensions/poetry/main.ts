@@ -188,6 +188,8 @@ async function poetryCheckDryRun(
       console.error(`[${red("phylum")}] Lockfile update failed.\n`);
       await abort(status.code ?? 255);
     }
+
+    console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   }
 
   const lockfileData = await PhylumApi.parseLockfile("./poetry.lock", "poetry");
@@ -196,7 +198,6 @@ async function poetryCheckDryRun(
   // regardless of success.
   await restoreBackup();
 
-  console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
 
   if (lockfileData.packages.length === 0) {
