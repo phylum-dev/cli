@@ -231,19 +231,22 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse a lockfile and output its packages as JSON").args(&[
-                Arg::new("LOCKFILE")
-                    .value_name("LOCKFILE")
-                    .value_hint(ValueHint::FilePath)
-                    .help("The package lock file to submit."),
-                Arg::new("lockfile-type")
-                    .short('t')
-                    .long("lockfile-type")
-                    .value_name("type")
-                    .requires("LOCKFILE")
-                    .help("The type of the lock file (default: auto)")
-                    .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-            ]),
+            Command::new("parse")
+                .about("Parse lock files and output their packages as JSON")
+                .args(&[
+                    Arg::new("lockfile")
+                        .value_name("LOCKFILE")
+                        .value_hint(ValueHint::FilePath)
+                        .help("The package lock files to submit")
+                        .action(ArgAction::Append),
+                    Arg::new("lockfile-type")
+                        .short('t')
+                        .long("lockfile-type")
+                        .value_name("type")
+                        .requires("lockfile")
+                        .help("Lock file type used for all lock files (default: auto)")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                ]),
         )
         .subcommand(
             Command::new("analyze")
@@ -275,16 +278,17 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("group_name")
                         .help("Specify a group to use for analysis")
                         .requires("project"),
-                    Arg::new("LOCKFILE")
+                    Arg::new("lockfile")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock file to submit."),
+                        .help("The package lock files to submit")
+                        .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
-                        .requires("LOCKFILE")
-                        .help("The type of the lock file (default: auto)")
+                        .requires("lockfile")
+                        .help("Lock file type used for all lock files (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 ]),
         )
@@ -445,14 +449,15 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('l')
                         .long("lockfile")
                         .value_name("LOCKFILE")
-                        .help("Project lockfile name"),
+                        .help("Project-relative lock file path")
+                        .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
-                        .value_name("LOCKFILE_TYPE")
+                        .value_name("type")
                         .requires("lockfile")
-                        .help("Project lockfile type")
-                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(false))),
+                        .help("Lock file type used for all lock files (default: auto)")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                     Arg::new("force")
                         .short('f')
                         .long("force")
