@@ -4,6 +4,7 @@ use std::path::Path;
 use std::{env, fs, io};
 
 use anyhow::Context;
+use clap::parser::ValuesRef;
 use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
@@ -32,7 +33,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     }
 
     let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
-    let cli_lockfile = matches.get_one::<String>("lockfile");
+    let cli_lockfiles = matches.get_many::<String>("lockfile");
     let cli_project = matches.get_one::<String>("project");
     let cli_group = matches.get_one::<String>("group");
 
@@ -41,7 +42,7 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
 
     // Interactively prompt for missing lockfile information.
     println!();
-    let lockfiles = prompt_lockfile(cli_lockfile, cli_lockfile_type)?;
+    let lockfiles = prompt_lockfiles(cli_lockfiles, cli_lockfile_type)?;
 
     // Attempt to create the project.
     println!();
@@ -117,38 +118,34 @@ fn prompt_group() -> io::Result<Option<String>> {
 }
 
 /// Interactively ask for missing lockfile information.
-fn prompt_lockfile(
-    cli_lockfile: Option<&String>,
+fn prompt_lockfiles(
+    cli_lockfiles: Option<ValuesRef<'_, String>>,
     cli_lockfile_type: Option<&String>,
 ) -> io::Result<Vec<LockfileConfig>> {
-    let lockfiles = match (cli_lockfile.cloned(), cli_lockfile_type) {
-        // Do not prompt if name and type were specified on CLI.
-        (Some(lockfile), Some(lockfile_type)) => {
-            let lockfiles = vec![LockfileConfig::new(lockfile, lockfile_type.into())];
-            return Ok(lockfiles);
-        },
-        // Prompt for type if only lockfile was passed.
-        (Some(lockfile), _) => vec![lockfile],
-        // Prompt for lockfiles if it wasn't specified.
-        (None, _) => prompt_lockfile_names()?,
+    // Prompt for lockfiles if they weren't specified.
+    let lockfiles = match cli_lockfiles {
+        Some(lockfiles) => lockfiles.cloned().collect(),
+        None => prompt_lockfile_names()?,
     };
 
     // Find lockfile type for each lockfile.
     let mut lockfile_configs = Vec::new();
     for lockfile in &lockfiles {
-        // Try to determine lockfile type from known formats.
-        if let Some(format) = LockfileFormat::iter()
+        let config = if let Some(cli_lockfile_type) = cli_lockfile_type {
+            // Use CLI lockfile type if specified.
+            LockfileConfig::new(lockfile, cli_lockfile_type.into())
+        } else if let Some(format) = LockfileFormat::iter()
             .find(|format| format.parser().is_path_lockfile(Path::new(&lockfile)))
         {
+            // Try to determine lockfile type from known formats.
             let lockfile_type = format.name().to_owned();
-            lockfile_configs.push(LockfileConfig::new(lockfile, lockfile_type));
-            continue;
-        }
-
-        // Prompt for lockfile type.
-        let lockfile_type = prompt_lockfile_type(lockfile)?;
-
-        lockfile_configs.push(LockfileConfig::new(lockfile, lockfile_type));
+            LockfileConfig::new(lockfile, lockfile_type)
+        } else {
+            // Prompt for lockfile type.
+            let lockfile_type = prompt_lockfile_type(lockfile)?;
+            LockfileConfig::new(lockfile, lockfile_type)
+        };
+        lockfile_configs.push(config)
     }
 
     Ok(lockfile_configs)

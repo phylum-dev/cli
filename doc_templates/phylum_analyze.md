@@ -22,4 +22,7 @@ $ phylum analyze -p sample -g sGroup app.csproj
 
 # Analyze a RubyGems lock file and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock
+
+# Analyze the `Cargo.lock` and `lockfile` files as cargo lockfiles
+$ phylum analyze --lockfile-type cargo Cargo.lock lockfile
 ```

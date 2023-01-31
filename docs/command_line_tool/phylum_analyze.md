@@ -7,13 +7,13 @@ hidden: false
 Submit a request for analysis to the processing system
 
 ```sh
-Usage: phylum analyze [OPTIONS] [LOCKFILE]
+Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 ```
 
 ### Arguments
 
 [LOCKFILE]
-&emsp; The package lock file to submit.
+&emsp; The package lock files to submit
 
 ### Options
 
@@ -44,7 +44,7 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]
 &emsp; Specify a group to use for analysis
 
 -t, --lockfile-type <type>
-&emsp; The type of the lock file (default: auto)
+&emsp; Lock file type used for all lock files (default: auto)
 &emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
 
 -v, --verbose...
@@ -76,4 +76,7 @@ $ phylum analyze -p sample -g sGroup app.csproj
 
 # Analyze a RubyGems lock file and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock
+
+# Analyze the `Cargo.lock` and `lockfile` files as cargo lockfiles
+$ phylum analyze --lockfile-type cargo Cargo.lock lockfile
 ```
