@@ -21,11 +21,11 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 &emsp; Group which will be the owner of the project
 
 -l, --lockfile <LOCKFILE>
-&emsp; Project lockfile name
+&emsp; Project-relative lock file path
 
--t, --lockfile-type <LOCKFILE_TYPE>
-&emsp; Project lockfile type
-&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`
+-t, --lockfile-type <type>
+&emsp; Lock file type used for all lock files (default: auto)
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
 
 -f, --force
 &emsp; Overwrite existing configurations without confirmation
