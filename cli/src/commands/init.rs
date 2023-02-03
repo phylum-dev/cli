@@ -98,13 +98,29 @@ fn prompt_project_name() -> io::Result<String> {
     let default_name = current_dir.file_name().and_then(|name| name.to_str());
 
     let mut prompt = Input::new();
-    prompt.with_prompt("Project Name");
 
-    if let Some(default_name) = default_name {
-        prompt.default(default_name.to_owned());
+    // Suggest default if we found a directory name.
+    //
+    // NOTE: We don't use dialoguer's built-in default here so we can add a more
+    // explicit `default` label.
+    match default_name {
+        Some(default_name) => {
+            prompt.with_prompt(format!("Project Name [default: {default_name}]"));
+            prompt.allow_empty(true);
+        },
+        None => {
+            let _ = prompt.with_prompt("Project Name");
+        },
+    };
+
+    let mut name: String = prompt.interact_text()?;
+
+    // Fallback to project name for empty strings.
+    if name.is_empty() {
+        name = default_name.expect("illegal empty project name").into();
     }
 
-    prompt.interact_text()
+    Ok(name)
 }
 
 /// Ask for the desired group.
@@ -163,13 +179,14 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
         .collect();
 
     // Prompt for selection if any lockfile was found.
-    if !lockfiles.is_empty() {
+    let prompt_lockfiles = !lockfiles.is_empty();
+    if prompt_lockfiles {
         // Add choice to specify additional unidentified lockfiles.
         lockfiles.push(String::from("others"));
 
         // Ask user for lockfiles.
         let indices = MultiSelect::new()
-            .with_prompt("Select your project's lockfile")
+            .with_prompt("[SPACE] Select  [ENTER] Confirm\nSelect your project's lockfile")
             .items(&lockfiles)
             .interact()?;
 
@@ -197,13 +214,30 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
         };
     }
 
+    println!();
+
+    // Construct dialoguer freetext prompt.
+    let mut input = Input::new();
+    if prompt_lockfiles {
+        input.with_prompt("Other lockfile(s) (comma separated paths)");
+    } else {
+        input.with_prompt(
+            "No known lockfiles found in the current directory.\nLockfile(s) (comma separated \
+             paths)",
+        );
+    };
+
+    // Allow empty as escape hatch if people already selected a valid lockfile.
+    input.allow_empty(!lockfiles.is_empty());
+
     // Prompt for additional lockfiles.
-    let prompt = "Other lockfiles (comma separated)";
-    let other_lockfiles: String = Input::new().with_prompt(prompt).interact_text()?;
+    let other_lockfiles: String = input.interact_text()?;
 
     // Remove whitespace around lockfiles and add them to our list.
-    for lockfile in other_lockfiles.split(',') {
-        lockfiles.push(lockfile.trim().into());
+    for lockfile in
+        other_lockfiles.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
+    {
+        lockfiles.push(lockfile.into());
     }
 
     Ok(lockfiles)
@@ -213,7 +247,9 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
 fn prompt_lockfile_type(lockfile: &str) -> io::Result<String> {
     let lockfile_types: Vec<_> = LockfileFormat::iter().map(|format| format.name()).collect();
 
-    let prompt = format!("Select type for lockfile {lockfile:?}");
+    println!();
+
+    let prompt = format!("[ENTER] Select and Confirm\nSelect type for lockfile {lockfile:?}");
     let index = FuzzySelect::new().with_prompt(prompt).items(&lockfile_types).interact()?;
 
     Ok(lockfile_types[index].to_owned())
