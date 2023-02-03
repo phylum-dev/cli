@@ -159,7 +159,7 @@ async fn handle_commands() -> CommandResult {
         "analyze" | "batch" => {
             jobs::handle_submission(&mut Spinner::wrap(api).await?, &matches).await
         },
-        "init" => init::handle_init(&mut Spinner::wrap(api).await?, sub_matches).await,
+        "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => uninstall::handle_uninstall(sub_matches),

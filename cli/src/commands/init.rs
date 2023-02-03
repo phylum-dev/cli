@@ -1,7 +1,7 @@
 //! Subcommand `phylum init`.
 
 use std::path::Path;
-use std::{env, fs, io};
+use std::{env, fs, io, iter};
 
 use anyhow::Context;
 use clap::parser::ValuesRef;
@@ -9,6 +9,7 @@ use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
 use phylum_project::{LockfileConfig, PROJ_CONF_FILE};
+use phylum_types::types::group::UserGroup;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
@@ -16,7 +17,7 @@ use crate::commands::{project, CommandResult, ExitCode};
 use crate::{config, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
-pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     // Prompt for confirmation if a linked project is already in this directory.
     if !matches.get_flag("force") && phylum_project::find_project_conf(".", false).is_some() {
         print_user_warning!("Workspace is already linked to a Phylum project");
@@ -37,8 +38,11 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
     let cli_project = matches.get_one::<String>("project");
     let cli_group = matches.get_one::<String>("group");
 
+    // Get available groups from API.
+    let groups = api.get_groups_list().await?.groups;
+
     // Interactively prompt for missing project information.
-    let (project, group) = prompt_project(cli_project, cli_group)?;
+    let (project, group) = prompt_project(&groups, cli_project, cli_group).await?;
 
     // Interactively prompt for missing lockfile information.
     println!();
@@ -71,10 +75,11 @@ pub async fn handle_init(api: &mut PhylumApi, matches: &ArgMatches) -> CommandRe
 }
 
 /// Interactively ask for missing project information.
-fn prompt_project(
+async fn prompt_project(
+    groups: &[UserGroup],
     cli_project: Option<&String>,
     cli_group: Option<&String>,
-) -> io::Result<(String, Option<String>)> {
+) -> anyhow::Result<(String, Option<String>)> {
     if let Some(project) = cli_project {
         return Ok((project.clone(), cli_group.cloned()));
     }
@@ -85,7 +90,7 @@ fn prompt_project(
     // Prompt for group name.
     let group = match cli_group {
         Some(group) => Some(group.clone()),
-        None => prompt_group()?,
+        None => prompt_group(groups).await?,
     };
 
     Ok((project, group))
@@ -124,13 +129,27 @@ fn prompt_project_name() -> io::Result<String> {
 }
 
 /// Ask for the desired group.
-fn prompt_group() -> io::Result<Option<String>> {
-    let group: String = Input::new()
-        .with_prompt("Project Group [default: no group]")
-        .allow_empty(true)
-        .interact_text()?;
+async fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
+    // Skip group selection if user has none.
+    if groups.is_empty() {
+        return Ok(None);
+    }
 
-    Ok((!group.is_empty()).then_some(group))
+    // Map groups to their name.
+    let group_names = iter::once("[None]")
+        .chain(groups.iter().map(|group| group.group_name.as_str()))
+        .collect::<Vec<_>>();
+
+    println!();
+
+    // Prompt for selection of one group.
+    let prompt = "[ENTER] Confirm\nProject Group";
+    let index = FuzzySelect::new().with_prompt(prompt).items(&group_names).default(0).interact()?;
+
+    match index {
+        0 => Ok(None),
+        index => Ok(group_names.get(index).cloned().map(String::from)),
+    }
 }
 
 /// Interactively ask for missing lockfile information.
