@@ -265,8 +265,9 @@ dependencies = [
 
 [[package]]
 name = "birdcage"
-version = "0.1.0"
-source = "git+https://github.com/phylum-dev/birdcage#59ffd1b2ed51d17a5ee6dc041498d5043a0d79c4"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "333de7a0f9b94c6814bb0d150cf8883116e8074fe411e91a361dc9bde775d7b7"
 dependencies = [
  "landlock",
  "libc",
@@ -2480,7 +2481,8 @@ dependencies = [
 [[package]]
 name = "landlock"
 version = "0.2.0"
-source = "git+https://github.com/landlock-lsm/rust-landlock#d6f1b233430bc0febfb5632fca4374d02cce7ab0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "520baa32708c4e957d2fc3a186bc5bd8d26637c33137f399ddfc202adb240068"
 dependencies = [
  "enumflags2",
  "libc",
