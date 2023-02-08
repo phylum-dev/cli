@@ -81,9 +81,9 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <https://www.gnu.org/licenses/gpl.html> or write to
 `phylum@phylum.io` or `engineering@phylum.io`
 
-## Slack
+## Discord
 
-Join us on the [Phylum Community Slack](https://join.slack.com/t/phylumio/shared_invite/zt-1cbgl6qjp-C_mkSFibEA9DyDxjYHbttQ)!
+Join us on the [Phylum Community Discord](https://discord.gg/c9QnknWxm3)!
 
 ## Questions/Issues
 
