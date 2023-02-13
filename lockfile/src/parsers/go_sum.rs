@@ -9,21 +9,25 @@ use super::Result;
 use crate::{Package, PackageVersion};
 
 pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
-    let (input, pkg_options) = many1(package)(input)?;
-    let pkgs = pkg_options.iter().flatten().cloned().collect::<Vec<_>>();
+    let (input, mut pkg_options) = many1(package)(input)?;
+    let mut pkgs = pkg_options.drain(..).collect::<Vec<_>>();
+
+    // Filter duplicate packages.
+    pkgs.sort_unstable();
+    pkgs.dedup();
 
     Ok((input, pkgs))
 }
 
-fn package(input: &str) -> Result<&str, Option<Package>> {
+fn package(input: &str) -> Result<&str, Package> {
     let (input, name) = package_name(input)?;
     let (input, version) = package_version(input)?;
     let (input, _hash) = package_hash(input)?;
 
-    let package = version.map(|version| Package {
+    let package = Package {
         name: name.to_string(),
         version: PackageVersion::FirstParty(version.to_string()),
-    });
+    };
 
     Ok((input, package))
 }
@@ -36,7 +40,7 @@ fn package_name(input: &str) -> Result<&str, &str> {
     recognize(take_until(" "))(input)
 }
 
-fn package_version(input: &str) -> Result<&str, Option<&str>> {
+fn package_version(input: &str) -> Result<&str, &str> {
     // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
@@ -46,20 +50,13 @@ fn package_version(input: &str) -> Result<&str, Option<&str>> {
         many1(alt((alphanumeric1, tag("."), tag("-"), tag("+")))),
     )))(input)?;
 
-    // Check for version suffix.
-    let (input, version_suffix) = opt(tag("/go.mod"))(input)?;
+    // Strip `/go.mod` suffix.
+    let (input, _) = opt(tag("/go.mod"))(input)?;
 
     // Expect at least one whitespace after version.
     let (input, _) = space1(input)?;
 
-    // If the package version ends in "/go.mod" then this entry
-    // just records the hash for a go.mod file. The package this
-    // go.mod file belongs to will also be listed, and that's what
-    // we're interested in, so we simply discard this entry.
-    match version_suffix {
-        Some(_) => Ok((input, None)),
-        None => Ok((input, Some(version))),
-    }
+    Ok((input, version))
 }
 
 fn package_hash(input: &str) -> Result<&str, &str> {

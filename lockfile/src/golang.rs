@@ -37,18 +37,21 @@ mod tests {
     #[test]
     fn parse_go_sum() {
         let pkgs = GoSum.parse(include_str!("../../tests/fixtures/go.sum")).unwrap();
-        assert_eq!(pkgs.len(), 675);
+        assert_eq!(pkgs.len(), 1711);
 
-        // check the first package in the example go.sum
-        assert_eq!(pkgs[0].name, "cloud.google.com/go");
-        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("v0.72.0".into()));
+        let expected_pkgs = [
+            Package {
+                name: "cloud.google.com/go".into(),
+                version: PackageVersion::FirstParty("v0.72.0".into()),
+            },
+            Package {
+                name: "sourcegraph.com/sourcegraph/appdash".into(),
+                version: PackageVersion::FirstParty("v0.0.0-20190731080439-ebfcffb1b5c0".into()),
+            },
+        ];
 
-        // check the last package in the example go.sum
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "sourcegraph.com/sourcegraph/appdash");
-        assert_eq!(
-            last.version,
-            PackageVersion::FirstParty("v0.0.0-20190731080439-ebfcffb1b5c0".into())
-        );
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
     }
 }

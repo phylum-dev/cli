@@ -129,6 +129,7 @@ mod tests {
             assert!(pkgs.contains(&expected_pkg));
         }
     }
+
     #[test]
     fn parse_cargo_lock_v3() {
         let pkgs = Cargo.parse(include_str!("../../tests/fixtures/Cargo_v3.lock")).unwrap();
