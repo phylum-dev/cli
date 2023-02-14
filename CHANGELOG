@@ -1,3 +1,4 @@
+* 4.6.1 - Fix Go parser ignoring dependencies
 * 4.6.0 - Improve init UX
 * 4.5.0 - Add multi-lockfile options to parse/analyze/init; fix poetry extension
 * 4.4.0 - group delete subcommand; multi-lockfile support in init; bug fixes
