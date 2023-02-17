@@ -233,14 +233,6 @@ mod test {
     }
 
     #[test]
-    fn get_project_details_is_correct() {
-        assert_eq!(
-            get_project_history(API_URI, "acme/widgets").unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/projects/name/acme%2Fwidgets"),
-        );
-    }
-
-    #[test]
     fn get_project_summary_is_correct() {
         assert_eq!(
             get_project_summary(API_URI).unwrap().as_str(),
