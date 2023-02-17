@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,6 +45,14 @@ pub struct GithubRelease {
 pub struct GithubReleaseAsset {
     pub browser_download_url: String,
     pub name: String,
+}
+
+/// History job entry.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HistoryJob {
+    pub id: String,
+    pub created: DateTime<Utc>,
+    pub label: String,
 }
 
 #[cfg(test)]
