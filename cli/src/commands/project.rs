@@ -163,7 +163,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 "author" => &mut preferences.thresholds.author,
                 "engineering" => &mut preferences.thresholds.engineering,
                 "license" => &mut preferences.thresholds.license,
-                "malicious code" => &mut preferences.thresholds.malicious_code,
+                "malicious code" => &mut preferences.thresholds.malicious,
                 "vulnerability" => &mut preferences.thresholds.vulnerability,
                 _ => unreachable!(),
             } = threshold;
