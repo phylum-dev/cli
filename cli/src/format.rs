@@ -173,7 +173,7 @@ impl Format for Package {
             ["Author Risk:", r -> risk_to_string(self.risk_scores.author)],
             ["Engineering Risk:", r -> risk_to_string(self.risk_scores.engineering)],
             ["License Risk:", r -> risk_to_string(self.risk_scores.license)],
-            ["Malicious Risk:", r -> risk_to_string(self.risk_scores.malicious)],
+            ["Malicious Code Risk:", r -> risk_to_string(self.risk_scores.malicious)],
             ["Vulnerability Risk:", r -> risk_to_string(self.risk_scores.vulnerability)]
         ];
         risks_table.set_format(table_format(3, 1));
