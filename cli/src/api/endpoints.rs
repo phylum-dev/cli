@@ -46,10 +46,27 @@ pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
 }
 
-/// GET /data/projects/name/<pkg_id>
-pub fn get_project_details(api_uri: &str, pkg_id: &str) -> Result<Url, BaseUriError> {
+/// GET /data/projects/<project_id>/history
+pub fn get_project_history(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
-    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", "name", pkg_id]);
+    url.path_segments_mut()
+        .unwrap()
+        .pop_if_empty()
+        .extend(["data", "projects", project_id, "history"]);
+    Ok(url)
+}
+
+/// GET /groups/<group_name>/projects/<project_id>/history
+pub fn get_group_project_history(
+    api_uri: &str,
+    project_id: &str,
+    group_name: &str,
+) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut()
+        .unwrap()
+        .pop_if_empty()
+        .extend(["groups", group_name, "projects", project_id, "history"]);
     Ok(url)
 }
 
@@ -212,14 +229,6 @@ mod test {
         assert_eq!(
             post_submit_package(API_URI).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/packages/submit"),
-        );
-    }
-
-    #[test]
-    fn get_project_details_is_correct() {
-        assert_eq!(
-            get_project_details(API_URI, "acme/widgets").unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/projects/name/acme%2Fwidgets"),
         );
     }
 

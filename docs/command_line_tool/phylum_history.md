@@ -32,7 +32,10 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 &emsp; Produce output in json format (default: false)
 
 -p, --project <project_name>
-&emsp; Project name used to filter jobs
+&emsp; Project to be queried
+
+-g, --group <group_name>
+&emsp; Group to be queried
 
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

@@ -19,6 +19,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::histogram::Histogram;
 use crate::print::{self, table_format};
+use crate::types::HistoryJob;
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -229,6 +230,17 @@ impl Format for JobStatusResponse<PackageStatusExtended> {
 
         let _ = writeln!(writer, "{table_1}");
         let _ = writeln!(writer, "{table_2}");
+    }
+}
+
+impl Format for Vec<HistoryJob> {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let table = format_table::<fn(&HistoryJob) -> String, _>(self, &[
+            ("Job ID", |job| job.id.clone()),
+            ("Label", |job| job.label.clone()),
+            ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
+        ]);
+        let _ = writeln!(writer, "{table}");
     }
 }
 

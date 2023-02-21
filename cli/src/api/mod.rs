@@ -15,7 +15,7 @@ use phylum_types::types::package::{
 };
 use phylum_types::types::preferences::{CorePreferences, ProjectPreferences};
 use phylum_types::types::project::{
-    CreateProjectRequest, CreateProjectResponse, ProjectDetailsResponse, ProjectSummaryResponse,
+    CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
 };
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
@@ -29,7 +29,7 @@ use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
-use crate::types::PingResponse;
+use crate::types::{HistoryJob, PingResponse};
 
 pub mod endpoints;
 
@@ -334,9 +334,24 @@ impl PhylumApi {
         self.get(endpoints::get_all_jobs_status(&self.config.connection.uri, 30)?).await
     }
 
-    /// Get the details of a specific project
-    pub async fn get_project_details(&self, project_name: &str) -> Result<ProjectDetailsResponse> {
-        self.get(endpoints::get_project_details(&self.config.connection.uri, project_name)?).await
+    /// Get project's job history.
+    pub async fn get_project_history(
+        &self,
+        project_name: &str,
+        group_name: Option<&str>,
+    ) -> Result<Vec<HistoryJob>> {
+        let project_id = self.get_project_id(project_name, group_name).await?.to_string();
+
+        let url = match group_name {
+            Some(group_name) => endpoints::get_group_project_history(
+                &self.config.connection.uri,
+                &project_id,
+                group_name,
+            )?,
+            None => endpoints::get_project_history(&self.config.connection.uri, &project_id)?,
+        };
+
+        self.get(url).await
     }
 
     /// Resolve a Project Name to a Project ID

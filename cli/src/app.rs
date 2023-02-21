@@ -88,7 +88,12 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('p')
                     .long("project")
                     .value_name("project_name")
-                    .help("Project name used to filter jobs"),
+                    .help("Project to be queried"),
+                Arg::new("group")
+                    .short('g')
+                    .long("group")
+                    .value_name("group_name")
+                    .help("Group to be queried"),
             ]),
         )
         .subcommand(

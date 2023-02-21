@@ -82,8 +82,9 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
             JobId::from_str(job_id).with_context(|| format!("{job_id:?} is not a valid Job ID"))?;
         action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
     } else if let Some(project) = matches.get_one::<String>("project") {
-        let resp = api.get_project_details(project).await?.jobs;
-        resp.write_stdout(pretty_print);
+        let group = matches.get_one::<String>("group").map(String::as_str);
+        let history = api.get_project_history(project, group).await?;
+        history.write_stdout(pretty_print);
     } else {
         let resp = match api.get_status().await {
             Ok(resp) => resp,
