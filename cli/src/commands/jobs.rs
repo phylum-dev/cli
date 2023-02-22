@@ -129,11 +129,15 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         jobs_project = JobsProject::new(api, matches).await?;
 
         for lockfile in jobs_project.lockfiles {
-            let res = parse::parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))
+            let res = parse::parse_lockfile(&lockfile.path, Some(&lockfile.lockfile_type))
                 .context("Unable to locate any valid package in package lockfile")?;
 
             if pretty_print {
-                print_user_success!("Successfully parsed lockfile as type: {}", res.format.name());
+                print_user_success!(
+                    "Successfully parsed lockfile {:?} as type: {}",
+                    lockfile.path,
+                    res.format.name()
+                );
             }
 
             request_type = res.package_type;
