@@ -192,10 +192,22 @@ pub fn lockfiles(
                 .collect())
         },
         None => {
-            let lockfiles = project.map(|project| project.lockfiles()).unwrap_or_default();
+            // Try the project file first.
+            let project_lockfiles = project.map(|project| project.lockfiles());
+
+            // Fallback to walking the directory.
+            let lockfiles = project_lockfiles.unwrap_or_else(|| {
+                phylum_lockfile::find_lockfiles()
+                    .drain(..)
+                    .map(|(path, format)| LockfileConfig::new(path, format.to_string()))
+                    .collect()
+            });
+
+            // Ask for explicit lockfile if none were found.
             if lockfiles.is_empty() {
                 return Err(anyhow!("Missing lockfile parameter"));
             }
+
             Ok(lockfiles)
         },
     }

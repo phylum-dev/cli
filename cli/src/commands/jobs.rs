@@ -127,9 +127,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         synch = true;
 
         jobs_project = JobsProject::new(api, matches).await?;
-        if jobs_project.lockfiles.is_empty() {
-            return Err(anyhow!("Missing lockfile parameter"));
-        }
 
         for lockfile in jobs_project.lockfiles {
             let res = parse::parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))
