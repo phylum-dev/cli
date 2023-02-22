@@ -131,10 +131,9 @@ jobs:
 
       - name: Sign archives
         run: |
-          echo "$OPENSSL_KEY" > key.pem
           for archive in phylum-*.zip;
           do
-            openssl dgst -sha256 -sign key.pem -out "${archive}.signature" "${archive}"
+            openssl dgst -sha256 -sign <(printf "$OPENSSL_KEY") -out "${archive}.signature" "${archive}"
           done
         env:
           OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
