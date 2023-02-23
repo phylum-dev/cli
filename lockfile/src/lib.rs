@@ -5,6 +5,7 @@ use std::str::FromStr;
 pub use cargo::Cargo;
 pub use csharp::CSProj;
 pub use golang::GoSum;
+use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
 use phylum_types::types::package::PackageType;
@@ -21,6 +22,9 @@ mod javascript;
 mod parsers;
 mod python;
 mod ruby;
+
+/// Maximum directory depth to recurse for finding lockfiles.
+const MAX_LOCKFILE_DEPTH: usize = 5;
 
 /// A file format that can be parsed.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -183,6 +187,23 @@ pub struct ThirdPartyVersion {
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
     LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
+}
+
+/// Find lockfiles in the current directory subtree.
+///
+/// Walks the directory tree and returns all paths recognized as lockfiles.
+///
+/// Paths excluded by gitignore are automatically ignored.
+pub fn find_lockfiles() -> Vec<(PathBuf, LockfileFormat)> {
+    let walker = WalkBuilder::new(".").max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
+    walker
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path().to_path_buf();
+            get_path_format(&path).map(|format| (path, format))
+        })
+        .collect()
 }
 
 #[cfg(test)]
