@@ -130,13 +130,13 @@ jobs:
           name: release-archives
 
       - name: Sign archives
+        env:
+          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
         run: |
           for archive in phylum-*.zip;
           do
-            openssl dgst -sha256 -sign <(printf "$OPENSSL_KEY") -out "${archive}.signature" "${archive}"
+            openssl dgst -sha256 -sign <(printf "%s" "$OPENSSL_KEY") -out "${archive}.signature" "${archive}"
           done
-        env:
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
 
       - id: release
         name: Create GitHub release
@@ -163,7 +163,7 @@ jobs:
               repo: "phylum-ci",
               event_type: "build-push-docker-images",
               client_payload: {CLI_version: process.env.GITHUB_REF_NAME},
-            });
+            })
 
   Update-Documentation:
     name: Update the documentation
