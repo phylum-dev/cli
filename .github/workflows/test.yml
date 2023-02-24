@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
 
       - name: Install Rust toolchain
         run: |
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     container: denoland/deno
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: deno fmt
         run: deno fmt --check
       - name: deno lint
@@ -82,7 +82,7 @@ jobs:
     #       https://github.com/phylum-dev/cli/issues/467
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: Script Style Check
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
