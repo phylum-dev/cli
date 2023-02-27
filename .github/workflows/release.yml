@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
 
       - name: Install Rust toolchain
         run: |
@@ -29,7 +29,7 @@ jobs:
         run: cargo xtask gencomp
 
       - name: Upload shell completions
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: shell-completions
           path: ./target/completions/
@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           fetch-depth: 0
 
@@ -67,7 +67,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: phylum-${{ matrix.target }}
           path: ./target/${{ matrix.target }}/release/phylum
@@ -83,12 +83,12 @@ jobs:
         run: sudo apt install -yq zip
 
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           path: cli
 
       - name: Download release artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
 
       - name: Prep archives
         run: |
@@ -107,7 +107,7 @@ jobs:
           done
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: release-archives
           path: phylum-*.zip
@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
         with:
           name: release-archives
 
@@ -140,7 +140,7 @@ jobs:
 
       - name: Create GitHub release
         id: create_release
-        uses: actions/github-script@v6
+        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
         with:
           # The response is explicitly returned here so it will be available for other steps
           script: |
@@ -178,7 +178,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@v6
+        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
@@ -198,9 +198,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
 
       - name: Update v2-latest using rdme
-        uses: readmeio/rdme@v8
+        uses: readmeio/rdme@8015101d7a10d3810d65583d947d6a17a57ff693 # v8.5.0
         with:
           rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest

@@ -1,12 +1,23 @@
+# This is the configuration file for GitHub's Dependabot, used here for version updates.
+# See the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+---
 version: 2
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: weekly
+    # Only worry about major version updates here. Other updates are accounted for in
+    # a separate workflow in an effort to reduce the number of PRs opened by Dependabot.
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-minor", "version-update:semver-patch"]
+
+  # All GitHub actions should be pinned to an explicit SHA instead of a tag name.
+  # Each pin should include a comment about the version of the action to which it corresponds.
+  # Dependabot will update these comments at the same time that it updates the pin.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
