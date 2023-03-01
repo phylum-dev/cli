@@ -144,14 +144,14 @@ async function poetryCheckDryRun(
   // Ensure dry-run update was successful.
   if (!result.success || result.stdout.length == 0) {
     console.error(`[${red("phylum")}] Failed to determine new packages.\n`);
-    return result.code ?? 255;
+    Deno.exit(result.code ?? 255);
   }
 
   // Parse dry-run output to look for new packages.
   const packages = [];
   const lines = result.stdout.split("\n");
   for (const line of lines) {
-    const installing_text = "Installing ";
+    const installing_text = "• Installing ";
     const installing_index = line.indexOf(installing_text);
 
     // Filter lines unrelated to new packages.
@@ -171,15 +171,14 @@ async function poetryCheckDryRun(
       version = version.substring(0, colon_index);
     }
 
-    // Ensure what we parsed is in a sensible format.
+    // Ensure the line is in the correct format.
     if (
       name.length === 0 ||
       version.length === 0 ||
       !version.startsWith("(") ||
       !version.endsWith(")")
     ) {
-      console.error(`[${red("phylum")}] Invalid poetry output: ${line}.\n`);
-      Deno.exit(125);
+      continue;
     }
 
     // Remove parenthesis from version.
