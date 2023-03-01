@@ -106,7 +106,12 @@ async function poetryCheckDryRun(
 ) {
   const result = PhylumApi.runSandboxed({
     cmd: "poetry",
-    args: [subcommand, "-n", "--dry-run", ...args.map((s) => s.toString())],
+    args: [
+      subcommand,
+      "--no-interaction",
+      "--dry-run",
+      ...args.map((s) => s.toString()),
+    ],
     exceptions: {
       run: [
         "./",
@@ -139,7 +144,7 @@ async function poetryCheckDryRun(
   // Ensure dry-run update was successful.
   if (!result.success || result.stdout.length == 0) {
     console.error(`[${red("phylum")}] Failed to determine new packages.\n`);
-    return status.code ?? 255;
+    return result.code ?? 255;
   }
 
   // Parse dry-run output to look for new packages.
