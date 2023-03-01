@@ -121,6 +121,7 @@ async function poetryCheckDryRun(
         "~/.local/bin/poetry",
         "~/Library/Application Support/pypoetry",
         "~/.local/share/pypoetry",
+        "~/.local/pipx",
       ],
       write: [
         "~/.cache/pypoetry",
