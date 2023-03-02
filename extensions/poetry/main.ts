@@ -206,6 +206,10 @@ async function poetryCheckDryRun(
       version = version_split[1];
     }
 
+    // Truncate URI from versions:
+    // "1.2.3 https://github.com/demo/demo.git" -> "1.2.3"
+    version = version.split(" ")[0];
+
     packages.push({ name, version });
   }
 
