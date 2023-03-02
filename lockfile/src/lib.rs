@@ -11,6 +11,7 @@ pub use javascript::{PackageLock, YarnLock};
 use phylum_types::types::package::PackageType;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
+pub use sbom::Sbom;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +23,7 @@ mod javascript;
 mod parsers;
 mod python;
 mod ruby;
+mod sbom;
 
 /// Maximum directory depth to recurse for finding lockfiles.
 const MAX_LOCKFILE_DEPTH: usize = 5;
@@ -48,6 +50,7 @@ pub enum LockfileFormat {
     Msbuild,
     Go,
     Cargo,
+    Sbom,
 }
 
 impl FromStr for LockfileFormat {
@@ -85,6 +88,7 @@ impl LockfileFormat {
             LockfileFormat::Msbuild => "nuget",
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
+            LockfileFormat::Sbom => "sbom",
         }
     }
 
@@ -102,6 +106,7 @@ impl LockfileFormat {
             LockfileFormat::Msbuild => &CSProj,
             LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
+            LockfileFormat::Sbom => &Sbom,
         }
     }
 
