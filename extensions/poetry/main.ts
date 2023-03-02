@@ -124,6 +124,7 @@ async function poetryCheckDryRun(
         "~/.local/pipx",
       ],
       write: [
+        "./",
         "~/.cache/pypoetry",
         "~/Library/Caches/pypoetry",
         "~/.pyenv",
@@ -155,22 +156,29 @@ async function poetryCheckDryRun(
     const installing_text = "• Installing ";
     const installing_index = line.indexOf(installing_text);
 
-    // Filter lines unrelated to new packages.
-    if (installing_index === -1) {
+    const updating_text = "• Updating ";
+    const updating_index = line.indexOf(updating_text);
+
+    // Strip text before package name.
+    let pkg;
+    if (installing_index !== -1) {
+      pkg = line.substring(installing_index + installing_text.length);
+    } else if (updating_index !== -1) {
+      pkg = line.substring(updating_index + updating_text.length);
+    } else {
+      // Filter lines unrelated to new packages.
       continue;
     }
 
-    // Extract name and version.
-    const pkg = line.substring(installing_index + installing_text.length);
-    const pkg_split = pkg.split(" ");
-    const name = pkg_split[0];
-    let version = pkg_split[1];
-
     // Strip suffix explaining why package install was skipped.
-    const colon_index = version.indexOf(":");
+    const colon_index = pkg.indexOf(":");
     if (colon_index !== -1) {
-      version = version.substring(0, colon_index);
+      pkg = pkg.substring(0, colon_index);
     }
+
+    // Extract name and version.
+    const name = pkg.substring(0, pkg.indexOf(" "));
+    let version = pkg.substring(name.length + 1);
 
     // Ensure the line is in the correct format.
     if (
@@ -184,6 +192,19 @@ async function poetryCheckDryRun(
 
     // Remove parenthesis from version.
     version = version.substring(1, version.length - 1);
+
+    // Extract target version from update.
+    if (updating_index !== -1) {
+      const version_split = version.split(" -> ");
+      if (version_split.length !== 2) {
+        console.error(
+          `[${red("phylum")}] Invalid version update: "${version}".\n`,
+        );
+        Deno.exit(124);
+      }
+
+      version = version_split[1];
+    }
 
     packages.push({ name, version });
   }
@@ -208,11 +229,11 @@ async function poetryCheckDryRun(
         )
       }] Unknown packages were submitted for analysis, please check again later.\n`,
     );
-    Deno.exit(124);
+    Deno.exit(123);
   } else {
     console.error(
       `[${red("phylum")}] The operation caused a threshold failure.\n`,
     );
-    Deno.exit(123);
+    Deno.exit(122);
   }
 }
