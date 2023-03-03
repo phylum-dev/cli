@@ -98,20 +98,10 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(
             Command::new("project")
-                .about("Create, list, link and set thresholds for projects")
-                .args(&[
-                    Arg::new("json")
-                        .action(ArgAction::SetTrue)
-                        .short('j')
-                        .long("json")
-                        .help("Produce output in json format (default: false)"),
-                    Arg::new("group")
-                        .short('g')
-                        .long("group")
-                        .value_name("group_name")
-                        .help("Group to list projects for"),
-                ])
                 .aliases(["projects"])
+                .about("Create, list, link and set thresholds for projects")
+                .arg_required_else_help(true)
+                .subcommand_required(true)
                 .subcommand(
                     Command::new("create").about("Create a new project").args(&[
                         Arg::new("name")
@@ -204,6 +194,8 @@ pub fn add_subcommands(command: Command) -> Command {
         .subcommand(
             Command::new("auth")
                 .about("Manage authentication, registration, and API keys")
+                .arg_required_else_help(true)
+                .subcommand_required(true)
                 .subcommand(Command::new("register").about("Register a new account"))
                 .subcommand(
                     Command::new("login").about("Login to an existing account").arg(
@@ -341,13 +333,8 @@ pub fn add_subcommands(command: Command) -> Command {
         .subcommand(
             Command::new("group")
                 .about("Interact with user groups")
-                .arg(
-                    Arg::new("json")
-                        .action(ArgAction::SetTrue)
-                        .short('j')
-                        .long("json")
-                        .help("Produce group list in json format (default: false)"),
-                )
+                .arg_required_else_help(true)
+                .subcommand_required(true)
                 .subcommand(
                     Command::new("list").about("List all groups the user is a member of").arg(
                         Arg::new("json")
@@ -374,19 +361,17 @@ pub fn add_subcommands(command: Command) -> Command {
                     ),
                 )
                 .subcommand(
-                    Command::new("member").about("Manage group members").args(&[
+                    Command::new("member")
+                    .about("Manage group members")
+                    .args(&[
                         Arg::new("group")
                             .short('g')
                             .long("group")
                             .value_name("GROUP")
                             .help("Group to list the members for")
                             .required(true),
-                        Arg::new("json")
-                            .action(ArgAction::SetTrue)
-                            .short('j')
-                            .long("json")
-                            .help("Produce member list in json format (default: false)"),
-                        ])
+                    ])
+                    .subcommand_required(true)
                     .subcommand(
                         Command::new("list").about("List group members").args(&[
                             Arg::new("json")

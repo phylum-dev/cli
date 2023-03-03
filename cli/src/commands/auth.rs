@@ -1,14 +1,13 @@
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
-use clap::{ArgMatches, Command};
+use clap::ArgMatches;
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
-use crate::print::print_sc_help;
 use crate::{auth, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
@@ -125,7 +124,6 @@ pub async fn handle_auth(
     config: Config,
     config_path: &Path,
     matches: &clap::ArgMatches,
-    app_helper: &mut Command,
     timeout: Option<u64>,
 ) -> CommandResult {
     match matches.subcommand() {
@@ -146,9 +144,6 @@ pub async fn handle_auth(
         Some(("status", _)) => handle_auth_status(config, timeout).await,
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
         Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
-        _ => {
-            print_sc_help(app_helper, &["auth"])?;
-            Ok(ExitCode::Ok.into())
-        },
+        _ => unreachable!("invalid clap configuration"),
     }
 }
