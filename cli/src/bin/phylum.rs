@@ -145,7 +145,7 @@ async fn handle_commands() -> CommandResult {
     match subcommand {
         "auth" => {
             drop(api);
-            auth::handle_auth(config, &config_path, sub_matches, app_helper, timeout).await
+            auth::handle_auth(config, &config_path, sub_matches, timeout).await
         },
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),

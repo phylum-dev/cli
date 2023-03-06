@@ -30,8 +30,6 @@ pub async fn get_project_list(
 /// project, linking a current repository to an existing project, listing
 /// projects and setting project thresholds for risk domains.
 pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let pretty_print = !matches.get_flag("json");
-
     if let Some(matches) = matches.subcommand_matches("create") {
         let name = matches.get_one::<String>("name").unwrap();
         let group = matches.get_one::<String>("group").cloned();
@@ -65,7 +63,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         print_user_success!("Successfully deleted project, {}", project_name);
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let group = matches.get_one::<String>("group");
-        let pretty_print = pretty_print && !matches.get_flag("json");
+        let pretty_print = !matches.get_flag("json");
         get_project_list(api, pretty_print, group.map(String::as_str)).await?;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.get_one::<String>("name").unwrap();
@@ -185,9 +183,6 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                 return Ok(ExitCode::SetThresholdsFailure.into());
             },
         }
-    } else {
-        let group = matches.get_one::<String>("group");
-        get_project_list(api, pretty_print, group.map(String::as_str)).await?;
     }
 
     Ok(ExitCode::Ok.into())

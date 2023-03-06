@@ -11,24 +11,22 @@ use crate::{print_user_failure, print_user_success, print_user_warning};
 
 /// Handle `phylum group` subcommand.
 pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
-    if let Some(matches) = matches.subcommand_matches("create") {
-        handle_group_create(api, matches).await
-    } else if let Some(matches) = matches.subcommand_matches("delete") {
-        handle_group_delete(api, matches).await
-    } else if let Some(matches) = matches.subcommand_matches("transfer") {
-        handle_group_transfer(api, matches).await
-    } else if let Some(matches) = matches.subcommand_matches("member") {
-        let group = matches.get_one::<String>("group").unwrap();
+    match matches.subcommand() {
+        Some(("list", matches)) => handle_group_list(api, matches).await,
+        Some(("create", matches)) => handle_group_create(api, matches).await,
+        Some(("delete", matches)) => handle_group_delete(api, matches).await,
+        Some(("transfer", matches)) => handle_group_transfer(api, matches).await,
+        Some(("member", matches)) => {
+            let group = matches.get_one::<String>("group").unwrap();
 
-        if let Some(matches) = matches.subcommand_matches("add") {
-            handle_member_add(api, matches, group).await
-        } else if let Some(matches) = matches.subcommand_matches("remove") {
-            handle_member_remove(api, matches, group).await
-        } else {
-            handle_member_list(api, matches, group).await
-        }
-    } else {
-        handle_group_list(api, matches).await
+            match matches.subcommand() {
+                Some(("list", matches)) => handle_member_list(api, matches, group).await,
+                Some(("add", matches)) => handle_member_add(api, matches, group).await,
+                Some(("remove", matches)) => handle_member_remove(api, matches, group).await,
+                _ => unreachable!("invalid clap configuration"),
+            }
+        },
+        _ => unreachable!("invalid clap configuration"),
     }
 }
 
@@ -59,12 +57,10 @@ pub async fn handle_group_delete(api: &mut PhylumApi, matches: &ArgMatches) -> C
 }
 
 /// Handle `phylum group list` subcommand.
-pub async fn handle_group_list(api: &mut PhylumApi, mut matches: &ArgMatches) -> CommandResult {
-    matches = matches.subcommand_matches("list").unwrap_or(matches);
-    let pretty = !matches.get_flag("json");
-
+pub async fn handle_group_list(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
     let response = api.get_groups_list().await?;
 
+    let pretty = !matches.get_flag("json");
     response.write_stdout(pretty);
 
     Ok(ExitCode::Ok.into())
@@ -105,14 +101,12 @@ pub async fn handle_member_remove(
 /// Handle `phylum group member` subcommand.
 pub async fn handle_member_list(
     api: &mut PhylumApi,
-    mut matches: &ArgMatches,
+    matches: &ArgMatches,
     group: &str,
 ) -> CommandResult {
-    matches = matches.subcommand_matches("list").unwrap_or(matches);
-    let pretty = !matches.get_flag("json");
-
     let response = api.group_members(group).await?;
 
+    let pretty = !matches.get_flag("json");
     response.write_stdout(pretty);
 
     Ok(ExitCode::Ok.into())

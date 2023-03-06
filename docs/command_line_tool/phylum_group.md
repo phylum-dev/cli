@@ -7,13 +7,10 @@ hidden: false
 Interact with user groups
 
 ```sh
-Usage: phylum group [OPTIONS] [COMMAND]
+Usage: phylum group [OPTIONS] <COMMAND>
 ```
 
 ### Options
-
--j, --json
-&emsp; Produce group list in json format (default: false)
 
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -31,13 +28,3 @@ Usage: phylum group [OPTIONS] [COMMAND]
 * [phylum group delete](./phylum_group_delete)
 * [phylum group member](./phylum_group_member)
 * [phylum group transfer](./phylum_group_transfer)
-
-### Examples
-
-```sh
-# List all groups for the current account
-$ phylum group
-
-# Return json response of all groups for the current account
-$ phylum group --json
-```

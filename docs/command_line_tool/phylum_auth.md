@@ -7,7 +7,7 @@ hidden: false
 Manage authentication, registration, and API keys
 
 ```sh
-Usage: phylum auth [OPTIONS] [COMMAND]
+Usage: phylum auth [OPTIONS] <COMMAND>
 ```
 
 ### Options
