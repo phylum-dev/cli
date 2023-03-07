@@ -135,6 +135,7 @@ impl Iterator for LockfileFormatIter {
             8 => LockfileFormat::Msbuild,
             9 => LockfileFormat::Go,
             10 => LockfileFormat::Cargo,
+            11 => LockfileFormat::Sbom,
             _ => return None,
         };
         self.0 += 1;
@@ -229,6 +230,8 @@ mod tests {
             ("poetry.lock", LockfileFormat::Poetry),
             ("go.sum", LockfileFormat::Go),
             ("Cargo.lock", LockfileFormat::Cargo),
+            (".spdx.json", LockfileFormat::Sbom),
+            (".spdx.yaml", LockfileFormat::Sbom),
         ];
 
         for (file, expected_type) in test_cases {
@@ -253,6 +256,7 @@ mod tests {
             ("msbuild", LockfileFormat::Msbuild),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
+            ("sbom", LockfileFormat::Sbom),
         ] {
             let actual_format =
                 name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
@@ -278,6 +282,7 @@ mod tests {
             ("nuget", LockfileFormat::Msbuild),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
+            ("sbom", LockfileFormat::Sbom),
         ] {
             let actual_name = format.to_string();
             assert_eq!(
@@ -317,6 +322,7 @@ mod tests {
             (LockfileFormat::Msbuild, 2),
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
+            (LockfileFormat::Sbom, 2),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {
