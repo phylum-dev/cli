@@ -190,6 +190,22 @@ jobs:
             });
             console.log(response);
 
+      - name: Trigger homebrew-cli Formula bump
+        # Don't trigger for pre-releases
+        if: ${{ !contains(github.ref, 'rc') }}
+        # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
+        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
+        with:
+          github-token: ${{ secrets.GH_RELEASE_PAT }}
+          script: |
+            const response = await github.rest.repos.createDispatchEvent({
+              owner: "phylum-dev",
+              repo: "homebrew-cli",
+              event_type: "trigger-bump-formula-pr",
+              client_payload: {CLI_version: process.env.GITHUB_REF_NAME},
+            });
+            console.log(response);
+
   Update-Documentation:
     name: Update the documentation
     needs: Release
