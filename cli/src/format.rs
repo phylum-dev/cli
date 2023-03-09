@@ -50,15 +50,10 @@ impl Format for Vec<ProjectSummaryResponse> {
         // Maximum length of the name column.
         const MAX_NAME_WIDTH: usize = 28;
 
-        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(
-            self,
-            &[
-                ("Project Name", |project| {
-                    print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()
-                }),
-                ("Project ID", |project| project.id.to_string()),
-            ],
-        );
+        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(self, &[
+            ("Project Name", |project| print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()),
+            ("Project ID", |project| project.id.to_string()),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -70,18 +65,11 @@ impl Format for ListUserGroupsResponse {
         // Maximum length of owner email column.
         const MAX_OWNER_WIDTH: usize = 25;
 
-        let table = format_table::<fn(&UserGroup) -> String, _>(
-            &self.groups,
-            &[
-                ("Group Name", |group| {
-                    print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()
-                }),
-                ("Owner", |group| {
-                    print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()
-                }),
-                ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
-            ],
-        );
+        let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
+            ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
+            ("Owner", |group| print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()),
+            ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -95,20 +83,15 @@ impl Format for ListGroupMembersResponse {
         // Maximum length of last name column.
         const MAX_LAST_NAME_WIDTH: usize = 15;
 
-        let table = format_table::<fn(&GroupMember) -> String, _>(
-            &self.members,
-            &[
-                ("E-Mail", |member| {
-                    print::truncate(&member.user_email, MAX_EMAIL_WIDTH).into_owned()
-                }),
-                ("First Name", |member| {
-                    print::truncate(&member.first_name, MAX_FIRST_NAME_WIDTH).into_owned()
-                }),
-                ("Last Name", |member| {
-                    print::truncate(&member.last_name, MAX_LAST_NAME_WIDTH).into_owned()
-                }),
-            ],
-        );
+        let table = format_table::<fn(&GroupMember) -> String, _>(&self.members, &[
+            ("E-Mail", |member| print::truncate(&member.user_email, MAX_EMAIL_WIDTH).into_owned()),
+            ("First Name", |member| {
+                print::truncate(&member.first_name, MAX_FIRST_NAME_WIDTH).into_owned()
+            }),
+            ("Last Name", |member| {
+                print::truncate(&member.last_name, MAX_LAST_NAME_WIDTH).into_owned()
+            }),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -256,14 +239,11 @@ impl Format for JobStatusResponse<PackageStatusExtended> {
 
 impl Format for Vec<HistoryJob> {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        let table = format_table::<fn(&HistoryJob) -> String, _>(
-            self,
-            &[
-                ("Job ID", |job| job.id.clone()),
-                ("Label", |job| job.label.clone()),
-                ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
-            ],
-        );
+        let table = format_table::<fn(&HistoryJob) -> String, _>(self, &[
+            ("Job ID", |job| job.id.clone()),
+            ("Label", |job| job.label.clone()),
+            ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
