@@ -112,13 +112,6 @@ impl Parse for Sbom {
                 };
 
                 match (pkg_info.pkg_type, pkg.version_info) {
-                    (PackageType::Sbom, Some(version)) => Some(Package {
-                        name: pkg_info.pkg_name,
-                        version: PackageVersion::ThirdParty(ThirdPartyVersion {
-                            version,
-                            registry: pkg.download_location,
-                        }),
-                    }),
                     (_, Some(version)) => Some(Package {
                         name: pkg_info.pkg_name.clone(),
                         version: PackageVersion::FirstParty(version),
@@ -147,14 +140,12 @@ mod tests {
     #[test]
     fn parse_spdx_2_2_json() {
         let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx.json")).unwrap();
-        assert_eq!(pkgs.len(), 5);
+        assert_eq!(pkgs.len(), 4);
 
         let expected_pkgs = [Package {
             name: "org.hamcrest/hamcrest-core".into(),
-            version: PackageVersion::FirstParty(FirstPartyVersion {
-                version: "1.3".into(),
-                registry: PackageType::Maven,
-            }),
+            version: PackageVersion::FirstParty("1.3".into()),
+            package_type: PackageType::Maven,
         }];
 
         for expected_pkg in expected_pkgs {
@@ -165,15 +156,61 @@ mod tests {
     #[test]
     fn parse_spdx_2_3_yaml() {
         let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.yaml")).unwrap();
-        assert_eq!(pkgs.len(), 3);
+        assert_eq!(pkgs.len(), 1);
 
         let expected_pkgs = [Package {
             name: "org.apache.jena/apache-jena".into(),
-            version: PackageVersion::FirstParty(FirstPartyVersion {
-                version: "3.12.0".into(),
-                registry: PackageType::Maven,
-            }),
+            version: PackageVersion::FirstParty("3.12.0".into()),
+            package_type: PackageType::Maven,
         }];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
+    }
+
+    #[test]
+    fn parse_spdx_2_3_json() {
+        let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.json")).unwrap();
+        assert_eq!(pkgs.len(), 2673);
+
+        let expected_pkgs = [
+            Package {
+                name: "@colors/colors".into(),
+                version: PackageVersion::FirstParty("1.5.0".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "CFPropertyList".into(),
+                version: PackageVersion::FirstParty("2.3.6".into()),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "async-timeout".into(),
+                version: PackageVersion::FirstParty("4.0.2".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "org.codehaus.classworlds/classworlds".into(),
+                version: PackageVersion::FirstParty("1.1".into()),
+                package_type: PackageType::Maven,
+            },
+            Package {
+                name: "Newtonsoft.Json".into(),
+                version: PackageVersion::FirstParty("13.0.1".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "dmitri.shuralyov.com/gpu/mtl".into(),
+                version: PackageVersion::FirstParty("v0.0.0-20190408044501-666a987793e9".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "env_logger".into(),
+                version: PackageVersion::FirstParty("0.8.4".into()),
+                package_type: PackageType::Cargo,
+            },
+        ];
 
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));

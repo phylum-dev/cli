@@ -322,7 +322,7 @@ mod tests {
             (LockfileFormat::Msbuild, 2),
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
-            (LockfileFormat::Sbom, 2),
+            (LockfileFormat::Sbom, 3),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {

@@ -6,7 +6,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Result};
 use phylum_lockfile::{
-    get_path_format, FirstPartyVersion, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
+    get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
 };
 use phylum_types::types::package::PackageDescriptor;
 
@@ -92,16 +92,9 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
     packages
         .drain(..)
         .filter_map(|package| {
-            let mut package_type = package_type;
             // Check if package should be submitted based on version format.
             let version = match package.version {
-                PackageVersion::FirstParty(FirstPartyVersion { registry, version }) => {
-                    // Use the correct registry for submission
-                    if package_type == PackageType::Sbom {
-                        package_type = registry
-                    }
-                    version
-                },
+                PackageVersion::FirstParty(version) => version,
                 PackageVersion::ThirdParty(ThirdPartyVersion { registry, version }) => {
                     log::debug!("Using registry {registry:?} for {} ({version})", package.name);
                     version

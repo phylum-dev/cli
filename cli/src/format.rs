@@ -361,7 +361,6 @@ where
                 PackageType::Nuget => "NuGet",
                 PackageType::Golang => "Golang",
                 PackageType::Cargo => "Cargo",
-                PackageType::Sbom => "Sbom",
             })
         })
         .collect::<Vec<_>>();
