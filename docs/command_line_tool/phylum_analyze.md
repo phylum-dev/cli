@@ -17,9 +17,6 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 
 ### Options
 
--F, --force
-&emsp; Force re-processing of packages (even if they already exist in the system)
-
 -l, --label <label>
 &emsp; Specify a label to use for analysis
 
