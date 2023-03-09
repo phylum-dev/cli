@@ -297,7 +297,6 @@ impl PhylumApi {
         &self,
         req_type: &PackageType,
         package_list: &[PackageDescriptor],
-        is_user: bool,
         project: ProjectId,
         label: Option<String>,
         group_name: Option<String>,
@@ -305,7 +304,7 @@ impl PhylumApi {
         let req = SubmitPackageRequest {
             package_type: req_type.to_owned(),
             packages: package_list.to_vec(),
-            is_user,
+            is_user: true,
             project,
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
             group_name,
@@ -496,7 +495,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client.submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None).await?;
+        client.submit_request(&PackageType::Npm, &[pkg], project_id, label, None).await?;
 
         // Request should have been submitted with a bearer token
         let bearer_token = token_holder.lock().unwrap().take();
@@ -526,7 +525,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client.submit_request(&PackageType::Npm, &[pkg], true, project_id, label, None).await?;
+        client.submit_request(&PackageType::Npm, &[pkg], project_id, label, None).await?;
         Ok(())
     }
 

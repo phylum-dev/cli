@@ -249,10 +249,6 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("analyze")
                 .about("Submit a request for analysis to the processing system")
                 .args(&[
-                    Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
-                        "Force re-processing of packages (even if they already exist in the \
-                         system)",
-                    ),
                     Arg::new("label")
                         .short('l')
                         .long("label")
@@ -308,10 +304,6 @@ pub fn add_subcommands(command: Command) -> Command {
                         .long("type")
                         .value_name("type")
                         .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
-                    Arg::new("force").action(ArgAction::SetTrue).short('F').long("force").help(
-                        "Force re-processing of packages (even if they already exist in the \
-                         system)",
-                    ),
                     Arg::new("label")
                         .short('l')
                         .long("label")

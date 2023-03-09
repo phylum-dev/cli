@@ -114,7 +114,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     let mut pretty_print = false;
     let mut display_filter = None;
     let mut action = Action::None;
-    let is_user; // is a user (non-batch) request
     let jobs_project;
     let label;
 
@@ -123,7 +122,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         verbose = log::max_level() > LevelFilter::Warn;
         pretty_print = !matches.get_flag("json");
         display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
-        is_user = !matches.get_flag("force");
         synch = true;
 
         jobs_project = JobsProject::new(api, matches).await?;
@@ -165,7 +163,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 .map_err(|_| anyhow!("invalid package type: {}", package_type))?
         }
         label = matches.get_one::<String>("label");
-        is_user = !matches.get_flag("force");
 
         while !eof {
             match reader.read_line(&mut line) {
@@ -201,7 +198,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         .submit_request(
             &request_type,
             &packages,
-            is_user,
             jobs_project.project_id,
             label.map(String::from),
             jobs_project.group,

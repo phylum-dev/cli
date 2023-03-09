@@ -177,7 +177,7 @@ async fn analyze(
         .collect::<Vec<_>>();
 
     let job_id = api
-        .submit_request(&package_type, &packages, false, project, None, group.map(String::from))
+        .submit_request(&package_type, &packages, project, None, group.map(String::from))
         .await?;
 
     Ok(job_id)
