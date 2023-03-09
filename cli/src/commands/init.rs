@@ -45,11 +45,9 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let (project, group) = prompt_project(&groups, cli_project, cli_group).await?;
 
     // Interactively prompt for missing lockfile information.
-    println!();
     let lockfiles = prompt_lockfiles(cli_lockfiles, cli_lockfile_type)?;
 
     // Attempt to create the project.
-    println!();
     let result = project::create_project(api, &project, group.clone()).await;
 
     let mut project_config = match result {
@@ -146,6 +144,8 @@ async fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
     let prompt = "[ENTER] Confirm\nProject Group";
     let index = FuzzySelect::new().with_prompt(prompt).items(&group_names).default(0).interact()?;
 
+    println!();
+
     match index {
         0 => Ok(None),
         index => Ok(group_names.get(index).cloned().map(String::from)),
@@ -226,14 +226,14 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
             retain
         });
 
+        println!();
+
         // Return lockfiles if we found at least one and no others were requested.
         match lockfiles.last().map_or("others", |lockfile| lockfile.as_str()) {
             "others" => lockfiles.pop(),
             _ => return Ok(lockfiles),
         };
     }
-
-    println!();
 
     // Construct dialoguer freetext prompt.
     let mut input = Input::new();
@@ -252,6 +252,8 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
     // Prompt for additional lockfiles.
     let other_lockfiles: String = input.interact_text()?;
 
+    println!();
+
     // Remove whitespace around lockfiles and add them to our list.
     for lockfile in
         other_lockfiles.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
@@ -266,10 +268,10 @@ fn prompt_lockfile_names() -> io::Result<Vec<String>> {
 fn prompt_lockfile_type(lockfile: &str) -> io::Result<String> {
     let lockfile_types: Vec<_> = LockfileFormat::iter().map(|format| format.name()).collect();
 
-    println!();
-
     let prompt = format!("[ENTER] Select and Confirm\nSelect type for lockfile {lockfile:?}");
     let index = FuzzySelect::new().with_prompt(prompt).items(&lockfile_types).interact()?;
+
+    println!();
 
     Ok(lockfile_types[index].to_owned())
 }
