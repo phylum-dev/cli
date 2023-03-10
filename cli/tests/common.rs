@@ -24,8 +24,6 @@ enum Cwd {
     None,
 }
 
-
-
 #[derive(Default)]
 pub struct TestCliBuilder {
     config: Option<Config>,

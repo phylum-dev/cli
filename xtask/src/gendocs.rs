@@ -87,7 +87,8 @@ mod tests {
 
         // Ensure all pages are up-to-date.
         for (path, expected) in pages().unwrap() {
-            let current = fs::read_to_string(&path).unwrap_or_else(|_| panic!("missing {path:?} CLI docs"));
+            let current =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("missing {path:?} CLI docs"));
             assert_eq!(current, expected, "out of date {path:?} CLI docs");
         }
     }
