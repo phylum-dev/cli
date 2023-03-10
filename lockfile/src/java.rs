@@ -24,10 +24,6 @@ impl Parse for GradleLock {
         Ok(entries)
     }
 
-    fn package_type(&self) -> PackageType {
-        PackageType::Maven
-    }
-
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("gradle.lockfile"))
     }
@@ -56,10 +52,6 @@ impl Parse for Pom {
                 Ok(packages)
             },
         }
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Maven
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -134,6 +126,7 @@ impl Pom {
                             &dep.artifact_id.clone().unwrap_or_default()
                         ),
                         version: PackageVersion::FirstParty(s.into()),
+                        package_type: PackageType::Maven,
                     })
                 })
             })
@@ -224,6 +217,7 @@ mod tests {
         let additional_dependency = Package {
             name: "io.phylum:fake-dependency".into(),
             version: PackageVersion::FirstParty("1.2.3".into()),
+            package_type: PackageType::Maven,
         };
 
         assert!(pkgs.contains(&additional_dependency));

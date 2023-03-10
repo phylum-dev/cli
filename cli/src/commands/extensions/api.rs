@@ -361,8 +361,12 @@ async fn parse_lockfile(
     // Attempt to parse as requested lockfile type.
     let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_deref())?;
 
+    // PackageLock should report LockfileFormat and not PackageType. This is just a
+    // placeholder until that can be updated.
+    let package_type = parsed.packages.first().map(|p| p.package_type).unwrap_or(PackageType::Npm);
+
     Ok(PackageLock {
-        package_type: parsed.package_type,
+        package_type,
         packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
     })
 }

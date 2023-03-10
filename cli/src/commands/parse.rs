@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use phylum_lockfile::{
     get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
 };
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageDescriptor;
 
 use crate::commands::{CommandResult, ExitCode};
 use crate::config;
@@ -16,7 +16,6 @@ use crate::config;
 pub struct ParsedLockfile {
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
-    pub package_type: PackageType,
 }
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
@@ -61,10 +60,9 @@ pub fn parse_lockfile(
             let data = read_to_string(path)?;
             let parser = format.parser();
 
-            let package_type = parser.package_type();
-            let packages = filter_packages(parser.parse(&data)?, package_type);
+            let packages = filter_packages(parser.parse(&data)?);
 
-            Ok(ParsedLockfile { package_type, packages, format })
+            Ok(ParsedLockfile { packages, format })
         },
         // Attempt to parse with all parsers until success.
         None => try_get_packages(path.as_ref()),
@@ -80,10 +78,9 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
         if let Some(packages) = parser.parse(data.as_str()).ok().filter(|pkgs| !pkgs.is_empty()) {
             log::info!("Identified lockfile type: {}", format);
 
-            let package_type = parser.package_type();
-            let packages = filter_packages(packages, package_type);
+            let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { package_type, packages, format });
+            return Ok(ParsedLockfile { packages, format });
         }
     }
 
@@ -91,10 +88,7 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
 }
 
 /// Filter packages for submission.
-fn filter_packages(
-    mut packages: Vec<Package>,
-    package_type: PackageType,
-) -> Vec<PackageDescriptor> {
+fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
     packages
         .drain(..)
         .filter_map(|package| {
@@ -119,7 +113,11 @@ fn filter_packages(
                 },
             };
 
-            Some(PackageDescriptor { package_type, version, name: package.name })
+            Some(PackageDescriptor {
+                package_type: package.package_type,
+                version,
+                name: package.name,
+            })
         })
         .collect()
 }
@@ -131,34 +129,29 @@ mod tests {
     #[test]
     fn it_can_identify_lock_file_types() {
         let test_cases = [
-            ("../tests/fixtures/Gemfile.lock", PackageType::RubyGems, LockfileFormat::Gem),
-            ("../tests/fixtures/yarn-v1.lock", PackageType::Npm, LockfileFormat::Yarn),
-            ("../tests/fixtures/yarn.lock", PackageType::Npm, LockfileFormat::Yarn),
-            ("../tests/fixtures/package-lock.json", PackageType::Npm, LockfileFormat::Npm),
-            ("../tests/fixtures/package-lock-v6.json", PackageType::Npm, LockfileFormat::Npm),
-            ("../tests/fixtures/Calculator.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
-            ("../tests/fixtures/sample.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
-            ("../tests/fixtures/Calculator.csproj", PackageType::Nuget, LockfileFormat::Msbuild),
-            ("../tests/fixtures/gradle.lockfile", PackageType::Maven, LockfileFormat::Gradle),
-            ("../tests/fixtures/effective-pom.xml", PackageType::Maven, LockfileFormat::Maven),
-            (
-                "../tests/fixtures/workspace-effective-pom.xml",
-                PackageType::Maven,
-                LockfileFormat::Maven,
-            ),
-            ("../tests/fixtures/requirements-locked.txt", PackageType::PyPi, LockfileFormat::Pip),
-            ("../tests/fixtures/Pipfile.lock", PackageType::PyPi, LockfileFormat::Pipenv),
-            ("../tests/fixtures/poetry.lock", PackageType::PyPi, LockfileFormat::Poetry),
-            ("../tests/fixtures/poetry_v2.lock", PackageType::PyPi, LockfileFormat::Poetry),
-            ("../tests/fixtures/go.sum", PackageType::Golang, LockfileFormat::Go),
-            ("../tests/fixtures/Cargo_v1.lock", PackageType::Cargo, LockfileFormat::Cargo),
-            ("../tests/fixtures/Cargo_v2.lock", PackageType::Cargo, LockfileFormat::Cargo),
-            ("../tests/fixtures/Cargo_v3.lock", PackageType::Cargo, LockfileFormat::Cargo),
+            ("../tests/fixtures/Gemfile.lock", LockfileFormat::Gem),
+            ("../tests/fixtures/yarn-v1.lock", LockfileFormat::Yarn),
+            ("../tests/fixtures/yarn.lock", LockfileFormat::Yarn),
+            ("../tests/fixtures/package-lock.json", LockfileFormat::Npm),
+            ("../tests/fixtures/package-lock-v6.json", LockfileFormat::Npm),
+            ("../tests/fixtures/Calculator.csproj", LockfileFormat::Msbuild),
+            ("../tests/fixtures/sample.csproj", LockfileFormat::Msbuild),
+            ("../tests/fixtures/Calculator.csproj", LockfileFormat::Msbuild),
+            ("../tests/fixtures/gradle.lockfile", LockfileFormat::Gradle),
+            ("../tests/fixtures/effective-pom.xml", LockfileFormat::Maven),
+            ("../tests/fixtures/workspace-effective-pom.xml", LockfileFormat::Maven),
+            ("../tests/fixtures/requirements-locked.txt", LockfileFormat::Pip),
+            ("../tests/fixtures/Pipfile.lock", LockfileFormat::Pipenv),
+            ("../tests/fixtures/poetry.lock", LockfileFormat::Poetry),
+            ("../tests/fixtures/poetry_v2.lock", LockfileFormat::Poetry),
+            ("../tests/fixtures/go.sum", LockfileFormat::Go),
+            ("../tests/fixtures/Cargo_v1.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/Cargo_v2.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/Cargo_v3.lock", LockfileFormat::Cargo),
         ];
 
-        for (file, expected_type, expected_format) in test_cases {
+        for (file, expected_format) in test_cases {
             let parsed = try_get_packages(Path::new(file)).unwrap();
-            assert_eq!(parsed.package_type, expected_type, "{}", file);
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }

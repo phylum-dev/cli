@@ -4,6 +4,7 @@ use nom::character::complete::{alphanumeric1, line_ending, space0, space1};
 use nom::combinator::{opt, recognize};
 use nom::multi::many1;
 use nom::sequence::{preceded, tuple};
+use phylum_types::types::package::PackageType;
 
 use super::Result;
 use crate::{Package, PackageVersion};
@@ -27,6 +28,7 @@ fn package(input: &str) -> Result<&str, Package> {
     let package = Package {
         name: name.to_string(),
         version: PackageVersion::FirstParty(version.to_string()),
+        package_type: PackageType::Golang,
     };
 
     Ok((input, package))

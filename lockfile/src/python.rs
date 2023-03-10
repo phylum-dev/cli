@@ -25,10 +25,6 @@ impl Parse for PyRequirements {
         Ok(entries)
     }
 
-    fn package_type(&self) -> PackageType {
-        PackageType::PyPi
-    }
-
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("requirements.txt"))
     }
@@ -68,13 +64,9 @@ impl Parse for PipFile {
                     }
                 };
 
-                Ok(Package { name, version })
+                Ok(Package { name, version, package_type: PackageType::PyPi })
             })
             .collect()
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::PyPi
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -118,10 +110,6 @@ impl Parse for Poetry {
         lock.packages.drain(..).map(Package::try_from).collect()
     }
 
-    fn package_type(&self) -> PackageType {
-        PackageType::PyPi
-    }
-
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("poetry.lock"))
     }
@@ -151,6 +139,7 @@ impl TryFrom<PoetryPackage> for Package {
                 return Ok(Self {
                     name: package.name,
                     version: PackageVersion::FirstParty(package.version),
+                    package_type: PackageType::PyPi,
                 });
             },
         };
@@ -177,7 +166,7 @@ impl TryFrom<PoetryPackage> for Package {
             source_type => return Err(anyhow!("Unknown package source_type: {source_type:?}")),
         };
 
-        Ok(Self { name: package.name, version })
+        Ok(Self { name: package.name, version, package_type: PackageType::PyPi })
     }
 }
 
@@ -210,38 +199,47 @@ mod tests {
             Package {
                 name: "flask".into(),
                 version: PackageVersion::FirstParty("2.2.2".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "requests".into(),
                 version: PackageVersion::FirstParty("2.28.1".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "werkzeug".into(),
                 version: PackageVersion::FirstParty("2.9.2".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "attr".into(),
                 version: PackageVersion::Path(Some("file:///tmp/attr".into())),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "numpy".into(),
                 version: PackageVersion::Path(Some("file:///tmp/testing/numpy-1.23.5-pp38-pypy38_pp73-win_amd64.whl".into())),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "git-for-pip-example".into(),
                 version: PackageVersion::Git("git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "tomli".into(),
                 version: PackageVersion::DownloadUrl("https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "phylum".into(),
                 version: PackageVersion::Git("git+ssh://git@github.com/phylum-dev/phylum-ci.git#7d6d859ad368d1ab0a933f24679e3d3c08a40eac".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "editable".into(),
                 version: PackageVersion::Path(Some("/tmp/editable".into())),
+                package_type: PackageType::PyPi,
             },
         ];
 
@@ -276,25 +274,37 @@ mod tests {
         assert_eq!(pkgs.len(), 30);
 
         let expected_pkgs = [
-            Package { name: "jdcal".into(), version: PackageVersion::FirstParty("1.3".into()) },
+            Package {
+                name: "jdcal".into(),
+                version: PackageVersion::FirstParty("1.3".into()),
+                package_type: PackageType::PyPi,
+            },
             Package {
                 name: "certifi".into(),
                 version: PackageVersion::FirstParty("2017.7.27.1".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "unittest2".into(),
                 version: PackageVersion::FirstParty("1.1.0".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "django".into(),
                 version: PackageVersion::Git("https://github.com/django/django.git#1.11.4".into()),
+                package_type: PackageType::PyPi,
             },
-            Package { name: "e1839a8".into(), version: PackageVersion::Path(Some(".".into())) },
+            Package {
+                name: "e1839a8".into(),
+                version: PackageVersion::Path(Some(".".into())),
+                package_type: PackageType::PyPi,
+            },
             Package {
                 name: "e682b37".into(),
                 version: PackageVersion::DownloadUrl(
                     "https://github.com/divio/django-cms/archive/release/3.4.x.zip".into(),
                 ),
+                package_type: PackageType::PyPi,
             },
         ];
 
@@ -312,14 +322,17 @@ mod tests {
             Package {
                 name: "cachecontrol".into(),
                 version: PackageVersion::FirstParty("0.12.10".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "flask".into(),
                 version: PackageVersion::FirstParty("2.1.1".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "poetry".into(),
                 version: PackageVersion::Git("https://github.com/python-poetry/poetry.git#4bc181b06ff9780791bc9e3d5b11bb807ca29d70".into()),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "autopep8".into(),
@@ -327,18 +340,22 @@ mod tests {
                     registry: "https://example.com/api/pypi/python/simple".into(),
                     version: "1.5.6".into(),
                 }),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "directory-test".into(),
                 version: PackageVersion::Path(Some("directory_test".into())),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "requests".into(),
                 version: PackageVersion::Path(Some("requests/requests-2.27.1-py2.py3-none-any.whl".into())),
+                package_type: PackageType::PyPi,
             },
             Package {
                 name: "toml".into(),
                 version: PackageVersion::DownloadUrl("https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz".into()),
+                package_type: PackageType::PyPi,
             },
         ];
 
@@ -356,9 +373,18 @@ mod tests {
             Package {
                 name: "certifi".into(),
                 version: PackageVersion::FirstParty("2020.12.5".into()),
+                package_type: PackageType::PyPi,
             },
-            Package { name: "pywin32".into(), version: PackageVersion::FirstParty("227".into()) },
-            Package { name: "docker".into(), version: PackageVersion::FirstParty("4.3.1".into()) },
+            Package {
+                name: "pywin32".into(),
+                version: PackageVersion::FirstParty("227".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "docker".into(),
+                version: PackageVersion::FirstParty("4.3.1".into()),
+                package_type: PackageType::PyPi,
+            },
         ];
 
         for expected_pkg in expected_pkgs {

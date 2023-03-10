@@ -8,6 +8,7 @@ use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
 use nom::sequence::{delimited, pair, terminated};
 use nom::Err as NomErr;
+use phylum_types::types::package::PackageType;
 
 use crate::parsers::Result;
 use crate::{Package, PackageVersion};
@@ -49,7 +50,7 @@ fn package(input: &str) -> Result<&str, Package> {
             PackageVersion::DownloadUrl(uri_version.into())
         };
 
-        return Ok((input, Package { name, version }));
+        return Ok((input, Package { name, version, package_type: PackageType::PyPi }));
     }
 
     // Parse first-party dependencies.
@@ -59,7 +60,7 @@ fn package(input: &str) -> Result<&str, Package> {
     // Ensure line is empty after the dependency.
     line_done(input)?;
 
-    Ok((input, Package { name, version }))
+    Ok((input, Package { name, version, package_type: PackageType::PyPi }))
 }
 
 /// Recognize local package overrides like `-e /tmp/editable`.
@@ -105,7 +106,7 @@ fn editable(input: &str) -> Result<&str, Package> {
     // Ensure line is empty after the dependency.
     line_done(input)?;
 
-    Ok((input, Package { name, version }))
+    Ok((input, Package { name, version, package_type: PackageType::PyPi }))
 }
 
 /// Find URI dependencies.

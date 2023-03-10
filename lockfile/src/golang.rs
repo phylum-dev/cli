@@ -4,7 +4,6 @@ use std::path::Path;
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
-use phylum_types::types::package::PackageType;
 
 use crate::parsers::go_sum;
 use crate::{Package, Parse};
@@ -20,10 +19,6 @@ impl Parse for GoSum {
         Ok(entries)
     }
 
-    fn package_type(&self) -> PackageType {
-        PackageType::Golang
-    }
-
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("go.sum"))
     }
@@ -31,6 +26,8 @@ impl Parse for GoSum {
 
 #[cfg(test)]
 mod tests {
+    use phylum_types::types::package::PackageType;
+
     use super::*;
     use crate::PackageVersion;
 
@@ -43,10 +40,12 @@ mod tests {
             Package {
                 name: "cloud.google.com/go".into(),
                 version: PackageVersion::FirstParty("v0.72.0".into()),
+                package_type: PackageType::Golang,
             },
             Package {
                 name: "sourcegraph.com/sourcegraph/appdash".into(),
                 version: PackageVersion::FirstParty("v0.0.0-20190731080439-ebfcffb1b5c0".into()),
+                package_type: PackageType::Golang,
             },
         ];
 

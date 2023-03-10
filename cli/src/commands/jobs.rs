@@ -138,7 +138,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            request_type = res.package_type;
             packages.extend(res.packages.into_iter());
         }
     } else if let Some(matches) = matches.subcommand_matches("batch") {
