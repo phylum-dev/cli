@@ -20,7 +20,7 @@ fn parse_with_project_lockfile() {
 
     test_cli
         .cmd()
-        .args(&["parse"])
+        .args(["parse"])
         .assert()
         .success()
         .stdout(predicate::str::contains("\"name\": \"typescript\""));

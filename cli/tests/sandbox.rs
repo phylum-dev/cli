@@ -16,13 +16,13 @@ fn default_deny_fs() {
 
     // Test write access.
     test_cli
-        .run(&["sandbox", "--allow-run", "/", "bash", "-c", &format!("echo x > {test_file_path}")])
+        .run(["sandbox", "--allow-run", "/", "bash", "-c", &format!("echo x > {test_file_path}")])
         .failure()
         .stderr(predicate::str::contains(expected_error));
 
     // Test read access.
     test_cli
-        .run(&["sandbox", "--allow-run", "cat", "cat", test_file_path])
+        .run(["sandbox", "--allow-run", "cat", "cat", test_file_path])
         .failure()
         .stderr(predicate::str::contains(expected_error));
 }
@@ -35,7 +35,7 @@ fn allow_fs() {
 
     // Test write access.
     test_cli
-        .run(&[
+        .run([
             "sandbox",
             "--allow-run",
             "/",
@@ -49,7 +49,7 @@ fn allow_fs() {
 
     // Test read access.
     test_cli
-        .run(&[
+        .run([
             "sandbox",
             "--allow-run",
             "cat",
@@ -67,7 +67,7 @@ fn default_deny_env() {
 
     test_cli
         .cmd()
-        .args(&["sandbox", "env"])
+        .args(["sandbox", "env"])
         .env("TEST", "VALUE")
         .assert()
         .success()
@@ -80,7 +80,7 @@ fn allow_env() {
 
     test_cli
         .cmd()
-        .args(&["sandbox", "--allow-run", "/", "--allow-env", "TEST", "env"])
+        .args(["sandbox", "--allow-run", "/", "--allow-env", "TEST", "env"])
         .env("TEST", "VALUE")
         .assert()
         .success()
@@ -92,7 +92,7 @@ fn default_deny_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(&["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://phylum.io"])
+        .run(["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://phylum.io"])
         .failure()
         .stderr(predicate::str::contains("Could not resolve host: phylum.io"));
 }
@@ -102,7 +102,7 @@ fn allow_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(&[
+        .run([
             "sandbox",
             "--allow-run",
             "/",

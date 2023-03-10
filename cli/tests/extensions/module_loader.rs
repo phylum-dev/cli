@@ -26,7 +26,7 @@ fn good_module_loads_successfully() {
     test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
 
     test_cli
-        .run(&["module-import-success"])
+        .run(["module-import-success"])
         .success()
         .stdout(predicate::str::contains("I should contain 12345"));
 }
@@ -40,7 +40,7 @@ fn module_with_traversal_fails_to_load() {
     test_cli.install_extension(&fixtures_path().join("module-import").join("fail-local")).success();
 
     test_cli
-        .run(&["module-import-fail-local"])
+        .run(["module-import-fail-local"])
         .failure()
         .stderr(predicate::str::contains("importing from paths outside"));
 }
@@ -54,7 +54,7 @@ fn phylum_module_works() {
         .install_extension(&fixtures_path().join("module-import").join("phylum-module"))
         .success();
 
-    test_cli.run(&["phylum-module"]).success().stdout("v0\n");
+    test_cli.run(["phylum-module"]).success().stdout("v0\n");
 }
 
 // A symlink is directly created during the test, as no symlinks are committed
@@ -71,7 +71,7 @@ fn symlinks_are_resolved() {
     std::os::unix::fs::symlink(ext_path.join("symlink_me.ts"), ext_path.join("symlink.ts"))
         .unwrap();
 
-    test_cli.run(&["symlink"]).success().stdout("I am symlinked\n");
+    test_cli.run(["symlink"]).success().stdout("I am symlinked\n");
 }
 
 // A symlink is directly created during the test, as no symlinks are committed
@@ -93,7 +93,7 @@ fn symlinks_with_traversal_fail() {
     .unwrap();
 
     test_cli
-        .run(&["symlink"])
+        .run(["symlink"])
         .failure()
         .stderr(predicate::str::contains("importing from paths outside"));
 }

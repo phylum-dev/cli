@@ -8,7 +8,7 @@ fn permission_dialog_is_shown_without_yes_flag() {
     let test_cli = TestCli::builder().cwd(fixtures_path().join("permissions")).build();
 
     test_cli
-        .run(&[
+        .run([
             "extension",
             "install",
             &fixtures_path().join("permissions").join("correct-read-perms").to_string_lossy(),
@@ -26,7 +26,7 @@ fn correct_read_permission_successful_install_and_run() {
         .success();
 
     test_cli
-        .run(&["correct-read-perms"])
+        .run(["correct-read-perms"])
         .success()
         .stdout(predicate::str::contains("await Deno.readFile"));
 }
@@ -40,7 +40,7 @@ fn incorrect_read_permission_unsuccessful_run() {
         .success();
 
     test_cli
-        .run(&["incorrect-read-perms"])
+        .run(["incorrect-read-perms"])
         .failure()
         .stderr("❗ Error: Requires read access to \"/tmp/passwd\"\n");
 }
@@ -54,7 +54,7 @@ fn correct_net_permission_successful_install_and_run() {
         .success();
 
     test_cli
-        .run(&["correct-net-perms"])
+        .run(["correct-net-perms"])
         .success()
         .stdout(predicate::str::contains("<!doctype html>"));
 }
@@ -68,7 +68,7 @@ fn incorrect_net_permission_unsuccessful_run() {
         .success();
 
     test_cli
-        .run(&["incorrect-net-perms"])
+        .run(["incorrect-net-perms"])
         .failure()
         .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
 }
@@ -82,7 +82,7 @@ fn correct_sandbox_run_permission_successful_install_and_run() {
         .install_extension(&fixtures_path().join("permissions").join("correct-run-perms"))
         .success();
 
-    test_cli.run(&["correct-run-perms"]).success().stdout(predicate::str::contains("hello"));
+    test_cli.run(["correct-run-perms"]).success().stdout(predicate::str::contains("hello"));
 }
 
 #[test]
