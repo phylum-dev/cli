@@ -2,12 +2,12 @@
   "importMap": "import_map.json",
   "lint": {
     "files": {
-      "include": ["extensions/", "cli/src/extension_api.ts"]
+      "include": ["extensions/"]
     }
   },
   "fmt": {
     "files": {
-      "include": ["extensions/", "cli/src/extension_api.ts"]
+      "include": ["extensions/"]
     }
   },
   "lock": false
