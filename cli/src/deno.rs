@@ -26,7 +26,7 @@ use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
 
 /// Load Phylum API for module injection.
-const EXTENSION_API: &str = include_str!("./extension_api.ts");
+const EXTENSION_API: &str = include_str!("../../extensions/phylum.ts");
 
 /// Execute Phylum extension.
 pub async fn run(

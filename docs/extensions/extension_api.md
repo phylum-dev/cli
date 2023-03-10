@@ -33,4 +33,4 @@ The following API methods are not supported:
 
 The Phylum extension API is documented in the [TypeScript module file].
 
-[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/cli/src/extension_api.ts
+[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/extensions/phylum.ts

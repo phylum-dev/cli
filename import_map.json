@@ -1,5 +1,5 @@
 {
   "imports": {
-    "phylum": "./cli/src/extension_api.ts"
+    "phylum": "./extensions/phylum.ts"
   }
 }
