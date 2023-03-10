@@ -108,7 +108,6 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 /// displays summary information about the submitted package(s)
 pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let mut packages = vec![];
-    let mut request_type = api.config().request_type; // default request type
     let mut synch = false; // get status after submission
     let mut verbose = false;
     let mut pretty_print = false;
@@ -155,12 +154,12 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             Box::new(io::BufReader::new(io::stdin()))
         };
 
-        // If a package type was provided on the command line, prefer that
-        //  to the global setting
-        if let Some(package_type) = matches.get_one::<String>("type") {
-            request_type = PackageType::from_str(package_type)
-                .map_err(|_| anyhow!("invalid package type: {}", package_type))?
-        }
+        let request_type = match matches.get_one::<String>("type") {
+            Some(package_type) => PackageType::from_str(package_type)
+                .map_err(|_| anyhow!("invalid package type: {}", package_type))?,
+            None => api.config().request_type,
+        };
+
         label = matches.get_one::<String>("label");
 
         while !eof {
@@ -195,7 +194,6 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     log::debug!("Submitting request...");
     let job_id = api
         .submit_request(
-            &request_type,
             &packages,
             jobs_project.project_id,
             label.map(String::from),

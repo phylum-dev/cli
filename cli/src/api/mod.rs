@@ -295,14 +295,15 @@ impl PhylumApi {
     /// Submit a new request to the system
     pub async fn submit_request(
         &self,
-        req_type: &PackageType,
         package_list: &[PackageDescriptor],
         project: ProjectId,
         label: Option<String>,
         group_name: Option<String>,
     ) -> Result<JobId> {
         let req = SubmitPackageRequest {
-            package_type: req_type.to_owned(),
+            // This package_type is ignored by the API, but it still validates it, so we have to put
+            // something here.
+            package_type: PackageType::Npm,
             packages: package_list.to_vec(),
             is_user: true,
             project,
@@ -495,7 +496,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client.submit_request(&PackageType::Npm, &[pkg], project_id, label, None).await?;
+        client.submit_request(&[pkg], project_id, label, None).await?;
 
         // Request should have been submitted with a bearer token
         let bearer_token = token_holder.lock().unwrap().take();
@@ -525,7 +526,7 @@ mod tests {
         };
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
-        client.submit_request(&PackageType::Npm, &[pkg], project_id, label, None).await?;
+        client.submit_request(&[pkg], project_id, label, None).await?;
         Ok(())
     }
 

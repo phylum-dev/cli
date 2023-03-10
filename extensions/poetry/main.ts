@@ -210,7 +210,7 @@ async function poetryCheckDryRun(
     // "1.2.3 https://github.com/demo/demo.git" -> "1.2.3"
     version = version.split(" ")[0];
 
-    packages.push({ name, version });
+    packages.push({ name, version, package_type: "pypi" });
   }
 
   // Abort if there's nothing to analyze.
@@ -220,7 +220,7 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const jobId = await PhylumApi.analyze("pypi", packages);
+  const jobId = await PhylumApi.analyze(undefined, packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
   if (jobStatus.pass && jobStatus.status === "complete") {

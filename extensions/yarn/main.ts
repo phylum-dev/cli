@@ -268,7 +268,7 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze("npm", lockfile.packages);
+  const jobId = await PhylumApi.analyze(undefined, lockfile.packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
   if (jobStatus.pass && jobStatus.status === "complete") {
