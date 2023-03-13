@@ -26,7 +26,7 @@ pub mod permissions;
 pub mod state;
 
 const EXTENSION_SKELETON: &[u8] = b"\
-import { PhylumApi } from 'phylum';
+import { PhylumApi } from 'https://deno.phylum.io/phylum.ts';
 
 console.log('Hello, World!');
 ";

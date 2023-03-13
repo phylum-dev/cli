@@ -18,15 +18,12 @@ use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{colors, fmt_errors, BootstrapOptions};
 use futures::future::BoxFuture;
 use tokio::fs;
-use url::{Host, Url};
+use url::Url;
 
 use crate::api::PhylumApi;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
-
-/// Load Phylum API for module injection.
-const EXTENSION_API: &str = include_str!("../../extensions/phylum.ts");
 
 /// Execute Phylum extension.
 pub async fn run(
@@ -160,25 +157,14 @@ impl ExtensionsModuleLoader {
     }
 
     async fn load_from_deno_std(path: &Url) -> Result<String> {
-        if let Some(Host::Domain("deno.land")) = path.host() {
-            let response = reqwest::get(path.clone()).await?;
-            Ok(response.text().await?)
-        } else {
-            Err(anyhow!(
-                "`{}`: importing from domains other than `deno.land` is not allowed",
-                path.host().unwrap_or(Host::Domain("<unknown host>"))
-            ))
-        }
+        let response = reqwest::get(path.clone()).await?;
+        Ok(response.text().await?)
     }
 }
 
 impl ModuleLoader for ExtensionsModuleLoader {
     fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
-        if specifier == "phylum" {
-            Ok(ModuleSpecifier::parse("deno:phylum")?)
-        } else {
-            Ok(deno_core::resolve_import(specifier, referrer)?)
-        }
+        Ok(deno_core::resolve_import(specifier, referrer)?)
     }
 
     fn load(
@@ -191,11 +177,6 @@ impl ModuleLoader for ExtensionsModuleLoader {
         let extension_path = self.extension_path.clone();
 
         Box::pin(async move {
-            // Inject Phylum API module.
-            if module_specifier.as_str() == "deno:phylum" {
-                return phylum_module();
-            }
-
             // Determine source file type.
             // We do not care about invalid URLs yet: This match statement is inexpensive,
             // bears no risk and does not do I/O -- it operates fully off of the
@@ -258,17 +239,4 @@ fn transpile(
         media_type,
     })?;
     Ok(parsed.transpile(&Default::default())?.text)
-}
-
-/// Load the internal Phylum API module
-fn phylum_module() -> Result<ModuleSource> {
-    let module_url = "deno:phylum";
-    let code = transpile(module_url, EXTENSION_API, MediaType::TypeScript)?;
-
-    Ok(ModuleSource {
-        code: code.into_bytes().into_boxed_slice(),
-        module_url_specified: module_url.into(),
-        module_url_found: module_url.into(),
-        module_type: ModuleType::JavaScript,
-    })
 }

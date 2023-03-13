@@ -160,7 +160,7 @@ impl<'a> TestExtension<'a> {
         let main = extension_path.join("main.ts");
         fs::write(
             main,
-            format!("import {{ PhylumApi, ApiVersion }} from 'phylum';\n{code}").as_bytes(),
+            format!("import {{ PhylumApi, ApiVersion }} from 'https://deno.phylum.io/phylum.ts';\n{code}").as_bytes(),
         )
         .unwrap();
 
