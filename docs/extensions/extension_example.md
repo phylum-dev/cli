@@ -17,7 +17,7 @@ import { mapValues } from "https://deno.land/std@0.150.0/collections/map_values.
 import { distinct } from "https://deno.land/std@0.150.0/collections/distinct.ts";
 import { groupBy } from "https://deno.land/std@0.150.0/collections/group_by.ts";
 
-import { PhylumApi } from "phylum";
+import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
 
 // Ensure lockfile argument is present.
 if (Deno.args.length != 1) {
@@ -70,7 +70,7 @@ We'll go into more detail on what we need these for later.
 [deno_std]: https://deno.land/std
 
 ```ts
-import { PhylumApi } from "phylum";
+import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
 ```
 
 This is the import for the built-in Phylum API. You'll see this in most Phylum
