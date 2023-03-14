@@ -46,6 +46,8 @@ pub enum ExitCode {
     JsError,
     FailedThresholds,
     ConfirmationFailed,
+    SandboxStart,
+    SandboxStartCollision,
     Custom(i32),
 }
 
@@ -70,7 +72,21 @@ impl From<&ExitCode> for i32 {
             ExitCode::JsError => 16,
             ExitCode::ConfirmationFailed => 17,
             ExitCode::FailedThresholds => 100,
+            ExitCode::SandboxStart => 117,
+            ExitCode::SandboxStartCollision => 118,
             ExitCode::Custom(code) => *code,
         }
+    }
+}
+
+impl PartialEq<i32> for ExitCode {
+    fn eq(&self, code: &i32) -> bool {
+        i32::from(self).eq(code)
+    }
+}
+
+impl PartialEq<ExitCode> for i32 {
+    fn eq(&self, code: &ExitCode) -> bool {
+        self.eq(&i32::from(code))
     }
 }
