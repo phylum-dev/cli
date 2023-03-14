@@ -59,13 +59,7 @@ pub enum ReferenceCategory {
     PackageManager,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Clone)]
-pub struct PkgInfo {
-    pub pkg_name: String,
-    pub pkg_type: PackageType,
-}
-
-impl TryFrom<&PackageInformation> for PkgInfo {
+impl TryFrom<&PackageInformation> for Package {
     type Error = anyhow::Error;
 
     fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
@@ -85,14 +79,40 @@ impl TryFrom<&PackageInformation> for PkgInfo {
             .context("Package manager not found")?;
 
         let purl = PackageUrl::from_str(pkg_url).context("Unable to parse package url")?;
-        let pkg_type =
+        let package_type =
             PackageType::from_str(purl.ty()).map_err(|_| anyhow!("Unrecognized ecosystem"))?;
-        let pkg_name = match purl.namespace() {
+        let name = match purl.namespace() {
             Some(ns) => format!("{}/{}", ns, purl.name()),
             None => purl.name().into(),
         };
+        let pkg_version = match (&pkg_info.version_info, purl.version()) {
+            (Some(v), _) => Some(v.to_string()),
+            (None, Some(v)) => Some(v.into()),
+            _ => None,
+        }
+        .context("Unable to determine version")?;
 
-        Ok(PkgInfo { pkg_name, pkg_type })
+        let version = purl
+            .qualifiers()
+            .iter()
+            .find_map(|(key, value)| match key.as_ref() {
+                "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
+                    version: pkg_version.clone(),
+                    registry: value.to_string(),
+                })),
+                "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
+                "vcs_url" => {
+                    if value.as_ref().starts_with("git+") {
+                        Some(PackageVersion::Git(value.to_string()))
+                    } else {
+                        None
+                    }
+                },
+                _ => None,
+            })
+            .unwrap_or(PackageVersion::FirstParty(pkg_version));
+
+        Ok(Package { name, version, package_type })
     }
 }
 
@@ -102,30 +122,13 @@ impl Parse for Sbom {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let mut lock: Spdx = serde_json::from_str(data).unwrap_or(serde_yaml::from_str(data)?);
 
-        let m = lock
+        let packages = lock
             .packages
             .drain(..)
-            .filter_map(|pkg| {
-                let pkg_info = match PkgInfo::try_from(&pkg).ok() {
-                    Some(pi) => pi,
-                    None => PkgInfo { pkg_name: pkg.name, pkg_type: PackageType::Sbom },
-                };
-
-                match (pkg_info.pkg_type, pkg.version_info) {
-                    (_, Some(version)) => Some(Package {
-                        name: pkg_info.pkg_name.clone(),
-                        version: PackageVersion::FirstParty(version),
-                    }),
-                    _ => None,
-                }
-            })
+            .filter_map(|package_info| Package::try_from(&package_info).ok())
             .collect::<Vec<Package>>();
 
-        Ok(m)
-    }
-
-    fn package_type(&self) -> phylum_types::types::package::PackageType {
-        PackageType::Sbom
+        Ok(packages)
     }
 
     fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
