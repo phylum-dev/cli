@@ -34,7 +34,9 @@ use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
-use crate::commands::{parse, ExitCode};
+use crate::commands::parse;
+#[cfg(unix)]
+use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
 
