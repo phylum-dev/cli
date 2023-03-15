@@ -257,11 +257,15 @@ fn net_sandboxing_fail() {
     #[rustfmt::skip]
     test_cli
         .extension("
-            const output = PhylumApi.runSandboxed({
-                cmd: 'curl',
-                args: ['http://phylum.io'],
-            });
-            Deno.exit(output.code);
+            try {
+                const output = PhylumApi.runSandboxed({
+                    cmd: 'curl',
+                    args: ['http://phylum.io'],
+                });
+                Deno.exit(output.code);
+            } catch (e) {
+                Deno.exit(111);
+            }
         ")
         .build()
         .run()
@@ -309,11 +313,15 @@ fn fs_sandboxing_fail() {
 
     #[rustfmt::skip]
     let js = format!("
-        const output = PhylumApi.runSandboxed({{
-            cmd: 'cat',
-            args: ['{}'],
-        }});
-        Deno.exit(output.code);
+        try {{
+            const output = PhylumApi.runSandboxed({{
+                cmd: 'cat',
+                args: ['{}'],
+            }});
+            Deno.exit(output.code);
+        }} catch (e) {{
+            Deno.exit(111);
+        }}
     ", file.path().to_string_lossy());
 
     test_cli.extension(&js).build().run().failure();

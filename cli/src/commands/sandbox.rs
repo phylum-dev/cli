@@ -18,9 +18,21 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
     // Start subprocess.
     let cmd = matches.get_one::<String>("cmd").unwrap();
     let args: Vec<&String> = matches.get_many("args").unwrap_or_default().collect();
-    let status = Command::new(cmd).args(args).status()?;
+    let status = match Command::new(cmd).args(args).status() {
+        Ok(status) => status,
+        Err(err) => {
+            eprintln!("Process {cmd:?} failed to start: {err}");
+            return Ok(CommandValue::Code(ExitCode::SandboxStart));
+        },
+    };
 
-    if let Some(code) = status.code() {
+    if let Some(mut code) = status.code() {
+        // Remap exit code if it matches our sandbox start failure indicator, to ensure
+        // we can detect the failure reliably.
+        if code == i32::from(&ExitCode::SandboxStart) {
+            code = i32::from(&ExitCode::SandboxStartCollision);
+        }
+
         Ok(CommandValue::Code(ExitCode::Custom(code)))
     } else if let Some(signal) = status.signal() {
         Err(anyhow!("Sandbox process failed with signal {signal}"))

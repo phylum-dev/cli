@@ -36,6 +36,8 @@ use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 #[cfg(unix)]
+use crate::commands::ExitCode;
+#[cfg(unix)]
 use crate::dirs;
 
 /// Package descriptor for any ecosystem.
@@ -399,7 +401,7 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
 
     // Add sandboxed command arguments.
     sandbox_args.push("--".into());
-    sandbox_args.push(cmd.into());
+    sandbox_args.push(cmd.as_str().into());
     for arg in &args {
         sandbox_args.push(arg.into());
     }
@@ -411,6 +413,11 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
         .stdout(stdout)
         .stderr(stderr)
         .output()?;
+
+    // Return explicit error when process start failed
+    if output.status.code().map_or(false, |code| code == i32::from(&ExitCode::SandboxStart)) {
+        return Err(anyhow!("Process {cmd:?} failed to start"));
+    }
 
     Ok(ProcessOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
