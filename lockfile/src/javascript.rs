@@ -86,7 +86,11 @@ impl Parse for PackageLock {
                     PackageVersion::Path(Some(resolved.into()))
                 };
 
-                packages.push(Package { version, name: name.into() });
+                packages.push(Package {
+                    version,
+                    name: name.into(),
+                    package_type: PackageType::Npm,
+                });
             }
             Ok(packages)
         } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
@@ -97,16 +101,13 @@ impl Parse for PackageLock {
                     Ok(Package {
                         version: PackageVersion::FirstParty(get_version(keys, name)?),
                         name: name.into(),
+                        package_type: PackageType::Npm,
                     })
                 })
                 .collect()
         } else {
             Err(anyhow!("Failed to find dependencies"))
         }
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Npm
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -217,14 +218,14 @@ impl Parse for YarnLock {
                 ));
             };
 
-            packages.push(Package { name: name.to_owned(), version });
+            packages.push(Package {
+                name: name.to_owned(),
+                version,
+                package_type: PackageType::Npm,
+            });
         }
 
         Ok(packages)
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Npm
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -258,8 +259,16 @@ mod tests {
         assert_eq!(pkgs.len(), 54);
 
         let expected_pkgs = [
-            Package { name: "accepts".into(), version: PackageVersion::FirstParty("1.3.8".into()) },
-            Package { name: "vary".into(), version: PackageVersion::FirstParty("1.1.2".into()) },
+            Package {
+                name: "accepts".into(),
+                version: PackageVersion::FirstParty("1.3.8".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "vary".into(),
+                version: PackageVersion::FirstParty("1.1.2".into()),
+                package_type: PackageType::Npm,
+            },
             Package {
                 name: "typescript".into(),
                 version: PackageVersion::Git(
@@ -267,10 +276,12 @@ mod tests {
                      9189e42b1c8b1a91906a245a24697da5e0c11a08"
                         .into(),
                 ),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "form-data".into(),
                 version: PackageVersion::FirstParty("2.3.3".into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "match-sorter".into(),
@@ -278,8 +289,13 @@ mod tests {
                     registry: "custom-registry.org".into(),
                     version: "3.1.1".into(),
                 }),
+                package_type: PackageType::Npm,
             },
-            Package { name: "test".into(), version: PackageVersion::Path(Some("../test".into())) },
+            Package {
+                name: "test".into(),
+                version: PackageVersion::Path(Some("../test".into())),
+                package_type: PackageType::Npm,
+            },
         ];
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
@@ -300,6 +316,7 @@ mod tests {
         assert_eq!(pkgs, vec![Package {
             name: "@yarnpkg/lockfile".to_string(),
             version: PackageVersion::FirstParty("1.1.0".into()),
+            package_type: PackageType::Npm,
         }]);
     }
 
@@ -341,38 +358,46 @@ mod tests {
             Package {
                 name: "accepts".into(),
                 version: PackageVersion::FirstParty("1.3.8".into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "mime-types".into(),
                 version: PackageVersion::FirstParty("2.1.35".into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "statuses".into(),
                 version: PackageVersion::FirstParty("1.5.0".into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "@fake/package".into(),
                 version: PackageVersion::FirstParty("1.2.3".into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "ethereumjs-abi".into(),
                 version: PackageVersion::Git("https://github.com/ethereumjs/ethereumjs-abi.git\
                     #commit=ee3994657fa7a427238e6ba92a84d0b529bbcde0"
                     .into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "@me/remote-patch".into(),
                 version: PackageVersion::Git("ssh://git@github.com:phylum/remote-patch\
                     #commit=d854c43ea177d1faeea56189249fff8c24a764bd"
                     .into()),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "xxx".into(),
                 version: PackageVersion::Path(None),
+                package_type: PackageType::Npm,
             },
             Package {
                 name: "testing".into(),
                 version: PackageVersion::Path(None),
+                package_type: PackageType::Npm,
             },
         ];
 

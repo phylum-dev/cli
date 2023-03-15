@@ -4,7 +4,6 @@ use std::path::Path;
 use anyhow::{anyhow, Context};
 use nom::error::convert_error;
 use nom::Finish;
-use phylum_types::types::package::PackageType;
 
 use super::parsers::gem;
 use crate::{Package, Parse};
@@ -21,10 +20,6 @@ impl Parse for GemLock {
         Ok(entries)
     }
 
-    fn package_type(&self) -> PackageType {
-        PackageType::RubyGems
-    }
-
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Gemfile.lock"))
     }
@@ -32,6 +27,8 @@ impl Parse for GemLock {
 
 #[cfg(test)]
 mod tests {
+    use phylum_types::types::package::PackageType;
+
     use super::*;
     use crate::{PackageVersion, ThirdPartyVersion};
 
@@ -44,22 +41,27 @@ mod tests {
             Package {
                 name: "yaml".into(),
                 version: PackageVersion::Git("git@github.com:ruby/yaml.git#b89ff5a79c2abbf81612ffe9a6c184db347365c9".into()),
+                package_type: PackageType::RubyGems,
             },
             Package {
                 name: "main".into(),
                 version: PackageVersion::Git("https://gist.github.com/cd-work/bb850193cd4d1eff0d7021c9a3899882.git#24b38dc61f9e2ee241e1f5eba4fdba4b5ed1e737".into()),
+                package_type: PackageType::RubyGems,
             },
             Package {
                 name: "benchmark".into(),
                 version: PackageVersion::Git("https://github.com/ruby/benchmark.git#303ac8f28b9aad6abe95c86bc64ea891f77ac93e".into()),
+                package_type: PackageType::RubyGems,
             },
             Package {
                 name: "csv".into(),
                 version: PackageVersion::Path(Some("/tmp/csv".into())),
+                package_type: PackageType::RubyGems,
             },
             Package {
                 name: "wirble".into(),
                 version: PackageVersion::FirstParty("0.1.3".into()),
+                package_type: PackageType::RubyGems,
             },
             Package {
                 name: "rspec-mocks".into(),
@@ -67,6 +69,7 @@ mod tests {
                     registry: "http://rubygems.org/".into(),
                     version: "3.11.2".into(),
                 }),
+                package_type: PackageType::RubyGems,
             },
         ];
 

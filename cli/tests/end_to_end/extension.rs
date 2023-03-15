@@ -140,7 +140,10 @@ pub async fn parse_lockfile() {
         .run()
         .success()
         .stdout(predicates::str::contains(
-            r#"{ packages: [ { name: "accepts", version: "1.3.8" } ], package_type: "npm" }"#,
+            r#"{
+  packages: [ { name: "accepts", version: "1.3.8", package_type: "npm" } ],
+  format: "yarn"
+}"#,
         ));
 }
 

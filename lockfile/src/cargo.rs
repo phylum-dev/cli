@@ -63,6 +63,7 @@ impl Parse for Cargo {
                         return Ok(Package {
                             name: package.name,
                             version: PackageVersion::Path(None),
+                            package_type: PackageType::Cargo,
                         })
                     },
                 };
@@ -80,13 +81,9 @@ impl Parse for Cargo {
                     return Err(anyhow!(format!("Unknown cargo package source: {source:?}")));
                 };
 
-                Ok(Package { name: package.name, version })
+                Ok(Package { name: package.name, version, package_type: PackageType::Cargo })
             })
             .collect()
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Cargo
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -106,8 +103,13 @@ mod tests {
             Package {
                 name: "core-foundation".into(),
                 version: PackageVersion::FirstParty("0.6.4".into()),
+                package_type: PackageType::Cargo,
             },
-            Package { name: "adler32".into(), version: PackageVersion::FirstParty("1.0.4".into()) },
+            Package {
+                name: "adler32".into(),
+                version: PackageVersion::FirstParty("1.0.4".into()),
+                package_type: PackageType::Cargo,
+            },
         ];
 
         for expected_pkg in expected_pkgs {
@@ -123,6 +125,7 @@ mod tests {
         let expected_pkgs = [Package {
             name: "form_urlencoded".into(),
             version: PackageVersion::FirstParty("1.0.1".into()),
+            package_type: PackageType::Cargo,
         }];
 
         for expected_pkg in expected_pkgs {
@@ -139,26 +142,32 @@ mod tests {
             Package {
                 name: "Inflector".into(),
                 version: PackageVersion::FirstParty("0.11.4".into()),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "adler".into(),
                 version: PackageVersion::FirstParty("1.0.2".into()),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "aead".into(),
                 version: PackageVersion::FirstParty("0.5.1".into()),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "aes".into(),
                 version: PackageVersion::FirstParty("0.8.1".into()),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "landlock".into(),
                 version: PackageVersion::Git("git+https://github.com/phylum-dev/rust-landlock#b553736cefc2a740eda746e5730cf250b069a4c1".into()),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "xtask".into(),
                 version: PackageVersion::Path(None),
+                package_type: PackageType::Cargo,
             },
             Package {
                 name: "zstd-sys".into(),
@@ -166,6 +175,7 @@ mod tests {
                     registry: "https://phylum.io/foreign-registry-example".into(),
                     version: "1.6.3+zstd.1.5.2".into(),
                 }),
+                package_type: PackageType::Cargo,
             },
         ];
 

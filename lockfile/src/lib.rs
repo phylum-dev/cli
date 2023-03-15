@@ -141,9 +141,6 @@ pub trait Parse {
     /// Parse from a string.
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>>;
 
-    /// Indicate the type of packages parsed by this parser.
-    fn package_type(&self) -> PackageType;
-
     /// Test if a file name could be a lock file supported by this parser.
     ///
     /// The file does not need to exist.
@@ -155,6 +152,7 @@ pub trait Parse {
 pub struct Package {
     pub name: String,
     pub version: PackageVersion,
+    pub package_type: PackageType,
 }
 
 /// Version for a lockfile's package.

@@ -8,6 +8,7 @@ use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
 use nom::Err as NomErr;
+use phylum_types::types::package::PackageType;
 
 use crate::parsers::{take_till_blank_line, Result};
 use crate::{Package, PackageVersion, ThirdPartyVersion};
@@ -95,7 +96,7 @@ impl<'a> Section<'a> {
                     })
                 };
 
-                Ok(Package { name, version })
+                Ok(Package { name, version, package_type: PackageType::RubyGems })
             })
             .collect::<StdResult<_, _>>()?;
 
@@ -127,6 +128,7 @@ impl<'a> Section<'a> {
         let package = Package {
             name: specs_packages.remove(0).name,
             version: PackageVersion::Git(version_uri),
+            package_type: PackageType::RubyGems,
         };
 
         Ok((input, vec![package]))
@@ -155,6 +157,7 @@ impl<'a> Section<'a> {
         let package = Package {
             name: specs_packages.remove(0).name,
             version: PackageVersion::Path(Some(path.into())),
+            package_type: PackageType::RubyGems,
         };
 
         Ok((input, vec![package]))

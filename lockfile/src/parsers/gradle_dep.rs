@@ -4,6 +4,7 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till};
 use nom::combinator::eof;
 use nom::error::VerboseError;
+use phylum_types::types::package::PackageType;
 
 use crate::parsers::Result;
 use crate::{Package, PackageVersion};
@@ -39,5 +40,6 @@ fn package(input: &str) -> StdResult<Package, nom::Err<VerboseError<&str>>> {
     Ok(Package {
         name: format!("{group_id}:{artifact_id}"),
         version: PackageVersion::FirstParty(version.to_string()),
+        package_type: PackageType::Maven,
     })
 }

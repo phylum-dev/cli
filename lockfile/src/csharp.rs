@@ -34,7 +34,11 @@ struct Project {
 
 impl From<PackageReference> for Package {
     fn from(pkg_ref: PackageReference) -> Self {
-        Self { name: pkg_ref.name, version: PackageVersion::FirstParty(pkg_ref.version) }
+        Self {
+            name: pkg_ref.name,
+            version: PackageVersion::FirstParty(pkg_ref.version),
+            package_type: PackageType::Nuget,
+        }
     }
 }
 
@@ -61,10 +65,6 @@ impl Parse for CSProj {
             Deserializer::new_from_reader(data.as_bytes()).non_contiguous_seq_elements(true);
         let parsed = Project::deserialize(&mut de)?;
         Ok(parsed.into())
-    }
-
-    fn package_type(&self) -> PackageType {
-        PackageType::Nuget
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {

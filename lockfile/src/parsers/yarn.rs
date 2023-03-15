@@ -1,3 +1,5 @@
+use phylum_types::types::package::PackageType;
+
 use super::*;
 use crate::{Package, PackageVersion};
 
@@ -26,6 +28,7 @@ fn parse_entry(input: &str) -> Result<&str, Package> {
         (next_input, Package {
             name: name.to_string(),
             version: PackageVersion::FirstParty(version.to_string()),
+            package_type: PackageType::Npm,
         })
     })
 }

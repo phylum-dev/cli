@@ -16,6 +16,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
 use deno_runtime::permissions::Permissions;
+use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -42,11 +43,16 @@ use crate::dirs;
 struct PackageSpecifier {
     name: String,
     version: String,
+    package_type: Option<PackageType>,
 }
 
 impl From<PackageDescriptor> for PackageSpecifier {
     fn from(descriptor: PackageDescriptor) -> Self {
-        Self { name: descriptor.name, version: descriptor.version }
+        Self {
+            name: descriptor.name,
+            version: descriptor.version,
+            package_type: Some(descriptor.package_type),
+        }
     }
 }
 
@@ -54,7 +60,7 @@ impl From<PackageDescriptor> for PackageSpecifier {
 #[derive(Serialize, Deserialize, Debug)]
 struct PackageLock {
     packages: Vec<PackageSpecifier>,
-    package_type: PackageType,
+    format: LockfileFormat,
 }
 
 /// New process to be launched.
@@ -148,7 +154,7 @@ struct ProcessOutput {
 #[op]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    package_type: PackageType,
+    package_type: Option<PackageType>,
     packages: Vec<PackageSpecifier>,
     project: Option<String>,
     group: Option<String>,
@@ -169,16 +175,18 @@ async fn analyze(
 
     let packages = packages
         .into_iter()
-        .map(|package| PackageDescriptor {
-            package_type,
-            version: package.version,
-            name: package.name,
+        .map(|package| {
+            let package_type = package.package_type.or(package_type);
+            Ok(PackageDescriptor {
+                version: package.version,
+                name: package.name,
+                package_type: package_type
+                    .ok_or_else(|| anyhow!("Package does not have package type"))?,
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
 
-    let job_id = api
-        .submit_request(&package_type, &packages, project, None, group.map(String::from))
-        .await?;
+    let job_id = api.submit_request(&packages, project, None, group.map(String::from)).await?;
 
     Ok(job_id)
 }
@@ -362,8 +370,8 @@ async fn parse_lockfile(
     let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_deref())?;
 
     Ok(PackageLock {
-        package_type: parsed.package_type,
         packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
+        format: parsed.format,
     })
 }
 

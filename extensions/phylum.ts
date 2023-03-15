@@ -4,11 +4,12 @@
 type Package = {
   name: string;
   version: string;
+  package_type: string | undefined;
 };
 
 type Lockfile = {
-  package_type: string;
   packages: Package[];
+  format: string;
 };
 
 type ProcessOutput = {
@@ -75,14 +76,16 @@ export class PhylumApi {
    *
    * ```
    * [
-   *   { name: "accepts", version: "1.3.8" },
-   *   { name: "ms", version: "2.0.0" },
-   *   { name: "negotiator", version: "0.6.3" },
-   *   { name: "ms", version: "2.1.3" }
+   *   { name: "accepts", version: "1.3.8", package_type: "npm" },
+   *   { name: "ms", version: "2.0.0", package_type: "npm" },
+   *   { name: "negotiator", version: "0.6.3", package_type: "npm" },
+   *   { name: "ms", version: "2.1.3", package_type: "npm" }
    * ]
    * ```
    *
-   * @param package_type - Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
+   * Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
+   *
+   * @param package_type - DEPRECATED. Specify package_type in each package object instead.
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
@@ -90,7 +93,7 @@ export class PhylumApi {
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
-    package_type: string,
+    package_type: string | undefined,
     packages: Package[],
     project?: string,
     group?: string,
