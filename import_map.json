@@ -1,5 +1,5 @@
 {
   "imports": {
-    "phylum": "./extensions/phylum.ts"
+    "https://deno.phylum.io/phylum.ts": "./extensions/phylum.ts"
   }
 }
