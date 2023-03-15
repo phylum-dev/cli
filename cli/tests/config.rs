@@ -12,7 +12,7 @@ fn pass_api_key_through_env() {
         .build()
         .cmd()
         .env("PHYLUM_API_KEY", ENV_TOKEN)
-        .args(&["auth", "token"])
+        .args(["auth", "token"])
         .assert()
         .success()
         .stdout(format!("{ENV_TOKEN}\n"));
@@ -32,7 +32,7 @@ fn ignore_empty_token() {
         .build()
         .cmd()
         .env("PHYLUM_API_KEY", "")
-        .args(&["auth", "token"])
+        .args(["auth", "token"])
         .assert()
         .success()
         .stdout(format!("{CONFIG_TOKEN}\n"));

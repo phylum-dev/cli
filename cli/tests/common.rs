@@ -16,16 +16,12 @@ use tempfile::TempDir;
 pub const API_URL: &str = "https://api.staging.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
+#[derive(Default)]
 enum Cwd {
     Path(PathBuf),
     TempDir,
+    #[default]
     None,
-}
-
-impl Default for Cwd {
-    fn default() -> Self {
-        Cwd::None
-    }
 }
 
 #[derive(Default)]
@@ -95,7 +91,7 @@ impl TestCli {
     }
 
     pub fn install_extension(&self, path: &Path) -> Assert {
-        self.run(&["extension", "install", "-y", &path.to_string_lossy()])
+        self.run(["extension", "install", "-y", &path.to_string_lossy()])
     }
 
     pub fn extension<'a>(&'a self, code: &'a str) -> TestExtensionBuilder<'a> {
@@ -112,7 +108,7 @@ impl TestCli {
         }
 
         if let Some(config_path) = self.config_path.as_ref() {
-            cmd.arg("--config").arg(&config_path);
+            cmd.arg("--config").arg(config_path);
         }
 
         cmd
@@ -154,37 +150,37 @@ impl<'a> TestExtension<'a> {
         let extension_path = test_cli.temp_path().to_owned().join("test-ext");
 
         // Create skeleton extension.
-        test_cli.run(&["extension", "new", &extension_path.to_string_lossy()]).success();
+        test_cli.run(["extension", "new", &extension_path.to_string_lossy()]).success();
 
         // Overwrite skeleton code.
         let main = extension_path.join("main.ts");
         fs::write(
             main,
-            format!("import {{ PhylumApi, ApiVersion }} from 'phylum';\n{code}").as_bytes(),
+            format!("import {{ PhylumApi, ApiVersion }} from 'https://deno.phylum.io/phylum.ts';\n{code}").as_bytes(),
         )
         .unwrap();
 
         // Overwrite permissions.
         let manifest_path = extension_path.join("PhylumExt.toml");
-        let mut manifest = File::options().append(true).open(&manifest_path).unwrap();
+        let mut manifest = File::options().append(true).open(manifest_path).unwrap();
         let permissions_str = toml::to_string(&permissions).unwrap();
         write!(manifest, "[permissions]\n{permissions_str}").unwrap();
 
         // Install extension.
-        test_cli.run(&["extension", "install", "-y", &extension_path.to_string_lossy()]);
+        test_cli.run(["extension", "install", "-y", &extension_path.to_string_lossy()]);
 
         Self { test_cli, extension_path }
     }
 
     pub fn run(&self) -> Assert {
         // Execute extension.
-        self.test_cli.run(&["test-ext"])
+        self.test_cli.run(["test-ext"])
     }
 }
 
 impl<'a> Drop for TestExtension<'a> {
     fn drop(&mut self) {
-        self.test_cli.run(&["extension", "uninstall", "test-ext"]).success();
+        self.test_cli.run(["extension", "uninstall", "test-ext"]).success();
         fs::remove_dir_all(&self.extension_path).unwrap();
     }
 }

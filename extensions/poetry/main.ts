@@ -1,4 +1,4 @@
-import { PhylumApi } from "phylum";
+import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
 import {
   green,
   red,
