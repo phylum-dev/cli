@@ -78,15 +78,3 @@ impl From<&ExitCode> for i32 {
         }
     }
 }
-
-impl PartialEq<i32> for ExitCode {
-    fn eq(&self, code: &i32) -> bool {
-        i32::from(self).eq(code)
-    }
-}
-
-impl PartialEq<ExitCode> for i32 {
-    fn eq(&self, code: &ExitCode) -> bool {
-        self.eq(&i32::from(code))
-    }
-}

@@ -415,7 +415,7 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
         .output()?;
 
     // Return explicit error when process start failed
-    if output.status.code().map_or(false, |code| code == ExitCode::SandboxStart) {
+    if output.status.code().map_or(false, |code| code == i32::from(&ExitCode::SandboxStart)) {
         return Err(anyhow!("Process {cmd:?} failed to start"));
     }
 
