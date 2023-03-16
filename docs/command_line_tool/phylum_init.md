@@ -25,7 +25,7 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 
 -t, --lockfile-type <type>
 &emsp; Lock file type used for all lock files (default: auto)
-&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `auto`
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `sbom`, `auto`
 
 -f, --force
 &emsp; Overwrite existing configurations without confirmation
