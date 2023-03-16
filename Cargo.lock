@@ -3216,6 +3216,7 @@ dependencies = [
  "phylum_types",
  "serde",
  "serde_yaml",
+ "tempfile",
  "uuid",
 ]
 

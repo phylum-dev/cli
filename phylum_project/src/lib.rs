@@ -93,7 +93,10 @@ pub fn find_project_conf(
     recurse_upwards: bool,
 ) -> Option<PathBuf> {
     let max_depth = if recurse_upwards { 32 } else { 1 };
-    let mut path = starting_directory.as_ref();
+    let path = starting_directory.as_ref();
+    // If `path` is like `.`, `path.parent()` is `None`.
+    let canonicalized = path.canonicalize();
+    let mut path = canonicalized.as_deref().ok().unwrap_or(path);
 
     for _ in 0..max_depth {
         let conf_path = path.join(PROJ_CONF_FILE);
@@ -124,6 +127,9 @@ pub fn get_current_project() -> Option<ProjectConfig> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+
+    use tempfile::TempDir;
     use uuid::uuid;
 
     use super::*;
@@ -186,5 +192,51 @@ mod tests {
         };
 
         assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &lockfile.path);
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn find_project_conf_can_recurse_up() {
+        // To verify the behavior of navigation to parent directories, we must construct
+        // a filesystem where the parent directory cannot be reached by removing path
+        // components.
+        //
+        //     temp:
+        //       - r:
+        //         - .phylum_project
+        //         - 0:
+        //           - 1:
+        //             - 2: etc
+        //       - cwd: link to temp/r/0/1/2/etc
+        //
+        // Starting from inside temp/cwd, the parent directory should be
+        // temp/r/0/1/2/etc, not temp.
+        let temp = TempDir::new().unwrap();
+        let root = temp.path().join("r");
+        let cwd = temp.path().join("cwd");
+
+        fs::create_dir_all(&root).unwrap();
+        let file = root.join(PROJ_CONF_FILE);
+        File::create(&file).unwrap();
+        // This is 32 path components.
+        // Use single characters for a better chance of not hitting path length
+        // limitations.
+        let subdir = root.join("0/1/2/3/4/5/6/7/8/9/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u");
+        fs::create_dir_all(&subdir).unwrap();
+
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&subdir, &cwd).unwrap();
+        // This only works on Windows if the user is an administrator or developer mode
+        // is on.
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(&subdir, &cwd).unwrap();
+
+        let found = find_project_conf(&cwd, true);
+        assert_eq!(
+            Some(file.canonicalize().unwrap()),
+            found.map(|f| f
+                .canonicalize()
+                .expect("Found configuration should be a canonicalizable path"))
+        );
     }
 }
