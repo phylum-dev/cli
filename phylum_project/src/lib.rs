@@ -34,11 +34,11 @@ impl ProjectConfig {
             group_name,
             name,
             id,
-            root: PathBuf::from("."),
             created_at: Local::now(),
             lockfile_type: None,
             lockfile_path: None,
             lockfiles: Default::default(),
+            root: Default::default(),
         }
     }
 
@@ -120,4 +120,71 @@ pub fn get_current_project() -> Option<ProjectConfig> {
         config.root = config_path.parent()?.to_path_buf();
         Some(config)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use uuid::uuid;
+
+    use super::*;
+    use crate::ProjectConfig;
+
+    const PROJECT_ID: ProjectId = uuid!("a814bc7b-c17c-4e91-9515-edd7899680fb");
+    const PROJECT_NAME: &str = "my project";
+    const GROUP_NAME: &str = "my group";
+
+    #[test]
+    fn new_config_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+    }
+
+    #[test]
+    fn deserialized_config_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+
+        let config: ProjectConfig =
+            serde_yaml::from_str(&serde_yaml::to_string(&config).unwrap()).unwrap();
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+    }
+
+    #[test]
+    fn when_root_set_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+        config.root = PathBuf::from("/home/user/project");
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &lockfile.path);
+    }
 }
