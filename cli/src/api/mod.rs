@@ -300,10 +300,11 @@ impl PhylumApi {
         label: Option<String>,
         group_name: Option<String>,
     ) -> Result<JobId> {
+        #[allow(deprecated)]
         let req = SubmitPackageRequest {
             // This package_type is ignored by the API, but it still validates it, so we have to put
             // something here.
-            package_type: PackageType::Npm,
+            package_type: Some(PackageType::Npm),
             packages: package_list.to_vec(),
             is_user: true,
             project,
