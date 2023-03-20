@@ -3235,7 +3235,7 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#6a51c1c5b695e644fce0af6497974db53b6afdd2"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#18fc152f46caf93a90122d8aec4de23cff4f45b0"
 dependencies = [
  "chrono",
  "schemars",
