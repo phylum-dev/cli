@@ -99,14 +99,11 @@ pub fn find_project_conf(
     let mut path = starting_directory.as_ref().canonicalize().ok()?;
 
     for _ in 0..max_depth {
-        path.push(PROJ_CONF_FILE);
-        if path.is_file() {
-            return Some(path);
+        let conf_path = path.join(PROJ_CONF_FILE);
+        if conf_path.is_file() {
+            return Some(conf_path);
         }
 
-        // Remove conf file.
-        path.pop();
-        // Remove last directory component.
         if !path.pop() {
             return None;
         }
