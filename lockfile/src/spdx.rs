@@ -1,11 +1,14 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
+use nom::error::convert_error;
+use nom::Finish;
 use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 use thiserror::Error;
 
+use crate::parsers::spdx;
 use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
 
 #[derive(Error, Debug)]
@@ -20,24 +23,35 @@ struct SpdxInfo {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct PackageInformation {
-    name: String,
-    version_info: Option<String>,
-    download_location: String,
-    external_refs: Vec<ExternalRefs>,
+pub(crate) struct PackageInformation {
+    pub(crate) name: String,
+    pub(crate) version_info: Option<String>,
+    pub(crate) download_location: String,
+    pub(crate) external_refs: Vec<ExternalRefs>,
+}
+
+impl Default for PackageInformation {
+    fn default() -> Self {
+        Self {
+            name: "NOASSERTION".to_string(),
+            version_info: None,
+            download_location: "NOASSERTION".to_string(),
+            external_refs: Vec::new(),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ExternalRefs {
-    reference_category: ReferenceCategory,
-    reference_locator: String,
-    reference_type: String,
+pub(crate) struct ExternalRefs {
+    pub(crate) reference_category: ReferenceCategory,
+    pub(crate) reference_locator: String,
+    pub(crate) reference_type: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "SCREAMING-KEBAB-CASE")]
-enum ReferenceCategory {
+pub(crate) enum ReferenceCategory {
     Other,
     // older schema uses _
     #[serde(alias = "PERSISTENT_ID")]
@@ -156,6 +170,22 @@ impl Parse for Spdx {
 
     fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
         path.ends_with(".spdx.json") || path.ends_with(".spdx.yaml") || path.ends_with(".spdx.yml")
+    }
+}
+
+pub struct SpdxTagValue;
+
+impl Parse for SpdxTagValue {
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        let (_, entries) = spdx::parse(data)
+            .finish()
+            .map_err(|e| anyhow!(convert_error(data, e)))
+            .context("Failed to parse requirements file")?;
+        Ok(entries)
+    }
+
+    fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
+        path.ends_with(".spdx")
     }
 }
 
@@ -360,5 +390,54 @@ mod tests {
 
         let pkgs = Spdx.parse(&data).unwrap();
         assert!(pkgs.is_empty())
+    }
+
+    #[test]
+    fn parse_spdx_2_2_tag_value() {
+        let (_, pkgs) = spdx::parse(include_str!("../../tests/fixtures/spdx-2.2.spdx")).unwrap();
+        assert_eq!(pkgs.len(), 2673);
+
+        let expected_pkgs = [
+            Package {
+                name: "@colors/colors".into(),
+                version: PackageVersion::FirstParty("1.5.0".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "CFPropertyList".into(),
+                version: PackageVersion::FirstParty("2.3.6".into()),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "async-timeout".into(),
+                version: PackageVersion::FirstParty("4.0.2".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "org.codehaus.classworlds:classworlds".into(),
+                version: PackageVersion::FirstParty("1.1".into()),
+                package_type: PackageType::Maven,
+            },
+            Package {
+                name: "Newtonsoft.Json".into(),
+                version: PackageVersion::FirstParty("13.0.1".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "dmitri.shuralyov.com/gpu/mtl".into(),
+                version: PackageVersion::FirstParty("v0.0.0-20190408044501-666a987793e9".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "env_logger".into(),
+                version: PackageVersion::FirstParty("0.8.4".into()),
+                package_type: PackageType::Cargo,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            println!("ep: {:?}", expected_pkg);
+            assert!(pkgs.contains(&expected_pkg));
+        }
     }
 }
