@@ -116,6 +116,10 @@ impl Format for Vec<JobDescriptor> {
                 state = format!("{}", style("FAIL").red());
             }
 
+            let mut ecosystems = job.ecosystems.clone();
+            ecosystems.sort_unstable();
+            let ecosystems = job.ecosystems.join(",");
+
             let first_line = format!(
                 "{}",
                 format_args!(
@@ -132,7 +136,7 @@ impl Format for Vec<JobDescriptor> {
             let second_line = format!("             {}\n", job.msg);
             let third_line = format!(
                 "             {}{:>62}{:>29} dependencies",
-                job.ecosystem, "Crit:-/High:-/Med:-/Low:-", job.num_dependencies
+                ecosystems, "Crit:-/High:-/Med:-/Low:-", job.num_dependencies
             );
             jobs.push_str(first_line.as_str());
             jobs.push_str(second_line.as_str());
