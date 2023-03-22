@@ -120,7 +120,7 @@ pub struct Sbom;
 
 impl Parse for Sbom {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let mut lock: Spdx = serde_json::from_str(data).unwrap_or(serde_yaml::from_str(data)?);
+        let mut lock: Spdx = serde_json::from_str(data).or_else(|_| serde_yaml::from_str(data))?;
 
         let packages = lock
             .packages
