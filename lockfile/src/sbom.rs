@@ -59,6 +59,28 @@ pub enum ReferenceCategory {
     PackageManager,
 }
 
+fn type_from_url(url: &str) -> Result<PackageType, ()> {
+    if url.starts_with("https://registry.npmjs.org")
+        | url.starts_with("https://registry.yarnpkg.com")
+    {
+        Ok(PackageType::Npm)
+    } else if url.starts_with("https://rubygems.org") {
+        Ok(PackageType::RubyGems)
+    } else if url.starts_with("https://files.pythonhosted.org") {
+        Ok(PackageType::PyPi)
+    } else if url.starts_with("https://repo1.maven.org") {
+        Ok(PackageType::Maven)
+    } else if url.starts_with("https://api.nuget.org") {
+        Ok(PackageType::Nuget)
+    } else if url.starts_with("https://proxy.golang.org") {
+        Ok(PackageType::Golang)
+    } else if url.starts_with("https://crates.io") {
+        Ok(PackageType::Cargo)
+    } else {
+        Err(())
+    }
+}
+
 impl TryFrom<&PackageInformation> for Package {
     type Error = anyhow::Error;
 
@@ -79,8 +101,9 @@ impl TryFrom<&PackageInformation> for Package {
             .context("Package manager not found")?;
 
         let purl = PackageUrl::from_str(pkg_url).context("Unable to parse package url")?;
-        let package_type =
-            PackageType::from_str(purl.ty()).map_err(|_| anyhow!("Unrecognized ecosystem"))?;
+        let package_type = PackageType::from_str(purl.ty())
+            .or_else(|_| type_from_url(&pkg_info.download_location))
+            .map_err(|_| anyhow!("Unrecognized ecosystem"))?;
         let name = match purl.namespace() {
             Some(ns) => format!("{}/{}", ns, purl.name()),
             None => purl.name().into(),
