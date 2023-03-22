@@ -1,7 +1,7 @@
 //! Subcommand `phylum init`.
 
 use std::path::Path;
-use std::{env, fs, io, iter};
+use std::{env, io, iter};
 
 use anyhow::Context;
 use clap::parser::ValuesRef;
@@ -189,13 +189,10 @@ fn prompt_lockfiles(
 /// Ask for the lockfile names.
 fn prompt_lockfile_names() -> io::Result<Vec<String>> {
     // Find all known lockfiles in the currenty directory.
-    let mut lockfiles: Vec<_> = fs::read_dir("./")?
-        .flatten()
-        .filter(|entry| {
-            LockfileFormat::iter().any(|format| format.parser().is_path_lockfile(&entry.path()))
-        })
-        .flat_map(|entry| entry.file_name().to_str().map(str::to_owned))
-        .collect();
+    let mut lockfiles = config::find_lockfiles(".")
+        .iter()
+        .flat_map(|lockfile| Some(lockfile.path.to_str()?.to_owned()))
+        .collect::<Vec<_>>();
 
     // Prompt for selection if any lockfile was found.
     let prompt_lockfiles = !lockfiles.is_empty();
