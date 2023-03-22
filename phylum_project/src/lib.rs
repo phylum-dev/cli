@@ -34,11 +34,11 @@ impl ProjectConfig {
             group_name,
             name,
             id,
-            root: PathBuf::from("."),
             created_at: Local::now(),
             lockfile_type: None,
             lockfile_path: None,
             lockfiles: Default::default(),
+            root: Default::default(),
         }
     }
 
@@ -93,7 +93,10 @@ pub fn find_project_conf(
     recurse_upwards: bool,
 ) -> Option<PathBuf> {
     let max_depth = if recurse_upwards { 32 } else { 1 };
-    let mut path = starting_directory.as_ref();
+    // If `path` is like `.`, `path.parent()` is `None`.
+    // Convert to a canonicalized path so removing components navigates up the
+    // directory hierarchy.
+    let mut path = starting_directory.as_ref().canonicalize().ok()?;
 
     for _ in 0..max_depth {
         let conf_path = path.join(PROJ_CONF_FILE);
@@ -101,7 +104,9 @@ pub fn find_project_conf(
             return Some(conf_path);
         }
 
-        path = path.parent()?;
+        if !path.pop() {
+            return None;
+        }
     }
 
     if recurse_upwards {
@@ -120,4 +125,120 @@ pub fn get_current_project() -> Option<ProjectConfig> {
         config.root = config_path.parent()?.to_path_buf();
         Some(config)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+
+    use tempfile::TempDir;
+    use uuid::uuid;
+
+    use super::*;
+    use crate::ProjectConfig;
+
+    const PROJECT_ID: ProjectId = uuid!("a814bc7b-c17c-4e91-9515-edd7899680fb");
+    const PROJECT_NAME: &str = "my project";
+    const GROUP_NAME: &str = "my group";
+
+    #[test]
+    fn new_config_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+    }
+
+    #[test]
+    fn deserialized_config_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+
+        let config: ProjectConfig =
+            serde_yaml::from_str(&serde_yaml::to_string(&config).unwrap()).unwrap();
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+    }
+
+    #[test]
+    fn when_root_set_has_correct_lockfile_paths() {
+        let mut config =
+            ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
+        config.set_lockfiles(vec![LockfileConfig {
+            path: PathBuf::from("Cargo.lock"),
+            lockfile_type: "cargo".to_owned(),
+        }]);
+        config.root = PathBuf::from("/home/user/project");
+
+        let lockfiles = config.lockfiles();
+        let [lockfile] = &lockfiles[..] else {
+            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        };
+
+        assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &lockfile.path);
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn find_project_conf_can_recurse_up() {
+        // To verify the behavior of navigation to parent directories, we must construct
+        // a filesystem where the parent directory cannot be reached by removing path
+        // components.
+        //
+        //     temp:
+        //       - r:
+        //         - .phylum_project
+        //         - 0:
+        //           - 1:
+        //             - 2: etc
+        //       - cwd: link to temp/r/0/1/2/etc
+        //
+        // Starting from inside temp/cwd, the parent directory should be
+        // temp/r/0/1/2/etc, not temp.
+        let temp = TempDir::new().unwrap();
+        let root = temp.path().join("r");
+        let cwd = temp.path().join("cwd");
+
+        fs::create_dir_all(&root).unwrap();
+        let file = root.join(PROJ_CONF_FILE);
+        File::create(&file).unwrap();
+        // This is 32 path components.
+        // Use single characters for a better chance of not hitting path length
+        // limitations.
+        let subdir = root.join("0/1/2/3/4/5/6/7/8/9/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u");
+        fs::create_dir_all(&subdir).unwrap();
+
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&subdir, &cwd).unwrap();
+        // This only works on Windows if the user is an administrator or developer mode
+        // is on.
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(&subdir, &cwd).unwrap();
+
+        let found = find_project_conf(&cwd, true);
+        assert_eq!(
+            Some(file.canonicalize().unwrap()),
+            found.map(|f| f
+                .canonicalize()
+                .expect("Found configuration should be a canonicalizable path"))
+        );
+    }
 }
