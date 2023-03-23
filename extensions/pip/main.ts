@@ -116,7 +116,7 @@ async function checkDryRun() {
 
   const status = PhylumApi.runSandboxed({
     cmd: "pip3",
-    args: [...Deno.args, "--dry-run"],
+    args: [...Deno.args, "--quiet", "--report", "-", "--dry-run", "--ignore-installed"],
     exceptions: {
       run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
       write: [
@@ -186,37 +186,26 @@ type Package = {
   package_type: string;
 };
 
-// Parse the dry-run output of `pip install`.
-function parseDryRun(output: string): Package[] {
-  // Extract the "Would install [..]" line.
-  let new_deps;
-  const lines = output.split("\n");
-  for (const line of lines) {
-    if (line.startsWith("Would install ")) {
-      new_deps = line.substring("Would install ".length);
-      break;
+type DryRunReport = {
+  install: {
+    metadata: {
+      name: string;
+      version: string;
     }
-  }
+  }[];
+}
 
-  // No "Would install [..]" means there were no new dependencies.
-  if (!new_deps) {
-    return [];
-  }
-
+// Parse the dry-run repot of `pip install`.
+function parseDryRun(output: string): Package[] {
   // Output package list.
   const packages: Package[] = [];
 
   // Parse dependency names and versions.
-  const deps = new_deps.split(" ");
-  for (let i = 0; i < deps.length; i++) {
-    const pkg = deps[i];
-    const lastDashIndex = pkg.lastIndexOf("-");
-    const pkgName = pkg.substring(0, lastDashIndex);
-    const pkgVer = pkg.substring(lastDashIndex + 1);
-
+  const deps = (JSON.parse(output) as DryRunReport).install;
+  for (const dep of deps) {
     packages.push({
-      name: pkgName,
-      version: pkgVer,
+      name: dep.metadata.name,
+      version: dep.metadata.version,
       package_type: "pypi",
     });
   }
