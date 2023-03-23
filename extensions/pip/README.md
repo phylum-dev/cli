@@ -1,7 +1,7 @@
 # Phylum pip extension
 
-A [Phylum CLI][phylum-cli] extension that checks your [pip] dependencies
-through [Phylum][phylum] before installing them.
+A [Phylum CLI][phylum-cli] extension that checks your [pip] dependencies through
+[Phylum][phylum] before installing them.
 
 ## Installation
 
