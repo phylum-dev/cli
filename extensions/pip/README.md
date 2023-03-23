@@ -16,6 +16,12 @@ git clone https://github.com/phylum-dev/cli
 phylum extension install cli/extensions/pip
 ```
 
+## Requirements
+
+This extension requires `pip` version 22.2 or greater (for the `--dry-run`
+flag). Check your version with `pip --version` and upgrade if necessary with
+`python -m pip install --upgrade pip`
+
 ## Basic usage
 
 Prepend `phylum` to your `pip` command invocations:
