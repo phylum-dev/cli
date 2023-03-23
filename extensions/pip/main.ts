@@ -3,7 +3,7 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "phylum";
+import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
 
 // List with all of pip's subcommands.
 const knownSubcommands = [
@@ -57,16 +57,23 @@ const installStatus = PhylumApi.runSandboxed({
     net: true,
   },
 });
-Deno.exit(installStatus.code);
+Deno.exit(installStatus.code ?? 255);
+
+type JobStatus = {
+  packages: {
+    issues: {
+      severity: string;
+      title: string;
+    }[]
+  }[]
+};
 
 // Logs any identified issues to the screen.
-async function logIssues(jobStatus) {
-  for(const key in jobStatus.packages) {
-    const pkg = jobStatus.packages[key];
+function logIssues(jobStatus: Record<string, unknown>) {
+  for(const pkg of (jobStatus as JobStatus).packages) {
     const issues = pkg.issues;
 
-    for(const idx in issues) {
-      const issue = issues[idx];
+    for(const issue of issues) {
       let severity = issue.severity.toLowerCase();
       
       if(["high", "critical"].indexOf(severity) != -1) {
@@ -102,11 +109,11 @@ async function checkDryRun() {
   // Ensure dry-run was successful.
   if (!status.success) {
     console.error(`[${red("phylum")}] Pip dry-run failed.\n`);
-    await Deno.exit(status.code);
+    Deno.exit(status.code ?? 255);
   } 
 
   // Parse dry-run output.
-  let packages = parseDryRun(status.stdout);
+  const packages = parseDryRun(status.stdout);
 
   console.log(`[${green("phylum")}] Dependency resolution successful.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
@@ -140,12 +147,18 @@ async function checkDryRun() {
   }
 }
 
+type Package = {
+  name: string;
+  version: string;
+  package_type: string;
+};
+
 // Parse the dry-run output of `pip install`.
-function parseDryRun(output: string): [object] {
+function parseDryRun(output: string): Package[] {
   // Extract the "Would install [..]" line.
   let new_deps;
   const lines = output.split('\n');
-  for (let line of lines) {
+  for (const line of lines) {
     if (line.startsWith('Would install ')) {
       new_deps = line.substring('Would install '.length);
       break;
@@ -158,11 +171,11 @@ function parseDryRun(output: string): [object] {
   }
 
   // Output package list.
-  const packages = [];
+  const packages: Package[] = [];
 
   // Parse dependency names and versions.
   const deps = new_deps.split(' ');
-  for (var i = 0; i < deps.length; i++) {
+  for (let i = 0; i < deps.length; i++) {
     const pkg = deps[i];
     const lastDashIndex = pkg.lastIndexOf('-');
     const pkgName = pkg.substring(0, lastDashIndex);
@@ -171,6 +184,7 @@ function parseDryRun(output: string): [object] {
     packages.push({
       name: pkgName,
       version: pkgVer,
+      package_type: "pypi",
     });
   }
 
