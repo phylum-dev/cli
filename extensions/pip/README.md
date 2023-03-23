@@ -5,11 +5,15 @@ through [Phylum][phylum] before installing them.
 
 ## Installation
 
+This is a pre-installed extension and may be available without any additional
+action. If, for some reason, this extension is not already available, follow
+these steps to install it:
+
 Clone the repository and install the extension via the Phylum CLI.
 
 ```console
-git clone https://github.com/phylum-dev/community-extensions
-phylum extension install community-extensions/pip
+git clone https://github.com/phylum-dev/cli
+phylum extension install cli/extensions/pip
 ```
 
 ## Basic usage
