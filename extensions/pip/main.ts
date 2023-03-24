@@ -116,7 +116,7 @@ async function checkDryRun() {
 
   const status = PhylumApi.runSandboxed({
     cmd: "pip3",
-    args: [...Deno.args, "--quiet", "--report", "-", "--dry-run", "--ignore-installed"],
+    args: [...Deno.args, "--quiet", "--report", "-", "--dry-run"],
     exceptions: {
       run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
       write: [
