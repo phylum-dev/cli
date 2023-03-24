@@ -7,35 +7,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Spdx {
-    pub spdx_version: String,
-    pub packages: Vec<PackageInformation>,
+struct Spdx {
+    packages: Vec<PackageInformation>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct PackageInformation {
-    #[serde(rename = "name")]
-    pub name: String,
-    #[serde(rename = "versionInfo", skip_serializing_if = "Option::is_none", default)]
-    pub version_info: Option<String>,
-    #[serde(rename = "downloadLocation")]
-    pub download_location: String,
-    #[serde(rename = "externalRefs", skip_serializing_if = "Vec::is_empty", default)]
-    pub external_refs: Vec<ExternalRefs>,
-}
-
-impl Default for PackageInformation {
-    fn default() -> Self {
-        Self {
-            name: "NOASSERTION".to_string(),
-            version_info: None,
-            download_location: "NOASSERTION".to_string(),
-            external_refs: Vec::new(),
-        }
-    }
+struct PackageInformation {
+    name: String,
+    version_info: Option<String>,
+    download_location: String,
+    external_refs: Vec<ExternalRefs>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -45,17 +29,17 @@ pub enum SbomError {
     Version,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ExternalRefs {
-    pub reference_category: ReferenceCategory,
-    pub reference_locator: String,
-    pub reference_type: String,
+struct ExternalRefs {
+    reference_category: ReferenceCategory,
+    reference_locator: String,
+    reference_type: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "SCREAMING-KEBAB-CASE")]
-pub enum ReferenceCategory {
+enum ReferenceCategory {
     Other,
     // older schema uses _
     #[serde(alias = "PERSISTENT_ID")]
@@ -64,6 +48,8 @@ pub enum ReferenceCategory {
     // older schema uses _
     #[serde(alias = "PACKAGE_MANAGER")]
     PackageManager,
+    #[serde(other)]
+    Unknown,
 }
 
 fn type_from_url(url: &str) -> Result<PackageType, ()> {
@@ -118,10 +104,6 @@ impl TryFrom<&PackageInformation> for Package {
             _ => purl.name().into(),
         };
 
-        // let name = match purl.namespace() {
-        //     Some(ns) => format!("{}/{}", ns, purl.name()),
-        //     None => purl.name().into(),
-        // };
         let pkg_version = match (&pkg_info.version_info, purl.version()) {
             (Some(v), _) => Some(v.to_string()),
             (None, Some(v)) => Some(v.into()),
