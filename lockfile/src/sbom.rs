@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
 
@@ -20,13 +20,6 @@ struct PackageInformation {
     version_info: Option<String>,
     download_location: String,
     external_refs: Vec<ExternalRefs>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum SbomError {
-    UnknownEcosytem(String),
-    Purl,
-    Version,
 }
 
 #[derive(Deserialize, Debug)]
@@ -52,7 +45,7 @@ enum ReferenceCategory {
     Unknown,
 }
 
-fn type_from_url(url: &str) -> Result<PackageType, ()> {
+fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
     if url.starts_with("https://registry.npmjs.org")
         | url.starts_with("https://registry.yarnpkg.com")
     {
@@ -70,14 +63,14 @@ fn type_from_url(url: &str) -> Result<PackageType, ()> {
     } else if url.starts_with("https://crates.io") {
         Ok(PackageType::Cargo)
     } else {
-        Err(anyhow!("Unknown download URL: {:?}", url))
+        bail!("Unknown download URL: {:?}", url)
     }
 }
 
 impl TryFrom<&PackageInformation> for Package {
-    type Error = SbomError;
+    type Error = anyhow::Error;
 
-    fn try_from(pkg_info: &PackageInformation) -> Result<Self, SbomError> {
+    fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
         let pkg_url = pkg_info
             .external_refs
             .iter()
@@ -91,13 +84,13 @@ impl TryFrom<&PackageInformation> for Package {
                 },
                 _ => None,
             })
-            .ok_or(SbomError::Purl)?;
+            .ok_or(anyhow!("Missing PURL for {}", pkg_info.name))?;
 
-        let purl = PackageUrl::from_str(pkg_url).map_err(|_| SbomError::Purl)?;
+        let purl = PackageUrl::from_str(pkg_url)?;
         let purl_ty = purl.ty();
         let package_type = PackageType::from_str(purl.ty())
             .or_else(|_| type_from_url(&pkg_info.download_location))
-            .map_err(|_| SbomError::UnknownEcosytem(purl_ty.into()))?;
+            .map_err(|_| anyhow!("Unsupported ecosystem {purl_ty}"))?;
         let name = match (package_type, purl.namespace()) {
             (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
             (_, Some(ns)) => format!("{}/{}", ns, purl.name()),
@@ -105,11 +98,10 @@ impl TryFrom<&PackageInformation> for Package {
         };
 
         let pkg_version = match (&pkg_info.version_info, purl.version()) {
-            (Some(v), _) => Some(v.to_string()),
-            (None, Some(v)) => Some(v.into()),
-            _ => None,
-        }
-        .ok_or(SbomError::Version)?;
+            (Some(v), _) => v.to_string(),
+            (None, Some(v)) => v.into(),
+            _ => bail!("Version not found for `{}`", pkg_info.name),
+        };
 
         let version = purl
             .qualifiers()
@@ -146,20 +138,10 @@ impl Parse for Sbom {
             match Package::try_from(&package_info) {
                 Ok(pkg) => packages.push(pkg),
                 Err(e) => {
-                    let pkg_name = &package_info.name;
-                    let pkg_ver = package_info.version_info.unwrap_or_default();
-                    match e {
-                        SbomError::UnknownEcosytem(ecosystem) => {
-                            log::warn!(
-                                "{pkg_name}:{pkg_ver} uses an unsupported ecosystem: {ecosystem}",
-                            )
-                        },
-                        SbomError::Purl => {
-                            return Err(anyhow!("{pkg_name}:{pkg_ver} is missing a package url"))
-                        },
-                        SbomError::Version => {
-                            return Err(anyhow!("{pkg_name} is missing version information"))
-                        },
+                    if e.to_string().starts_with("Unsupported ecosystem") {
+                        log::warn!("{}", e)
+                    } else {
+                        bail!(e)
                     }
                 },
             }
@@ -292,7 +274,7 @@ mod tests {
         }).to_string();
 
         let error = Sbom.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("missing a package url"))
+        assert!(error.to_string().contains("Missing PURL"))
     }
 
     #[test]
@@ -332,6 +314,47 @@ mod tests {
         }).to_string();
 
         let error = Sbom.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("missing version information"))
+        assert!(error.to_string().contains("Version"))
+    }
+
+    #[test]
+    fn unsupported_ecosystem() {
+        let data = json!({
+              "spdxVersion": "SPDX-2.3",
+              "dataLicense": "CC0-1.0",
+              "SPDXID": "SPDXRef-DOCUMENT",
+              "name": "sbom-example",
+              "packages": [ {
+                "name": "@colors/colors",
+                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
+                "versionInfo": "1.5.0",
+                "originator": "Person: DABH",
+                "downloadLocation": "http://github.com/DABH/colors.js.git",
+                "homepage": "https://github.com/DABH/colors.js",
+                "sourceInfo": "acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json",
+                "licenseConcluded": "MIT",
+                "licenseDeclared": "MIT",
+                "copyrightText": "NOASSERTION",
+                "externalRefs": [
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceType": "cpe23Type",
+                    "referenceLocator": "cpe:2.3:a:\\@colors\\/colors:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceType": "cpe23Type",
+                    "referenceLocator": "cpe:2.3:a:*:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:tbd/colors/colors"
+                }]
+            }]
+        }).to_string();
+
+        let pkgs = Sbom.parse(&data).unwrap();
+        assert!(pkgs.is_empty())
     }
 }
