@@ -191,9 +191,9 @@ type DryRunReport = {
     metadata: {
       name: string;
       version: string;
-    }
+    };
   }[];
-}
+};
 
 // Parse the dry-run repot of `pip install`.
 function parseDryRun(output: string): Package[] {
