@@ -213,7 +213,7 @@ type DryRunReport = {
   }[];
 };
 
-// Parse the dry-run repot of `pip install`.
+// Parse the dry-run report of `pip install`.
 function parseDryRun(output: string): Package[] {
   // Output package list.
   const packages: Package[] = [];
