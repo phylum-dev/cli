@@ -9,7 +9,7 @@ use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct Spdx {
+struct SpdxInfo {
     packages: Vec<PackageInformation>,
 }
 
@@ -127,11 +127,11 @@ impl TryFrom<&PackageInformation> for Package {
     }
 }
 
-pub struct Sbom;
+pub struct Spdx;
 
-impl Parse for Sbom {
+impl Parse for Spdx {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let lock: Spdx = serde_json::from_str(data).or_else(|_| serde_yaml::from_str(data))?;
+        let lock: SpdxInfo = serde_json::from_str(data).or_else(|_| serde_yaml::from_str(data))?;
 
         let mut packages = Vec::new();
         for package_info in lock.packages {
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn parse_spdx_2_2_json() {
-        let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx.json")).unwrap();
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx.json")).unwrap();
         assert_eq!(pkgs.len(), 4);
 
         let expected_pkgs = [Package {
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn parse_spdx_2_3_yaml() {
-        let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.yaml")).unwrap();
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.yaml")).unwrap();
         assert_eq!(pkgs.len(), 1);
 
         let expected_pkgs = [Package {
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn parse_spdx_2_3_json() {
-        let pkgs = Sbom.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.json")).unwrap();
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.3.spdx.json")).unwrap();
         assert_eq!(pkgs.len(), 2673);
 
         let expected_pkgs = [
@@ -273,7 +273,7 @@ mod tests {
             }]
         }).to_string();
 
-        let error = Sbom.parse(&data).err().unwrap();
+        let error = Spdx.parse(&data).err().unwrap();
         assert!(error.to_string().contains("Missing PURL"))
     }
 
@@ -313,7 +313,7 @@ mod tests {
             }]
         }).to_string();
 
-        let error = Sbom.parse(&data).err().unwrap();
+        let error = Spdx.parse(&data).err().unwrap();
         assert!(error.to_string().contains("Version"))
     }
 
@@ -354,7 +354,7 @@ mod tests {
             }]
         }).to_string();
 
-        let pkgs = Sbom.parse(&data).unwrap();
+        let pkgs = Spdx.parse(&data).unwrap();
         assert!(pkgs.is_empty())
     }
 }

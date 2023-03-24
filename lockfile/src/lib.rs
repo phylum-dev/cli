@@ -11,9 +11,9 @@ pub use javascript::{PackageLock, YarnLock};
 use phylum_types::types::package::PackageType;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
-pub use sbom::Sbom;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
+pub use spdx::Spdx;
 
 mod cargo;
 mod csharp;
@@ -23,7 +23,7 @@ mod javascript;
 mod parsers;
 mod python;
 mod ruby;
-mod sbom;
+mod spdx;
 
 /// Maximum directory depth to recurse for finding lockfiles.
 const MAX_LOCKFILE_DEPTH: usize = 5;
@@ -50,7 +50,7 @@ pub enum LockfileFormat {
     Msbuild,
     Go,
     Cargo,
-    Sbom,
+    Spdx,
 }
 
 impl FromStr for LockfileFormat {
@@ -88,7 +88,7 @@ impl LockfileFormat {
             LockfileFormat::Msbuild => "nuget",
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
-            LockfileFormat::Sbom => "sbom",
+            LockfileFormat::Spdx => "spdx",
         }
     }
 
@@ -106,7 +106,7 @@ impl LockfileFormat {
             LockfileFormat::Msbuild => &CSProj,
             LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
-            LockfileFormat::Sbom => &Sbom,
+            LockfileFormat::Spdx => &Spdx,
         }
     }
 
@@ -135,7 +135,7 @@ impl Iterator for LockfileFormatIter {
             8 => LockfileFormat::Msbuild,
             9 => LockfileFormat::Go,
             10 => LockfileFormat::Cargo,
-            11 => LockfileFormat::Sbom,
+            11 => LockfileFormat::Spdx,
             _ => return None,
         };
         self.0 += 1;
@@ -230,8 +230,8 @@ mod tests {
             ("poetry.lock", LockfileFormat::Poetry),
             ("go.sum", LockfileFormat::Go),
             ("Cargo.lock", LockfileFormat::Cargo),
-            (".spdx.json", LockfileFormat::Sbom),
-            (".spdx.yaml", LockfileFormat::Sbom),
+            (".spdx.json", LockfileFormat::Spdx),
+            (".spdx.yaml", LockfileFormat::Spdx),
         ];
 
         for (file, expected_type) in test_cases {
@@ -256,7 +256,7 @@ mod tests {
             ("msbuild", LockfileFormat::Msbuild),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
-            ("sbom", LockfileFormat::Sbom),
+            ("spdx", LockfileFormat::Spdx),
         ] {
             let actual_format =
                 name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
@@ -282,7 +282,7 @@ mod tests {
             ("nuget", LockfileFormat::Msbuild),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
-            ("sbom", LockfileFormat::Sbom),
+            ("spdx", LockfileFormat::Spdx),
         ] {
             let actual_name = format.to_string();
             assert_eq!(
@@ -322,7 +322,7 @@ mod tests {
             (LockfileFormat::Msbuild, 2),
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
-            (LockfileFormat::Sbom, 3),
+            (LockfileFormat::Spdx, 3),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {

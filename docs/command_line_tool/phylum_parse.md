@@ -19,7 +19,7 @@ Usage: phylum parse [OPTIONS] [LOCKFILE]...
 
 -t, --lockfile-type <type>
 &emsp; Lock file type used for all lock files (default: auto)
-&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `sbom`, `auto`
+&emsp; Accepted values: `yarn`, `npm`, `gem`, `pip`, `pipenv`, `poetry`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `spdx`, `auto`
 
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
