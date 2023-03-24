@@ -3,19 +3,18 @@
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::thread;
 
 use anyhow::{anyhow, Context, Error, Result};
 use console::style;
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
-    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
+    self, Extension, ModuleCode, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier,
+    ModuleType, ResolutionKind,
 };
-use deno_runtime::permissions::{Permissions, PermissionsOptions};
+use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
-use deno_runtime::{colors, fmt_errors, BootstrapOptions};
+use deno_runtime::{fmt_errors, BootstrapOptions};
 use futures::future::BoxFuture;
 use tokio::fs;
 use url::Url;
@@ -31,71 +30,42 @@ pub async fn run(
     extension: extension::Extension,
     args: Vec<String>,
 ) -> CommandResult {
-    let phylum_api = Extension::builder()
+    let state = ExtensionState::new(api, extension.clone());
+    let phylum_api = Extension::builder("phylum-ext")
         .middleware(|op| match op.name {
             "op_request_permission" => op.disable(),
             _ => op,
         })
         .ops(api::api_decls())
+        .state(|deno_state| deno_state.put(state))
+        .force_op_registration()
         .build();
 
-    let main_module = deno_core::resolve_path(&extension.entry_point().to_string_lossy())?;
-
-    let cpu_count = thread::available_parallelism().map(|p| p.get()).unwrap_or(1);
+    let main_module =
+        deno_core::resolve_path(&extension.entry_point().to_string_lossy(), &PathBuf::from("."))?;
 
     let bootstrap = BootstrapOptions {
-        cpu_count,
         args,
         runtime_version: env!("CARGO_PKG_VERSION").into(),
         user_agent: "phylum-cli/extension".into(),
-        no_color: !colors::use_color(),
-        is_tty: colors::is_tty(),
-        enable_testing_features: Default::default(),
-        debug_flag: Default::default(),
-        ts_version: Default::default(),
-        location: Default::default(),
-        unstable: Default::default(),
-        inspect: Default::default(),
+        ..Default::default()
     };
 
     let options = WorkerOptions {
         bootstrap,
-        web_worker_pre_execute_module_cb: Arc::new(|_| {
-            unimplemented!("web workers are not supported")
-        }),
-        web_worker_preload_module_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
-        create_web_worker_cb: Arc::new(|_| unimplemented!("web workers are not supported")),
         module_loader: Rc::new(ExtensionsModuleLoader::new(extension.path())),
         extensions: vec![phylum_api],
-        seed: None,
-        unsafely_ignore_certificate_errors: Default::default(),
-        should_break_on_first_statement: Default::default(),
-        compiled_wasm_module_store: Default::default(),
-        shared_array_buffer_store: Default::default(),
-        maybe_inspector_server: Default::default(),
-        format_js_error_fn: Default::default(),
-        get_error_class_fn: Default::default(),
-        origin_storage_dir: Default::default(),
-        broadcast_channel: Default::default(),
-        cache_storage_dir: Default::default(),
-        source_map_getter: Default::default(),
-        root_cert_store: Default::default(),
-        npm_resolver: Default::default(),
-        blob_store: Default::default(),
-        stdio: Default::default(),
+        ..Default::default()
     };
 
     // Build permissions object from extension's requested permissions.
     let permissions_options = PermissionsOptions::from(&*extension.permissions());
     let worker_permissions = Permissions::from_options(&permissions_options)?;
+    let permissions_container = PermissionsContainer::new(worker_permissions);
 
     // Initialize Deno runtime.
     let mut worker =
-        MainWorker::bootstrap_from_options(main_module.clone(), worker_permissions, options);
-
-    // Export shared state.
-    let state = ExtensionState::new(api, extension);
-    worker.js_runtime.op_state().borrow_mut().put(state);
+        MainWorker::bootstrap_from_options(main_module.clone(), permissions_container, options);
 
     // Execute extension code.
     if let Err(error) = worker.execute_main_module(&main_module).await {
@@ -163,7 +133,12 @@ impl ExtensionsModuleLoader {
 }
 
 impl ModuleLoader for ExtensionsModuleLoader {
-    fn resolve(&self, specifier: &str, referrer: &str, _is_main: bool) -> Result<ModuleSpecifier> {
+    fn resolve(
+        &self,
+        specifier: &str,
+        referrer: &str,
+        _kind: ResolutionKind,
+    ) -> Result<ModuleSpecifier> {
         Ok(deno_core::resolve_import(specifier, referrer)?)
     }
 
@@ -181,7 +156,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
             // We do not care about invalid URLs yet: This match statement is inexpensive,
             // bears no risk and does not do I/O -- it operates fully off of the
             // contents of the URL.
-            let media_type = MediaType::from(&module_specifier);
+            let media_type = MediaType::from_specifier(&module_specifier);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
@@ -215,10 +190,10 @@ impl ModuleLoader for ExtensionsModuleLoader {
             }
 
             Ok(ModuleSource {
-                code: code.into_bytes().into_boxed_slice(),
+                module_type,
                 module_url_specified: module_specifier.to_string(),
                 module_url_found: module_specifier.to_string(),
-                module_type,
+                code: ModuleCode::Owned(code.into_bytes()),
             })
         })
     }

@@ -24,7 +24,7 @@ lazy_static! {
     static ref EXTENSION_NAME_RE: Regex = Regex::new(r#"^[a-z][a-z0-9-]+$"#).unwrap();
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ExtensionManifest {
     name: String,
     description: Option<String>,
@@ -47,7 +47,7 @@ impl ExtensionManifest {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Extension {
     path: PathBuf,
     manifest: ExtensionManifest,

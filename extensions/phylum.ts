@@ -66,7 +66,7 @@ export class PhylumApi {
    * This will usually return `https://api.phylum.io/api`.
    */
   static async apiBaseUrl(): Promise<URL> {
-    return new URL(await Deno.core.opAsync("api_base_url"));
+    return new URL(await Deno[Deno.internal].core.opAsync("api_base_url"));
   }
 
   /**
@@ -98,7 +98,7 @@ export class PhylumApi {
     project?: string,
     group?: string,
   ): Promise<string> {
-    return Deno.core.opAsync(
+    return Deno[Deno.internal].core.opAsync(
       "analyze",
       package_type,
       packages,
@@ -126,17 +126,17 @@ export class PhylumApi {
    * ```
    */
   static getUserInfo(): Promise<Record<string, unknown>> {
-    return Deno.core.opAsync("get_user_info");
+    return Deno[Deno.internal].core.opAsync("get_user_info");
   }
 
   /** Get the current short-lived API access token. */
   static getAccessToken(): Promise<string> {
-    return Deno.core.opAsync("get_access_token");
+    return Deno[Deno.internal].core.opAsync("get_access_token");
   }
 
   /** Get the long-lived user refresh token. */
   static getRefreshToken(): Promise<string> {
-    return Deno.core.opAsync("get_refresh_token");
+    return Deno[Deno.internal].core.opAsync("get_refresh_token");
   }
 
   /**
@@ -190,7 +190,7 @@ export class PhylumApi {
    * ```
    */
   static getJobStatus(jobId: string): Promise<Record<string, unknown>> {
-    return Deno.core.opAsync("get_job_status", jobId);
+    return Deno[Deno.internal].core.opAsync("get_job_status", jobId);
   }
 
   /**
@@ -209,7 +209,7 @@ export class PhylumApi {
    * ```
    */
   static getCurrentProject(): Record<string, unknown> | null {
-    return Deno.core.ops.get_current_project();
+    return Deno[Deno.internal].core.ops.get_current_project();
   }
 
   /**
@@ -234,7 +234,7 @@ export class PhylumApi {
    * ```
    */
   static getGroups(): Promise<Record<string, unknown>> {
-    return Deno.core.opAsync("get_groups");
+    return Deno[Deno.internal].core.opAsync("get_groups");
   }
 
   /**
@@ -257,7 +257,7 @@ export class PhylumApi {
    * ```
    */
   static getProjects(group?: string): Promise<Record<string, unknown>[]> {
-    return Deno.core.opAsync("get_projects", group);
+    return Deno[Deno.internal].core.opAsync("get_projects", group);
   }
 
   /**
@@ -269,7 +269,7 @@ export class PhylumApi {
     name: string,
     group?: string,
   ): Promise<{ id: string; status: "created" | "existed" }> {
-    return Deno.core.opAsync("create_project", name, group);
+    return Deno[Deno.internal].core.opAsync("create_project", name, group);
   }
 
   /**
@@ -278,7 +278,7 @@ export class PhylumApi {
    * Throws an error if unsuccessful.
    */
   static deleteProject(name: string, group?: string): Promise<void> {
-    return Deno.core.opAsync("delete_project", name, group);
+    return Deno[Deno.internal].core.opAsync("delete_project", name, group);
   }
 
   /**
@@ -338,7 +338,7 @@ export class PhylumApi {
     version: string,
     packageType: string,
   ): Promise<Record<string, unknown>> {
-    return Deno.core.opAsync(
+    return Deno[Deno.internal].core.opAsync(
       "get_package_details",
       name,
       version,
@@ -368,7 +368,7 @@ export class PhylumApi {
     lockfile: string,
     lockfileType?: string,
   ): Promise<Lockfile> {
-    return Deno.core.opAsync("parse_lockfile", lockfile, lockfileType);
+    return Deno[Deno.internal].core.opAsync("parse_lockfile", lockfile, lockfileType);
   }
 
   /**
@@ -437,7 +437,7 @@ export class PhylumApi {
    * ```
    */
   static runSandboxed(process: Record<string, unknown>): ProcessOutput {
-    return Deno.core.ops.run_sandboxed(process);
+    return Deno[Deno.internal].core.ops.run_sandboxed(process);
   }
 
   /**
@@ -457,7 +457,7 @@ export class PhylumApi {
    * ```
    */
   static permissions(): Record<string, unknown> {
-    return Deno.core.ops.op_permissions();
+    return Deno[Deno.internal].core.ops.op_permissions();
   }
 }
 
