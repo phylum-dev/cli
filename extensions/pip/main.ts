@@ -202,7 +202,9 @@ type Package = {
   package_type: string;
 };
 
+// Ref: https://pip.pypa.io/en/stable/reference/installation-report/
 type DryRunReport = {
+  version: string;
   install: {
     metadata: {
       name: string;
@@ -217,7 +219,14 @@ function parseDryRun(output: string): Package[] {
   const packages: Package[] = [];
 
   // Parse dependency names and versions.
-  const deps = (JSON.parse(output) as DryRunReport).install;
+  const report = JSON.parse(output) as DryRunReport;
+
+  if (report.version !== "1") {
+    console.error(`[${red("pip")}] Unsupported pip version!`);
+    Deno.exit(255);
+  }
+
+  const deps = report.install;
   for (const dep of deps) {
     packages.push({
       name: dep.metadata.name,
