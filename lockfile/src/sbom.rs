@@ -40,7 +40,7 @@ impl Default for PackageInformation {
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum SbomError {
-    UnknownEcossytem(String),
+    UnknownEcosytem(String),
     Purl,
     Version,
 }
@@ -111,7 +111,7 @@ impl TryFrom<&PackageInformation> for Package {
         let purl_ty = purl.ty();
         let package_type = PackageType::from_str(purl.ty())
             .or_else(|_| type_from_url(&pkg_info.download_location))
-            .map_err(|_| SbomError::UnknownEcossytem(purl_ty.into()))?;
+            .map_err(|_| SbomError::UnknownEcosytem(purl_ty.into()))?;
         let name = match (package_type, purl.namespace()) {
             (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
             (_, Some(ns)) => format!("{}/{}", ns, purl.name()),
@@ -167,7 +167,7 @@ impl Parse for Sbom {
                     let pkg_name = &package_info.name;
                     let pkg_ver = package_info.version_info.unwrap_or_default();
                     match e {
-                        SbomError::UnknownEcossytem(ecosystem) => {
+                        SbomError::UnknownEcosytem(ecosystem) => {
                             log::warn!(
                                 "{pkg_name}:{pkg_ver} uses an unsupported ecosystem: {ecosystem}",
                             )
