@@ -84,7 +84,7 @@ fn type_from_url(url: &str) -> Result<PackageType, ()> {
     } else if url.starts_with("https://crates.io") {
         Ok(PackageType::Cargo)
     } else {
-        Err(())
+        Err(anyhow!("Unknown download URL: {:?}", url))
     }
 }
 
