@@ -93,7 +93,7 @@ impl TryFrom<&PackageInformation> for Package {
             .map_err(|_| anyhow!("Unsupported ecosystem {purl_ty}"))?;
         let name = match (package_type, purl.namespace()) {
             (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
-            (_, Some(ns)) => format!("{}/{}", ns, purl.name()),
+            (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
             _ => purl.name().into(),
         };
 
