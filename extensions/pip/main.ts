@@ -89,24 +89,40 @@ type JobStatus = {
   }[];
 };
 
+// Get severity level as a number
+function severityLevel(s: string): number {
+  switch (s) {
+    case "low":
+      return 1;
+    case "medium":
+      return 2;
+    case "high":
+      return 3;
+    case "critical":
+      return 4;
+  }
+  return 0;
+}
+
 // Logs any identified issues to the screen.
 function logIssues(jobStatus: Record<string, unknown>) {
-  for (const pkg of (jobStatus as JobStatus).packages) {
-    const issues = pkg.issues;
+  const issues = (jobStatus as JobStatus).packages.flatMap((p) => p.issues);
 
-    for (const issue of issues) {
-      let severity = issue.severity.toLowerCase();
+  // Sort by severity
+  issues.sort((a, b) => severityLevel(b.severity) - severityLevel(a.severity));
 
-      if (["high", "critical"].indexOf(severity) != -1) {
-        severity = red(severity);
-      } else if (severity == "medium") {
-        severity = yellow(severity);
-      } else {
-        severity = green(severity);
-      }
+  for (const issue of issues) {
+    let severity = issue.severity.toLowerCase();
 
-      console.log(`    [${severity}] ${issue.title}`);
+    if (["high", "critical"].indexOf(severity) != -1) {
+      severity = red(severity);
+    } else if (severity == "medium") {
+      severity = yellow(severity);
+    } else {
+      severity = green(severity);
     }
+
+    console.log(`    [${severity}] ${issue.title}`);
   }
 }
 
