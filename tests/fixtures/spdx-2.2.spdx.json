@@ -17,54 +17,6 @@
   "documentNamespace" : "http://www.sourceauditor.com/spdxdocs/appbomination-src/e3b71037-57de-44c9-8b7f-4e8a62f45311",
   "documentDescribes" : [ "SPDXRef-1" ],
   "packages" : [ {
-    "SPDXID" : "SPDXRef-5",
-    "comment" : "Package info generated from Source Auditor package database",
-    "copyrightText" : "NOASSERTION",
-    "downloadLocation" : "NOASSERTION",
-    "filesAnalyzed" : false,
-    "homepage" : "https://gradle.org/",
-    "licenseConcluded" : "Apache-2.0",
-    "licenseDeclared" : "Apache-2.0",
-    "name" : "Gradle"
-  }, {
-    "SPDXID" : "SPDXRef-1",
-    "checksums" : [ {
-      "algorithm" : "SHA1",
-      "checksumValue" : "498cebd51a4483d6e68c2fc62d27008252fa4f7b"
-    } ],
-    "copyrightText" : "Copyright (c) 2016 Faust, Inc.",
-    "description" : "A uniquely useless project with a cataclysmic software supply chain, to serve a test case for BOM solutions.",
-    "downloadLocation" : "https://github.com/act-project/App-BOM-ination/archive/refs/tags/1.0.zip",
-    "filesAnalyzed" : true,
-    "hasFiles" : [ "SPDXRef-7", "SPDXRef-10", "SPDXRef-2", "SPDXRef-3", "SPDXRef-4", "SPDXRef-6", "SPDXRef-9", "SPDXRef-11", "SPDXRef-12", "SPDXRef-14" ],
-    "homepage" : "https://github.com/act-project/App-BOM-ination",
-    "licenseComments" : "Faust proprietary notice was found in one or more source files.  LGPL-2.0-or-later OR WTFPL was in a build configuration file and does not apply to the concluded license.",
-    "licenseConcluded" : "(LicenseRef-1 AND Apache-2.0)",
-    "licenseDeclared" : "Apache-2.0",
-    "licenseInfoFromFiles" : [ "LicenseRef-1", "Apache-2.0", "(LGPL-2.0-or-later OR WTFPL)" ],
-    "name" : "App-BOM-ination",
-    "originator" : "Person: Yevester",
-    "packageFileName" : "App-BOM-ination-1.0.zip",
-    "packageVerificationCode" : {
-      "packageVerificationCodeValue" : "be2fb65c6b22b81f1b273442d70479a41a3093e7"
-    },
-    "sourceInfo" : "",
-    "summary" : "A uniquely useless project with a cataclysmic software supply chain, to serve a test case for BOM solutions.",
-    "supplier" : "Organization: ACT Project",
-    "versionInfo" : "1.0"
-  }, {
-    "SPDXID" : "SPDXRef-13",
-    "comment" : "Package info generated from Source Auditor package database",
-    "copyrightText" : "NOASSERTION",
-    "description" : "Files containing a Faust Proprietary Notice",
-    "downloadLocation" : "NOASSERTION",
-    "filesAnalyzed" : false,
-    "homepage" : "https://github.com/act-project/App-BOM-ination/blob/master/src/main/java/com/github/appbomination/InsufficientKarmaException.java",
-    "licenseConcluded" : "LicenseRef-1",
-    "licenseDeclared" : "LicenseRef-1",
-    "name" : "Faust Proprietary File",
-    "summary" : "Files containing a Faust Proprietary Notice"
-  }, {
     "SPDXID" : "SPDXRef-23",
     "checksums" : [ {
       "algorithm" : "SHA1",
