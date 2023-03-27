@@ -26,7 +26,8 @@ impl<T: FilterIssues> FilterIssues for JobStatusResponse<T> {
 
 impl FilterIssues for PackageStatusExtended {
     fn filter(&mut self, filter: &Filter) {
-        self.issues.retain(|issue| !should_filter_issue(filter, issue.severity, issue.domain));
+        self.issues
+            .retain(|issue| !should_filter_issue(filter, issue.issue.severity, issue.issue.domain));
     }
 }
 
