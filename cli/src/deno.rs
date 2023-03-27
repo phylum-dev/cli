@@ -24,6 +24,9 @@ use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
 
+/// Load Phylum API for module injection.
+const EXTENSION_API: &str = include_str!("../../extensions/phylum.ts");
+
 /// Execute Phylum extension.
 pub async fn run(
     api: BoxFuture<'static, Result<PhylumApi>>,
@@ -126,7 +129,7 @@ impl ExtensionsModuleLoader {
         Ok(fs::read_to_string(path).await?)
     }
 
-    async fn load_from_deno_std(path: &Url) -> Result<String> {
+    async fn load_from_remote(path: &Url) -> Result<String> {
         let response = reqwest::get(path.clone()).await?;
         Ok(response.text().await?)
     }
@@ -139,7 +142,11 @@ impl ModuleLoader for ExtensionsModuleLoader {
         referrer: &str,
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier> {
-        Ok(deno_core::resolve_import(specifier, referrer)?)
+        if specifier == "phylum" {
+            Ok(ModuleSpecifier::parse("deno:phylum")?)
+        } else {
+            Ok(deno_core::resolve_import(specifier, referrer)?)
+        }
     }
 
     fn load(
@@ -152,6 +159,11 @@ impl ModuleLoader for ExtensionsModuleLoader {
         let extension_path = self.extension_path.clone();
 
         Box::pin(async move {
+            // Inject Phylum API module.
+            if module_specifier.as_str() == "deno:phylum" {
+                return phylum_module();
+            }
+
             // Determine source file type.
             // We do not care about invalid URLs yet: This match statement is inexpensive,
             // bears no risk and does not do I/O -- it operates fully off of the
@@ -181,7 +193,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
                     ExtensionsModuleLoader::load_from_filesystem(&extension_path, &module_specifier)
                         .await?
                 },
-                "https" => ExtensionsModuleLoader::load_from_deno_std(&module_specifier).await?,
+                "https" => ExtensionsModuleLoader::load_from_remote(&module_specifier).await?,
                 _ => return Err(anyhow!("Unsupported module specifier: {}", module_specifier)),
             };
 
@@ -214,4 +226,17 @@ fn transpile(
         media_type,
     })?;
     Ok(parsed.transpile(&Default::default())?.text)
+}
+
+/// Load the internal Phylum API module
+fn phylum_module() -> Result<ModuleSource> {
+    let module_url = "deno:phylum";
+    let code = transpile(module_url, EXTENSION_API, MediaType::TypeScript)?;
+
+    Ok(ModuleSource {
+        module_url_specified: module_url.into(),
+        module_url_found: module_url.into(),
+        module_type: ModuleType::JavaScript,
+        code: code.into(),
+    })
 }

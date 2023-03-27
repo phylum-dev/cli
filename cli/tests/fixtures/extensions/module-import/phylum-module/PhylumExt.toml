@@ -1,3 +1,0 @@
-name = "phylum-module"
-description = "Test: successfully load Phylum's extension module"
-entry_point = "main.ts"

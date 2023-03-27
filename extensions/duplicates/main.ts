@@ -2,7 +2,7 @@ import { mapValues } from "https://deno.land/std@0.150.0/collections/map_values.
 import { distinct } from "https://deno.land/std@0.150.0/collections/distinct.ts";
 import { groupBy } from "https://deno.land/std@0.150.0/collections/group_by.ts";
 
-import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
+import { PhylumApi } from "phylum";
 
 // Ensure lockfile argument is present.
 if (Deno.args.length != 1) {

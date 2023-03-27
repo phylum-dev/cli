@@ -3,7 +3,7 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
+import { PhylumApi } from "phylum";
 
 class FileBackup {
   readonly fileName: string;

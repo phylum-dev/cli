@@ -14,7 +14,7 @@ The following code provides an example on how you could sandbox `cat` to only
 allow access to files in the current working directory or below it:
 
 ```ts
-import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
+import { PhylumApi } from 'phylum';
 
 // Ensure a file path is passed as the only argument.
 if (Deno.args.length !== 1) {
