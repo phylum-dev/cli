@@ -368,7 +368,11 @@ export class PhylumApi {
     lockfile: string,
     lockfileType?: string,
   ): Promise<Lockfile> {
-    return Deno[Deno.internal].core.opAsync("parse_lockfile", lockfile, lockfileType);
+    return Deno[Deno.internal].core.opAsync(
+      "parse_lockfile",
+      lockfile,
+      lockfileType,
+    );
   }
 
   /**
