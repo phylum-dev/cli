@@ -218,8 +218,11 @@ impl Format for JobStatusResponse<PackageStatusExtended> {
         let mut table_2 = Table::new();
         table_2.set_format(table_format(3, 1));
 
-        let mut issues: Vec<&Issue> =
-            self.packages.iter().flat_map(|package| &package.issues).collect();
+        let mut issues: Vec<&Issue> = self
+            .packages
+            .iter()
+            .flat_map(|package| package.issues.iter().map(|issue| &issue.issue))
+            .collect();
 
         issues.sort_by(|a, b| a.severity.partial_cmp(&b.severity).unwrap());
         issues.reverse();

@@ -4,26 +4,25 @@ category: 6255e67693d5200013b1fa41
 hidden: false
 ---
 
-The Phylum CLI natively supports processing the lock/requirements files for several ecosystems, namely:
+The Phylum CLI natively supports processing lockfiles for several ecosystems, namely:
 * npm
-    * `package-lock.json`
-    * `yarn.lock` (Version 1 + 2)
+  * `package-lock.json`
+  * `yarn.lock` (Version 1 + 2)
 * RubyGems
-    * `Gemfile.lock`
+  * `Gemfile.lock`
 * PyPI
-    * `requirements.txt`
-    * `Pipfile.lock`
-    * `Pipfile`
-    * `poetry.lock` (Version 1 + 2)
+  * `requirements.txt`
+  * `Pipfile.lock`
+  * `poetry.lock` (Version 1 + 2)
 * NuGet
-    * `*.csproj`
+  * `*.csproj`
 * Maven
-    * `effective-pom.xml`
-    * `gradle.lockfile`
+  * `effective-pom.xml`
+  * `gradle.lockfile`
 * Golang
-    * `go.sum`
+  * `go.sum`
 * Cargo
-    * `Cargo.lock`
+  * `Cargo.lock`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
@@ -33,31 +32,32 @@ phylum analyze
 
 The default response will provide you with a high-level overview of your packages, including the total project score, score distributions across all packages, whether or not this analysis was a pass or fail and the total number of packages still processing.
 
-```
-$ phylum analyze
-✅ Job ID: 3cd30a5b-eeee-4ba1-b8e1-276c61e6502c
+```console
+❯ phylum analyze
+✅ Successfully parsed lockfile "./requirements.txt" as type: pip
+✅ Successfully parsed lockfile "./package-lock.json" as type: npm
+✅ Job ID: bbb6edae-e50b-4c6e-8386-34a5a56508e7
 
 
           Project: example-project                                         Label: uncategorized
-       Proj Score: 5                                                        Date: 2021-08-19 19:04:55 UTC
-         Num Deps: 70                                                     Job ID: 3cd30a5b-eeee-4ba1-b8e1-276c61e6502c
-             Type: NPM                                                  Language: Javascript
-          User ID: louis@phylum.io                             View in Phylum UI: https://app.phylum.io/projects/bce673f2-fd77-48cb-8ca6-80a51033a34d
+       Proj Score: 32                                                       Date: 2023-03-23 21:22:58 UTC
+         Num Deps: 58                                                     Job ID: bbb6edae-e50b-4c6e-8386-34a5a56508e7
+       Ecosystems: NPM, PyPI
 
      Score       Count
-      0 - 10   [    1]                                                                                     Thresholds:
-     10 - 20   [    2] █                                                                                Project Score: 0.6
-     20 - 30   [    0]                                                                        Malicious Code Risk MAL:   0
-     30 - 40   [    0]                                                                         Vulnerability Risk VLN:   0
-     40 - 50   [    0]                                                                           Engineering Risk ENG:   0
-     50 - 60   [    1]                                                                                Author Risk AUT:   0
-     60 - 70   [    0]                                                                               License Risk LIC:   0
-     70 - 80   [    1]
-     80 - 90   [    3] █
-     90 - 100  [   62] ████████████████████████████████
+     91 - 100  [   55] ████████████████████████████████████████████████████████                        Thresholds:
+     81 - 90   [    0]                                                                              Project Score: 60
+     71 - 80   [    0]                                                                    Malicious Code Risk MAL: 60
+     61 - 70   [    0]                                                                     Vulnerability Risk VLN: 60
+     51 - 60   [    2] ████████████████                                                      Engineering Risk ENG: 60
+     41 - 50   [    0]                                                                            Author Risk AUT: 60
+     31 - 40   [    1] ████████                                                                  License Risk LIC: 60
+     21 - 30   [    0]
+     11 - 20   [    0]
+      0 - 10   [    0]
 
            Status: FAIL
-           Reason: Project failed due to project score threshold of 0.6 not being met
+           Reason: Project failed due to project_score threshold of 60 not being met
 ```
 
 You can get more detailed output from the analysis, to include specific issues and their severity, by using the `--verbose` flag:

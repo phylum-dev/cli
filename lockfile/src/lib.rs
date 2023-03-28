@@ -199,7 +199,16 @@ pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
 ///
 /// Paths excluded by gitignore are automatically ignored.
 pub fn find_lockfiles() -> Vec<(PathBuf, LockfileFormat)> {
-    let walker = WalkBuilder::new(".").max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
+    find_lockfiles_at(".")
+}
+
+/// Find lockfiles at or below the specified root directory.
+///
+/// Walks the directory tree and returns all paths recognized as lockfiles.
+///
+/// Paths excluded by gitignore are automatically ignored.
+pub fn find_lockfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
+    let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
     walker
         .into_iter()
         .flatten()
