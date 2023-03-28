@@ -3061,6 +3061,7 @@ dependencies = [
  "unicode-width",
  "url",
  "walkdir",
+ "winapi",
  "wiremock",
  "zip",
 ]

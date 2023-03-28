@@ -65,6 +65,9 @@ deno_ast = { version = "0.25.0", features = ["transpiling"] }
 birdcage = { version = "0.2.0" }
 libc = "0.2.135"
 
+[target.'cfg(windows)'.build-dependencies]
+winapi = { version = "0.3.9", features = ["winbase", "processenv"] }
+
 [dev-dependencies]
 assert_cmd = "2.0.4"
 predicates = { version = "3.0", default-features = false, features = ["diff"] }
