@@ -3229,6 +3229,7 @@ dependencies = [
  "serde-xml-rs",
  "serde_json",
  "serde_yaml",
+ "thiserror",
  "toml",
 ]
 

@@ -1,11 +1,16 @@
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
+use thiserror::Error;
 
 use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
+
+#[derive(Error, Debug)]
+#[error("Could not determine ecosystem")]
+struct UnknownEcosystem;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -87,10 +92,9 @@ impl TryFrom<&PackageInformation> for Package {
             .ok_or(anyhow!("Missing PURL for {}", pkg_info.name))?;
 
         let purl = PackageUrl::from_str(pkg_url)?;
-        let purl_ty = purl.ty();
         let package_type = PackageType::from_str(purl.ty())
             .or_else(|_| type_from_url(&pkg_info.download_location))
-            .map_err(|_| anyhow!("Unsupported ecosystem {purl_ty}"))?;
+            .context(UnknownEcosystem)?;
         let name = match (package_type, purl.namespace()) {
             (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
             (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
@@ -138,8 +142,8 @@ impl Parse for Spdx {
             match Package::try_from(&package_info) {
                 Ok(pkg) => packages.push(pkg),
                 Err(e) => {
-                    if e.to_string().starts_with("Unsupported ecosystem") {
-                        log::warn!("{}", e)
+                    if e.is::<UnknownEcosystem>() {
+                        log::warn!("{:?}", e)
                     } else {
                         bail!(e)
                     }
