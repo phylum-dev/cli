@@ -21504,51 +21504,6 @@ ExternalRef: PACKAGE-MANAGER purl pkg:cargo/bytes@1.4.0
 
 # Package
 
-PackageName: ca-certificates-java
-SPDXID: SPDXRef-Package-java-archive-ca-certificates-java-300cbdd37d289bad
-PackageDownloadLocation: NOASSERTION
-PackageSourceInfo: acquired package info from installed java archive: /usr/share/ca-certificates-java/ca-certificates-java.jar
-PackageChecksum: SHA1: 0b1d4f423b4ec416cb14026a75c184bdb06c6914
-PackageLicenseDeclared: NONE
-PackageLicenseConcluded: NONE
-PackageCopyrightText: NOASSERTION
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates-java:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates-java:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates_java:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates_java:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:UpdateCertificates:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:UpdateCertificates:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates-java:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates_java:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:UpdateCertificates:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates-java:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates_java:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:security:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:security:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:UpdateCertificates:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:debian:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:debian:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:security:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:debian:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca-certificates:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca_certificates:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca:ca-certificates-java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca:ca_certificates_java:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca:UpdateCertificates:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:security:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:debian:security:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:ca:security:*:*:*:*:*:*:*:*
-ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.debian.security.UpdateCertificates/ca-certificates-java
-
-
-# Package
-
 PackageName: cacache
 SPDXID: SPDXRef-Package-npm-cacache-f8cc0c81cd88056d
 PackageVersion: 15.0.5
@@ -23236,25 +23191,6 @@ ExternalRef: SECURITY cpe23Type cpe:2.3:a:ruby_lang:concurrent_ruby:1.2.2:*:*:*:
 ExternalRef: SECURITY cpe23Type cpe:2.3:a:ruby:concurrent-ruby:1.2.2:*:*:*:*:*:*:*
 ExternalRef: SECURITY cpe23Type cpe:2.3:a:ruby:concurrent_ruby:1.2.2:*:*:*:*:*:*:*
 ExternalRef: PACKAGE-MANAGER purl pkg:gem/concurrent-ruby@1.2.2
-
-
-# Package
-
-PackageName: concurrent_ruby
-SPDXID: SPDXRef-Package-java-archive-concurrent-ruby-f09da469905bdcbe
-PackageDownloadLocation: NOASSERTION
-PackageSourceInfo: acquired package info from installed java archive: /var/lib/gems/2.7.0/gems/concurrent-ruby-1.2.2/lib/concurrent-ruby/concurrent/concurrent_ruby.jar
-PackageChecksum: SHA1: cc67b9bcf95c32a4f880909d3a9bce3c38615f48
-PackageLicenseDeclared: NONE
-PackageLicenseConcluded: NONE
-PackageCopyrightText: NOASSERTION
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent-ruby:concurrent-ruby:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent-ruby:concurrent_ruby:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent_ruby:concurrent-ruby:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent_ruby:concurrent_ruby:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent:concurrent-ruby:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:concurrent:concurrent_ruby:*:*:*:*:*:*:*:*
-ExternalRef: PACKAGE-MANAGER purl pkg:maven/concurrent_ruby/concurrent_ruby
 
 
 # Package
@@ -32205,51 +32141,6 @@ ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:python_jaraco.classes:3.2.3:*:*
 ExternalRef: SECURITY cpe23Type cpe:2.3:a:jaraco:jaraco.classes:3.2.3:*:*:*:*:*:*:*
 ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:jaraco.classes:3.2.3:*:*:*:*:*:*:*
 ExternalRef: PACKAGE-MANAGER purl pkg:pypi/jaraco.classes@3.2.3
-
-
-# Package
-
-PackageName: java-atk-wrapper
-SPDXID: SPDXRef-Package-java-archive-java-atk-wrapper-56ab2c7443a4fe1a
-PackageDownloadLocation: NOASSERTION
-PackageSourceInfo: acquired package info from installed java archive: /usr/share/java/java-atk-wrapper.jar
-PackageChecksum: SHA1: 28deae945a6436b1e64a1d34a9940f0c9bd3b9de
-PackageLicenseDeclared: NONE
-PackageLicenseConcluded: NONE
-PackageCopyrightText: NOASSERTION
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk-wrapper:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk-wrapper:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk_wrapper:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk_wrapper:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:Accessibility:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:Accessibility:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk-wrapper:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk_wrapper:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:Accessibility:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:AtkWrapper:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:AtkWrapper:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk-wrapper:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk_wrapper:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:Accessibility:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:AtkWrapper:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:GNOME:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:GNOME:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:AtkWrapper:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java:java-atk-wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java:java_atk_wrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:GNOME:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java-atk:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java_atk:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java:Accessibility:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:GNOME:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: SECURITY cpe23Type cpe:2.3:a:java:AtkWrapper:*:*:*:*:*:*:*:*
-ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.GNOME.Accessibility.AtkWrapper/java-atk-wrapper
 
 
 # Package

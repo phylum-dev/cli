@@ -3,22 +3,17 @@ use nom::bytes::complete::{tag, take_until, take_while};
 use nom::character::complete::{multispace0, not_line_ending, space0};
 use nom::character::streaming::line_ending;
 use nom::combinator::{eof, map_opt, opt, recognize};
-use nom::error::context;
+use nom::error::{context, VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
+use nom::Err as NomErr;
 
 use crate::parsers::{take_till_blank_line, take_till_line_end, Result};
 use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory};
-use crate::Package;
 
-pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
-    let (input, mut pkg_options) = many1(package)(input)?;
-    let pkgs = pkg_options
-        .drain(..)
-        .filter_map(|pi| Package::try_from(&pi).ok())
-        .collect::<Vec<Package>>();
-
-    Ok((input, pkgs))
+pub(crate) fn parse(input: &str) -> Result<&str, Vec<PackageInformation>> {
+    let (i, pkgs_info) = many1(package)(input)?;
+    Ok((i, pkgs_info))
 }
 
 fn package_name(input: &str) -> Result<&str, &str> {
@@ -72,23 +67,28 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
 
     // PackageDownloadLocation is required
     let (i, _) = tag("PackageDownloadLocation:")(i)?;
-    let (i, _) = recognize(ws(take_till_line_end))(i)?;
+    let (i, download_location) = recognize(ws(take_till_line_end))(i)?;
 
     // Look for external references
     let (i, next_input) = extern_ref(i)?;
     let (_, external_ref) = opt(recognize(ws(take_till_line_end)))(i)?;
 
+    // Package name
+    let name = name.trim();
+
     if let Some(external_ref) = external_ref {
         let (_, external_ref) = parse_external_refs(external_ref)?;
 
         Ok((next_input, PackageInformation {
-            name: name.trim().into(),
+            name: name.into(),
             version_info: version,
-            download_location: "NOASSERTION".into(),
+            download_location: download_location.into(),
             external_refs: vec![external_ref],
         }))
     } else {
-        Ok((next_input, PackageInformation::default()))
+        let kind = VerboseErrorKind::Context("Missing PURL");
+        let error = VerboseError { errors: vec![(input, kind)] };
+        Err(NomErr::Failure(error))
     }
 }
 

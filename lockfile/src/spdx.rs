@@ -30,17 +30,6 @@ pub(crate) struct PackageInformation {
     pub(crate) external_refs: Vec<ExternalRefs>,
 }
 
-impl Default for PackageInformation {
-    fn default() -> Self {
-        Self {
-            name: "NOASSERTION".to_string(),
-            version_info: None,
-            download_location: "NOASSERTION".to_string(),
-            external_refs: Vec::new(),
-        }
-    }
-}
-
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ExternalRefs {
@@ -149,10 +138,18 @@ pub struct Spdx;
 
 impl Parse for Spdx {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let lock: SpdxInfo = serde_json::from_str(data).or_else(|_| serde_yaml::from_str(data))?;
+        let packages_info =
+            match serde_json::from_str::<SpdxInfo>(data).or_else(|_| serde_yaml::from_str(data)) {
+                Ok(lock) => lock.packages,
+                Err(_) => {
+                    let (_, b) =
+                        spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?;
+                    b
+                },
+            };
 
         let mut packages = Vec::new();
-        for package_info in lock.packages {
+        for package_info in packages_info {
             match Package::try_from(&package_info) {
                 Ok(pkg) => packages.push(pkg),
                 Err(e) => {
@@ -169,23 +166,10 @@ impl Parse for Spdx {
     }
 
     fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
-        path.ends_with(".spdx.json") || path.ends_with(".spdx.yaml") || path.ends_with(".spdx.yml")
-    }
-}
-
-pub struct SpdxTagValue;
-
-impl Parse for SpdxTagValue {
-    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let (_, entries) = spdx::parse(data)
-            .finish()
-            .map_err(|e| anyhow!(convert_error(data, e)))
-            .context("Failed to parse requirements file")?;
-        Ok(entries)
-    }
-
-    fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
-        path.ends_with(".spdx")
+        path.ends_with(".spdx.json")
+            || path.ends_with(".spdx.yaml")
+            || path.ends_with(".spdx.yml")
+            || path.ends_with(".spdx")
     }
 }
 
@@ -393,8 +377,89 @@ mod tests {
     }
 
     #[test]
+    fn tag_value_fail_missing_purl() {
+        let data = r##"SPDXVersion: SPDX-2.3
+            DataLicense: CC0-1.0
+            DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
+            DocumentName: SPDX-Tools-v2.0
+            SPDXID: SPDXRef-DOCUMENT
+            DocumentComment: <text>This document was created using SPDX 2.0 using licenses from the web site.</text>
+
+            ## Package Information
+            PackageName: Jena
+            SPDXID: SPDXRef-fromDoap-0
+            PackageVersion: 3.12.0
+            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
+            PackageHomePage: http://www.openjena.org/
+            FilesAnalyzed: false
+
+            ## Package Information
+            PackageName: @colors/colors
+            SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
+            PackageVersion: 1.5.0
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
+
+        let error = Spdx.parse(data).err().unwrap();
+        assert!(error.to_string().contains("Missing PURL"))
+    }
+
+    #[test]
+    fn tag_value_fail_missing_version() {
+        let data = r##"SPDXVersion: SPDX-2.3
+            DataLicense: CC0-1.0
+            DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
+            DocumentName: SPDX-Tools-v2.0
+            SPDXID: SPDXRef-DOCUMENT
+            DocumentComment: <text>This document was created using SPDX 2.0 using licenses from the web site.</text>
+
+            ## Package Information
+            PackageName: Jena
+            SPDXID: SPDXRef-fromDoap-0
+            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
+            PackageHomePage: http://www.openjena.org/
+            ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.apache.jena/apache-jena
+            FilesAnalyzed: false
+
+            ## Package Information
+            PackageName: @colors/colors
+            SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
+            PackageVersion: 1.5.0
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
+
+        let error = Spdx.parse(data).err().unwrap();
+        assert!(error.to_string().contains("Version"))
+    }
+
+    #[test]
+    fn tag_value_unsupported_ecosystem() {
+        let data = r##"SPDXVersion: SPDX-2.3
+            DataLicense: CC0-1.0
+            DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
+            DocumentName: SPDX-Tools-v2.0
+            SPDXID: SPDXRef-DOCUMENT
+            DocumentComment: <text>This document was created using SPDX 2.0 using licenses from the web site.</text>
+
+            ## Package Information
+            PackageName: TBD
+            SPDXID: SPDXRef-fromDoap-0
+            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
+            PackageHomePage: http://www.openjena.org/
+            ExternalRef: PACKAGE-MANAGER purl pkg:tbd/org.apache.jena/apache-jena
+            FilesAnalyzed: false
+
+            ## Package Information
+            PackageName: @colors/colors
+            SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
+            PackageVersion: 1.5.0
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
+
+        let pkgs = Spdx.parse(data).unwrap();
+        assert!(pkgs.is_empty())
+    }
+
+    #[test]
     fn parse_spdx_2_2_tag_value() {
-        let (_, pkgs) = spdx::parse(include_str!("../../tests/fixtures/spdx-2.2.spdx")).unwrap();
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx")).unwrap();
         assert_eq!(pkgs.len(), 2673);
 
         let expected_pkgs = [
@@ -436,7 +501,6 @@ mod tests {
         ];
 
         for expected_pkg in expected_pkgs {
-            println!("ep: {:?}", expected_pkg);
             assert!(pkgs.contains(&expected_pkg));
         }
     }
