@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op, OpDecl, OpState};
-use deno_runtime::permissions::Permissions;
+use deno_runtime::permissions::PermissionsContainer;
 use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
@@ -364,8 +364,8 @@ async fn parse_lockfile(
     // Ensure extension has file read-access.
     {
         let mut state = op_state.borrow_mut();
-        let permissions = state.borrow_mut::<Permissions>();
-        permissions.read.check(Path::new(&lockfile), None)?;
+        let permissions = state.borrow_mut::<PermissionsContainer>();
+        permissions.check_read(Path::new(&lockfile), "phylum")?;
     }
 
     // Attempt to parse as requested lockfile type.

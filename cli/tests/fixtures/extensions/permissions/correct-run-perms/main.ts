@@ -1,4 +1,4 @@
-import { PhylumApi } from 'https://deno.phylum.io/phylum.ts';
+import { PhylumApi } from 'phylum';
 
 let cmd = PhylumApi.runSandboxed({
   cmd: 'echo',

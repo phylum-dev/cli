@@ -21,7 +21,7 @@ correct base URI. The following example retrieves projects owned by the user
 which do not belong to any group:
 
 ```ts
-import { PhylumApi, ApiVersion } from "https://deno.phylum.io/phylum.ts";
+import { PhylumApi, ApiVersion } from "phylum";
 
 // Create a fetch request to the `/data/projects/overview` endpoint.
 const reply = await PhylumApi.fetch(
@@ -43,7 +43,7 @@ project through the API:
 [Deno's `fetch` function]: https://deno.land/api@latest?s=fetch
 
 ```ts
-import { PhylumApi, ApiVersion } from "https://deno.phylum.io/phylum.ts";
+import { PhylumApi, ApiVersion } from "phylum";
 
 // Create a fetch request to the `/data/projects` endpoint.
 const reply = await PhylumApi.fetch(
