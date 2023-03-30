@@ -215,7 +215,7 @@ pub async fn lookup_project(
     group: Option<&str>,
 ) -> StdResult<ProjectId, PhylumApiError> {
     let uuid = api
-        .get_project_id(project, group.as_deref())
+        .get_project_id(project, group)
         .await
         .context("A project with that name does not exist")?;
     Ok(uuid)

@@ -56,7 +56,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
             let uuid = project::lookup_project(api, &project, group.as_deref())
                 .await
                 .context(format!("Could not find project {project:?}"))?;
-            ProjectConfig::new(uuid, project.into(), group)
+            ProjectConfig::new(uuid, project, group)
         },
         project_config => project_config.context("Unable to create project")?,
     };
