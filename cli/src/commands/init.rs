@@ -8,7 +8,7 @@ use clap::parser::ValuesRef;
 use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
-use phylum_project::{LockfileConfig, PROJ_CONF_FILE};
+use phylum_project::{LockfileConfig, ProjectConfig, PROJ_CONF_FILE};
 use phylum_types::types::group::UserGroup;
 use reqwest::StatusCode;
 
@@ -53,9 +53,10 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            project::lookup_project(api, &project, group)
+            let uuid = project::lookup_project(api, &project, group.as_deref())
                 .await
-                .context(format!("Could not find project {project:?}"))?
+                .context(format!("Could not find project {project:?}"))?;
+            ProjectConfig::new(uuid, project.into(), group)
         },
         project_config => project_config.context("Unable to create project")?,
     };

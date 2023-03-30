@@ -4,6 +4,7 @@ use std::result::Result as StdResult;
 use anyhow::{anyhow, Context, Result};
 use console::style;
 use phylum_project::{ProjectConfig, PROJ_CONF_FILE};
+use phylum_types::types::common::ProjectId;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
@@ -69,7 +70,15 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group").cloned();
 
-        let project_config = lookup_project(api, project_name, group_name).await?;
+        let uuid = lookup_project(api, project_name, group_name.as_deref()).await?;
+
+        let project_config = match phylum_project::get_current_project() {
+            Some(mut project) => {
+                project.update_project(uuid, project_name.into(), group_name);
+                project
+            },
+            None => ProjectConfig::new(uuid, project_name.into(), group_name),
+        };
 
         save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
             log::error!("Failed to save user credentials to config: {}", err)
@@ -203,12 +212,11 @@ pub async fn create_project(
 pub async fn lookup_project(
     api: &PhylumApi,
     project: &str,
-    group: Option<String>,
-) -> StdResult<ProjectConfig, PhylumApiError> {
+    group: Option<&str>,
+) -> StdResult<ProjectId, PhylumApiError> {
     let uuid = api
         .get_project_id(project, group.as_deref())
         .await
         .context("A project with that name does not exist")?;
-
-    Ok(ProjectConfig::new(uuid, project.into(), group))
+    Ok(uuid)
 }
