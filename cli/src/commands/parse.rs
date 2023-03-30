@@ -4,7 +4,7 @@ use std::fs::read_to_string;
 use std::io;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{
     get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
 };
@@ -49,10 +49,11 @@ pub fn parse_lockfile(
     lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
+    let path = path.as_ref();
     let format = lockfile_type
         .filter(|lockfile_type| lockfile_type != &"auto")
         .map(|lockfile_type| lockfile_type.parse::<LockfileFormat>().unwrap())
-        .or_else(|| get_path_format(path.as_ref()));
+        .or_else(|| get_path_format(path));
 
     match format {
         // Parse with identified parser.
@@ -60,12 +61,15 @@ pub fn parse_lockfile(
             let data = read_to_string(path)?;
             let parser = format.parser();
 
-            let packages = filter_packages(parser.parse(&data)?);
+            let packages = parser
+                .parse(&data)
+                .with_context(|| format!("Failed to parse lockfile {path:?}"))?;
+            let packages = filter_packages(packages);
 
             Ok(ParsedLockfile { packages, format })
         },
         // Attempt to parse with all parsers until success.
-        None => try_get_packages(path.as_ref()),
+        None => try_get_packages(path),
     }
 }
 
@@ -84,7 +88,7 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
         }
     }
 
-    Err(anyhow!("Failed to identify lockfile type"))
+    Err(anyhow!("Failed to identify type for lockfile {path:?}"))
 }
 
 /// Filter packages for submission.
