@@ -138,15 +138,13 @@ pub struct Spdx;
 
 impl Parse for Spdx {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let packages_info =
-            match serde_json::from_str::<SpdxInfo>(data).or_else(|_| serde_yaml::from_str(data)) {
-                Ok(lock) => lock.packages,
-                Err(_) => {
-                    let (_, b) =
-                        spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?;
-                    b
-                },
-            };
+        let packages_info = if let Ok(lock) = serde_json::from_str::<SpdxInfo>(data) {
+            lock.packages
+        } else if let Ok(lock) = serde_yaml::from_str::<SpdxInfo>(data) {
+            lock.packages
+        } else {
+            spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?.1
+        };
 
         let mut packages = Vec::new();
         for package_info in packages_info {
