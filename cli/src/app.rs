@@ -182,7 +182,8 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('t')
                     .long("package-type")
                     .value_name("type")
-                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
+                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#)
+                    .required(true),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
