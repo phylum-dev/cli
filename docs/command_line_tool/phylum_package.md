@@ -7,7 +7,7 @@ hidden: false
 Retrieve the details of a specific package
 
 ```sh
-Usage: phylum package [OPTIONS] <name> <version>
+Usage: phylum package [OPTIONS] --package-type <type> <name> <version>
 ```
 
 ### Arguments
