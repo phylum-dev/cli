@@ -23,6 +23,11 @@ The Phylum CLI natively supports processing lockfiles for several ecosystems, na
   * `go.sum`
 * Cargo
   * `Cargo.lock`
+* SPDX (Version 2.2 + 2.3)
+  * `*.spdx.json`
+  * `*.spdx.yaml`
+  * `*.spdx.yml`
+  * `*.spdx`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
