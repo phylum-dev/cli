@@ -67,6 +67,13 @@ impl ProjectConfig {
         Vec::new()
     }
 
+    /// Update the config's project.
+    pub fn update_project(&mut self, project_id: ProjectId, name: String, group: Option<String>) {
+        self.id = project_id;
+        self.name = name;
+        self.group_name = group;
+    }
+
     /// Update the project's lockfiles.
     pub fn set_lockfiles(&mut self, lockfiles: Vec<LockfileConfig>) {
         self.lockfiles = lockfiles;

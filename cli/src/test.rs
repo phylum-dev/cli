@@ -99,7 +99,7 @@ pub mod mockito {
                     query_params.get("redirect_uri").expect("redirect_uri not set").to_string();
                 ResponseTemplate::new(302).insert_header::<&str, &str>(
                     "Location",
-                    &(redirect_uri + &format!("/?code={}", DUMMY_AUTH_CODE)),
+                    &format!("{redirect_uri}/?code={}", DUMMY_AUTH_CODE),
                 )
             })
             .mount(&mock_server)
