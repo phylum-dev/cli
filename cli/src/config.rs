@@ -12,7 +12,6 @@ use std::{env, fs};
 use anyhow::{anyhow, Result};
 use phylum_project::{LockfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
-use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{dirs, print_user_warning};
@@ -49,7 +48,6 @@ impl AuthInfo {
 pub struct Config {
     pub connection: ConnectionInfo,
     pub auth_info: AuthInfo,
-    pub request_type: PackageType,
     pub last_update: Option<usize>,
     #[serde(skip)]
     ignore_certs_cli: bool,
@@ -62,7 +60,6 @@ impl Default for Config {
         Config {
             connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
             auth_info: AuthInfo::default(),
-            request_type: PackageType::Npm,
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
@@ -229,9 +226,10 @@ mod tests {
 
     const CONFIG_TOKEN: &str = "FAKE TOKEN";
     const ENV_TOKEN: &str = "ENV TOKEN";
+    const LOCALHOST: &str = "http://127.0.0.1";
 
     fn write_test_config(path: &Path) {
-        let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
+        let con = ConnectionInfo { uri: LOCALHOST.into() };
 
         let auth = AuthInfo {
             offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
@@ -241,7 +239,6 @@ mod tests {
         let config = Config {
             connection: con,
             auth_info: auth,
-            request_type: PackageType::Npm,
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
@@ -260,7 +257,7 @@ mod tests {
         let tempfile = NamedTempFile::new().unwrap();
         write_test_config(tempfile.path());
         let config: Config = parse_config(tempfile.path()).unwrap();
-        assert_eq!(config.request_type, PackageType::Npm);
+        assert_eq!(config.connection.uri, LOCALHOST);
     }
 
     #[test]
