@@ -118,10 +118,10 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             Box::new(io::BufReader::new(io::stdin()))
         };
 
-        let request_type = match matches.get_one::<String>("type") {
-            Some(package_type) => PackageType::from_str(package_type)
-                .map_err(|_| anyhow!("invalid package type: {}", package_type))?,
-            None => api.config().request_type,
+        let request_type = {
+            let package_type = matches.get_one::<String>("type").unwrap();
+            PackageType::from_str(package_type)
+                .map_err(|_| anyhow!("invalid package type: {}", package_type))?
         };
 
         label = matches.get_one::<String>("label");

@@ -292,7 +292,8 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("type")
                         .value_name("type")
-                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
+                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#)
+                        .required(true),
                     Arg::new("label")
                         .short('l')
                         .long("label")
