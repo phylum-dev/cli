@@ -173,16 +173,21 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(
             Command::new("package").about("Retrieve the details of a specific package").args(&[
-                Arg::new("name").value_name("name").help("The name of the package.").required(true),
+                Arg::new("package-type")
+                    .index(1)
+                    .value_name("type")
+                    .help("Package ecosystem type")
+                    .value_parser(["npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo"])
+                    .required(true),
+                Arg::new("name")
+                    .index(2)
+                    .value_name("name")
+                    .help("The name of the package.")
+                    .required(true),
                 Arg::new("version")
+                    .index(3)
                     .value_name("version")
                     .help("The version of the package.")
-                    .required(true),
-                Arg::new("package-type")
-                    .short('t')
-                    .long("package-type")
-                    .value_name("type")
-                    .help(r#"The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#)
                     .required(true),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
