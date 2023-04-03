@@ -7,10 +7,14 @@ hidden: false
 Retrieve the details of a specific package
 
 ```sh
-Usage: phylum package [OPTIONS] <name> <version>
+Usage: phylum package [OPTIONS] <type> <name> <version>
 ```
 
 ### Arguments
+
+<type>
+&emsp; Package ecosystem type
+&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
 <name>
 &emsp; The name of the package.
@@ -19,9 +23,6 @@ Usage: phylum package [OPTIONS] <name> <version>
 &emsp; The version of the package.
 
 ### Options
-
--t, --package-type <type>
-&emsp; The type of the package ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")
 
 -j, --json
 &emsp; Produce output in json format (default: false)
