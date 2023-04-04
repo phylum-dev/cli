@@ -1,3 +1,4 @@
+* 4.8.0 - SPDX file support; Official pip extension
 * 4.7.0 - Automatic lockfile detection
 * 4.6.1 - Fix Go parser ignoring dependencies
 * 4.6.0 - Improve init UX
