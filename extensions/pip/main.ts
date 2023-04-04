@@ -206,6 +206,7 @@ type Package = {
 type DryRunReport = {
   version: string;
   install: {
+    is_direct: boolean;
     metadata: {
       name: string;
       version: string;
@@ -228,11 +229,20 @@ function parseDryRun(output: string): Package[] {
 
   const deps = report.install;
   for (const dep of deps) {
-    packages.push({
-      name: dep.metadata.name,
-      version: dep.metadata.version,
-      package_type: "pypi",
-    });
+    if (!dep.is_direct) {
+      packages.push({
+        name: dep.metadata.name,
+        version: dep.metadata.version,
+        package_type: "pypi",
+      });
+    } else {
+      // Filesystem paths or direct URLs
+      console.warn(
+        `[${
+          yellow("phylum")
+        }] Cannot analyze dependency: ${dep.metadata.name}-${dep.metadata.version}`,
+      );
+    }
   }
 
   return packages;
