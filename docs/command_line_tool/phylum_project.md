@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Create, list, and link projects
+Manage Phylum projects
 
 ```sh
 Usage: phylum project [OPTIONS] <COMMAND>

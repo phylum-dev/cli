@@ -99,7 +99,7 @@ pub fn add_subcommands(command: Command) -> Command {
         .subcommand(
             Command::new("project")
                 .aliases(["projects"])
-                .about("Create, list, and link projects")
+                .about("Manage Phylum projects")
                 .arg_required_else_help(true)
                 .subcommand_required(true)
                 .subcommand(

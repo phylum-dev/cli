@@ -26,9 +26,7 @@ pub async fn get_project_list(
     Ok(())
 }
 
-/// Handle the project subcommand. Provides facilities for creating a new
-/// project, linking a current repository to an existing project, and listing
-/// projects.
+/// Handle the project subcommand.
 pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
         let name = matches.get_one::<String>("name").unwrap();
