@@ -11,6 +11,7 @@ pub mod gem;
 pub mod go_sum;
 pub mod gradle_dep;
 pub mod pypi;
+pub mod spdx;
 pub mod yarn;
 
 fn take_till_line_end(input: &str) -> Result<&str, &str> {

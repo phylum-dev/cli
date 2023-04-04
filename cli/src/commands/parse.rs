@@ -152,7 +152,9 @@ mod tests {
             ("../tests/fixtures/Cargo_v1.lock", LockfileFormat::Cargo),
             ("../tests/fixtures/Cargo_v2.lock", LockfileFormat::Cargo),
             ("../tests/fixtures/Cargo_v3.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/spdx-2.2.spdx", LockfileFormat::Spdx),
             ("../tests/fixtures/spdx-2.2.spdx.json", LockfileFormat::Spdx),
+            ("../tests/fixtures/spdx-2.3.spdx.json", LockfileFormat::Spdx),
             ("../tests/fixtures/spdx-2.3.spdx.yaml", LockfileFormat::Spdx),
         ];
 
