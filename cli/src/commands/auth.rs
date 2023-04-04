@@ -40,7 +40,7 @@ async fn handle_auth_login(
 pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> CommandResult {
     if config.auth_info.offline_access().is_none() {
         print_user_warning!("User is not currently authenticated");
-        return Ok(ExitCode::NotAuthenticated.into());
+        return Ok(ExitCode::NotAuthenticated);
     }
 
     // Create a client with our auth token attached.
@@ -54,11 +54,11 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
                 "Currently authenticated as '{}' with long lived refresh token",
                 user.email
             );
-            Ok(ExitCode::Ok.into())
+            Ok(ExitCode::Ok)
         },
         Err(_err) => {
             print_user_warning!("Refresh token could not be validated");
-            Ok(ExitCode::AuthenticationFailure.into())
+            Ok(ExitCode::AuthenticationFailure)
         },
     }
 }
@@ -71,7 +71,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
             print_user_warning!(
                 "User is not currently authenticated, please login with `phylum auth login`"
             );
-            return Ok(ExitCode::NotAuthenticated.into());
+            return Ok(ExitCode::NotAuthenticated);
         },
     };
 
@@ -80,10 +80,10 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
         let tokens =
             auth::handle_refresh_tokens(refresh_token, config.ignore_certs(), api_uri).await?;
         println!("{}", tokens.access_token);
-        Ok(ExitCode::Ok.into())
+        Ok(ExitCode::Ok)
     } else {
         println!("{refresh_token}");
-        Ok(ExitCode::Ok.into())
+        Ok(ExitCode::Ok)
     }
 }
 
@@ -116,7 +116,7 @@ pub async fn handle_auth_set_token(
     };
     config.auth_info.set_offline_access(offline_access);
     save_config(config_path, &config)?;
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle the subcommands for the `auth` subcommand.
@@ -130,14 +130,14 @@ pub async fn handle_auth(
         Some(("register", _)) => match handle_auth_register(config, config_path).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
-                Ok(ExitCode::Ok.into())
+                Ok(ExitCode::Ok)
             },
             Err(error) => Err(error).context("User registration failed"),
         },
         Some(("login", matches)) => match handle_auth_login(config, config_path, matches).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
-                Ok(ExitCode::Ok.into())
+                Ok(ExitCode::Ok)
             },
             Err(error) => Err(error).context("User login failed"),
         },

@@ -3,66 +3,36 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
-use log::LevelFilter;
 use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::job::{Action, JobStatusResponse};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 
-use crate::api::{PhylumApi, PhylumApiError};
-use crate::commands::{parse, CommandResult, CommandValue, ExitCode};
-use crate::filter::{Filter, FilterIssues};
+use crate::api::PhylumApi;
+use crate::commands::{parse, CommandResult, ExitCode};
 use crate::format::Format;
 use crate::{config, print_user_success, print_user_warning};
 
-fn handle_status<T>(
-    resp: Result<JobStatusResponse<T>, PhylumApiError>,
-    pretty: bool,
-) -> Result<Action>
-where
-    JobStatusResponse<T>: Format,
-{
-    let resp = match resp {
-        Ok(resp) => resp,
+/// Output analysis job results.
+pub async fn print_job_status(api: &mut PhylumApi, job_id: &JobId, pretty: bool) -> CommandResult {
+    let response = api.get_job_status(job_id, []).await;
+
+    // Provide nicer messages for specific errors.
+    let status = match response {
+        Ok(status) => status,
         Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
-            print_user_warning!(
-                "No results found. Submit a lockfile for processing:\n\n\t{}\n",
-                style("phylum analyze <lock_file>").blue()
-            );
-            return Ok(Action::None);
+            print_user_warning!("No results found for JobId {job_id}.");
+            return Ok(ExitCode::Ok);
         },
         Err(err) => return Err(err.into()),
     };
 
-    resp.write_stdout(pretty);
+    status.write_stdout(pretty);
 
-    if !resp.pass {
-        Ok(resp.action)
+    if status.is_failure {
+        Ok(ExitCode::FailedPolicy)
     } else {
-        Ok(Action::None)
-    }
-}
-
-/// Display user-friendly overview of a job
-pub async fn get_job_status(
-    api: &mut PhylumApi,
-    job_id: &JobId,
-    verbose: bool,
-    pretty: bool,
-    filter: Option<Filter>,
-) -> Result<Action> {
-    if verbose {
-        let mut resp = api.get_job_status_ext(job_id).await;
-
-        if let (Ok(resp), Some(filter)) = (&mut resp, filter) {
-            resp.filter(&filter);
-        }
-
-        handle_status(resp, pretty)
-    } else {
-        let resp = api.get_job_status(job_id).await;
-        handle_status(resp, pretty)
+        Ok(ExitCode::Ok)
     }
 }
 
@@ -73,14 +43,11 @@ pub async fn get_job_status(
 /// job run.
 pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.get_flag("json");
-    let verbose = log::max_level() > LevelFilter::Warn;
-    let mut action = Action::None;
-    let display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
 
     if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
         let job_id =
             JobId::from_str(job_id).with_context(|| format!("{job_id:?} is not a valid Job ID"))?;
-        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
+        return print_job_status(api, &job_id, pretty_print).await;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let group = matches.get_one::<String>("group").map(String::as_str);
         let history = api.get_project_history(project, group).await?;
@@ -93,7 +60,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
                     "No results found. Submit a lockfile for processing:\n\n\t{}\n",
                     style("phylum analyze <lock_file>").blue()
                 );
-                return Ok(ExitCode::NoHistoryFound.into());
+                return Ok(ExitCode::NoHistoryFound);
             },
             Err(err) => return Err(err.into()),
         };
@@ -101,7 +68,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         resp.write_stdout(pretty_print);
     }
 
-    Ok(CommandValue::Action(action))
+    Ok(ExitCode::Ok)
 }
 
 /// Handles submission of packages to the system for analysis and
@@ -109,18 +76,13 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let mut packages = vec![];
     let mut synch = false; // get status after submission
-    let mut verbose = false;
     let mut pretty_print = false;
-    let mut display_filter = None;
-    let mut action = Action::None;
     let jobs_project;
     let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         label = matches.get_one::<String>("label");
-        verbose = log::max_level() > LevelFilter::Warn;
         pretty_print = !matches.get_flag("json");
-        display_filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
         synch = true;
 
         jobs_project = JobsProject::new(api, matches).await?;
@@ -216,9 +178,10 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
     if synch {
         log::debug!("Requesting status...");
-        action = get_job_status(api, &job_id, verbose, pretty_print, display_filter).await?;
+        print_job_status(api, &job_id, pretty_print).await
+    } else {
+        Ok(ExitCode::Ok)
     }
-    Ok(CommandValue::Action(action))
 }
 
 /// Project information for analyze/batch.

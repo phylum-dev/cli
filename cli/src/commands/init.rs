@@ -27,7 +27,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
             .interact()?;
 
         if !should_continue {
-            return Ok(ExitCode::ConfirmationFailed.into());
+            return Ok(ExitCode::ConfirmationFailed);
         }
 
         println!();
@@ -70,7 +70,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
 
     print_user_success!("Successfully created project configuration");
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Interactively ask for missing project information.

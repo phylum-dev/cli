@@ -29,7 +29,7 @@ pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches)
         Ok(resp) => resp,
         Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
             print_user_warning!("No matching package found.");
-            return Ok(ExitCode::PackageNotFound.into());
+            return Ok(ExitCode::PackageNotFound);
         },
         Err(err) => return Err(err.into()),
     };
@@ -55,5 +55,5 @@ pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches)
         },
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }

@@ -7,11 +7,10 @@ use phylum_types::types::group::{
     CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse, ListUserGroupsResponse,
 };
 use phylum_types::types::job::{
-    AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
+    AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
 use phylum_types::types::package::{
-    PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended,
-    PackageSubmitResponse, PackageType,
+    PackageDescriptor, PackageSpecifier, PackageSubmitResponse, PackageType,
 };
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
@@ -28,7 +27,7 @@ use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
-use crate::types::{HistoryJob, PingResponse};
+use crate::types::{HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse};
 
 pub mod endpoints;
 
@@ -59,6 +58,7 @@ impl PhylumApiError {
     pub fn status(&self) -> Option<StatusCode> {
         match self {
             PhylumApiError::ReqwestError { source } => source.status(),
+            PhylumApiError::Response(ResponseError { code, .. }) => Some(*code),
             _ => None,
         }
     }
@@ -287,17 +287,14 @@ impl PhylumApi {
         Ok(resp.job_id)
     }
 
-    /// Get the status of a previously submitted job
-    pub async fn get_job_status(&self, job_id: &JobId) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, false)?).await
-    }
-
-    /// Get the status of a previously submitted job (verbose output)
-    pub async fn get_job_status_ext(
+    /// Get the status of a previously submitted job.
+    pub async fn get_job_status(
         &self,
         job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, true)?).await
+        ignored: impl Into<Vec<PackageDescriptor>>,
+    ) -> Result<PolicyEvaluationResponse> {
+        let body = PolicyEvaluationRequest { ignored_packages: ignored.into() };
+        self.post(endpoints::get_job_status(&self.config.connection.uri, job_id)?, body).await
     }
 
     /// Get the status of all jobs
@@ -634,6 +631,7 @@ mod tests {
         Ok(())
     }
 
+    // TODO
     #[tokio::test]
     async fn get_job_status() -> Result<()> {
         let body = r#"
@@ -683,7 +681,7 @@ mod tests {
         let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        client.get_job_status(&job).await?;
+        client.get_job_status_thresholds(&job).await?;
 
         Ok(())
     }

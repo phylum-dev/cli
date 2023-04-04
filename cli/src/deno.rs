@@ -78,7 +78,7 @@ pub async fn run(
         return print_js_error(error);
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Pretty-print an anyhow error as Deno JS error.
@@ -96,7 +96,7 @@ fn print_js_error(error: Error) -> CommandResult {
 
     println!("{}: {}", style("Extension error").red(), fmt_errors::format_js_error(&js_error));
 
-    Ok(ExitCode::JsError.into())
+    Ok(ExitCode::JsError)
 }
 
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.

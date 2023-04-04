@@ -16,7 +16,7 @@ use log::error;
 use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
 use crate::commands::extensions::permissions::Permission;
-use crate::commands::{CommandResult, CommandValue, ExitCode};
+use crate::commands::{CommandResult, ExitCode};
 use crate::print::print_sc_help;
 use crate::{app, print_user_success, print_user_warning};
 
@@ -146,7 +146,7 @@ pub async fn handle_run_extension(
 
     extension.run(api, options.unwrap_or_default()).await?;
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 /// Handle the `extension run <PATH>` command path.
@@ -162,7 +162,7 @@ pub async fn handle_run_extension_from_path(
 
     if ["--help", "-h", "help"].contains(&path.as_str()) {
         print_sc_help(app, &["extension", "run"])?;
-        return Ok(CommandValue::Code(ExitCode::Ok));
+        return Ok(ExitCode::Ok);
     }
 
     let extension_path =
@@ -175,7 +175,7 @@ pub async fn handle_run_extension_from_path(
 
     extension.run(api, options.unwrap_or_default()).await?;
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 /// Handle the `extension install` subcommand path.
@@ -209,7 +209,7 @@ async fn handle_install_extension(
         if let Ok(installed_extension) = Extension::load(name) {
             if extension == installed_extension {
                 print_user_success!("Extension {name} already installed, nothing to do");
-                return Ok(CommandValue::Code(ExitCode::Ok));
+                return Ok(ExitCode::Ok);
             }
             ask_overwrite(&extension)?;
         }
@@ -223,7 +223,7 @@ async fn handle_install_extension(
 
     print_user_success!("Extension {name} installed successfully");
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 fn ask_overwrite(extension: &Extension) -> Result<()> {
@@ -317,7 +317,7 @@ async fn handle_uninstall_extension(name: &str) -> CommandResult {
 
     extension.uninstall()?;
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 /// Handle the `extension new` command path.
@@ -374,7 +374,7 @@ pub async fn handle_create_extension(path: &str) -> CommandResult {
         \nRun `phylum extension install {install_path}` to install it."
     );
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 /// Handle the `extension` / `extension list` subcommand path.
@@ -397,7 +397,7 @@ async fn handle_list_extensions() -> CommandResult {
         }
     }
 
-    Ok(CommandValue::Code(ExitCode::Ok))
+    Ok(ExitCode::Ok)
 }
 
 /// Return a list of installed extensions. Filter out invalid extensions instead

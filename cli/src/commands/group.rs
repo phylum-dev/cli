@@ -36,11 +36,11 @@ pub async fn handle_group_create(api: &mut PhylumApi, matches: &ArgMatches) -> C
     match api.create_group(group_name).await {
         Ok(response) => {
             print_user_success!("Successfully created group {}", response.group_name);
-            Ok(ExitCode::Ok.into())
+            Ok(ExitCode::Ok)
         },
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
             print_user_failure!("Group '{}' already exists", group_name);
-            Ok(ExitCode::AlreadyExists.into())
+            Ok(ExitCode::AlreadyExists)
         },
         Err(err) => Err(err.into()),
     }
@@ -53,7 +53,7 @@ pub async fn handle_group_delete(api: &mut PhylumApi, matches: &ArgMatches) -> C
 
     print_user_success!("Successfully deleted group {}", group_name);
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle `phylum group list` subcommand.
@@ -63,7 +63,7 @@ pub async fn handle_group_list(api: &mut PhylumApi, matches: &ArgMatches) -> Com
     let pretty = !matches.get_flag("json");
     response.write_stdout(pretty);
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle `phylum group member add` subcommand.
@@ -79,7 +79,7 @@ pub async fn handle_member_add(
         print_user_success!("Successfully added {user:?} to group {group:?}");
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle `phylum group member remove` subcommand.
@@ -95,7 +95,7 @@ pub async fn handle_member_remove(
         print_user_success!("Successfully removed {user:?} from group {group:?}");
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle `phylum group member` subcommand.
@@ -109,7 +109,7 @@ pub async fn handle_member_list(
     let pretty = !matches.get_flag("json");
     response.write_stdout(pretty);
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Handle `phylum group transfer` subcommand.
@@ -130,7 +130,7 @@ pub async fn handle_group_transfer(api: &mut PhylumApi, matches: &ArgMatches) ->
         // Abort if user did not confirm our prompt.
         if !should_continue {
             print_user_warning!("Aborting group transfer");
-            return Ok(ExitCode::ConfirmationFailed.into());
+            return Ok(ExitCode::ConfirmationFailed);
         }
     }
 
@@ -139,5 +139,5 @@ pub async fn handle_group_transfer(api: &mut PhylumApi, matches: &ArgMatches) ->
 
     print_user_success!("Successfully transferred group ownership!");
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }

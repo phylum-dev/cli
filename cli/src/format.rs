@@ -19,7 +19,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::histogram::Histogram;
 use crate::print::{self, table_format};
-use crate::types::HistoryJob;
+use crate::types::{HistoryJob, PolicyEvaluationResponse};
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -42,6 +42,12 @@ pub trait Format: Serialize {
         } else {
             self.json(&mut io::stdout());
         }
+    }
+}
+
+impl Format for PolicyEvaluationResponse {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let _ = writeln!(writer, "{}", self.report);
     }
 }
 

@@ -13,13 +13,11 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, extensions, group, init, jobs, packages, parse, project, CommandResult, CommandValue,
-    ExitCode,
+    auth, extensions, group, init, jobs, packages, parse, project, CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
 use phylum_cli::{print, print_user_failure, print_user_success, print_user_warning, update};
-use phylum_types::types::job::Action;
 
 const LICENSE_BLURB: &str = r#"
 Copyright (C) 2022  Phylum, Inc.
@@ -177,7 +175,7 @@ async fn handle_commands() -> CommandResult {
 
 async fn handle_ping(api: PhylumApi) -> CommandResult {
     print_user_success!("{}", api.ping().await?);
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 #[cfg(feature = "selfmanage")]
@@ -185,26 +183,18 @@ async fn handle_update(matches: &ArgMatches, ignore_certs: bool) -> CommandResul
     let res = update::do_update(matches.get_flag("prerelease"), ignore_certs).await;
     let message = res?;
     print_user_success!("{}", message);
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 fn handle_version(app_name: &str, ver: &str) -> CommandResult {
     print_user_success!("{app_name} (Version {ver}){LICENSE_BLURB}");
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 #[tokio::main]
 async fn main() {
     match handle_commands().await {
-        Ok(CommandValue::Action(action)) => match action {
-            Action::None => ExitCode::Ok.exit(),
-            Action::Warn => exit_warn("Project failed threshold requirements!"),
-            Action::Break => exit_fail(
-                "Project failed threshold requirements, failing the build!",
-                ExitCode::FailedThresholds,
-            ),
-        },
-        Ok(CommandValue::Code(code)) => code.exit(),
+        Ok(code) => code.exit(),
         Err(error) => exit_fail(format!("{error:?}"), ExitCode::Generic),
     }
 }
