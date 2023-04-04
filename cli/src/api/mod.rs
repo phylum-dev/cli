@@ -13,7 +13,6 @@ use phylum_types::types::package::{
     PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended,
     PackageSubmitResponse, PackageType,
 };
-use phylum_types::types::preferences::{CorePreferences, ProjectPreferences};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
 };
@@ -93,14 +92,6 @@ impl PhylumApi {
 
     async fn delete<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
         self.send_request(Method::DELETE, path, None::<()>).await
-    }
-
-    async fn put<T: DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
-        &self,
-        path: U,
-        s: S,
-    ) -> Result<T> {
-        self.send_request(Method::PUT, path, Some(s)).await
     }
 
     async fn post<T: serde::de::DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
@@ -269,27 +260,6 @@ impl PhylumApi {
         };
 
         self.get(uri).await
-    }
-
-    /// Get project thresholds.
-    pub async fn get_project_preferences(
-        &self,
-        project_id: ProjectId,
-    ) -> Result<ProjectPreferences> {
-        let uri =
-            endpoints::project_preferences(&self.config.connection.uri, &project_id.to_string())?;
-        self.get(uri).await
-    }
-
-    /// Put project thresholds.
-    pub async fn put_project_preferences(
-        &self,
-        project_id: ProjectId,
-        preferences: CorePreferences,
-    ) -> Result<ProjectPreferences> {
-        let uri =
-            endpoints::project_preferences(&self.config.connection.uri, &project_id.to_string())?;
-        self.put(uri, preferences).await
     }
 
     /// Submit a new request to the system

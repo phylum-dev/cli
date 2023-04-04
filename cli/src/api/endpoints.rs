@@ -137,11 +137,6 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
 }
 
-/// GET/PUT /preferences/project/<project_id>
-pub fn project_preferences(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("preferences/project/")?.join(project_id)?)
-}
-
 fn parse_base_url(api_uri: &str) -> Result<Url, BaseUriError> {
     let mut url = Url::parse(api_uri)?;
 

@@ -99,7 +99,7 @@ pub fn add_subcommands(command: Command) -> Command {
         .subcommand(
             Command::new("project")
                 .aliases(["projects"])
-                .about("Create, list, link and set thresholds for projects")
+                .about("Create, list, and link projects")
                 .arg_required_else_help(true)
                 .subcommand_required(true)
                 .subcommand(
@@ -155,21 +155,6 @@ pub fn add_subcommands(command: Command) -> Command {
                             .help("Group owning the project"),
                     ]),
                 )
-                .subcommand(
-                    Command::new("set-thresholds")
-                        .about("Interactively set risk domain thresholds for a project")
-                        .args(&[
-                            Arg::new("name")
-                                .value_name("name")
-                                .help("Name of the project")
-                                .required(true),
-                            Arg::new("group")
-                                .short('g')
-                                .long("group")
-                                .value_name("group_name")
-                                .help("Group owning the project"),
-                        ]),
-                ),
         )
         .subcommand(
             Command::new("package").about("Retrieve the details of a specific package").args(&[
