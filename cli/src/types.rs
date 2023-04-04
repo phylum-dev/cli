@@ -63,7 +63,7 @@ pub struct PolicyEvaluationRequest {
 }
 
 /// Response body for `/data/jobs/{job_id}/policy/evaluate`.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct PolicyEvaluationResponse {
     pub is_failure: bool,
     pub is_complete: bool,
