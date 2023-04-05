@@ -2,7 +2,7 @@ use std::cmp;
 use std::io::{self, Write};
 use std::str::{self, FromStr};
 
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use console::style;
 use phylum_types::types::group::{
     GroupMember, ListGroupMembersResponse, ListUserGroupsResponse, UserGroup,
@@ -102,54 +102,50 @@ impl Format for ListGroupMembersResponse {
     }
 }
 
+/// Write object fields
+fn write_fields<W: Write>(fields: &[(&str, &str)], writer: &mut W) -> std::io::Result<()> {
+    let max_label_width = fields.iter().map(|f| f.0.len()).max().unwrap_or(0);
+
+    for field in fields {
+        writeln!(writer, "  {}  {}", style(leftpad(field.0, max_label_width)).blue(), field.1)?;
+    }
+    Ok(())
+}
+
 impl Format for Vec<JobDescriptor> {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer, "Last {} runs\n", self.len());
 
-        let mut jobs = String::new();
-        for (i, job) in self.iter().enumerate() {
-            let mut state = style("PASS").green().to_string();
-            let score = format!("{:>3}", (job.score * 100.0) as u32);
-            let mut colored_score = style(&score).green().to_string();
-            let project_name = print::truncate(&job.project, 39);
-            let colored_project_name = style(project_name).white().bold().to_string();
-
-            if job.num_incomplete > 0 {
-                colored_score = format!("{}", style(&score).yellow());
-                state = format!("{}", style("INCOMPLETE").yellow());
+        for job in self {
+            let status = if job.num_incomplete > 0 {
+                style("INCOMPLETE").yellow().to_string()
             } else if !job.pass {
-                colored_score = format!("{}", style(&score).red());
-                state = format!("{}", style("FAIL").red());
-            }
+                style("FAIL").red().to_string()
+            } else {
+                style("PASS").green().to_string()
+            };
 
-            let mut ecosystems = job.ecosystems.clone();
-            ecosystems.sort_unstable();
-            let ecosystems = job.ecosystems.join(",");
+            let date = job
+                .date
+                .parse::<DateTime<Utc>>()
+                .map(|date| date.format("%FT%RZ").to_string())
+                .unwrap_or_else(|_| "UNKNOWN".into());
 
-            let first_line = format!(
-                "{}",
-                format_args!(
-                    "{:<3} {} {} {:<50} {:<30} {:<40} {:>32}\n",
-                    (i + 1),
-                    colored_score,
-                    state,
-                    colored_project_name,
-                    job.label,
-                    job.job_id,
-                    job.date
-                )
+            let _ = writeln!(writer, "Job ID: {}", style(job.job_id).cyan());
+            let _ = write_fields(
+                &[
+                    ("Project Name", &job.project),
+                    ("Label", &job.label),
+                    ("Creation Time", &date),
+                    ("Status", &status),
+                    ("Ecosystems", &job.ecosystems.join(",")),
+                    ("Dependencies", &job.num_dependencies.to_string()),
+                    ("Message", &job.msg),
+                ],
+                writer,
             );
-            let second_line = format!("             {}\n", job.msg);
-            let third_line = format!(
-                "             {}{:>62}{:>29} dependencies",
-                ecosystems, "Crit:-/High:-/Med:-/Low:-", job.num_dependencies
-            );
-            jobs.push_str(first_line.as_str());
-            jobs.push_str(second_line.as_str());
-            jobs.push_str(third_line.as_str());
-            jobs.push_str("\n\n");
+            let _ = writeln!(writer);
         }
-        let _ = writeln!(writer, "{}", jobs.trim_end());
     }
 }
 
