@@ -22,7 +22,7 @@ pub async fn print_job_status(api: &mut PhylumApi, job_id: &JobId, pretty: bool)
         Ok(status) => status,
         Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
             print_user_warning!("No results found for JobId {job_id}.");
-            return Ok(ExitCode::Ok);
+            return Ok(ExitCode::NotFound);
         },
         Err(err) => return Err(err.into()),
     };
