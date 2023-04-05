@@ -16,12 +16,12 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{dirs, print_user_warning};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ConnectionInfo {
     pub uri: String,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AuthInfo {
     offline_access: Option<RefreshToken>,
     #[serde(skip)]
@@ -44,7 +44,7 @@ impl AuthInfo {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Config {
     pub connection: ConnectionInfo,
     pub auth_info: AuthInfo,
@@ -228,21 +228,21 @@ mod tests {
     const ENV_TOKEN: &str = "ENV TOKEN";
     const LOCALHOST: &str = "http://127.0.0.1";
 
-    fn write_test_config(path: &Path) {
-        let con = ConnectionInfo { uri: LOCALHOST.into() };
-
-        let auth = AuthInfo {
-            offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
-            env_token: Some(RefreshToken::new(ENV_TOKEN)),
-        };
-
-        let config = Config {
-            connection: con,
-            auth_info: auth,
+    fn test_config() -> Config {
+        Config {
+            connection: ConnectionInfo { uri: String::from(LOCALHOST) },
+            auth_info: AuthInfo {
+                offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
+                env_token: Some(RefreshToken::new(ENV_TOKEN)),
+            },
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
-        };
+        }
+    }
+
+    fn write_test_config(path: &Path) {
+        let config = test_config();
         save_config(path, &config).unwrap();
     }
 
@@ -257,7 +257,12 @@ mod tests {
         let tempfile = NamedTempFile::new().unwrap();
         write_test_config(tempfile.path());
         let config: Config = parse_config(tempfile.path()).unwrap();
-        assert_eq!(config.connection.uri, LOCALHOST);
+
+        let mut orig_config = test_config();
+        // Clearing env token is expected.
+        orig_config.auth_info.env_token = None;
+
+        assert_eq!(config, orig_config);
     }
 
     #[test]
