@@ -275,6 +275,13 @@ pub fn add_subcommands(command: Command) -> Command {
                         .requires("lockfile")
                         .help("Lock file type used for all lock files (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                    Arg::new("base")
+                        .short('b')
+                        .long("base")
+                        .value_name("FILE")
+                        .value_hint(ValueHint::FilePath)
+                        .help("Previous list of dependencies for analyzing the delta")
+                        .hide(true),
                 ]),
         )
         .subcommand(
