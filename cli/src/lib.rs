@@ -12,7 +12,6 @@ pub mod format;
 pub mod fs_compare;
 pub mod histogram;
 pub mod print;
-pub mod prompt;
 pub mod spinner;
 #[cfg(test)]
 mod test;

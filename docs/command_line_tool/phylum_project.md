@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Create, list, link and set thresholds for projects
+Manage Phylum projects
 
 ```sh
 Usage: phylum project [OPTIONS] <COMMAND>
@@ -27,4 +27,3 @@ Usage: phylum project [OPTIONS] <COMMAND>
 * [phylum project delete](./phylum_project_delete)
 * [phylum project list](./phylum_project_list)
 * [phylum project link](./phylum_project_link)
-* [phylum project set-thresholds](./phylum_project_set-thresholds)
