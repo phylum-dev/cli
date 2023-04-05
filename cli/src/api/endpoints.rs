@@ -27,17 +27,16 @@ pub fn get_all_jobs_status(api_uri: &str, limit: u32) -> Result<Url, BaseUriErro
     Ok(get_api_path(api_uri)?.join(&format!("data/jobs/?limit={limit}&verbose=1"))?)
 }
 
-/// GET /data/jobs/<job_id>
-pub fn get_job_status(api_uri: &str, job_id: &JobId, verbose: bool) -> Result<Url, BaseUriError> {
+/// POST /data/jobs/{job_id}/policy/evaluate
+pub fn get_job_status(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
-
-    // Unwrap is okay because get_api_path only returns URLs that can be base URLs.
-    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "jobs", &job_id.to_string()]);
-
-    if verbose {
-        url.query_pairs_mut().append_pair("verbose", "True");
-    }
-
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "data",
+        "jobs",
+        &job_id.to_string(),
+        "policy",
+        "evaluate",
+    ]);
     Ok(url)
 }
 
@@ -201,21 +200,6 @@ mod test {
         assert_eq!(
             get_all_jobs_status(API_URI, 123).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/jobs/?limit=123&verbose=1"),
-        );
-    }
-
-    #[test]
-    fn get_job_status_is_correct() {
-        const JOB_ID: &str = "e00ad8fd-73b2-4259-b4ed-a188a405f5eb";
-        let job_id = JobId::parse_str(JOB_ID).unwrap();
-
-        assert_eq!(
-            get_job_status(API_URI, &job_id, false).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/jobs/{JOB_ID}"),
-        );
-        assert_eq!(
-            get_job_status(API_URI, &job_id, true).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/jobs/{JOB_ID}?verbose=True"),
         );
     }
 

@@ -147,45 +147,10 @@ export class PhylumApi {
    * Job analysis results example:
    * ```
    * {
-   *   job_id: "de2d74b1-3925-4de9-9b8f-0c7b27f9b3c8",
-   *   ecosystem: "npm",
-   *   user_id: "0f2a8e3d-9f75-49fa-89c7-718c4f87fc93",
-   *   user_email: "",
-   *   created_at: 1657106760573,
-   *   status: "complete",
-   *   score: 1,
-   *   pass: true,
-   *   msg: "Project met threshold requirements",
-   *   action: "none",
-   *   num_incomplete: 0,
-   *   last_updated: 1657106760573,
-   *   project: "02a8dcdd-69bd-469f-8c39-be76c786fd2b",
-   *   project_name: "api-docs",
-   *   label: "uncategorized",
-   *   thresholds: { author: 0, engineering: 0, license: 0, malicious: 0, total: 0, vulnerability: 0 },
-   *   packages: [
-   *     {
-   *       name: "typescript",
-   *       version: "4.7.4",
-   *       status: "complete",
-   *       last_updated: 1657106208802,
-   *       license: "Apache-2.0",
-   *       package_score: 1,
-   *       num_dependencies: 0,
-   *       num_vulnerabilities: 0,
-   *       type: "npm",
-   *       riskVectors: {
-   *         author: 1,
-   *         vulnerabilities: 1,
-   *         total: 1,
-   *         engineering: 1,
-   *         malicious_code: 1,
-   *         license: 1
-   *       },
-   *       dependencies: {},
-   *       issues: []
-   *     }
-   *   ]
+   *   is_failure: false,
+   *   is_complete: true,
+   *   report: "# Phylum OSS Supply Chain Risk Analysis - SUCCESS\n\nThe Phylum risk analysis is complete and did not identify any issues.\n\n[View this project in the Phylum UI](https://app.staging.phylum.io/projects/739098bc-c954-4bf6-aa36-692f5483edaa?label=uncategorized)\n",
+   *   output: "{\"dependencies\":[],\"errors\":[]}"
    * }
    * ```
    */

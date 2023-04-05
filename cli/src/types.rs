@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
+use phylum_types::types::package::PackageDescriptor;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,6 +54,21 @@ pub struct HistoryJob {
     pub id: String,
     pub created: DateTime<Utc>,
     pub label: String,
+}
+
+/// Request body for `/data/jobs/{job_id}/policy/evaluate`.
+#[derive(Serialize, Debug)]
+pub struct PolicyEvaluationRequest {
+    pub ignored_packages: Vec<PackageDescriptor>,
+}
+
+/// Response body for `/data/jobs/{job_id}/policy/evaluate`.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct PolicyEvaluationResponse {
+    pub is_failure: bool,
+    pub is_complete: bool,
+    pub output: String,
+    pub report: String,
 }
 
 #[cfg(test)]

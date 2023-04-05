@@ -40,7 +40,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Parse a package lockfile.

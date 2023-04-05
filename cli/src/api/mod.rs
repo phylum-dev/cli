@@ -7,11 +7,10 @@ use phylum_types::types::group::{
     CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse, ListUserGroupsResponse,
 };
 use phylum_types::types::job::{
-    AllJobsStatusResponse, JobStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
+    AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
 use phylum_types::types::package::{
-    PackageDescriptor, PackageSpecifier, PackageStatus, PackageStatusExtended,
-    PackageSubmitResponse, PackageType,
+    PackageDescriptor, PackageSpecifier, PackageSubmitResponse, PackageType,
 };
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
@@ -28,7 +27,7 @@ use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
-use crate::types::{HistoryJob, PingResponse};
+use crate::types::{HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse};
 
 pub mod endpoints;
 
@@ -59,6 +58,7 @@ impl PhylumApiError {
     pub fn status(&self) -> Option<StatusCode> {
         match self {
             PhylumApiError::ReqwestError { source } => source.status(),
+            PhylumApiError::Response(ResponseError { code, .. }) => Some(*code),
             _ => None,
         }
     }
@@ -287,17 +287,14 @@ impl PhylumApi {
         Ok(resp.job_id)
     }
 
-    /// Get the status of a previously submitted job
-    pub async fn get_job_status(&self, job_id: &JobId) -> Result<JobStatusResponse<PackageStatus>> {
-        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, false)?).await
-    }
-
-    /// Get the status of a previously submitted job (verbose output)
-    pub async fn get_job_status_ext(
+    /// Get the status of a previously submitted job.
+    pub async fn get_job_status(
         &self,
         job_id: &JobId,
-    ) -> Result<JobStatusResponse<PackageStatusExtended>> {
-        self.get(endpoints::get_job_status(&self.config.connection.uri, job_id, true)?).await
+        ignored: impl Into<Vec<PackageDescriptor>>,
+    ) -> Result<PolicyEvaluationResponse> {
+        let body = PolicyEvaluationRequest { ignored_packages: ignored.into() };
+        self.post(endpoints::get_job_status(&self.config.connection.uri, job_id)?, body).await
     }
 
     /// Get the status of all jobs
@@ -636,130 +633,27 @@ mod tests {
 
     #[tokio::test]
     async fn get_job_status() -> Result<()> {
-        let body = r#"
-        {
-            "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
-            "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
-            "ecosystem": "npm",
-            "user_email": "foo@bar.com",
-            "thresholds": {
-                "author": 0.4,
-                "engineering": 0.2,
-                "license": 0.5,
-                "malicious": 0.42,
-                "vulnerability": 0.8,
-                "total": 0.6
-            },
-            "created_at": 1603311564,
-            "status": "complete",
-            "score": 1.0,
-            "last_updated": 1603311780,
-            "project": "86bb664a-5331-489b-8901-f052f155ec79",
-            "project_name": "some_project",
-            "label": "some_label",
-            "msg": "Project met threshold requirements",
-            "pass": true,
-            "action": "none",
-            "packages": [
-                {
-                "name": "foo",
-                "version": "1.0.0",
-                "type": "npm",
-                "status": "complete",
-                "last_updated": 1603311564,
-                "license": null,
-                "num_dependencies": 2,
-                "num_vulnerabilities": 4,
-                "package_score": 0.85
-                }]}"#;
+        let body = PolicyEvaluationResponse {
+            is_failure: true,
+            is_complete: true,
+            output: "output".into(),
+            report: "report".into(),
+        };
+        let expected_body = body.clone();
 
         let mock_server = build_mock_server().await;
-        Mock::given(method("GET"))
-            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+$".to_string()))
-            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
+        Mock::given(method("POST"))
+            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+/policy/evaluate$".to_string()))
+            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_json(body.clone()))
             .mount(&mock_server)
             .await;
 
         let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        client.get_job_status(&job).await?;
+        let response = client.get_job_status(&job, []).await?;
 
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn get_job_status_ext() -> Result<()> {
-        let body = r#"
-        {
-            "job_id": "59482a54-423b-448d-8325-f171c9dc336b",
-            "user_id": "86bb664a-5331-489b-8901-f052f155ec79",
-            "ecosystem": "npm",
-            "project": "86bb664a-5331-489b-8901-f052f155ec79",
-            "project_name": "some project",
-            "user_email": "foo@bar.com",
-            "thresholds": {
-                "author": 0.4,
-                "engineering": 0.2,
-                "license": 0.5,
-                "malicious": 0.42,
-                "vulnerability": 0.8,
-                "total": 0.6
-            },
-            "created_at": 1603311564,
-            "score": 1.0,
-            "label": "",
-            "status": "incomplete",
-            "last_updated": 1603311864,
-            "msg": "Project met threshold requirements",
-            "pass": true,
-            "action": "warn",
-            "packages": [
-                {
-                    "name": "foo",
-                    "version": "1.0.0",
-                    "type": "npm",
-                    "last_updated": 1603311864,
-                    "license": null,
-                    "num_dependencies": 2,
-                    "num_vulnerabilities": 7,
-                    "package_score": 0.3,
-                    "status": "incomplete",
-                    "issues": [
-                        {
-                            "title": "Commercial license risk in xmlrpc@0.3.0",
-                            "description": "license is medium risk",
-                            "severity": "medium",
-                            "domain": "license"
-                        }
-                    ],
-                    "riskVectors": {
-                        "author": 0.9,
-                        "engineering": 0.42,
-                        "license": 1.0,
-                        "malicious_code": 1.0,
-                        "vulnerability": 1.0
-                    },
-                    "dependencies": {
-                        "bar": "^2.3.4",
-                        "baz": "<9.8.7"
-                    }
-                }
-            ]
-        }"#;
-
-        let mock_server = build_mock_server().await;
-        Mock::given(method("GET"))
-            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+".to_string()))
-            .and(query_param("verbose", "True"))
-            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_string(body))
-            .mount(&mock_server)
-            .await;
-
-        let client = build_phylum_api(&mock_server).await?;
-
-        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        client.get_job_status_ext(&job).await?;
+        assert_eq!(response, expected_body);
 
         Ok(())
     }

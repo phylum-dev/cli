@@ -8,7 +8,7 @@ use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 
 use crate::commands::extensions::permissions;
-use crate::commands::{CommandResult, CommandValue, ExitCode};
+use crate::commands::{CommandResult, ExitCode};
 
 /// Entry point for the `sandbox` subcommand.
 pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
@@ -22,7 +22,7 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
         Ok(status) => status,
         Err(err) => {
             eprintln!("Process {cmd:?} failed to start: {err}");
-            return Ok(CommandValue::Code(ExitCode::SandboxStart));
+            return Ok(ExitCode::SandboxStart);
         },
     };
 
@@ -33,7 +33,7 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
             code = i32::from(&ExitCode::SandboxStartCollision);
         }
 
-        Ok(CommandValue::Code(ExitCode::Custom(code)))
+        Ok(ExitCode::Custom(code))
     } else if let Some(signal) = status.signal() {
         Err(anyhow!("Sandbox process failed with signal {signal}"))
     } else {

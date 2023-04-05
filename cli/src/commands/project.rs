@@ -37,7 +37,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         let project_config = match create_project(api, name, group).await {
             Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
                 print_user_failure!("Project '{}' already exists", name);
-                return Ok(ExitCode::AlreadyExists.into());
+                return Ok(ExitCode::AlreadyExists);
             },
             project_config => project_config?,
         };
@@ -87,7 +87,7 @@ pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
         );
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Create and update the Phylum project.

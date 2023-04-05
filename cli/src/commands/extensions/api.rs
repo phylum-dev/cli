@@ -21,10 +21,9 @@ use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
-use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageStatusExtended,
-    PackageSubmitResponse, PackageType,
+    Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
+    PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
@@ -39,6 +38,7 @@ use crate::commands::parse;
 use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
+use crate::types::PolicyEvaluationResponse;
 
 /// Package descriptor for any ecosystem.
 #[derive(Serialize, Deserialize, Debug)]
@@ -224,6 +224,7 @@ async fn get_access_token(
 }
 
 /// Retrieve the refresh token.
+///
 /// Equivalent to `phylum auth token`.
 #[op]
 async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
@@ -239,17 +240,18 @@ async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToke
 }
 
 /// Retrieve a job's status.
+///
 /// Equivalent to `phylum history job`.
 #[op]
 async fn get_job_status(
     op_state: Rc<RefCell<OpState>>,
     job_id: String,
-) -> Result<JobStatusResponse<PackageStatusExtended>> {
+) -> Result<PolicyEvaluationResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     let job_id = JobId::from_str(&job_id)?;
-    api.get_job_status_ext(&job_id).await.map_err(Error::from)
+    api.get_job_status(&job_id, []).await.map_err(Error::from)
 }
 
 /// Show the user's currently linked project.

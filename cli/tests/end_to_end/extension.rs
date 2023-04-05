@@ -164,7 +164,7 @@ pub async fn get_job_status() {
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains(r#"name: "typescript""#));
+        .stdout(predicates::str::contains("is_failure: "));
 }
 
 /// Ensure shared state is async and thread safe.

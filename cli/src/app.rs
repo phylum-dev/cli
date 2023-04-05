@@ -78,7 +78,6 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("JOB_ID")
                     .value_name("JOB_ID")
                     .help("The job id to query"),
-                Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -245,7 +244,6 @@ pub fn add_subcommands(command: Command) -> Command {
                         .long("label")
                         .value_name("label")
                         .help("Specify a label to use for analysis"),
-                    Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
                     Arg::new("json")
                         .action(ArgAction::SetTrue)
                         .short('j')

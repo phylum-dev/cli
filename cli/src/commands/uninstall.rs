@@ -27,7 +27,7 @@ pub fn handle_uninstall(matches: &ArgMatches) -> CommandResult {
         print_user_warning!("ZSH config error: {}", err);
     }
 
-    Ok(ExitCode::Ok.into())
+    Ok(ExitCode::Ok)
 }
 
 /// Remove the entire phylum config directory.
