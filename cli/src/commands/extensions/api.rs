@@ -23,7 +23,6 @@ use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::package::{
     Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
-    PackageType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
@@ -40,28 +39,10 @@ use crate::commands::ExitCode;
 use crate::dirs;
 use crate::types::PolicyEvaluationResponse;
 
-/// Package descriptor for any ecosystem.
-#[derive(Serialize, Deserialize, Debug)]
-struct PackageSpecifier {
-    name: String,
-    version: String,
-    package_type: Option<PackageType>,
-}
-
-impl From<PackageDescriptor> for PackageSpecifier {
-    fn from(descriptor: PackageDescriptor) -> Self {
-        Self {
-            name: descriptor.name,
-            version: descriptor.version,
-            package_type: Some(descriptor.package_type),
-        }
-    }
-}
-
 /// Parsed lockfile content.
 #[derive(Serialize, Deserialize, Debug)]
 struct PackageLock {
-    packages: Vec<PackageSpecifier>,
+    packages: Vec<PackageDescriptor>,
     format: LockfileFormat,
 }
 
@@ -156,8 +137,7 @@ struct ProcessOutput {
 #[op]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    package_type: Option<PackageType>,
-    packages: Vec<PackageSpecifier>,
+    packages: Vec<PackageDescriptor>,
     project: Option<String>,
     group: Option<String>,
 ) -> Result<JobId> {
@@ -174,19 +154,6 @@ async fn analyze(
             }
         },
     };
-
-    let packages = packages
-        .into_iter()
-        .map(|package| {
-            let package_type = package.package_type.or(package_type);
-            Ok(PackageDescriptor {
-                version: package.version,
-                name: package.name,
-                package_type: package_type
-                    .ok_or_else(|| anyhow!("Package does not have package type"))?,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
 
     let job_id = api.submit_request(&packages, project, None, group.map(String::from)).await?;
 
@@ -246,12 +213,16 @@ async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToke
 async fn get_job_status(
     op_state: Rc<RefCell<OpState>>,
     job_id: String,
+    ignored_packages: Option<Vec<PackageDescriptor>>,
 ) -> Result<PolicyEvaluationResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     let job_id = JobId::from_str(&job_id)?;
-    api.get_job_status(&job_id, []).await.map_err(Error::from)
+    let ignored_packages = ignored_packages.unwrap_or_default();
+    let response = api.get_job_status(&job_id, ignored_packages).await?;
+
+    Ok(response)
 }
 
 /// Show the user's currently linked project.
@@ -373,10 +344,7 @@ async fn parse_lockfile(
     // Attempt to parse as requested lockfile type.
     let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_deref())?;
 
-    Ok(PackageLock {
-        packages: parsed.packages.into_iter().map(PackageSpecifier::from).collect(),
-        format: parsed.format,
-    })
+    Ok(PackageLock { packages: parsed.packages, format: parsed.format })
 }
 
 /// Run a command inside a sandbox.

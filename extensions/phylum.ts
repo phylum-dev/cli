@@ -4,7 +4,7 @@ const DenoCore = Deno[Deno.internal].core;
 type Package = {
   name: string;
   version: string;
-  package_type: string | undefined;
+  type: string;
 };
 
 type Lockfile = {
@@ -76,16 +76,15 @@ export class PhylumApi {
    *
    * ```
    * [
-   *   { name: "accepts", version: "1.3.8", package_type: "npm" },
-   *   { name: "ms", version: "2.0.0", package_type: "npm" },
-   *   { name: "negotiator", version: "0.6.3", package_type: "npm" },
-   *   { name: "ms", version: "2.1.3", package_type: "npm" }
+   *   { name: "accepts", version: "1.3.8", type: "npm" },
+   *   { name: "ms", version: "2.0.0", type: "npm" },
+   *   { name: "negotiator", version: "0.6.3", type: "npm" },
+   *   { name: "ms", version: "2.1.3", type: "npm" }
    * ]
    * ```
    *
    * Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
    *
-   * @param package_type - DEPRECATED. Specify package_type in each package object instead.
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
@@ -93,14 +92,12 @@ export class PhylumApi {
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
-    package_type: string | undefined,
     packages: Package[],
     project?: string,
     group?: string,
   ): Promise<string> {
     return DenoCore.opAsync(
       "analyze",
-      package_type,
       packages,
       project,
       group,
@@ -142,6 +139,9 @@ export class PhylumApi {
   /**
    * Get job results.
    *
+   * @param jobId - ID of the analysis job, see `PhylumApi.analyze`.
+   * @param ignoredPackages - List of packages which will be ignored in the report.
+   *
    * @returns Job analysis results
    *
    * Job analysis results example:
@@ -154,8 +154,11 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getJobStatus(jobId: string): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync("get_job_status", jobId);
+  static getJobStatus(
+    jobId: string,
+    ignoredPackages?: Package[],
+  ): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
   }
 
   /**
@@ -319,12 +322,12 @@ export class PhylumApi {
    * Lockfile dependencies example:
    * ```
    * {
-   *   package_type: "npm",
+   *   format: "npm",
    *   packages: [
-   *     { name: "accepts", version: "1.3.8" },
-   *     { name: "ms", version: "2.0.0" },
-   *     { name: "negotiator", version: "0.6.3" },
-   *     { name: "ms", version: "2.1.3" }
+   *     { name: "accepts", version: "1.3.8", type: "npm" },
+   *     { name: "ms", version: "2.0.0", type: "npm" },
+   *     { name: "negotiator", version: "0.6.3", type: "npm" },
+   *     { name: "ms", version: "2.1.3", type: "npm" }
    *   ]
    * }
    * ```
