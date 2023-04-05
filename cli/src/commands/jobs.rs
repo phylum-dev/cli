@@ -158,7 +158,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     // Avoid request error without dependencies.
     if packages.is_empty() {
         print_user_warning!("No packages found in lockfile");
-        return Ok(ExitCode::Ok.into());
+        return Ok(ExitCode::Ok);
     }
 
     log::debug!("Submitting request...");
