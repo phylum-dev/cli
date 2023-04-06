@@ -117,12 +117,11 @@ impl Format for Vec<JobDescriptor> {
         let _ = writeln!(writer, "Last {} runs\n", self.len());
 
         for job in self {
-            let status = if job.num_incomplete > 0 {
-                style("INCOMPLETE").yellow().to_string()
-            } else if !job.pass {
-                style("FAIL").red().to_string()
-            } else {
-                style("PASS").green().to_string()
+            let status = match (job.num_incomplete, job.pass) {
+                (0, false) => style("FAILED").red().to_string(),
+                (_, false) => style("INCOMPLETE WITH FAILURE").red().to_string(),
+                (0, true) => style("SUCCESS").green().to_string(),
+                (_, true) => style("INCOMPLETE").yellow().to_string(),
             };
 
             let date = job
