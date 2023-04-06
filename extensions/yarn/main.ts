@@ -268,12 +268,15 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze(undefined, lockfile.packages);
+  const jobId = await PhylumApi.analyze(lockfile.packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
-  if (jobStatus.pass && jobStatus.status === "complete") {
-    console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
-  } else if (jobStatus.pass) {
+  if (!jobStatus.is_failure && jobStatus.is_complete) {
+    console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
+  } else if (!jobStatus.is_failure) {
+    console.warn(
+      `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
+    );
     console.warn(
       `[${
         yellow(
@@ -284,7 +287,7 @@ async function checkDryRun() {
     Deno.exit(126);
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`,
+      `[${red("phylum")}] Supply Chain Risk Analysis - FAILURE\n`,
     );
     Deno.exit(127);
   }

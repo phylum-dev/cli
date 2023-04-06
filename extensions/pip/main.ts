@@ -1,9 +1,9 @@
+import { PhylumApi } from "phylum";
 import {
   green,
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "https://deno.phylum.io/phylum.ts";
 
 // List with all of pip's subcommands.
 const knownSubcommands = [
@@ -89,43 +89,6 @@ type JobStatus = {
   }[];
 };
 
-// Get severity level as a number
-function severityLevel(s: string): number {
-  switch (s) {
-    case "low":
-      return 1;
-    case "medium":
-      return 2;
-    case "high":
-      return 3;
-    case "critical":
-      return 4;
-  }
-  return 0;
-}
-
-// Logs any identified issues to the screen.
-function logIssues(jobStatus: Record<string, unknown>) {
-  const issues = (jobStatus as JobStatus).packages.flatMap((p) => p.issues);
-
-  // Sort by severity
-  issues.sort((a, b) => severityLevel(b.severity) - severityLevel(a.severity));
-
-  for (const issue of issues) {
-    let severity = issue.severity.toLowerCase();
-
-    if (["high", "critical"].indexOf(severity) != -1) {
-      severity = red(severity);
-    } else if (severity == "medium") {
-      severity = yellow(severity);
-    } else {
-      severity = green(severity);
-    }
-
-    console.log(`    [${severity}] ${issue.title}`);
-  }
-}
-
 // Analyze new packages.
 async function checkDryRun() {
   console.log(`[${green("phylum")}] Finding new dependencies…`);
@@ -172,12 +135,15 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze("pypi", packages);
+  const jobId = await PhylumApi.analyze(packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
-  if (jobStatus.pass && jobStatus.status === "complete") {
-    console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
-  } else if (jobStatus.pass) {
+  if (!jobStatus.is_failure && jobStatus.is_complete) {
+    console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
+  } else if (!jobStatus.is_failure) {
+    console.warn(
+      `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
+    );
     console.warn(
       `[${
         yellow(
@@ -188,10 +154,8 @@ async function checkDryRun() {
     Deno.exit(126);
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`,
+      `[${red("phylum")}] Supply Chain Risk Analysis - FAILURE\n`,
     );
-
-    logIssues(jobStatus);
     Deno.exit(127);
   }
 }
@@ -199,7 +163,7 @@ async function checkDryRun() {
 type Package = {
   name: string;
   version: string;
-  package_type: string;
+  type: string;
 };
 
 // Ref: https://pip.pypa.io/en/stable/reference/installation-report/
@@ -233,7 +197,7 @@ function parseDryRun(output: string): Package[] {
       packages.push({
         name: dep.metadata.name,
         version: dep.metadata.version,
-        package_type: "pypi",
+        type: "pypi",
       });
     } else {
       // Filesystem paths or direct URLs

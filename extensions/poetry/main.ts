@@ -210,7 +210,7 @@ async function poetryCheckDryRun(
     // "1.2.3 https://github.com/demo/demo.git" -> "1.2.3"
     version = version.split(" ")[0];
 
-    packages.push({ name, version, package_type: "pypi" });
+    packages.push({ name, version, type: "pypi" });
   }
 
   // Abort if there's nothing to analyze.
@@ -220,12 +220,15 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const jobId = await PhylumApi.analyze(undefined, packages);
+  const jobId = await PhylumApi.analyze(packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
-  if (jobStatus.pass && jobStatus.status === "complete") {
-    console.log(`[${green("phylum")}] All packages pass project thresholds.\n`);
-  } else if (jobStatus.pass) {
+  if (!jobStatus.is_failure && jobStatus.is_complete) {
+    console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
+  } else if (!jobStatus.is_failure) {
+    console.warn(
+      `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
+    );
     console.warn(
       `[${
         yellow(
@@ -236,7 +239,7 @@ async function poetryCheckDryRun(
     Deno.exit(123);
   } else {
     console.error(
-      `[${red("phylum")}] The operation caused a threshold failure.\n`,
+      `[${red("phylum")}] Supply Chain Risk Analysis - FAILURE\n`,
     );
     Deno.exit(122);
   }

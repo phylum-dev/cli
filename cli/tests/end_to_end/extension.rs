@@ -139,12 +139,10 @@ pub async fn parse_lockfile() {
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains(
-            r#"{
-  packages: [ { name: "accepts", version: "1.3.8", package_type: "npm" } ],
-  format: "yarn"
-}"#,
-        ));
+        .stdout(
+            "{ packages: [ { name: \"accepts\", version: \"1.3.8\", type: \"npm\" } ], format: \
+             \"yarn\" }\n",
+        );
 }
 
 #[tokio::test]
@@ -154,8 +152,8 @@ pub async fn get_job_status() {
     let project = create_project().await;
     let analyze = format!(
         "
-        const pkg = {{ name: 'typescript', version: '4.7.4'}};
-        const jobId = await PhylumApi.analyze('npm', [pkg], {project:?});
+        const pkg = {{ name: 'typescript', version: '4.7.4', type: 'npm' }};
+        const jobId = await PhylumApi.analyze([pkg], {project:?});
         console.log(await PhylumApi.getJobStatus(jobId));"
     );
 
