@@ -12,17 +12,16 @@ use std::{env, fs};
 use anyhow::{anyhow, Result};
 use phylum_project::{LockfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
-use phylum_types::types::package::PackageType;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{dirs, print_user_warning};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ConnectionInfo {
     pub uri: String,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AuthInfo {
     offline_access: Option<RefreshToken>,
     #[serde(skip)]
@@ -45,11 +44,10 @@ impl AuthInfo {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Config {
     pub connection: ConnectionInfo,
     pub auth_info: AuthInfo,
-    pub request_type: PackageType,
     pub last_update: Option<usize>,
     #[serde(skip)]
     ignore_certs_cli: bool,
@@ -62,7 +60,6 @@ impl Default for Config {
         Config {
             connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
             auth_info: AuthInfo::default(),
-            request_type: PackageType::Npm,
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
@@ -229,23 +226,23 @@ mod tests {
 
     const CONFIG_TOKEN: &str = "FAKE TOKEN";
     const ENV_TOKEN: &str = "ENV TOKEN";
+    const LOCALHOST: &str = "http://127.0.0.1";
 
-    fn write_test_config(path: &Path) {
-        let con = ConnectionInfo { uri: "http://127.0.0.1".into() };
-
-        let auth = AuthInfo {
-            offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
-            env_token: Some(RefreshToken::new(ENV_TOKEN)),
-        };
-
-        let config = Config {
-            connection: con,
-            auth_info: auth,
-            request_type: PackageType::Npm,
+    fn test_config() -> Config {
+        Config {
+            connection: ConnectionInfo { uri: String::from(LOCALHOST) },
+            auth_info: AuthInfo {
+                offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
+                env_token: Some(RefreshToken::new(ENV_TOKEN)),
+            },
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
-        };
+        }
+    }
+
+    fn write_test_config(path: &Path) {
+        let config = test_config();
         save_config(path, &config).unwrap();
     }
 
@@ -260,7 +257,12 @@ mod tests {
         let tempfile = NamedTempFile::new().unwrap();
         write_test_config(tempfile.path());
         let config: Config = parse_config(tempfile.path()).unwrap();
-        assert_eq!(config.request_type, PackageType::Npm);
+
+        let mut orig_config = test_config();
+        // Clearing env token is expected.
+        orig_config.auth_info.env_token = None;
+
+        assert_eq!(config, orig_config);
     }
 
     #[test]

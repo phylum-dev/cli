@@ -75,9 +75,7 @@ pub fn add_subcommands(command: Command) -> Command {
     let mut app = command
         .subcommand(
             Command::new("history").about("Return information about historical jobs").args(&[
-                Arg::new("JOB_ID")
-                    .value_name("JOB_ID")
-                    .help("The job id to query"),
+                Arg::new("JOB_ID").value_name("JOB_ID").help("The job id to query"),
                 Arg::new("json")
                     .action(ArgAction::SetTrue)
                     .short('j')
@@ -153,7 +151,7 @@ pub fn add_subcommands(command: Command) -> Command {
                             .value_name("group_name")
                             .help("Group owning the project"),
                     ]),
-                )
+                ),
         )
         .subcommand(
             Command::new("package").about("Retrieve the details of a specific package").args(&[
@@ -178,7 +176,11 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('j')
                     .long("json")
                     .help("Produce output in json format (default: false)"),
-                Arg::new("filter").short('f').long("filter").value_name("filter").help(FILTER_ABOUT),
+                Arg::new("filter")
+                    .short('f')
+                    .long("filter")
+                    .value_name("filter")
+                    .help(FILTER_ABOUT),
             ]),
         )
         .subcommand(
@@ -199,11 +201,12 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("status").about("Return the current authentication status"),
                 )
-                .subcommand(Command::new("set-token").about("Set the current authentication token").arg(
-                    Arg::new("token")
-                        .action(ArgAction::Set)
-                        .required(false)
-                        .help("Authentication token to store (read from stdin if omitted)")
+                .subcommand(
+                    Command::new("set-token").about("Set the current authentication token").arg(
+                        Arg::new("token")
+                            .action(ArgAction::Set)
+                            .required(false)
+                            .help("Authentication token to store (read from stdin if omitted)"),
                     ),
                 )
                 .subcommand(
@@ -218,9 +221,8 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse")
-                .about("Parse lock files and output their packages as JSON")
-                .args(&[
+            Command::new("parse").about("Parse lock files and output their packages as JSON").args(
+                &[
                     Arg::new("lockfile")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
@@ -233,7 +235,8 @@ pub fn add_subcommands(command: Command) -> Command {
                         .requires("lockfile")
                         .help("Lock file type used for all lock files (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-                ]),
+                ],
+            ),
         )
         .subcommand(
             Command::new("analyze")
@@ -292,11 +295,12 @@ pub fn add_subcommands(command: Command) -> Command {
                         .short('t')
                         .long("type")
                         .value_name("type")
-                        .help(r#"Package type ("npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo")"#),
-                    Arg::new("label")
-                        .short('l')
-                        .long("label")
-                        .help("Label to use for analysis"),
+                        .help("Package ecosystem type")
+                        .value_parser([
+                            "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                        ])
+                        .required(true),
+                    Arg::new("label").short('l').long("label").help("Label to use for analysis"),
                     Arg::new("project")
                         .short('p')
                         .long("project")
@@ -343,98 +347,92 @@ pub fn add_subcommands(command: Command) -> Command {
                 )
                 .subcommand(
                     Command::new("member")
-                    .about("Manage group members")
-                    .args(&[
-                        Arg::new("group")
+                        .about("Manage group members")
+                        .args(&[Arg::new("group")
                             .short('g')
                             .long("group")
                             .value_name("GROUP")
                             .help("Group to list the members for")
-                            .required(true),
-                    ])
-                    .subcommand_required(true)
-                    .subcommand(
-                        Command::new("list").about("List group members").args(&[
-                            Arg::new("json")
-                                .action(ArgAction::SetTrue)
-                                .short('j')
-                                .long("json")
-                                .help("Produce member list in json format (default: false)"),
-                        ]),
-                    )
-                    .subcommand(
-                        Command::new("add").about("Add user to group").args(&[
-                            Arg::new("user")
-                                .value_name("USER")
-                                .help("User(s) to be added")
-                                .action(ArgAction::Append)
-                                .required(true),
-                        ]),
-                    )
-                    .subcommand(
-                        Command::new("remove")
-                            .alias("rm")
-                            .about("Remove user from group")
-                            .args(&[
-                                Arg::new("user")
+                            .required(true)])
+                        .subcommand_required(true)
+                        .subcommand(
+                            Command::new("list").about("List group members").args(&[Arg::new(
+                                "json",
+                            )
+                            .action(ArgAction::SetTrue)
+                            .short('j')
+                            .long("json")
+                            .help("Produce member list in json format (default: false)")]),
+                        )
+                        .subcommand(
+                            Command::new("add").about("Add user to group").args(&[Arg::new(
+                                "user",
+                            )
+                            .value_name("USER")
+                            .help("User(s) to be added")
+                            .action(ArgAction::Append)
+                            .required(true)]),
+                        )
+                        .subcommand(
+                            Command::new("remove")
+                                .alias("rm")
+                                .about("Remove user from group")
+                                .args(&[Arg::new("user")
                                     .value_name("USER")
                                     .help("User(s) to be removed")
                                     .action(ArgAction::Append)
-                                    .required(true),
-                            ]),
-                    )
+                                    .required(true)]),
+                        ),
                 )
                 .subcommand(
-                    Command::new("transfer").about("Transfer group ownership between users").args(&[
-                        Arg::new("group")
-                            .short('g')
-                            .long("group")
-                            .value_name("GROUP")
-                            .help("Group to transfer")
-                            .required(true),
-                        Arg::new("user")
-                            .value_name("USER")
-                            .help("User the group ownership will be transferred to")
-                            .required(true),
-                        Arg::new("force")
-                            .short('f')
-                            .long("force")
-                            .help("Do not prompt for confirmation")
-                            .action(ArgAction::SetTrue),
-                    ])
-                )
+                    Command::new("transfer").about("Transfer group ownership between users").args(
+                        &[
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP")
+                                .help("Group to transfer")
+                                .required(true),
+                            Arg::new("user")
+                                .value_name("USER")
+                                .help("User the group ownership will be transferred to")
+                                .required(true),
+                            Arg::new("force")
+                                .short('f')
+                                .long("force")
+                                .help("Do not prompt for confirmation")
+                                .action(ArgAction::SetTrue),
+                        ],
+                    ),
+                ),
         )
         .subcommand(
-            Command::new("init")
-                .about("Setup a new Phylum project")
-                .args(&[
-                    Arg::new("project")
-                        .value_name("PROJECT_NAME")
-                        .help("Phylum project name"),
-                    Arg::new("group")
-                        .short('g')
-                        .long("group")
-                        .value_name("GROUP_NAME")
-                        .help("Group which will be the owner of the project"),
-                    Arg::new("lockfile")
-                        .short('l')
-                        .long("lockfile")
-                        .value_name("LOCKFILE")
-                        .help("Project-relative lock file path")
-                        .action(ArgAction::Append),
-                    Arg::new("lockfile-type")
-                        .short('t')
-                        .long("lockfile-type")
-                        .value_name("type")
-                        .requires("lockfile")
-                        .help("Lock file type used for all lock files (default: auto)")
-                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-                    Arg::new("force")
-                        .short('f')
-                        .long("force")
-                        .help("Overwrite existing configurations without confirmation")
-                        .action(ArgAction::SetTrue),
-                ]),
+            Command::new("init").about("Setup a new Phylum project").args(&[
+                Arg::new("project").value_name("PROJECT_NAME").help("Phylum project name"),
+                Arg::new("group")
+                    .short('g')
+                    .long("group")
+                    .value_name("GROUP_NAME")
+                    .help("Group which will be the owner of the project"),
+                Arg::new("lockfile")
+                    .short('l')
+                    .long("lockfile")
+                    .value_name("LOCKFILE")
+                    .help("Project-relative lock file path")
+                    .action(ArgAction::Append),
+                Arg::new("lockfile-type")
+                    .short('t')
+                    .long("lockfile-type")
+                    .value_name("type")
+                    .requires("lockfile")
+                    .help("Lock file type used for all lock files (default: auto)")
+                    .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                Arg::new("force")
+                    .short('f')
+                    .long("force")
+                    .help("Overwrite existing configurations without confirmation")
+                    .action(ArgAction::SetTrue),
+            ]),
         )
         .subcommand(extensions::command());
 
