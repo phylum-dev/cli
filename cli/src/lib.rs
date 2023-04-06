@@ -10,7 +10,6 @@ pub mod dirs;
 pub mod filter;
 pub mod format;
 pub mod fs_compare;
-pub mod histogram;
 pub mod print;
 pub mod spinner;
 #[cfg(test)]
