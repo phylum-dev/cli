@@ -1,5 +1,5 @@
-use std::io;
 use std::str::FromStr;
+use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
@@ -14,8 +14,13 @@ use crate::format::Format;
 use crate::{config, print_user_success, print_user_warning};
 
 /// Output analysis job results.
-pub async fn print_job_status(api: &mut PhylumApi, job_id: &JobId, pretty: bool) -> CommandResult {
-    let response = api.get_job_status(job_id, []).await;
+pub async fn print_job_status(
+    api: &mut PhylumApi,
+    job_id: &JobId,
+    ignored_packages: impl Into<Vec<PackageDescriptor>>,
+    pretty: bool,
+) -> CommandResult {
+    let response = api.get_job_status(job_id, ignored_packages).await;
 
     // Provide nicer messages for specific errors.
     let status = match response {
@@ -47,7 +52,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
     if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
         let job_id =
             JobId::from_str(job_id).with_context(|| format!("{job_id:?} is not a valid Job ID"))?;
-        return print_job_status(api, &job_id, pretty_print).await;
+        return print_job_status(api, &job_id, [], pretty_print).await;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let group = matches.get_one::<String>("group").map(String::as_str);
         let history = api.get_project_history(project, group).await?;
@@ -74,6 +79,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
 pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+    let mut ignored_packages: Vec<PackageDescriptor> = vec![];
     let mut packages = vec![];
     let mut synch = false; // get status after submission
     let mut pretty_print = false;
@@ -102,6 +108,11 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             }
 
             packages.extend(res.packages.into_iter());
+        }
+
+        if let Some(base) = matches.get_one::<String>("base") {
+            let base_text = fs::read_to_string(base)?;
+            ignored_packages = serde_json::from_str(&base_text)?;
         }
     } else if let Some(matches) = matches.subcommand_matches("batch") {
         jobs_project = JobsProject::new(api, matches).await?;
@@ -178,7 +189,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
     if synch {
         log::debug!("Requesting status...");
-        print_job_status(api, &job_id, pretty_print).await
+        print_job_status(api, &job_id, ignored_packages, pretty_print).await
     } else {
         Ok(ExitCode::Ok)
     }
