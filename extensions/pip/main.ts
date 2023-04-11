@@ -99,6 +99,7 @@ async function checkDryRun() {
     exceptions: {
       run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
       write: [
+        "./",
         "~/Library/Caches",
         "~/.pyenv",
         "~/.cache",
