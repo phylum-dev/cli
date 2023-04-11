@@ -635,7 +635,7 @@ mod tests {
     async fn get_job_status() -> Result<()> {
         let body = PolicyEvaluationResponse {
             is_failure: true,
-            is_complete: true,
+            incomplete_count: 0,
             output: "output".into(),
             report: "report".into(),
         };

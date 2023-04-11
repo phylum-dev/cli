@@ -66,7 +66,7 @@ pub struct PolicyEvaluationRequest {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct PolicyEvaluationResponse {
     pub is_failure: bool,
-    pub is_complete: bool,
+    pub incomplete_count: u32,
     pub output: String,
     pub report: String,
 }
