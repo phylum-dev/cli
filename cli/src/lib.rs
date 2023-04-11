@@ -16,3 +16,5 @@ pub mod spinner;
 mod test;
 pub mod types;
 pub mod update;
+#[cfg(feature = "vulnreach")]
+pub mod vulnreach;

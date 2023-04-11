@@ -3,14 +3,24 @@ use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
+#[cfg(feature = "vulnreach")]
+use log::debug;
 use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
+#[cfg(feature = "vulnreach")]
+use vulnreach_types::{Job, JobPackage};
 
 use crate::api::PhylumApi;
+#[cfg(feature = "vulnreach")]
+use crate::auth::jwt::RealmRole;
 use crate::commands::{parse, CommandResult, ExitCode};
 use crate::format::Format;
+#[cfg(feature = "vulnreach")]
+use crate::print_user_failure;
+#[cfg(feature = "vulnreach")]
+use crate::vulnreach;
 use crate::{config, print_user_success, print_user_warning};
 
 /// Output analysis job results.
@@ -188,11 +198,63 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
     }
 
     if synch {
+        if pretty_print {
+            #[cfg(feature = "vulnreach")]
+            if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
+                print_user_failure!("Reachability analysis failed: {err:?}");
+            }
+        }
+
         log::debug!("Requesting status...");
         print_job_status(api, &job_id, ignored_packages, pretty_print).await
     } else {
         Ok(ExitCode::Ok)
     }
+}
+
+/// Perform vulnerability reachability analysis.
+#[cfg(feature = "vulnreach")]
+async fn vulnreach(
+    api: &mut PhylumApi,
+    matches: &clap::ArgMatches,
+    packages: Vec<PackageDescriptor>,
+    job_id: String,
+) -> Result<()> {
+    // Skip requests early if we know user doesn't have the required role.
+    let roles = api.roles();
+    if !roles.contains(&RealmRole::Vulnreach) {
+        debug!("Skipping reachability analysis: User roles missing `vulnreach`: ({roles:?})");
+        return Ok(());
+    }
+
+    // Find all direct dependencies.
+    let local_imports = vulnreach::imports();
+
+    // Output reachability results.
+    let imports = job_from_packages(packages, local_imports, job_id);
+    let vulnerabilities = api.vulnerabilities(imports).await?;
+
+    // Skip output if there are no vulnerabilities.
+    if vulnerabilities.is_empty() {
+        return Ok(());
+    }
+
+    println!("{}", style("\n# Identified vulnerabilities").bold());
+
+    // Output reachability for each individual vulnerability.
+    for vulnerability in &vulnerabilities {
+        println!();
+
+        if matches.get_count("verbose") > 0 {
+            vulnerability.pretty_verbose(&mut io::stdout());
+        } else {
+            vulnerability.pretty(&mut io::stdout());
+        }
+    }
+
+    println!();
+
+    Ok(())
 }
 
 /// Project information for analyze/batch.
@@ -236,4 +298,23 @@ impl JobsProject {
             },
         }
     }
+}
+
+/// Convert Vec<PackageDescriptor> to Imports.
+#[cfg(feature = "vulnreach")]
+fn job_from_packages(
+    dependencies: Vec<PackageDescriptor>,
+    imports: Vec<String>,
+    analysis_job_id: String,
+) -> Job {
+    let dependencies = dependencies
+        .into_iter()
+        .map(|package| JobPackage {
+            name: package.name,
+            version: package.version,
+            ecosystem: "npm".into(),
+        })
+        .collect();
+
+    Job { analysis_job_id, dependencies, imported_packages: imports.into_iter().collect() }
 }

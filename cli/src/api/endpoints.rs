@@ -141,6 +141,11 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
 }
 
+/// POST /reachability/vulnerabilities
+pub fn vulnreach(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(parse_base_url(api_uri)?.join("reachability/vulnerabilities")?)
+}
+
 fn parse_base_url(api_uri: &str) -> Result<Url, BaseUriError> {
     let mut url = Url::parse(api_uri)?;
 
