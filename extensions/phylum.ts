@@ -148,7 +148,7 @@ export class PhylumApi {
    * ```
    * {
    *   is_failure: false,
-   *   is_complete: true,
+   *   incomplete_count: 0,
    *   report: "# Phylum OSS Supply Chain Risk Analysis - SUCCESS\n\nThe Phylum risk analysis is complete and did not identify any issues.\n\n[View this project in the Phylum UI](https://app.staging.phylum.io/projects/739098bc-c954-4bf6-aa36-692f5483edaa?label=uncategorized)\n",
    *   output: "{\"dependencies\":[],\"errors\":[]}"
    * }
