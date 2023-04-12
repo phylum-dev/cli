@@ -139,7 +139,7 @@ async function checkDryRun() {
   const jobId = await PhylumApi.analyze(packages);
   const jobStatus = await PhylumApi.getJobStatus(jobId);
 
-  if (!jobStatus.is_failure && jobStatus.is_complete) {
+  if (!jobStatus.is_failure && jobStatus.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
   } else if (!jobStatus.is_failure) {
     console.warn(
