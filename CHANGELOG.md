@@ -74,7 +74,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Fix install with poetry extension by @cd-work (#930)
 
 ### Upgrading
-There are no breaking changes in this release. Projects may like to take advantage of the new `.phylum_project` file format which accounts for multiple lockfiles. To do so, simply run the `phylum init` command from the root of the project directory. As long as the project and group names used are the same as before, the existing project ID will be re-linked.
+There are no breaking changes in this release. Projects may like to take
+advantage of the new `.phylum_project` file format which accounts for multiple
+lockfiles. To do so, simply run the `phylum init` command from the root of the
+project directory. As long as the project and group names used are the same as
+before, the existing project ID will be re-linked.
 
 ## [4.4.0] - 2023-01-20
 
