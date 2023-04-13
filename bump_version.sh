@@ -31,6 +31,11 @@ git add Cargo.lock
 git add CHANGELOG
 git add cli/Cargo.toml
 
+printf "\nUpdating extension changelog...\n"
+sed -i'.bak' "s/\(## Unreleased\)/\1\n\n## ${version}/" extensions/CHANGELOG.md
+rm extensions/CHANGELOG.md.bak
+git add extensions/CHANGELOG.md
+
 commit_message="Bump to ${TAG} - ${changelog}"
 printf "\nFiles to be added and committed with message: \"%s\"\n\n" "${commit_message}"
 git status
