@@ -78,9 +78,7 @@ jobs:
         run: deno check --no-lock extensions/**/*.ts
 
   shellcheck:
-    # TODO: Update to `ubuntu-latest` once `ubuntu-22.04` support is stabilized.
-    #       https://github.com/phylum-dev/cli/issues/467
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
       - name: Script Style Check
