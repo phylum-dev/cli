@@ -117,7 +117,7 @@ const output = PhylumApi.runSandboxed({
   cmd: "npm",
   args: ["install"],
   exceptions: {
-    write: ["~/.npm/_logs", "./package-lock.json", "./node_modules"],
+    write: ["~/.npm/_logs", "./"],
     read: true,
     run: true,
     net: false,
@@ -176,7 +176,13 @@ async function checkDryRun(subcommand: string, args: string[]) {
     await abort(status.code);
   }
 
-  const lockfile = await PhylumApi.parseLockfile("./package-lock.json", "npm");
+  let lockfile;
+  try {
+    lockfile = await PhylumApi.parseLockfile("./package-lock.json", "npm");
+  } catch (_e) {
+    console.warn(`[${yellow("phylum")}] No lockfile created.\n`);
+    return;
+  }
 
   // Ensure `checkDryRun` never modifies package manager files,
   // regardless of success.
