@@ -126,7 +126,13 @@ async function checkDryRun() {
   }
 
   // Parse dry-run output.
-  const packages = parseDryRun(status.stdout);
+  let packages;
+  try {
+    packages = parseDryRun(status.stdout);
+  } catch (_e) {
+    console.warn(`[${yellow("phylum")}] Ignoring non-JSON dry-run output.\n`);
+    return;
+  }
 
   console.log(`[${green("phylum")}] Dependency resolution successful.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
