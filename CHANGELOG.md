@@ -99,7 +99,6 @@ before, the existing project ID will be re-linked.
 ### Fixed
 - Fix sandbox executable path resolution by @cd-work (#905)
 
-
 ## [4.2.0] - 2023-01-05
 
 ### Added
