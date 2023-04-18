@@ -89,6 +89,10 @@ impl Parse for Cargo {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Cargo.lock"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("Cargo.toml"))
+    }
 }
 
 #[cfg(test)]

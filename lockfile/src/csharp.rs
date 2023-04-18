@@ -70,6 +70,10 @@ impl Parse for CSProj {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.extension() == Some(OsStr::new("csproj"))
     }
+
+    fn is_path_manifest(&self, _path: &Path) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
