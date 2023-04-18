@@ -28,6 +28,10 @@ impl Parse for PyRequirements {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("requirements.txt"))
     }
+
+    fn is_path_manifest(&self, _path: &Path) -> bool {
+        false
+    }
 }
 
 impl Parse for PipFile {
@@ -72,6 +76,10 @@ impl Parse for PipFile {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Pipfile.lock"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("Pipfile"))
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -112,6 +120,10 @@ impl Parse for Poetry {
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("poetry.lock"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("pyproject.toml"))
     }
 }
 

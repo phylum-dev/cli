@@ -115,6 +115,10 @@ impl Parse for PackageLock {
         file_name == Some(OsStr::new("package-lock.json"))
             || file_name == Some(OsStr::new("npm-shrinkwrap.json"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
+    }
 }
 
 /// Check if a YAML file is a valid v2 yarn lockfile.
@@ -232,6 +236,10 @@ impl Parse for YarnLock {
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("yarn.lock"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
     }
 }
 

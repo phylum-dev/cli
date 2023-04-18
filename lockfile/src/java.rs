@@ -27,6 +27,10 @@ impl Parse for GradleLock {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("gradle.lockfile"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("build.gradle"))
+    }
 }
 
 impl Parse for Pom {
@@ -56,6 +60,10 @@ impl Parse for Pom {
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("effective-pom.xml"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("pom.xml"))
     }
 }
 

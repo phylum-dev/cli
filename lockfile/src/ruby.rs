@@ -23,6 +23,10 @@ impl Parse for GemLock {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Gemfile.lock"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("Gemfile"))
+    }
 }
 
 #[cfg(test)]
