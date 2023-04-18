@@ -1,19 +1,20 @@
 //! `phylum parse` command for lockfile parsing
 
-use std::fs::read_to_string;
-use std::io;
-use std::path::Path;
+use std::path::PathBuf;
+use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{
     get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
 };
 use phylum_types::types::package::PackageDescriptor;
+use walkdir::WalkDir;
 
 use crate::commands::{CommandResult, ExitCode};
-use crate::config;
+use crate::{config, print_user_warning};
 
 pub struct ParsedLockfile {
+    pub path: PathBuf,
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
 }
@@ -45,20 +46,42 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
 /// Parse a package lockfile.
 pub fn parse_lockfile(
-    path: impl AsRef<Path>,
+    path: impl Into<PathBuf>,
     lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
-    let path = path.as_ref();
+    let mut path = path.into();
     let format = lockfile_type
         .filter(|lockfile_type| lockfile_type != &"auto")
         .map(|lockfile_type| lockfile_type.parse::<LockfileFormat>().unwrap())
-        .or_else(|| get_path_format(path));
+        .or_else(|| get_path_format(&path))
+        .or_else(|| {
+            let canonicalized = fs::canonicalize(&path).ok()?;
+            let manifest_dir = canonicalized.parent()?;
+
+            // Find matching format and lockfile in manifest's directory.
+            let (format, lockfile_path) = LockfileFormat::iter()
+                .filter(|format| format.parser().is_path_manifest(&path))
+                .find_map(|format| {
+                    let lockfile_path = WalkDir::new(manifest_dir)
+                        .into_iter()
+                        .flatten()
+                        .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
+                    Some((format, lockfile_path))
+                })?;
+
+            // Switch manifest to lockfile path.
+            let lockfile_path = lockfile_path.path().to_owned();
+            print_user_warning!("{path:?} is not a lockfile, using {lockfile_path:?} instead");
+            path = lockfile_path;
+
+            Some(format)
+        });
 
     match format {
         // Parse with identified parser.
         Some(format) => {
-            let data = read_to_string(path)?;
+            let data = fs::read_to_string(&path)?;
             let parser = format.parser();
 
             let packages = parser
@@ -66,7 +89,7 @@ pub fn parse_lockfile(
                 .with_context(|| format!("Failed to parse lockfile {path:?}"))?;
             let packages = filter_packages(packages);
 
-            Ok(ParsedLockfile { packages, format })
+            Ok(ParsedLockfile { path, packages, format })
         },
         // Attempt to parse with all parsers until success.
         None => try_get_packages(path),
@@ -74,8 +97,8 @@ pub fn parse_lockfile(
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
-    let data = read_to_string(path)?;
+fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
+    let data = fs::read_to_string(&path)?;
 
     for format in LockfileFormat::iter() {
         let parser = format.parser();
@@ -84,7 +107,7 @@ fn try_get_packages(path: &Path) -> Result<ParsedLockfile> {
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { packages, format });
+            return Ok(ParsedLockfile { path, packages, format });
         }
     }
 
@@ -159,7 +182,7 @@ mod tests {
         ];
 
         for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(Path::new(file)).unwrap();
+            let parsed = try_get_packages(PathBuf::from(file)).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }

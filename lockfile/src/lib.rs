@@ -151,6 +151,12 @@ pub trait Parse {
     ///
     /// The file does not need to exist.
     fn is_path_lockfile(&self, path: &Path) -> bool;
+
+    /// Test if a file name could be a manifest file corresponding to this
+    /// parser.
+    ///
+    /// The file does not need to exist.
+    fn is_path_manifest(&self, path: &Path) -> bool;
 }
 
 /// Single package parsed from a lockfile.

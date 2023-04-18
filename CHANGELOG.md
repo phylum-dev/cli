@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- CLI will look for the corresponding lockfile when analyzing a manifest file
+
 ## [5.0.0] - 2023-04-13
 
 ### Added
@@ -456,22 +460,22 @@ before, the existing project ID will be re-linked.
 ## 1.0.0 - 2021-08-02
 - Add formatted output; refactor subcommands; many other changes for improved usability
 
-## 0.0.7 
+## 0.0.7
 - Adding synch submit requests
 
-## 0.0.5 
+## 0.0.5
 - Add support for projects and project labels / decrease verbosity of package status
 
-## 0.0.4 
+## 0.0.4
 - Minor update to API response format; add `--threshold` argument to `status` command
 
-## 0.0.3 
+## 0.0.3
 - Update response format of the `status` command to match API changes.
 
-## 0.0.2 
+## 0.0.2
 - Add support for listing / submitting heuristics.
 
-## 0.0.1 
+## 0.0.1
 - Initial release.
 
 [unreleased]: https://github.com/phylum-dev/cli/compare/v5.0.0...HEAD

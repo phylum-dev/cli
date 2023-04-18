@@ -22,6 +22,10 @@ impl Parse for GoSum {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("go.sum"))
     }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("go.mod"))
+    }
 }
 
 #[cfg(test)]
