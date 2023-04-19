@@ -2,6 +2,12 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use lockfile_generator::npm::Npm as NpmGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::yarn::Yarn as YarnGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
@@ -118,6 +124,11 @@ impl Parse for PackageLock {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&NpmGenerator)
     }
 }
 
@@ -240,6 +251,11 @@ impl Parse for YarnLock {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&YarnGenerator)
     }
 }
 

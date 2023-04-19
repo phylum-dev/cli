@@ -1,12 +1,10 @@
 //! `phylum parse` command for lockfile parsing
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
-use phylum_lockfile::{
-    get_path_format, LockfileFormat, Package, PackageVersion, ThirdPartyVersion,
-};
+use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
 use phylum_types::types::package::PackageDescriptor;
 use walkdir::WalkDir;
 
@@ -50,49 +48,128 @@ pub fn parse_lockfile(
     lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
-    let mut path = path.into();
-    let format = lockfile_type
-        .filter(|lockfile_type| lockfile_type != &"auto")
-        .map(|lockfile_type| lockfile_type.parse::<LockfileFormat>().unwrap())
-        .or_else(|| get_path_format(&path))
-        .or_else(|| {
-            let canonicalized = fs::canonicalize(&path).ok()?;
-            let manifest_dir = canonicalized.parent()?;
+    let path = path.into();
+    let format = find_lockfile_format(&path, lockfile_type);
 
-            // Find matching format and lockfile in manifest's directory.
-            let (format, lockfile_path) = LockfileFormat::iter()
-                .filter(|format| format.parser().is_path_manifest(&path))
-                .find_map(|format| {
-                    let lockfile_path = WalkDir::new(manifest_dir)
-                        .into_iter()
-                        .flatten()
-                        .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
-                    Some((format, lockfile_path))
-                })?;
+    // Attempt to parse with all known parsers as fallback.
+    let (format, lockfile) = match format {
+        Some(format) => format,
+        None => return try_get_packages(path),
+    };
 
-            // Switch manifest to lockfile path.
-            let lockfile_path = lockfile_path.path().to_owned();
-            print_user_warning!("{path:?} is not a lockfile, using {lockfile_path:?} instead");
-            path = lockfile_path;
+    // Parse with the identified parser.
 
-            Some(format)
-        });
+    // Check if original path is a manifest file.
+    let parser = format.parser();
+    let is_manifest = parser.is_path_manifest(&path);
 
-    match format {
-        // Parse with identified parser.
-        Some(format) => {
-            let data = fs::read_to_string(&path)?;
-            let parser = format.parser();
+    // Skip lockfile parsing if lockfile type was specified from the CLI and the
+    // target file is only a valid manifest file.
+    let lockfile = lockfile.filter(|path| !is_manifest && parser.is_path_lockfile(path));
 
-            let packages = parser
-                .parse(&data)
-                .with_context(|| format!("Failed to parse lockfile {path:?}"))?;
-            let packages = filter_packages(packages);
+    // Attempt to parse the identified lockfile.
+    let mut lockfile_error = None;
+    if let Some(lockfile) = lockfile {
+        // Parse lockfile content.
+        let content = fs::read_to_string(&lockfile).map_err(Into::into);
+        let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
 
-            Ok(ParsedLockfile { path, packages, format })
+        match packages {
+            Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
+            // Store error on failure.
+            Err(err) => lockfile_error = Some(err),
+        }
+    }
+
+    // If the path is neither a valid manifest nor lockfile, we abort.
+    if !is_manifest {
+        // Try to use existing parser error when available.
+        match lockfile_error {
+            Some(err) => return Err(err),
+            None => return Err(anyhow!("{path:?} is neither a supported lockfile nor manifest")),
+        }
+    }
+
+    // If the lockfile couldn't be parsed, or there is none, we generate a new one.
+
+    // Find the generator for this lockfile format.
+    let generator = match parser.generator() {
+        Some(generator) => generator,
+        None => return Err(anyhow!("unsupported manifest file {path:?}")),
+    };
+
+    println!("Generating lockfile for manifest {path:?}…");
+
+    // Generate a new lockfile.
+    let canonicalized = fs::canonicalize(&path)?;
+    let project_path =
+        canonicalized.parent().ok_or_else(|| anyhow!("invalid manifest path: {path:?}"))?;
+    let generated_lockfile = generator.generate_lockfile(project_path)?;
+
+    // Parse the generated lockfile.
+    let packages = parse_lockfile_content(&generated_lockfile, parser)?;
+
+    Ok(ParsedLockfile { path, format, packages })
+}
+
+/// Attempt to parse a lockfile.
+fn parse_lockfile_content(
+    content: &str,
+    parser: &'static dyn Parse,
+) -> Result<Vec<PackageDescriptor>> {
+    let packages = parser.parse(content).context("Failed to parse lockfile")?;
+    Ok(filter_packages(packages))
+}
+
+/// Find a lockfile's format.
+fn find_lockfile_format(
+    path: &Path,
+    lockfile_type: Option<&str>,
+) -> Option<(LockfileFormat, Option<PathBuf>)> {
+    // Determine format from lockfile type.
+    if let Some(lockfile_type) = lockfile_type.filter(|lockfile_type| lockfile_type != &"auto") {
+        let format = lockfile_type.parse::<LockfileFormat>().unwrap();
+        return Some((format, Some(path.into())));
+    }
+
+    // Determine format based on lockfile path.
+    if let Some(format) = phylum_lockfile::get_path_format(path) {
+        return Some((format, Some(path.into())));
+    }
+
+    // Determine format from manifest path.
+    find_manifest_format(path)
+}
+
+/// Find a manifest file's format.
+fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)> {
+    // Find project root directory.
+    let canonicalized = fs::canonicalize(path).ok()?;
+    let manifest_dir = canonicalized.parent()?;
+
+    // Find lockfile formats matching this manifest.
+    let mut formats =
+        LockfileFormat::iter().filter(|format| format.parser().is_path_manifest(path)).peekable();
+
+    // Store first format as fallback.
+    let fallback_format = formats.peek().copied();
+
+    // Look for formats which already have a lockfile generated.
+    let manifest_lockfile = formats.find_map(|format| {
+        let manifest_lockfile = WalkDir::new(manifest_dir)
+            .into_iter()
+            .flatten()
+            .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
+        Some((format, manifest_lockfile.path().to_owned()))
+    });
+
+    // Return existing lockfile or format capable of generating it.
+    match manifest_lockfile {
+        Some((format, manifest_lockfile)) => {
+            print_user_warning!("{path:?} is not a lockfile, using {manifest_lockfile:?} instead");
+            Some((format, Some(manifest_lockfile)))
         },
-        // Attempt to parse with all parsers until success.
-        None => try_get_packages(path),
+        None => fallback_format.map(|format| (format, None)),
     }
 }
 

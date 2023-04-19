@@ -3,6 +3,14 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use lockfile_generator::pip::Pip as PipGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::poetry::Poetry as PoetryGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::python_requirements::PythonRequirements as PythonRequirementsGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
@@ -29,8 +37,13 @@ impl Parse for PyRequirements {
         path.file_name() == Some(OsStr::new("requirements.txt"))
     }
 
-    fn is_path_manifest(&self, _path: &Path) -> bool {
-        false
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("requirements.txt"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&PythonRequirementsGenerator)
     }
 }
 
@@ -80,6 +93,11 @@ impl Parse for PipFile {
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Pipfile"))
     }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&PipGenerator)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -124,6 +142,11 @@ impl Parse for Poetry {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("pyproject.toml"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&PoetryGenerator)
     }
 }
 
