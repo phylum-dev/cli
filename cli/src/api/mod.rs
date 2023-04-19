@@ -297,6 +297,14 @@ impl PhylumApi {
         self.post(endpoints::get_job_status(&self.config.connection.uri, job_id)?, body).await
     }
 
+    /// Check a set of packages against the default policy
+    pub async fn package_check(
+        &self,
+        package_list: &[PackageDescriptor],
+    ) -> Result<PolicyEvaluationResponse> {
+        self.post(endpoints::package_check(&self.config.connection.uri)?, package_list).await
+    }
+
     /// Get the status of all jobs
     pub async fn get_status(&self) -> Result<AllJobsStatusResponse> {
         self.get(endpoints::get_all_jobs_status(&self.config.connection.uri, 30)?).await

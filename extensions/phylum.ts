@@ -105,6 +105,17 @@ export class PhylumApi {
   }
 
   /**
+   * Check packages against the default policy.
+   *
+   * @param packages - List of packages to check (see `analyze()` for details)
+   *
+   * @returns Job analysis results (see `getJobStatus()` for details)
+   */
+  static packageCheck(packages: Package[]): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("package_check", packages);
+  }
+
+  /**
    * Get info about the logged in user.
    *
    * @returns User information

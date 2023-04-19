@@ -40,6 +40,11 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError
     Ok(url)
 }
 
+/// POST /data/packages/check
+pub fn package_check(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/packages/check")?)
+}
+
 /// POST /data/packages/submit
 pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
@@ -200,6 +205,14 @@ mod test {
         assert_eq!(
             get_all_jobs_status(API_URI, 123).unwrap().as_str(),
             format!("{API_URI}/{API_PATH}data/jobs/?limit=123&verbose=1"),
+        );
+    }
+
+    #[test]
+    fn package_check_is_correct() {
+        assert_eq!(
+            package_check(API_URI).unwrap().as_str(),
+            format!("{API_URI}/{API_PATH}data/packages/check"),
         );
     }
 

@@ -160,6 +160,18 @@ async fn analyze(
     Ok(job_id)
 }
 
+/// Check a set of packages against the default policy.
+#[op]
+async fn package_check(
+    op_state: Rc<RefCell<OpState>>,
+    packages: Vec<PackageDescriptor>,
+) -> Result<PolicyEvaluationResponse> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    Ok(api.package_check(&packages).await?)
+}
+
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
 #[op]
@@ -472,6 +484,7 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
+        package_check::decl(),
         get_user_info::decl(),
         get_access_token::decl(),
         get_refresh_token::decl(),
