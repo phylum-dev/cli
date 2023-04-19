@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - CLI will look for the corresponding lockfile when analyzing a manifest file
+- Allow analyzing manifest files by generating lockfiles on-demand
 
 ### Fixed
 - Handle null job labels in `phylum history --project`

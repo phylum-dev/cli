@@ -2,6 +2,12 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use lockfile_generator::gradle::Gradle as GradleGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::maven::Maven as MavenGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::ecosystems::maven::{Dependency, Plugin, Project};
@@ -30,6 +36,11 @@ impl Parse for GradleLock {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("build.gradle"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&GradleGenerator)
     }
 }
 
@@ -64,6 +75,11 @@ impl Parse for Pom {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("pom.xml"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&MavenGenerator)
     }
 }
 

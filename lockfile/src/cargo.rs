@@ -2,6 +2,10 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::anyhow;
+#[cfg(feature = "generator")]
+use lockfile_generator::cargo::Cargo as CargoGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 
@@ -92,6 +96,11 @@ impl Parse for Cargo {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Cargo.toml"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&CargoGenerator)
     }
 }
 

@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -8,12 +9,15 @@ pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 pub use spdx::Spdx;
+use walkdir::WalkDir;
 
 mod cargo;
 mod csharp;
@@ -157,6 +161,11 @@ pub trait Parse {
     ///
     /// The file does not need to exist.
     fn is_path_manifest(&self, path: &Path) -> bool;
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        None
+    }
 }
 
 /// Single package parsed from a lockfile.
@@ -189,14 +198,39 @@ pub struct ThirdPartyVersion {
     pub registry: String,
 }
 
-/// Get the expected format of a potential lock file.
+/// Identify a lockfile's format based on its path.
 ///
-/// If the file name does not look like a lock file supported by this crate,
-/// `None` is returned.
+/// Returns `None` if no supported format could be identified.
 ///
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
     LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
+}
+
+/// Find a manifest file's lockfile.
+///
+/// Returns `None` if no lockfile exists or the format isn't supported.
+///
+/// Contrary to [`get_path_format`], the `path` argument must point to an
+/// existing manifest file within the project to find its lockfile.
+pub fn find_manifest_lockfile<P: AsRef<Path>>(path: P) -> Option<(PathBuf, LockfileFormat)> {
+    // Canonicalize the path, so calling `parent` always works.
+    let path = path.as_ref();
+    let canonicalized = fs::canonicalize(path).ok()?;
+    let manifest_dir = canonicalized.parent()?;
+
+    // Find matching format and lockfile in the manifest's directory.
+    LockfileFormat::iter()
+        // Check if file is a valid manifest.
+        .filter(|format| format.parser().is_path_manifest(path))
+        // Try to find the associated lockfile.
+        .find_map(|format| {
+            let lockfile_path = WalkDir::new(manifest_dir)
+                .into_iter()
+                .flatten()
+                .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
+            Some((lockfile_path.path().to_owned(), format))
+        })
 }
 
 /// Find lockfiles in the current directory subtree.

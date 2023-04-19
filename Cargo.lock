@@ -2691,6 +2691,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "lockfile_generator"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "log"
 version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3212,6 +3219,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "ignore",
+ "lockfile_generator",
  "log",
  "nom",
  "packageurl",
@@ -3222,6 +3230,7 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "toml",
+ "walkdir",
 ]
 
 [[package]]

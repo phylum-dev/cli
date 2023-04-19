@@ -2,6 +2,8 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 
@@ -26,6 +28,11 @@ impl Parse for GemLock {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("Gemfile"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        None
     }
 }
 

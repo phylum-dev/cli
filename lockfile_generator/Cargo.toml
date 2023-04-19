@@ -1,0 +1,10 @@
+[package]
+name = "lockfile_generator"
+version = "0.1.0"
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
+license = "GPL-3.0-or-later"
+edition = "2021"
+rust-version = "1.68.0"
+
+[dependencies]
+thiserror = "1.0.40"
