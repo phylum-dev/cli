@@ -50,6 +50,15 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
+if (Deno.args.length != 0 && Deno.args[0].startsWith("-")) {
+  console.error(
+    `[${
+      red("phylum")
+    }] This extension does not support arguments before the first subcommand.`,
+  );
+  Deno.exit(127);
+}
+
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
