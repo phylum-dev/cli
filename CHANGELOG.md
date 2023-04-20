@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Handle null job labels in `phylum history --project`
+
 ## [5.0.0] - 2023-04-13
 
 ### Added
