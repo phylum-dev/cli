@@ -53,7 +53,7 @@ pub struct GithubReleaseAsset {
 pub struct HistoryJob {
     pub id: String,
     pub created: DateTime<Utc>,
-    pub label: String,
+    pub label: Option<String>,
 }
 
 /// Request body for `/data/jobs/{job_id}/policy/evaluate`.

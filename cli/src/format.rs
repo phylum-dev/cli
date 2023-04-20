@@ -207,7 +207,7 @@ impl Format for Vec<HistoryJob> {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let table = format_table::<fn(&HistoryJob) -> String, _>(self, &[
             ("Job ID", |job| job.id.clone()),
-            ("Label", |job| job.label.clone()),
+            ("Label", |job| job.label.clone().unwrap_or_default()),
             ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
         ]);
         let _ = writeln!(writer, "{table}");
