@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.0.1] - 2023-04-20
+
 ### Fixed
 - Handle null job labels in `phylum history --project`
 
@@ -477,7 +479,8 @@ before, the existing project ID will be re-linked.
 ## 0.0.1 
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.0.0...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.0.1...HEAD
+[5.0.1]: https://github.com/phylum-dev/cli/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/phylum-dev/cli/compare/v4.8.0...v5.0.0
 [4.8.0]: https://github.com/phylum-dev/cli/compare/v4.7.0...v4.8.0
 [4.7.0]: https://github.com/phylum-dev/cli/compare/v4.6.1...v4.7.0
