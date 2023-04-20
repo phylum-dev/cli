@@ -189,6 +189,7 @@ jobs:
               repo: context.repo.repo,
               tag_name: process.env.GITHUB_REF_NAME,
               prerelease: ${{ contains(github.ref, 'rc') }},
+              name: process.env.GITHUB_REF_NAME,
               body: body,
             });
             console.log(response);
