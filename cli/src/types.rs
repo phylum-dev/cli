@@ -38,10 +38,6 @@ impl FromStr for Role {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubRelease {
-    // The `name` entry stores the GitHub Release name,
-    // which could be set to something other than the version.
-    // Using the `tag_name` entry is better since the tags
-    // are much more tightly coupled with the release version.
     pub tag_name: String,
     pub assets: Vec<GithubReleaseAsset>,
 }
