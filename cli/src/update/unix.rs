@@ -42,7 +42,7 @@ pub async fn do_update(prerelease: bool, ignore_certs: bool) -> anyhow::Result<S
     let updater = ApplicationUpdater::default().with_ignore_certs(ignore_certs);
     let ver =
         updater.get_latest_version(prerelease).await.context("Failed to get the latest version")?;
-    updater.do_update(ver).await.map(|ver| format!("Successfully updated to {}!", ver.name))
+    updater.do_update(ver).await.map(|ver| format!("Successfully updated to {}!", ver.tag_name))
 }
 
 #[derive(Debug)]
@@ -159,7 +159,8 @@ impl ApplicationUpdater {
     /// indicate that we need to update. We do not compare semvers to
     /// determine if an update is required.
     fn needs_update(&self, current_version: &str, latest_version: &GithubRelease) -> bool {
-        let latest = latest_version.name.replace("phylum ", "").replace('v', "").trim().to_owned();
+        let latest =
+            latest_version.tag_name.replace("phylum ", "").replace('v', "").trim().to_owned();
         let current = current_version.replace("phylum ", "").trim().to_owned();
         latest != current
     }
@@ -245,7 +246,7 @@ mod tests {
     #[tokio::test]
     async fn version_check() {
         let body = r#"{
-            "name": "1.2.3",
+            "tag_name": "v1.2.3",
             "assets": [
               { "browser_download_url": "https://foo.example.com", "name": "foo" },
               { "browser_download_url": "https://bar.example.com", "name": "bar" }
@@ -262,7 +263,7 @@ mod tests {
         let updater = ApplicationUpdater::build_test_instance(mock_server);
         let latest = updater.get_latest_version(false).await.unwrap();
         log::error!("{:?}", latest);
-        assert!("1.2.3" == latest.name);
+        assert!("v1.2.3" == latest.tag_name);
         assert!(updater.needs_update("1.0.2", &latest));
 
         let github_asset = updater.find_github_asset(&latest, "foo").unwrap();
