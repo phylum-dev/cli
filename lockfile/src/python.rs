@@ -193,9 +193,24 @@ mod tests {
         let pkgs = PyRequirements
             .parse(include_str!("../../tests/fixtures/requirements-locked.txt"))
             .unwrap();
-        assert_eq!(pkgs.len(), 9);
+        assert_eq!(pkgs.len(), 12);
 
         let expected_pkgs = [
+            Package {
+                name: "alembic".into(),
+                version: PackageVersion::FirstParty("1.10.3".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "amqp".into(),
+                version: PackageVersion::FirstParty("5.0.9".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "attrs".into(),
+                version: PackageVersion::FirstParty("20.2.0".into()),
+                package_type: PackageType::PyPi,
+            },
             Package {
                 name: "flask".into(),
                 version: PackageVersion::FirstParty("2.2.2".into()),

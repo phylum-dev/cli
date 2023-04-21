@@ -17,7 +17,10 @@ pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     let mut pkgs = Vec::new();
 
     // Iterate over all non-empty lines.
-    for line in input.lines().filter(|line| !line.starts_with('#') && !line.trim().is_empty()) {
+    for line in
+        input.lines().filter(|line| !line.trim().starts_with('#') && !line.trim().is_empty())
+    {
+        let (_, line) = recognize(alt((take_until(" #"), not_line_ending)))(line)?;
         let (_, pkg) = package(line)?;
         pkgs.push(pkg);
     }
