@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `pip` parser fails for some lines containing comments
+
 ## [5.0.1] - 2023-04-20
 
 ### Fixed
@@ -355,7 +358,7 @@ before, the existing project ID will be re-linked.
 
 ### BREAKING CHANGES
 - Follow XDG directories spec by @cd-work (#251)
-  * Existing installs will have config file moved automatically
+  - Existing installs will have config file moved automatically
 
 ### Added
 - Add `uninstall` subcommand to phylum by @cd-work (#239)
@@ -381,8 +384,8 @@ before, the existing project ID will be re-linked.
 - Parse package extras in Python requirements.txt files by @kylewillmon (#271)
 - Rename projects subcommand to project by @kylewillmon (#282)
 - Improved scripting support
-  * Remove checkmark from `auth token` command by @cd-work (#261)
-  * Set appropriate exit codes on failure by @cd-work (#260)
+  - Remove checkmark from `auth token` command by @cd-work (#261)
+  - Set appropriate exit codes on failure by @cd-work (#260)
 
 ### Fixed
 - Format "Last updated" field with ISO 8601 by @cd-work (#257)
@@ -461,22 +464,22 @@ before, the existing project ID will be re-linked.
 ## 1.0.0 - 2021-08-02
 - Add formatted output; refactor subcommands; many other changes for improved usability
 
-## 0.0.7 
+## 0.0.7
 - Adding synch submit requests
 
-## 0.0.5 
+## 0.0.5
 - Add support for projects and project labels / decrease verbosity of package status
 
-## 0.0.4 
+## 0.0.4
 - Minor update to API response format; add `--threshold` argument to `status` command
 
-## 0.0.3 
+## 0.0.3
 - Update response format of the `status` command to match API changes.
 
-## 0.0.2 
+## 0.0.2
 - Add support for listing / submitting heuristics.
 
-## 0.0.1 
+## 0.0.1
 - Initial release.
 
 [unreleased]: https://github.com/phylum-dev/cli/compare/v5.0.1...HEAD
