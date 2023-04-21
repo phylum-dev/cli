@@ -38,7 +38,7 @@ impl FromStr for Role {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubRelease {
-    pub name: String,
+    pub tag_name: String,
     pub assets: Vec<GithubReleaseAsset>,
 }
 
