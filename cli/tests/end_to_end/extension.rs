@@ -167,14 +167,14 @@ pub async fn get_job_status() {
 }
 
 #[tokio::test]
-pub async fn package_check() {
+pub async fn check_packages() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
         .extension(
             "
             const pkg = { name: 'typescript', version: '4.7.4', type: 'npm' };
-            const res = await PhylumApi.packageCheck([pkg]);
+            const res = await PhylumApi.checkPackages([pkg]);
             console.log(res);",
         )
         .build()

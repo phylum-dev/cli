@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- `packageCheck` function to check a package against the default policy
+- `checkPackages` function to check a list of packages against the default policy
 
 ## 5.0.0 - 2023-04-13
 

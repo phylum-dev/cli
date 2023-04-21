@@ -298,11 +298,11 @@ impl PhylumApi {
     }
 
     /// Check a set of packages against the default policy
-    pub async fn package_check(
+    pub async fn check_packages(
         &self,
         package_list: &[PackageDescriptor],
     ) -> Result<PolicyEvaluationResponse> {
-        self.post(endpoints::package_check(&self.config.connection.uri)?, package_list).await
+        self.post(endpoints::check_packages(&self.config.connection.uri)?, package_list).await
     }
 
     /// Get the status of all jobs

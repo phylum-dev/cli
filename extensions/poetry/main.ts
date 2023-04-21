@@ -220,7 +220,7 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const checkResult = await PhylumApi.packageCheck(packages);
+  const checkResult = await PhylumApi.checkPackages(packages);
 
   if (!checkResult.is_failure && checkResult.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);

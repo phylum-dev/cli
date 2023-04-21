@@ -41,7 +41,7 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError
 }
 
 /// POST /data/packages/check
-pub fn package_check(api_uri: &str) -> Result<Url, BaseUriError> {
+pub fn check_packages(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/check")?)
 }
 

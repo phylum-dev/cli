@@ -268,7 +268,7 @@ async function checkDryRun() {
     return;
   }
 
-  const result = await PhylumApi.packageCheck(lockfile.packages);
+  const result = await PhylumApi.checkPackages(lockfile.packages);
 
   if (!result.is_failure && result.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
