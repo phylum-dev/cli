@@ -1,3 +1,5 @@
+# The full `pip` requirements file format is documented here:
+# https://pip.pypa.io/en/stable/reference/requirements-file-format/
 
 # This is a comment.
 
@@ -10,7 +12,8 @@ amqp==5.0.9
 
 attrs==20.2.0   # This is an inline comment
 
-flask==2.2.2
+# The requirement specifier does not have to be at the beginning of the line
+    flask==2.2.2
 
 requests[security,tests]==2.28.1
 
