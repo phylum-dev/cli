@@ -1,13 +1,12 @@
 # Changelog
 
-All notable changes are documented in this file.
+Notable changes to the extension API are documented in this file.
+
 The sections should follow the order `Packaging`, `Added`, `Changed`, `Fixed` and `Removed`.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
-
-## 5.0.1 - 2023-04-20
 
 ## 5.0.0 - 2023-04-13
 
