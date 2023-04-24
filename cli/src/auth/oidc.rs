@@ -19,7 +19,7 @@ use super::ip_addr_ext::IpAddrExt;
 use crate::api::endpoints;
 use crate::app::USER_AGENT;
 
-pub const OIDC_SCOPES: [&str; 4] = ["openid", "offline_access", "profile", "email"];
+pub const OIDC_SCOPES: [&str; 2] = ["openid", "offline_access"];
 
 /// OIDC Client id used to identify this client to the oidc server
 pub const OIDC_CLIENT_ID: &str = "phylum_cli";
@@ -186,7 +186,6 @@ fn build_grant_type_auth_code_post_body(
         "grant_type".to_owned() => "authorization_code".to_owned(),
         // Must match previous request to /authorize but not redirected to by server
         "redirect_uri".to_owned() => redirect_url.to_string(),
-        "scopes".to_owned() => OIDC_SCOPES.join(" ")
     };
     Ok(body)
 }
@@ -198,7 +197,6 @@ fn build_grant_type_refresh_token_post_body(
         "client_id".to_owned() => OIDC_CLIENT_ID.to_owned(),
         "grant_type".to_owned() => "refresh_token".to_owned(),
         "refresh_token".to_owned() => refresh_token.into(),
-        "scopes".to_owned() => OIDC_SCOPES.join(" ")
     };
     Ok(body)
 }
@@ -222,7 +220,6 @@ pub async fn acquire_tokens(
         .build()?;
     let response = client
         .post(token_url)
-        .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(5))
         .form(&body)
