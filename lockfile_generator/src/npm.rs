@@ -11,6 +11,10 @@ impl Generator for Npm {
         "package-lock.json"
     }
 
+    fn conflicting_files(&self) -> Vec<&'static str> {
+        vec![self.lockfile_name(), "npm-shrinkwrap.json", "yarn.lock"]
+    }
+
     fn command(&self) -> Command {
         let mut command = Command::new("npm");
         command.args(["install", "--package-lock-only", "--ignore-scripts"]);

@@ -45,7 +45,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let (project, group) = prompt_project(&groups, cli_project, cli_group).await?;
 
     // Interactively prompt for missing lockfile information.
-    let lockfiles = prompt_lockfiles(cli_lockfiles, cli_lockfile_type)?;
+    let lockfiles = prompt_lockable_files(cli_lockfiles, cli_lockfile_type)?;
 
     // Attempt to create the project.
     let result = project::create_project(api, &project, group.clone()).await;
@@ -153,123 +153,141 @@ async fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
     }
 }
 
-/// Interactively ask for missing lockfile information.
-fn prompt_lockfiles(
+/// Interactively ask for missing lockfile or manifest information.
+fn prompt_lockable_files(
     cli_lockfiles: Option<ValuesRef<'_, String>>,
     cli_lockfile_type: Option<&String>,
 ) -> io::Result<Vec<LockfileConfig>> {
-    // Prompt for lockfiles if they weren't specified.
+    // Prompt for lockfiles or manifests if they weren't specified.
     let lockfiles = match cli_lockfiles {
         Some(lockfiles) => lockfiles.cloned().collect(),
-        None => prompt_lockfile_names()?,
+        None => prompt_lockable_file_names()?,
     };
 
-    // Find lockfile type for each lockfile.
+    // Find lockfile type for each file.
     let mut lockfile_configs = Vec::new();
     for lockfile in &lockfiles {
-        let config = if let Some(cli_lockfile_type) = cli_lockfile_type {
-            // Use CLI lockfile type if specified.
-            LockfileConfig::new(lockfile, cli_lockfile_type.into())
-        } else if let Some(format) = LockfileFormat::iter()
-            .find(|format| format.parser().is_path_lockfile(Path::new(&lockfile)))
-        {
-            // Try to determine lockfile type from known formats.
-            let lockfile_type = format.name().to_owned();
-            LockfileConfig::new(lockfile, lockfile_type)
-        } else {
-            // Prompt for lockfile type.
-            let lockfile_type = prompt_lockfile_type(lockfile)?;
-            LockfileConfig::new(lockfile, lockfile_type)
-        };
-        lockfile_configs.push(config)
+        let lockfile_type = find_lockfile_type(lockfile, cli_lockfile_type)?;
+        let config = LockfileConfig::new(lockfile, lockfile_type);
+        lockfile_configs.push(config);
     }
 
     Ok(lockfile_configs)
 }
 
-/// Ask for the lockfile names.
-fn prompt_lockfile_names() -> io::Result<Vec<String>> {
-    // Find all known lockfiles in the currenty directory.
-    let mut lockfiles = config::find_lockfiles(".")
+/// Ask for the lockfile and manifest names.
+fn prompt_lockable_file_names() -> io::Result<Vec<String>> {
+    // Find all known lockfiles and manifests below the currenty directory.
+    let mut lockable_files = phylum_lockfile::find_lockable_files_at(".")
         .iter()
-        .flat_map(|lockfile| Some(lockfile.path.to_str()?.to_owned()))
+        .flat_map(|(path, _)| Some(path.to_str()?.to_owned()))
         .collect::<Vec<_>>();
 
     // Prompt for selection if any lockfile was found.
-    let prompt_lockfiles = !lockfiles.is_empty();
-    if prompt_lockfiles {
-        // Add choice to specify additional unidentified lockfiles.
-        lockfiles.push(String::from("others"));
+    let prompt = !lockable_files.is_empty();
+    if prompt {
+        // Add choice to specify additional unidentified files.
+        lockable_files.push(String::from("others"));
 
-        // Ask user for lockfiles.
+        // Ask user for files.
         let indices = MultiSelect::new()
-            .with_prompt("[SPACE] Select  [ENTER] Confirm\nSelect your project's lockfile")
-            .items(&lockfiles)
+            .with_prompt(
+                "[SPACE] Select  [ENTER] Confirm\nSelect your project's lockfiles and manifests",
+            )
+            .items(&lockable_files)
             .interact()?;
 
         // Remove unselected lockfiles.
         let mut indices = indices.iter().peekable();
-        let mut lockfiles_index = 0;
-        lockfiles.retain(|_| {
-            // Check if lockfile index is in the selected indices.
-            let retain = indices.peek().map_or(false, |index| **index <= lockfiles_index);
+        let mut files_index = 0;
+        lockable_files.retain(|_| {
+            // Check if index is in the selected indices.
+            let retain = indices.peek().map_or(false, |index| **index <= files_index);
 
             // Go to next selection index if current index was found.
             if retain {
                 indices.next();
             }
 
-            lockfiles_index += 1;
+            files_index += 1;
 
             retain
         });
 
         println!();
 
-        // Return lockfiles if we found at least one and no others were requested.
-        match lockfiles.last().map_or("others", |lockfile| lockfile.as_str()) {
-            "others" => lockfiles.pop(),
-            _ => return Ok(lockfiles),
+        // Return files if we found at least one and no others were requested.
+        match lockable_files.last().map_or("others", |lockfile| lockfile.as_str()) {
+            "others" => lockable_files.pop(),
+            _ => return Ok(lockable_files),
         };
     }
 
     // Construct dialoguer freetext prompt.
     let mut input = Input::new();
-    if prompt_lockfiles {
-        input.with_prompt("Other lockfile(s) (comma separated paths)");
+    if prompt {
+        input.with_prompt("Other lockfiles or manifests (comma separated paths)");
     } else {
         input.with_prompt(
-            "No known lockfiles found in the current directory.\nLockfile(s) (comma separated \
-             paths)",
+            "No known lockfiles or manifests found in the current directory.\nLockfiles or \
+             manifests (comma separated paths)",
         );
     };
 
     // Allow empty as escape hatch if people already selected a valid lockfile.
-    input.allow_empty(!lockfiles.is_empty());
+    input.allow_empty(!lockable_files.is_empty());
 
-    // Prompt for additional lockfiles.
-    let other_lockfiles: String = input.interact_text()?;
+    // Prompt for additional files.
+    let other_lockable_files: String = input.interact_text()?;
 
     println!();
 
-    // Remove whitespace around lockfiles and add them to our list.
+    // Remove whitespace around files and add them to our list.
     for lockfile in
-        other_lockfiles.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
+        other_lockable_files.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
     {
-        lockfiles.push(lockfile.into());
+        lockable_files.push(lockfile.into());
     }
 
-    Ok(lockfiles)
+    Ok(lockable_files)
+}
+
+/// Find lockfile type for a lockable file path.
+fn find_lockfile_type(lockfile: &str, cli_lockfile_type: Option<&String>) -> io::Result<String> {
+    if let Some(cli_lockfile_type) = cli_lockfile_type {
+        // Use CLI lockfile type if specified.
+        return Ok(cli_lockfile_type.into());
+    }
+
+    // Find all matching lockfile types.
+    let formats = LockfileFormat::iter().filter(|format| {
+        let path = Path::new(&lockfile);
+        let parser = format.parser();
+        parser.is_path_lockfile(path) || parser.is_path_manifest(path)
+    });
+    let formats = formats.map(|format| format.name()).collect::<Vec<_>>();
+
+    // Pick format if only one is available.
+    if formats.len() == 1 {
+        let lockfile_type = formats[0].to_owned();
+        return Ok(lockfile_type);
+    }
+
+    // Prompt if multiple or no formats were detected.
+    prompt_lockfile_type(lockfile, formats)
 }
 
 /// Ask for the lockfile type.
-fn prompt_lockfile_type(lockfile: &str) -> io::Result<String> {
-    let lockfile_types: Vec<_> = LockfileFormat::iter().map(|format| format.name()).collect();
+fn prompt_lockfile_type(lockfile: &str, mut formats: Vec<&str>) -> io::Result<String> {
+    // Allow all formats if no matching formats were found.
+    if formats.is_empty() {
+        formats = LockfileFormat::iter().map(|format| format.name()).collect();
+    }
 
-    let prompt = format!("[ENTER] Select and Confirm\nSelect type for lockfile {lockfile:?}");
-    let index = FuzzySelect::new().with_prompt(prompt).items(&lockfile_types).interact()?;
+    let prompt = format!("[ENTER] Select and Confirm\nSelect lockfile type for {lockfile:?}");
+    let index = FuzzySelect::new().with_prompt(prompt).items(&formats).interact()?;
 
     println!();
 
-    Ok(lockfile_types[index].to_owned())
+    Ok(formats[index].to_owned())
 }

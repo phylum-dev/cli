@@ -8,14 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- CLI will look for the corresponding lockfile when analyzing a manifest file
+- Allow analyzing manifest files by generating lockfiles on-demand
+
 ### Fixed
 - `pip` parser fails for some lines containing comments
 
 ## [5.0.1] - 2023-04-20
-
-### Added
-- CLI will look for the corresponding lockfile when analyzing a manifest file
-- Allow analyzing manifest files by generating lockfiles on-demand
 
 ### Fixed
 - Handle null job labels in `phylum history --project`

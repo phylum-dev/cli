@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fs, io};
 
+pub mod bundler;
 pub mod cargo;
 pub mod go;
 pub mod gradle;
@@ -21,18 +22,25 @@ pub trait Generator {
     /// Command for generating the lockfile.
     fn command(&self) -> Command;
 
+    /// List of files conflicting with lockfile generation.
+    ///
+    /// These files are temporarily renamed during lockfile generation to ensure
+    /// the correct lockfile is updated.
+    fn conflicting_files(&self) -> Vec<&'static str> {
+        vec![self.lockfile_name()]
+    }
+
     /// Generate the lockfile for a project.
     ///
     /// This will ignore all existing lockfiles and create a new lockfile based
     /// on the current project configuration.
     fn generate_lockfile(&self, project_path: &Path) -> Result<String> {
-        // Move existing lockfile so we do not overwrite it.
-        let lockfile_path = project_path.join(self.lockfile_name());
-        let _relocator = if lockfile_path.exists() {
-            Some(FileRelocator::new(lockfile_path.clone())?)
-        } else {
-            None
-        };
+        // Move files which interfere with lockfile generation.
+        let _relocators = self
+            .conflicting_files()
+            .drain(..)
+            .map(|file| FileRelocator::new(project_path.join(file)))
+            .collect::<Result<Vec<_>>>()?;
 
         // Generate lockfile at the target location.
         let mut command = self.command();
@@ -42,10 +50,8 @@ pub trait Generator {
         command.stderr(Stdio::null());
 
         // Provide better error message, including the failed program's name.
-        let mut child = command.spawn().map_err(|err| {
-            let program = command.get_program().to_string_lossy().into_owned();
-            Error::ProcessCreation(program, err)
-        })?;
+        let mut child =
+            command.spawn().map_err(|err| Error::ProcessCreation(format!("{command:?}"), err))?;
 
         // Ensure generation was successful.
         let status = child.wait()?;
@@ -54,6 +60,7 @@ pub trait Generator {
         }
 
         // Ensure lockfile was created.
+        let lockfile_path = project_path.join(self.lockfile_name());
         if !lockfile_path.exists() {
             return Err(Error::NoLockfileGenerated);
         }
@@ -86,13 +93,17 @@ impl Drop for FileRelocator {
 }
 
 impl FileRelocator {
-    fn new(path: PathBuf) -> Result<Self> {
+    fn new(path: PathBuf) -> Result<Option<Self>> {
+        if path.exists() {
+            return Ok(None);
+        }
+
         // Relocate the file.
         let mut backup_path = path.clone().into_os_string();
         backup_path.push(".phylum_bak");
         fs::rename(&path, &backup_path)?;
 
-        Ok(Self { original_path: path, backup_path })
+        Ok(Some(Self { original_path: path, backup_path }))
     }
 }
 
