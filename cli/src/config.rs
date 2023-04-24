@@ -193,7 +193,7 @@ pub fn lockfiles(
             let project_lockfiles = project.map(|project| project.lockfiles());
 
             // Fallback to walking the directory.
-            let lockfiles = project_lockfiles.unwrap_or_else(|| find_lockfiles("."));
+            let lockfiles = project_lockfiles.unwrap_or_else(|| find_lockable_files("."));
 
             // Ask for explicit lockfile if none were found.
             if lockfiles.is_empty() {
@@ -205,9 +205,9 @@ pub fn lockfiles(
     }
 }
 
-/// Find lockfiles at or below the specified directory.
-pub fn find_lockfiles(directory: impl AsRef<Path>) -> Vec<LockfileConfig> {
-    phylum_lockfile::find_lockfiles_at(directory)
+/// Find lockfiles and manifests at or below the specified directory.
+fn find_lockable_files(directory: impl AsRef<Path>) -> Vec<LockfileConfig> {
+    phylum_lockfile::find_lockable_files_at(directory)
         .drain(..)
         .map(|(path, format)| LockfileConfig::new(path, format.to_string()))
         .collect()

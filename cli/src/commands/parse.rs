@@ -59,13 +59,7 @@ pub fn parse_lockfile(
 
     // Parse with the identified parser.
 
-    // Check if original path is a manifest file.
     let parser = format.parser();
-    let is_manifest = parser.is_path_manifest(&path);
-
-    // Skip lockfile parsing if lockfile type was specified from the CLI and the
-    // target file is only a valid manifest file.
-    let lockfile = lockfile.filter(|path| !is_manifest && parser.is_path_lockfile(path));
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
@@ -82,11 +76,12 @@ pub fn parse_lockfile(
     }
 
     // If the path is neither a valid manifest nor lockfile, we abort.
-    if !is_manifest {
-        // Try to use existing parser error when available.
+    if !parser.is_path_manifest(&path) {
+        // Return the original lockfile parsing error.
         match lockfile_error {
             Some(err) => return Err(err),
-            None => return Err(anyhow!("{path:?} is neither a supported lockfile nor manifest")),
+            // If it's neither manifest nor lockfile, `try_get_packages` is used instead.
+            None => unreachable!("neither lockfile nor manifest"),
         }
     }
 
@@ -98,7 +93,7 @@ pub fn parse_lockfile(
         None => return Err(anyhow!("unsupported manifest file {path:?}")),
     };
 
-    println!("Generating lockfile for manifest {path:?}…");
+    eprintln!("Generating lockfile for manifest {path:?} using {format:?}…");
 
     // Generate a new lockfile.
     let canonicalized = fs::canonicalize(&path)?;
@@ -129,7 +124,13 @@ fn find_lockfile_format(
     // Determine format from lockfile type.
     if let Some(lockfile_type) = lockfile_type.filter(|lockfile_type| lockfile_type != &"auto") {
         let format = lockfile_type.parse::<LockfileFormat>().unwrap();
-        return Some((format, Some(path.into())));
+
+        // Skip lockfile analysis when path is only valid manifest.
+        let parser = format.parser();
+        let lockfile =
+            (!parser.is_path_manifest(path) || parser.is_path_lockfile(path)).then(|| path.into());
+
+        return Some((format, lockfile));
     }
 
     // Determine format based on lockfile path.

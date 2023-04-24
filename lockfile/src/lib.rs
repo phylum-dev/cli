@@ -127,9 +127,14 @@ impl Iterator for LockfileFormatIter {
     type Item = LockfileFormat;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // NOTE: Without explicit override, the lockfile generator will always pick the
+        // first matching format for the manifest. To ensure best possible support,
+        // common formats should be returned **before** less common ones (i.e. NPM
+        // before Yarn).
+
         let item = match self.0 {
-            0 => LockfileFormat::Yarn,
-            1 => LockfileFormat::Npm,
+            0 => LockfileFormat::Npm,
+            1 => LockfileFormat::Yarn,
             2 => LockfileFormat::Gem,
             3 => LockfileFormat::Pip,
             4 => LockfileFormat::Pipenv,
@@ -257,6 +262,46 @@ pub fn find_lockfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat
             get_path_format(&path).map(|format| (path, format))
         })
         .collect()
+}
+
+/// Find lockfiles and manifests at or below the specified root directory.
+///
+/// Walks the directory tree and returns all recognized files.
+///
+/// Paths excluded by gitignore are automatically ignored.
+pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
+    let mut lockfiles = Vec::new();
+    let mut manifests = Vec::new();
+
+    let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
+
+    // Find all lockfiles and manifests in the specified directory.
+    for entry in walker.into_iter().flatten() {
+        let path = entry.path();
+
+        for format in LockfileFormat::iter() {
+            let parser = format.parser();
+
+            if parser.is_path_lockfile(path) {
+                lockfiles.push((path.to_path_buf(), format));
+                break;
+            } else if parser.is_path_manifest(path) {
+                // Select first matching format for manifests.
+                manifests.push((path.to_path_buf(), format));
+                break;
+            }
+        }
+    }
+
+    // Filter out manifests with a lockfile in a directory above them.
+    manifests.retain(|(manifest_path, _)| {
+        let mut lockfile_dirs = lockfiles.iter().filter_map(|(path, _)| path.parent());
+        lockfile_dirs.all(|lockfile_dir| !manifest_path.starts_with(lockfile_dir))
+    });
+
+    // Return all manifests and lockfiles.
+    lockfiles.append(&mut manifests);
+    lockfiles
 }
 
 #[cfg(test)]
