@@ -33,16 +33,17 @@ npm install my-package  # This will be checked by Phylum!
 
 ## How it works
 
-When invoking `phylum npm`, subcommands that would modify the `package.json` or
-`package-lock.json` files will trigger a Phylum analysis.
+When invoking `phylum npm`, subcommands that would modify the `package.json`,
+`npm-shrinkwrap.json`, or `package-lock.json` files will trigger a Phylum
+analysis.
 
 - If the analysis is successful, the corresponding changes will be applied.
 - If the analysis is unsuccessful because some of the new dependencies don't
   meet the required project thresholds, the command will fail.
 - If the analysis is waiting for Phylum to process one or more of the submitted
   packages, the command will fail and the changes will _not_ be applied.
-- Commands that modify neither `package.json` nor `package-lock.json` will be
-  passed through to `npm` directly.
+- Commands that modify neither `package.json`, `npm-shrinkwrap.json`, nor
+  `package-lock.json` will be passed through to `npm` directly.
 
 [phylum]: https://phylum.io
 [phylum-cli]: https://github.com/phylum-dev/cli
