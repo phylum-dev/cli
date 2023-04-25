@@ -190,8 +190,8 @@ async function checkDryRun(subcommand: string, args: string[]) {
   // Use `npm-shrinkwrap.json` if it is present.
   let lockfilePath = "./package-lock.json";
   try {
-      await Deno.stat("./npm-shrinkwrap.json");
-      lockfilePath = "./npm-shrinkwrap.json";
+    await Deno.stat("./npm-shrinkwrap.json");
+    lockfilePath = "./npm-shrinkwrap.json";
   } catch (_e) {}
 
   let lockfile;
