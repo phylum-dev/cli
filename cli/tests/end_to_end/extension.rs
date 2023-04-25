@@ -166,6 +166,23 @@ pub async fn get_job_status() {
         .stdout(predicates::str::contains("is_failure: "));
 }
 
+#[tokio::test]
+pub async fn check_packages() {
+    let test_cli = TestCli::builder().with_config(None).build();
+
+    test_cli
+        .extension(
+            "
+            const pkg = { name: 'typescript', version: '4.7.4', type: 'npm' };
+            const res = await PhylumApi.checkPackages([pkg]);
+            console.log(res);",
+        )
+        .build()
+        .run()
+        .success()
+        .stdout(predicates::str::contains("is_failure: "));
+}
+
 /// Ensure shared state is async and thread safe.
 #[test]
 pub fn async_state() {

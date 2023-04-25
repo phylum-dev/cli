@@ -268,12 +268,11 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze(lockfile.packages);
-  const jobStatus = await PhylumApi.getJobStatus(jobId);
+  const result = await PhylumApi.checkPackages(lockfile.packages);
 
-  if (!jobStatus.is_failure && jobStatus.incomplete_count == 0) {
+  if (!result.is_failure && result.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!jobStatus.is_failure) {
+  } else if (!result.is_failure) {
     console.warn(
       `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
     );
