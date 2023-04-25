@@ -25,12 +25,12 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install stable --profile minimal -c clippy
+          rustup toolchain install --no-self-update stable --profile minimal -c clippy
           rustup default stable
 
       - name: Install Rust nightly toolchain
         if: github.event_name != 'schedule'
-        run: rustup toolchain install nightly --profile minimal -c rustfmt
+        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
 
       - name: Format check
         if: github.event_name != 'schedule'
