@@ -89,6 +89,8 @@ if (!root) {
 // Store initial package manager file state.
 const packageLockBackup = new FileBackup(root + "/package-lock.json");
 await packageLockBackup.backup();
+const shrinkwrapBackup = new FileBackup(root + "/npm-shrinkwrap.json");
+await shrinkwrapBackup.backup();
 const manifestBackup = new FileBackup(root + "/package.json");
 await manifestBackup.backup();
 
@@ -185,9 +187,16 @@ async function checkDryRun(subcommand: string, args: string[]) {
     await abort(status.code);
   }
 
+  // Use `npm-shrinkwrap.json` if it is present.
+  let lockfilePath = "./package-lock.json";
+  try {
+      await Deno.stat("./npm-shrinkwrap.json");
+      lockfilePath = "./npm-shrinkwrap.json";
+  } catch (_e) {}
+
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseLockfile("./package-lock.json", "npm");
+    lockfile = await PhylumApi.parseLockfile(lockfilePath, "npm");
   } catch (_e) {
     console.warn(`[${yellow("phylum")}] No lockfile created.\n`);
     return;
