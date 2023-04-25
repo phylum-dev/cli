@@ -111,7 +111,9 @@ impl Parse for PackageLock {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("package-lock.json"))
+        let file_name = path.file_name();
+        file_name == Some(OsStr::new("package-lock.json"))
+            || file_name == Some(OsStr::new("npm-shrinkwrap.json"))
     }
 }
 
