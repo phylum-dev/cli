@@ -231,6 +231,7 @@ mod tests {
             ("Gemfile.lock", LockfileFormat::Gem),
             ("yarn.lock", LockfileFormat::Yarn),
             ("package-lock.json", LockfileFormat::Npm),
+            ("npm-shrinkwrap.json", LockfileFormat::Npm),
             ("sample.csproj", LockfileFormat::Msbuild),
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),

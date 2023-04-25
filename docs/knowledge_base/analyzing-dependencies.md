@@ -7,6 +7,7 @@ hidden: false
 The Phylum CLI natively supports processing lockfiles for several ecosystems, namely:
 * npm
   * `package-lock.json`
+  * `npm-shrinkwrap.json`
   * `yarn.lock` (Version 1 + 2)
 * RubyGems
   * `Gemfile.lock`
