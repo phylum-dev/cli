@@ -94,7 +94,7 @@ impl Drop for FileRelocator {
 
 impl FileRelocator {
     fn new(path: PathBuf) -> Result<Option<Self>> {
-        if path.exists() {
+        if !path.exists() {
             return Ok(None);
         }
 
