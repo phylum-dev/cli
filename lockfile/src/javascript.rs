@@ -431,4 +431,19 @@ mod tests {
             assert!(pkgs.contains(&expected_pkg));
         }
     }
+
+    #[test]
+    fn empty_yarn_v1() {
+        let pkgs = YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.empty.lock")).unwrap();
+        assert!(pkgs.is_empty());
+    }
+
+    #[test]
+    fn empty_yarn_v2() {
+        // While this uses the same parser as the `empty_yarn_v1` test, this should make
+        // sure we do not accidentally introduce a regression if we ever remove the v1
+        // parser.
+        let pkgs = YarnLock.parse("").unwrap();
+        assert!(pkgs.is_empty());
+    }
 }
