@@ -45,6 +45,7 @@ Usage: phylum [OPTIONS] [COMMAND]
 * [phylum version](./phylum_version)
 * [phylum group](./phylum_group)
 * [phylum init](./phylum_init)
+* [phylum status](./phylum_status)
 * [phylum extension](./phylum_extension)
 * [phylum uninstall](./phylum_uninstall)
 * [phylum update](./phylum_update)
