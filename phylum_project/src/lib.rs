@@ -78,6 +78,11 @@ impl ProjectConfig {
     pub fn set_lockfiles(&mut self, lockfiles: Vec<LockfileConfig>) {
         self.lockfiles = lockfiles;
     }
+
+    /// Get project's root directory.
+    pub fn root(&self) -> &PathBuf {
+        &self.root
+    }
 }
 
 /// Lockfile metadata.

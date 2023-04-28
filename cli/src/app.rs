@@ -441,6 +441,13 @@ pub fn add_subcommands(command: Command) -> Command {
                     .action(ArgAction::SetTrue),
             ]),
         )
+        .subcommand(
+            Command::new("status").about("Get Phylum project details").args(&[Arg::new("json")
+                .action(ArgAction::SetTrue)
+                .short('j')
+                .long("json")
+                .help("Produce output in json format (default: false)")]),
+        )
         .subcommand(extensions::command());
 
     #[cfg(unix)]

@@ -16,6 +16,7 @@ use prettytable::{color as table_color, row, table, Attr, Cell, Row, Table};
 use serde::Serialize;
 use unicode_width::UnicodeWidthStr;
 
+use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{HistoryJob, PolicyEvaluationResponse};
 
@@ -42,6 +43,50 @@ pub trait Format: Serialize {
         }
     }
 }
+
+impl Format for PhylumStatus {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        fn write_option<W: Write, T: std::fmt::Display>(
+            writer: &mut W,
+            label: &str,
+            option: Option<T>,
+        ) {
+            let label = style(label).blue();
+            let _ = match option {
+                Some(value) => writeln!(writer, "{label}: {}", value),
+                None => writeln!(writer, "{label}: {}", style("null").italic().green()),
+            };
+        }
+
+        let root = self.root.as_ref().map(|root| root.display());
+
+        // Write group fields.
+        write_option(writer, "Project", self.project.as_ref());
+        write_option(writer, "Group", self.group.as_ref());
+        write_option(writer, "Project Root", root);
+
+        // Write known lockfiles.
+        let lockfiles_label = style("Lockfiles").blue();
+        if self.lockfiles.is_empty() {
+            let _ = writeln!(writer, "{lockfiles_label}: {}", style("null").italic().green());
+        } else {
+            let _ = writeln!(writer, "{lockfiles_label}:");
+            for lockfile in &self.lockfiles {
+                let path = lockfile.path.display();
+                let _ = writeln!(writer, " - {}: {}", style("path").blue(), path);
+                let _ = writeln!(writer, "   {}: {}", style("type").blue(), lockfile.lockfile_type);
+            }
+        }
+    }
+}
+// pub struct PhylumStatus {
+//     pub lockfiles: Vec<LockfileConfig>,
+//     pub project: Option<String>,
+//     pub group: Option<String>,
+//     pub root: Option<PathBuf>,
+//     // pub created_at: DateTime<Local>,
+//     // pub id: ProjectId,
+// }
 
 impl Format for PolicyEvaluationResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
