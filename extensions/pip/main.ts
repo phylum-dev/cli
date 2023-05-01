@@ -42,8 +42,8 @@ if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
 
 // Ignore all commands that shouldn't be intercepted.
 if (Deno.args.length == 0 || subcommand != "install") {
-  const cmd = Deno.run({ cmd: ["pip3", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("pip3", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
