@@ -69,8 +69,8 @@ if (
     "udpate".startsWith(Deno.args[0])
   )
 ) {
-  const cmd = Deno.run({ cmd: ["npm", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("npm", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
@@ -105,13 +105,13 @@ try {
 console.log(`[${green("phylum")}] Installing without build scripts…`);
 
 // Install packages without executing build scripts.
-const cmd = Deno.run({
-  cmd: ["npm", ...Deno.args, "--ignore-scripts"],
+const cmd = new Deno.Command("npm", {
+  args: [...Deno.args, "--ignore-scripts"],
   stdout: "inherit",
   stderr: "inherit",
   stdin: "inherit",
 });
-const status = await cmd.status();
+const status = await cmd.spawn().status;
 
 // Ensure install worked. Failure is still "safe" for the user.
 if (!status.success) {
@@ -167,9 +167,8 @@ if (!output.success) {
 async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  const cmd = Deno.run({
-    cmd: [
-      "npm",
+  const cmd = new Deno.Command("npm", {
+    args: [
       subcommand,
       "--package-lock-only",
       "--ignore-scripts",
@@ -179,7 +178,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     stderr: "inherit",
     stdin: "inherit",
   });
-  const status = await cmd.status();
+  const status = await cmd.spawn().status;
 
   // Ensure lockfile update was successful.
   if (!status.success) {

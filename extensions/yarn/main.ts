@@ -129,8 +129,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "install", "up", "dedupe"].includes(Deno.args[0])
 ) {
-  const cmd = Deno.run({ cmd: ["yarn", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("yarn", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
