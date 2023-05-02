@@ -179,16 +179,16 @@ pub fn lockfiles(
     project: Option<&ProjectConfig>,
 ) -> Result<Vec<LockfileConfig>> {
     let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").unwrap_or(None);
-    let cli_lockfiles = matches.get_many::<String>("lockfile");
+    let cli_lockfiles = matches.try_get_many::<String>("lockfile");
 
     match cli_lockfiles {
-        Some(cli_lockfiles) => {
+        Ok(Some(cli_lockfiles)) => {
             let lockfile_type = cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into());
             Ok(cli_lockfiles
                 .map(|lockfile| LockfileConfig::new(lockfile, lockfile_type.clone()))
                 .collect())
         },
-        None => {
+        _ => {
             // Try the project file first.
             let project_lockfiles = project.map(|project| project.lockfiles());
 

@@ -13,7 +13,7 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, extensions, group, init, jobs, packages, parse, project, CommandResult, ExitCode,
+    auth, extensions, group, init, jobs, packages, parse, project, status, CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -152,6 +152,7 @@ async fn handle_commands() -> CommandResult {
             jobs::handle_submission(&mut Spinner::wrap(api).await?, &matches).await
         },
         "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
+        "status" => status::handle_status(sub_matches).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => uninstall::handle_uninstall(sub_matches),
