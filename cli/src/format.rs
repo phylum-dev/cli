@@ -79,14 +79,6 @@ impl Format for PhylumStatus {
         }
     }
 }
-// pub struct PhylumStatus {
-//     pub lockfiles: Vec<LockfileConfig>,
-//     pub project: Option<String>,
-//     pub group: Option<String>,
-//     pub root: Option<PathBuf>,
-//     // pub created_at: DateTime<Local>,
-//     // pub id: ProjectId,
-// }
 
 impl Format for PolicyEvaluationResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {

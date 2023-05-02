@@ -39,7 +39,7 @@ impl PhylumStatus {
         // Add lockfiles.
         status.lockfiles = config::lockfiles(matches, project.as_ref()).unwrap_or_default();
 
-        // Popuplate project details.
+        // Populate project details.
         if let Some(project) = project {
             status.created_at = Some(project.created_at);
             status.root = Some(project.root().clone());
