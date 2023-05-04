@@ -4,6 +4,10 @@ use std::os::unix::process::ExitStatusExt;
 use std::process::Command;
 
 use anyhow::{anyhow, Result};
+#[cfg(target_os = "linux")]
+use anyhow::{Context, Error};
+#[cfg(target_os = "linux")]
+use birdcage::error::Error as SandboxError;
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 
@@ -44,8 +48,18 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
 /// Lock down the current process.
 #[cfg(unix)]
 fn lock_process(matches: &ArgMatches) -> Result<()> {
-    let mut birdcage =
-        if matches.get_flag("strict") { Birdcage::new()? } else { permissions::default_sandbox()? };
+    let birdcage =
+        if matches.get_flag("strict") { Birdcage::new() } else { permissions::default_sandbox() };
+
+    // Provide additional error context.
+    let mut birdcage = match birdcage {
+        Ok(birdcage) => birdcage,
+        #[cfg(target_os = "linux")]
+        Err(err @ SandboxError::Ruleset(_)) => {
+            return Err(Error::from(err)).context("sandbox requires Linux kernel 5.13+");
+        },
+        Err(err) => return Err(err.into()),
+    };
 
     // Apply filesystem exceptions.
     for path in matches.get_many::<String>("allow-read").unwrap_or_default() {
