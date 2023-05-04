@@ -3,7 +3,10 @@
 use std::os::unix::process::ExitStatusExt;
 use std::process::Command;
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{anyhow, Result};
+#[cfg(target_os = "linux")]
+use anyhow::{Context, Error};
+#[cfg(target_os = "linux")]
 use birdcage::error::Error as SandboxError;
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
