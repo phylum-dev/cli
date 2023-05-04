@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - CLI will look for the corresponding lockfile when analyzing a manifest file
 - Allow analyzing manifest files by generating lockfiles on-demand
 - `phylum status` command for printing project and lockfile details
+- Support `npm-shrinkwrap.json` in `phylum npm` extension
 
 ### Fixed
 - `pip` parser fails for some lines containing comments
