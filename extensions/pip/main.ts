@@ -79,15 +79,6 @@ const installStatus = PhylumApi.runSandboxed({
 });
 Deno.exit(installStatus.code ?? 255);
 
-type JobStatus = {
-  packages: {
-    issues: {
-      severity: string;
-      title: string;
-    }[];
-  }[];
-};
-
 // Analyze new packages.
 async function checkDryRun() {
   console.log(`[${green("phylum")}] Finding new dependencies…`);
