@@ -18,9 +18,6 @@ printf "version (w/o a leading 'v'): "
 read -r version
 TAG=v${version}
 
-printf "One line summary: "
-read -r summary
-
 today=$(date '+%Y-%m-%d')
 printf "\nUpdating CHANGELOG, bumping version, running 'cargo check', and adding files for commit ...\n\n"
 sed -i'.bak' "s/\(## \[Unreleased\]\)/\1\n\n## \[${version}\] - ${today}/" CHANGELOG.md
@@ -39,7 +36,7 @@ sed -i'.bak' "s/\(## Unreleased\)/\1\n\n## ${version} - ${today}/" extensions/CH
 rm extensions/CHANGELOG.md.bak
 git add extensions/CHANGELOG.md
 
-commit_message="Bump to ${TAG} - ${summary}"
+commit_message="Bump to ${TAG}"
 printf "\nFiles to be added and committed with message: \"%s\"\n\n" "${commit_message}"
 git status
 
@@ -50,7 +47,6 @@ git commit -F - <<EOF
 ${commit_message}
 
 Release-Version: ${TAG}
-Release-Summary: ${summary}
 EOF
 
 git log --pretty=fuller -1
