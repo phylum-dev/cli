@@ -56,7 +56,7 @@ fn lock_process(matches: &ArgMatches) -> Result<()> {
         Ok(birdcage) => birdcage,
         #[cfg(target_os = "linux")]
         Err(err @ SandboxError::Ruleset(_)) => {
-            return Err(Error::from(err)).context("sandbox requires Linux 5.13+");
+            return Err(Error::from(err)).context("sandbox requires Linux kernel 5.13+");
         },
         Err(err) => return Err(err.into()),
     };
