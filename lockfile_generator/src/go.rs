@@ -1,5 +1,6 @@
 //! Go ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,7 +12,7 @@ impl Generator for Go {
         "go.sum"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, _manifest_path: &Path) -> Command {
         let mut command = Command::new("go");
         command.args(["get", "-d"]);
         command
