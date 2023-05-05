@@ -293,6 +293,13 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::Read("/etc/ca-certificates".into()))?;
     add_exception(&mut birdcage, Exception::Read("/etc/ssl".into()))?;
 
+    // Allow mime types
+    add_exception(&mut birdcage, Exception::Read("/etc/apache2/mime.types".into()))?;
+
+    // Allow release info
+    add_exception(&mut birdcage, Exception::Read("/etc/os-release".into()))?;
+    add_exception(&mut birdcage, Exception::Read("/etc/debian_version".into()))?;
+
     // Allow `env` exec to resolve binary paths.
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
 

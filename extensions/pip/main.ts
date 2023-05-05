@@ -73,21 +73,11 @@ const installStatus = PhylumApi.runSandboxed({
       "~/.pyenv",
       "/tmp",
       "/etc/passwd",
-      "/etc/apache2/mime.types",
     ],
     net: true,
   },
 });
 Deno.exit(installStatus.code ?? 255);
-
-type JobStatus = {
-  packages: {
-    issues: {
-      severity: string;
-      title: string;
-    }[];
-  }[];
-};
 
 // Analyze new packages.
 async function checkDryRun() {
@@ -112,7 +102,6 @@ async function checkDryRun() {
         "~/.local/lib",
         "/tmp",
         "/etc/passwd",
-        "/etc/apache2/mime.types",
       ],
       net: true,
     },
