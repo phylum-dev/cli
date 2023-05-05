@@ -23,6 +23,13 @@ pub struct PyRequirements;
 pub struct PipFile;
 pub struct Poetry;
 
+/// Check if filename is `requirements*.txt`
+fn is_requirements_file(path: &Path) -> bool {
+    path.file_name().and_then(|f| f.to_str()).map_or(false, |file_name| {
+        file_name.starts_with("requirements") && file_name.ends_with(".txt")
+    })
+}
+
 impl Parse for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
@@ -34,11 +41,14 @@ impl Parse for PyRequirements {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("requirements.txt"))
+        is_requirements_file(path)
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("requirements.txt"))
+        path.file_name() == Some(OsStr::new("requirements.in"))
+            || path.file_name() == Some(OsStr::new("setup.cfg"))
+            || path.file_name() == Some(OsStr::new("setup.py"))
+            || is_requirements_file(path)
     }
 
     #[cfg(feature = "generator")]
