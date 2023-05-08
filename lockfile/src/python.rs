@@ -46,6 +46,7 @@ impl Parse for PyRequirements {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("requirements.in"))
+            || path.file_name() == Some(OsStr::new("pyproject.toml"))
             || path.file_name() == Some(OsStr::new("setup.cfg"))
             || path.file_name() == Some(OsStr::new("setup.py"))
             || is_requirements_file(path)
