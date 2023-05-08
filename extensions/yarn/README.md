@@ -21,14 +21,14 @@ phylum extension install cli/extensions/yarn
 Prepend `phylum` to your `yarn` command invocations:
 
 ```console
-phylum yarn install my-package  # This will be checked by Phylum!
+phylum yarn add my-package  # This will be checked by Phylum!
 ```
 
 Or set up an alias in your shell to make it transparent:
 
 ```console
 alias yarn="phylum yarn"
-yarn install my-package  # This will be checked by Phylum!
+yarn add my-package  # This will be checked by Phylum!
 ```
 
 ## How it works
