@@ -239,7 +239,7 @@ async function checkDryRun() {
 
   const status = PhylumApi.runSandboxed({
     cmd: "yarn",
-    args: [...Deno.args, "--mode=update-lockfile"],
+    args: [...Deno.args, "--mode=skip-build", "--mode=update-lockfile"],
     exceptions: {
       read: true,
       write: ["~/.cache/node", "~/.cache/yarn", "~/.yarn", "./", "/tmp"],

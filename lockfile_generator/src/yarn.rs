@@ -13,7 +13,7 @@ impl Generator for Yarn {
 
     fn command(&self) -> Command {
         let mut command = Command::new("yarn");
-        command.args(["install", "--mode=update-lockfile"]);
+        command.args(["install", "--mode=skip-build", "--mode=update-lockfile"]);
         command
     }
 }
