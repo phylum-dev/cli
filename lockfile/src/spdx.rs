@@ -127,10 +127,10 @@ fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
     }
 
     let package_type = PackageType::from_str(registry).map_err(|_| UnknownEcosystem)?;
-
-    let captures = RE.captures(locator).expect("Invalid locator");
-    let name = decode(captures.get(1).expect("Invalid package name").as_str())?;
-    let version = captures.get(3).expect("Invalid package version").as_str();
+    let captures = RE.captures(locator).ok_or(anyhow!("Invalid locator: {}", locator))?;
+    let name =
+        decode(captures.get(1).ok_or(anyhow!("Missing package name: {}", locator))?.as_str())?;
+    let version = captures.get(3).ok_or(anyhow!("Missing package version: {}", locator))?.as_str();
 
     Ok(Package {
         name: name.into(),
