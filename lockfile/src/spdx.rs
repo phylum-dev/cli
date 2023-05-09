@@ -92,11 +92,11 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
         _ => purl.name().into(),
     };
 
-    let pkg_version = match (&pkg_info.version_info, purl.version()) {
-        (Some(v), _) => v.to_string(),
-        (None, Some(v)) => v.into(),
-        _ => bail!("Version not found for `{}`", pkg_info.name),
-    };
+    let pkg_version = pkg_info
+        .version_info
+        .as_ref()
+        .ok_or(purl.version())
+        .map_err(|_| anyhow!("No version found for `{}`", pkg_info.name))?;
 
     let version = purl
         .qualifiers()
@@ -116,7 +116,7 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
             },
             _ => None,
         })
-        .unwrap_or(PackageVersion::FirstParty(pkg_version));
+        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()));
 
     Ok(Package { name, version, package_type })
 }
@@ -360,7 +360,7 @@ mod tests {
         }).to_string();
 
         let error = Spdx.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("Version"))
+        assert!(error.to_string().contains("version"))
     }
 
     #[test]
@@ -455,7 +455,7 @@ mod tests {
             PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
 
         let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("Version"))
+        assert!(error.to_string().contains("version"))
     }
 
     #[test]
