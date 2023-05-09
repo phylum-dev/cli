@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fmt::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fs, io};
@@ -50,8 +51,15 @@ pub trait Generator {
         command.stderr(Stdio::null());
 
         // Provide better error message, including the failed program's name.
-        let mut child =
-            command.spawn().map_err(|err| Error::ProcessCreation(format!("{command:?}"), err))?;
+        let mut child = command.spawn().map_err(|err| {
+            // Collect program and args for error message.
+            let mut cmdline = format!("{:?}", command.get_program());
+            for arg in command.get_args() {
+                let _ = write!(cmdline, " {arg:?}");
+            }
+
+            Error::ProcessCreation(cmdline, err)
+        })?;
 
         // Ensure generation was successful.
         let status = child.wait()?;
@@ -115,7 +123,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-    #[error("failed to run command {0:?}: {1}")]
+    #[error("failed to run command {0}: {1}")]
     ProcessCreation(String, io::Error),
     #[error("package manager exited with non-zero status")]
     NonZeroExit,
