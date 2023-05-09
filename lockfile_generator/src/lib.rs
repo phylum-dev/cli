@@ -48,7 +48,7 @@ pub trait Generator {
             .collect::<Result<Vec<_>>>()?;
 
         // Generate lockfile at the target location.
-        let mut command = self.command(manifest_path);
+        let mut command = self.command(&canonicalized);
         command.current_dir(project_path);
         command.stdin(Stdio::null());
         command.stdout(Stdio::null());
