@@ -1,5 +1,6 @@
 //! Python poetry ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,7 +12,7 @@ impl Generator for Poetry {
         "poetry.lock"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, _manifest_path: &Path) -> Command {
         let mut command = Command::new("poetry");
         command.args(["lock"]);
         command
