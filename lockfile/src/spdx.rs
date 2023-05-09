@@ -130,7 +130,7 @@ fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
 
     let captures = RE.captures(locator).expect("Invalid locator");
     let name = decode(captures.get(1).expect("Invalid package name").as_str())?;
-    let version = captures.get(3).expect("Invalid package name").as_str();
+    let version = captures.get(3).expect("Invalid package version").as_str();
 
     Ok(Package {
         name: name.into(),
