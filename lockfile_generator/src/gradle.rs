@@ -1,5 +1,6 @@
 //! Java gradle ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,7 +12,7 @@ impl Generator for Gradle {
         "gradle.lockfile"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, _manifest_path: &Path) -> Command {
         let mut command = Command::new("gradle");
         command.args(["dependencies", "--write-locks"]);
         command

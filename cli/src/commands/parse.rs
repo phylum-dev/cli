@@ -96,10 +96,7 @@ pub fn parse_lockfile(
     eprintln!("Generating lockfile for manifest {path:?} using {format:?}…");
 
     // Generate a new lockfile.
-    let canonicalized = fs::canonicalize(&path)?;
-    let project_path =
-        canonicalized.parent().ok_or_else(|| anyhow!("invalid manifest path: {path:?}"))?;
-    let generated_lockfile = generator.generate_lockfile(project_path)?;
+    let generated_lockfile = generator.generate_lockfile(&path)?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;

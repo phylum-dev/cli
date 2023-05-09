@@ -1,5 +1,6 @@
 //! Java maven ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,7 +12,7 @@ impl Generator for Maven {
         "effective-pom.xml"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, _manifest_path: &Path) -> Command {
         let mut command = Command::new("mvn");
         command.args(["help:effective-pom", &format!("-Doutput={}", self.lockfile_name())]);
         command

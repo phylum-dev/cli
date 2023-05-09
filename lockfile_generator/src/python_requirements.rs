@@ -1,5 +1,6 @@
 //! Python pip ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,9 +12,9 @@ impl Generator for PythonRequirements {
         "requirements-locked.txt"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, manifest_path: &Path) -> Command {
         let mut command = Command::new("pip-compile");
-        command.args(["-o", self.lockfile_name()]);
+        command.arg("-o").arg(self.lockfile_name()).arg(manifest_path);
         command
     }
 }

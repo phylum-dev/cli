@@ -20,7 +20,7 @@ pub trait Generator {
     fn lockfile_name(&self) -> &'static str;
 
     /// Command for generating the lockfile.
-    fn command(&self) -> Command;
+    fn command(&self, manifest_path: &Path) -> Command;
 
     /// List of files conflicting with lockfile generation.
     ///
@@ -34,7 +34,12 @@ pub trait Generator {
     ///
     /// This will ignore all existing lockfiles and create a new lockfile based
     /// on the current project configuration.
-    fn generate_lockfile(&self, project_path: &Path) -> Result<String> {
+    fn generate_lockfile(&self, manifest_path: &Path) -> Result<String> {
+        let canonicalized = fs::canonicalize(manifest_path)?;
+        let project_path = canonicalized
+            .parent()
+            .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
+
         // Move files which interfere with lockfile generation.
         let _relocators = self
             .conflicting_files()
@@ -43,15 +48,17 @@ pub trait Generator {
             .collect::<Result<Vec<_>>>()?;
 
         // Generate lockfile at the target location.
-        let mut command = self.command();
+        let mut command = self.command(&canonicalized);
         command.current_dir(project_path);
         command.stdin(Stdio::null());
         command.stdout(Stdio::null());
         command.stderr(Stdio::null());
 
         // Provide better error message, including the failed program's name.
-        let mut child =
-            command.spawn().map_err(|err| Error::ProcessCreation(format!("{command:?}"), err))?;
+        let mut child = command.spawn().map_err(|err| {
+            let program = format!("{:?}", command.get_program());
+            Error::ProcessCreation(program, err)
+        })?;
 
         // Ensure generation was successful.
         let status = child.wait()?;
@@ -115,7 +122,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-    #[error("failed to run command {0:?}: {1}")]
+    #[error("invalid manifest path: {0:?}")]
+    InvalidManifest(PathBuf),
+    #[error("failed to spawn command {0}: {1}")]
     ProcessCreation(String, io::Error),
     #[error("package manager exited with non-zero status")]
     NonZeroExit,

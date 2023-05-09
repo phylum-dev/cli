@@ -1,5 +1,6 @@
 //! JavaScript yarn ecosystem.
 
+use std::path::Path;
 use std::process::Command;
 
 use crate::Generator;
@@ -11,9 +12,9 @@ impl Generator for Yarn {
         "yarn.lock"
     }
 
-    fn command(&self) -> Command {
+    fn command(&self, _manifest_path: &Path) -> Command {
         let mut command = Command::new("yarn");
-        command.args(["install", "--mode=update-lockfile"]);
+        command.args(["install", "--mode=skip-build", "--mode=update-lockfile"]);
         command
     }
 }

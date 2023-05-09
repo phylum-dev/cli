@@ -47,6 +47,9 @@ if (Deno.args.length == 0 || subcommand != "install") {
   Deno.exit(status.code);
 }
 
+// Ensure the pip version requirements are met.
+checkPipVersion();
+
 // Analyze new dependencies with phylum before install/update.
 await checkDryRun();
 
@@ -205,4 +208,31 @@ function parseDryRun(output: string): Package[] {
   }
 
   return packages;
+}
+
+// Ensure pip version is at least 23.0.0.
+function checkPipVersion() {
+  const versionStatus = PhylumApi.runSandboxed({
+    cmd: "pip3",
+    args: ["--version"],
+    exceptions: {
+      run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
+    },
+    stdout: "piped",
+  });
+
+  // Ensure command exited without error.
+  if (!versionStatus.success) {
+    console.error(`[${red("phylum")}] 'pip --version' failed.\n`);
+    Deno.exit(versionStatus.code ?? 255);
+  }
+
+  // Check major version in STDOUT.
+  const versionMatch = /^pip ([0-9]*)/.exec(versionStatus.stdout);
+  if (versionMatch === null || !(parseInt(versionMatch[1]) >= 23)) {
+    console.error(
+      `[${red("phylum")}] Pip version 23.0.0 or higher is required.\n`,
+    );
+    Deno.exit(128);
+  }
 }
