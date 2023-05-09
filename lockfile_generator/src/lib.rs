@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-use std::fmt::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fs, io};
@@ -52,13 +51,8 @@ pub trait Generator {
 
         // Provide better error message, including the failed program's name.
         let mut child = command.spawn().map_err(|err| {
-            // Collect program and args for error message.
-            let mut cmdline = format!("{:?}", command.get_program());
-            for arg in command.get_args() {
-                let _ = write!(cmdline, " {arg:?}");
-            }
-
-            Error::ProcessCreation(cmdline, err)
+            let program = format!("{:?}", command.get_program());
+            Error::ProcessCreation(program, err)
         })?;
 
         // Ensure generation was successful.
