@@ -117,7 +117,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-    #[error("failed to run command {0}: {1}")]
+    #[error("failed to spawn command {0}: {1}")]
     ProcessCreation(String, io::Error),
     #[error("package manager exited with non-zero status")]
     NonZeroExit,
