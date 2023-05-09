@@ -182,7 +182,7 @@ Unsandboxed run permissions list executable paths which can be executed without
 **any** sandboxing restrictions. This means they can execute arbitrary code even
 beyond the requested manifest permissions.
 
-This permission is required for executing paths with `Deno.run`.
+This permission is required for executing paths with `Deno.Command`.
 
 See [run](#run) for more details.
 

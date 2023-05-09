@@ -40,6 +40,11 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError
     Ok(url)
 }
 
+/// POST /data/packages/check
+pub fn check_packages(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/packages/check")?)
+}
+
 /// POST /data/packages/submit
 pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
@@ -161,8 +166,6 @@ fn get_api_path(api_uri: &str) -> Result<Url, BaseUriError> {
 mod test {
     use super::*;
 
-    const API_URI: &str = "https://example.com/a";
-
     #[test]
     fn get_api_path_returns_api_base() {
         assert_eq!(
@@ -179,85 +182,6 @@ mod test {
         assert_eq!(
             get_api_path("https://example.com/search?q=invalid#search").unwrap().as_str(),
             "https://example.com/search/api/v0/",
-        );
-    }
-
-    #[test]
-    fn put_submit_job_is_correct() {
-        assert_eq!(
-            post_submit_job(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/jobs"),
-        );
-    }
-
-    #[test]
-    fn get_ping_is_correct() {
-        assert_eq!(get_ping(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}health"),);
-    }
-
-    #[test]
-    fn get_all_jobs_status_is_correct() {
-        assert_eq!(
-            get_all_jobs_status(API_URI, 123).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/jobs/?limit=123&verbose=1"),
-        );
-    }
-
-    #[test]
-    fn post_submit_package_is_correct() {
-        assert_eq!(
-            post_submit_package(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/packages/submit"),
-        );
-    }
-
-    #[test]
-    fn get_project_summary_is_correct() {
-        assert_eq!(
-            get_project_summary(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/projects/overview"),
-        );
-    }
-
-    #[test]
-    fn put_create_project_is_correct() {
-        assert_eq!(
-            post_create_project(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/projects"),
-        );
-    }
-
-    #[test]
-    fn delete_project_is_correct() {
-        assert_eq!(
-            delete_project(API_URI, "12345678-90ab-cdef-1234-567890abcdef").unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}data/projects/12345678-90ab-cdef-1234-567890abcdef"),
-        );
-    }
-
-    #[test]
-    fn group_list_is_correct() {
-        assert_eq!(group_list(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}groups"),);
-    }
-
-    #[test]
-    fn group_create_is_correct() {
-        assert_eq!(group_create(API_URI).unwrap().as_str(), format!("{API_URI}/{API_PATH}groups"),);
-    }
-
-    #[test]
-    fn group_project_summary_is_correct() {
-        assert_eq!(
-            group_project_summary(API_URI, "acme/misc. projects").unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}groups/acme%2Fmisc.%20projects/projects"),
-        );
-    }
-
-    #[test]
-    fn oidc_discovery_is_correct() {
-        assert_eq!(
-            oidc_discovery(API_URI).unwrap().as_str(),
-            format!("{API_URI}/{API_PATH}.well-known/openid-configuration"),
         );
     }
 }

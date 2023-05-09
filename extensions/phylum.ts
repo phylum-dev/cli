@@ -105,6 +105,17 @@ export class PhylumApi {
   }
 
   /**
+   * Check a list of packages against the default policy.
+   *
+   * @param packages - List of packages to check (see `analyze()` for details)
+   *
+   * @returns Job analysis results (see `getJobStatus()` for details)
+   */
+  static checkPackages(packages: Package[]): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("check_packages", packages);
+  }
+
+  /**
    * Get info about the logged in user.
    *
    * @returns User information
@@ -148,7 +159,7 @@ export class PhylumApi {
    * ```
    * {
    *   is_failure: false,
-   *   is_complete: true,
+   *   incomplete_count: 0,
    *   report: "# Phylum OSS Supply Chain Risk Analysis - SUCCESS\n\nThe Phylum risk analysis is complete and did not identify any issues.\n\n[View this project in the Phylum UI](https://app.staging.phylum.io/projects/739098bc-c954-4bf6-aa36-692f5483edaa?label=uncategorized)\n",
    *   output: "{\"dependencies\":[],\"errors\":[]}"
    * }

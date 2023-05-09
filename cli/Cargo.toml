@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "4.8.0"
+version = "5.1.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
@@ -35,7 +35,7 @@ lazy_static = "1.4.0"
 log = "0.4.6"
 maplit = "1.0.2"
 open = "4.0.0"
-phylum_lockfile = { path = "../lockfile" }
+phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 prettytable-rs = "0.10.0"

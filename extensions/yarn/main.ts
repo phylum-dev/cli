@@ -129,8 +129,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "install", "up", "dedupe"].includes(Deno.args[0])
 ) {
-  const cmd = Deno.run({ cmd: ["yarn", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("yarn", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
@@ -268,12 +268,11 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze(lockfile.packages);
-  const jobStatus = await PhylumApi.getJobStatus(jobId);
+  const result = await PhylumApi.checkPackages(lockfile.packages);
 
-  if (!jobStatus.is_failure && jobStatus.is_complete) {
+  if (!result.is_failure && result.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!jobStatus.is_failure) {
+  } else if (!result.is_failure) {
     console.warn(
       `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
     );

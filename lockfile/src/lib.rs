@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -8,12 +9,15 @@ pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, YarnLock};
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 pub use spdx::Spdx;
+use walkdir::WalkDir;
 
 mod cargo;
 mod csharp;
@@ -123,9 +127,14 @@ impl Iterator for LockfileFormatIter {
     type Item = LockfileFormat;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // NOTE: Without explicit override, the lockfile generator will always pick the
+        // first matching format for the manifest. To ensure best possible support,
+        // common formats should be returned **before** less common ones (i.e. NPM
+        // before Yarn).
+
         let item = match self.0 {
-            0 => LockfileFormat::Yarn,
-            1 => LockfileFormat::Npm,
+            0 => LockfileFormat::Npm,
+            1 => LockfileFormat::Yarn,
             2 => LockfileFormat::Gem,
             3 => LockfileFormat::Pip,
             4 => LockfileFormat::Pipenv,
@@ -151,6 +160,17 @@ pub trait Parse {
     ///
     /// The file does not need to exist.
     fn is_path_lockfile(&self, path: &Path) -> bool;
+
+    /// Test if a file name could be a manifest file corresponding to this
+    /// parser.
+    ///
+    /// The file does not need to exist.
+    fn is_path_manifest(&self, path: &Path) -> bool;
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        None
+    }
 }
 
 /// Single package parsed from a lockfile.
@@ -183,14 +203,39 @@ pub struct ThirdPartyVersion {
     pub registry: String,
 }
 
-/// Get the expected format of a potential lock file.
+/// Identify a lockfile's format based on its path.
 ///
-/// If the file name does not look like a lock file supported by this crate,
-/// `None` is returned.
+/// Returns `None` if no supported format could be identified.
 ///
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
     LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
+}
+
+/// Find a manifest file's lockfile.
+///
+/// Returns `None` if no lockfile exists or the format isn't supported.
+///
+/// Contrary to [`get_path_format`], the `path` argument must point to an
+/// existing manifest file within the project to find its lockfile.
+pub fn find_manifest_lockfile<P: AsRef<Path>>(path: P) -> Option<(PathBuf, LockfileFormat)> {
+    // Canonicalize the path, so calling `parent` always works.
+    let path = path.as_ref();
+    let canonicalized = fs::canonicalize(path).ok()?;
+    let manifest_dir = canonicalized.parent()?;
+
+    // Find matching format and lockfile in the manifest's directory.
+    LockfileFormat::iter()
+        // Check if file is a valid manifest.
+        .filter(|format| format.parser().is_path_manifest(path))
+        // Try to find the associated lockfile.
+        .find_map(|format| {
+            let lockfile_path = WalkDir::new(manifest_dir)
+                .into_iter()
+                .flatten()
+                .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
+            Some((lockfile_path.path().to_owned(), format))
+        })
 }
 
 /// Find lockfiles in the current directory subtree.
@@ -219,6 +264,46 @@ pub fn find_lockfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat
         .collect()
 }
 
+/// Find lockfiles and manifests at or below the specified root directory.
+///
+/// Walks the directory tree and returns all recognized files.
+///
+/// Paths excluded by gitignore are automatically ignored.
+pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
+    let mut lockfiles = Vec::new();
+    let mut manifests = Vec::new();
+
+    let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
+
+    // Find all lockfiles and manifests in the specified directory.
+    for entry in walker.into_iter().flatten() {
+        let path = entry.path();
+
+        for format in LockfileFormat::iter() {
+            let parser = format.parser();
+
+            if parser.is_path_lockfile(path) {
+                lockfiles.push((path.to_path_buf(), format));
+                break;
+            } else if parser.is_path_manifest(path) {
+                // Select first matching format for manifests.
+                manifests.push((path.to_path_buf(), format));
+                break;
+            }
+        }
+    }
+
+    // Filter out manifests with a lockfile in a directory above them.
+    manifests.retain(|(manifest_path, _)| {
+        let mut lockfile_dirs = lockfiles.iter().filter_map(|(path, _)| path.parent());
+        lockfile_dirs.all(|lockfile_dir| !manifest_path.starts_with(lockfile_dir))
+    });
+
+    // Return all manifests and lockfiles.
+    lockfiles.append(&mut manifests);
+    lockfiles
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -231,6 +316,7 @@ mod tests {
             ("Gemfile.lock", LockfileFormat::Gem),
             ("yarn.lock", LockfileFormat::Yarn),
             ("package-lock.json", LockfileFormat::Npm),
+            ("npm-shrinkwrap.json", LockfileFormat::Npm),
             ("sample.csproj", LockfileFormat::Msbuild),
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),

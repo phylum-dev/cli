@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Install Rust toolchain
         run: |
@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           fetch-depth: 0
 
@@ -83,7 +83,7 @@ jobs:
         run: sudo apt install -yq zip
 
       - name: Checkout the repo
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           path: cli
 
@@ -114,6 +114,37 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Create release notes
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          script: |
+            const fs = require("node:fs");
+
+            const tag = process.env.GITHUB_REF_NAME;
+            const prerelease = !tag.match(/^v(\d+\.)*\d+$/);
+            const ver = prerelease ? "Unreleased" : tag.replace("v", "");
+
+            const changelog = fs
+              .readFileSync("cli/CHANGELOG.md", { encoding: "utf-8" })
+              .split("\n");
+
+            const header = changelog.findIndex((line) => line.startsWith(`## [${ver}]`));
+            const nextHeader = changelog.findIndex((line, idx) => idx > header && line.startsWith("## ["));
+
+            if (header == -1 || nextHeader == -1) throw "Could not find headers";
+
+            const releaseNotes = changelog.slice(header + 1, nextHeader).join("\n").trim();
+            fs.writeFileSync("RELEASE-NOTES.txt", releaseNotes);
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: RELEASE-NOTES.txt
+          path: RELEASE-NOTES.txt
+          if-no-files-found: error
+          retention-days: 7
+
+
   Release:
     name: Create release from tag
     needs: Build-Release-Artifacts
@@ -138,18 +169,28 @@ jobs:
             openssl dgst -sha256 -sign <(printf "%s" "$OPENSSL_KEY") -out "${archive}.signature" "${archive}"
           done
 
+      - name: Download release notes
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: RELEASE-NOTES.txt
+
       - name: Create GitHub release
         id: create_release
-        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
           # The response is explicitly returned here so it will be available for other steps
           script: |
+            const fs = require("node:fs");
+
+            const body = fs.readFileSync("RELEASE-NOTES.txt", { encoding: "utf-8" });
+
             const response = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: process.env.GITHUB_REF_NAME,
               prerelease: ${{ contains(github.ref, 'rc') }},
-              generate_release_notes: true,
+              name: process.env.GITHUB_REF_NAME,
+              body: body,
             });
             console.log(response);
             return response;
@@ -178,7 +219,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
@@ -194,7 +235,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
@@ -214,9 +255,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Update v2-latest using rdme
-        uses: readmeio/rdme@c8bbd3599aed42d5060176394caa150ac57e0b51 # v8.6.0
+        uses: readmeio/rdme@9fc7a0ff9bac4cb539095cfa2f5eeec6cba48f16 # v8.6.3
         with:
           rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest

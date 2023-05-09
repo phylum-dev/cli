@@ -72,8 +72,8 @@ if (
   Deno.args.length == 0 ||
   !["add", "update", "install"].includes(Deno.args[0])
 ) {
-  const cmd = Deno.run({ cmd: ["poetry", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("poetry", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
@@ -95,8 +95,8 @@ if (!root) {
 await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1));
 
 // Execute install without sandboxing after successful analysis.
-const cmd = Deno.run({ cmd: ["poetry", ...Deno.args] });
-const status = await cmd.status();
+const cmd = new Deno.Command("poetry", { args: Deno.args });
+const status = await cmd.spawn().status;
 Deno.exit(status.code);
 
 // Analyze new packages.
@@ -220,12 +220,11 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const jobId = await PhylumApi.analyze(packages);
-  const jobStatus = await PhylumApi.getJobStatus(jobId);
+  const checkResult = await PhylumApi.checkPackages(packages);
 
-  if (!jobStatus.is_failure && jobStatus.is_complete) {
+  if (!checkResult.is_failure && checkResult.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!jobStatus.is_failure) {
+  } else if (!checkResult.is_failure) {
     console.warn(
       `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
     );

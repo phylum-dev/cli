@@ -6,6 +6,10 @@ authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"
 rust-version = "1.63.0"
 
+[features]
+default = []
+generator = ["lockfile_generator"]
+
 [dependencies]
 anyhow = "1.0.44"
 ignore = "0.4.20"
@@ -22,3 +26,5 @@ serde-xml-rs = "0.5.1"
 thiserror = "1.0.40"
 toml = "0.5.8"
 urlencoding = "2.1.2"
+walkdir = "2.3.2"
+lockfile_generator = { path = "../lockfile_generator", optional = true }

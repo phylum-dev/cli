@@ -42,8 +42,8 @@ if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
 
 // Ignore all commands that shouldn't be intercepted.
 if (Deno.args.length == 0 || subcommand != "install") {
-  const cmd = Deno.run({ cmd: ["pip3", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("pip3", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
@@ -73,21 +73,11 @@ const installStatus = PhylumApi.runSandboxed({
       "~/.pyenv",
       "/tmp",
       "/etc/passwd",
-      "/etc/apache2/mime.types",
     ],
     net: true,
   },
 });
 Deno.exit(installStatus.code ?? 255);
-
-type JobStatus = {
-  packages: {
-    issues: {
-      severity: string;
-      title: string;
-    }[];
-  }[];
-};
 
 // Analyze new packages.
 async function checkDryRun() {
@@ -99,6 +89,7 @@ async function checkDryRun() {
     exceptions: {
       run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
       write: [
+        "./",
         "~/Library/Caches",
         "~/.pyenv",
         "~/.cache",
@@ -111,7 +102,6 @@ async function checkDryRun() {
         "~/.local/lib",
         "/tmp",
         "/etc/passwd",
-        "/etc/apache2/mime.types",
       ],
       net: true,
     },
@@ -125,7 +115,13 @@ async function checkDryRun() {
   }
 
   // Parse dry-run output.
-  const packages = parseDryRun(status.stdout);
+  let packages;
+  try {
+    packages = parseDryRun(status.stdout);
+  } catch (_e) {
+    console.warn(`[${yellow("phylum")}] Ignoring non-JSON dry-run output.\n`);
+    return;
+  }
 
   console.log(`[${green("phylum")}] Dependency resolution successful.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
@@ -135,12 +131,11 @@ async function checkDryRun() {
     return;
   }
 
-  const jobId = await PhylumApi.analyze(packages);
-  const jobStatus = await PhylumApi.getJobStatus(jobId);
+  const result = await PhylumApi.checkPackages(packages);
 
-  if (!jobStatus.is_failure && jobStatus.is_complete) {
+  if (!result.is_failure && result.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!jobStatus.is_failure) {
+  } else if (!result.is_failure) {
     console.warn(
       `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
     );

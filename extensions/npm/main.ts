@@ -50,6 +50,15 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
+if (Deno.args.length != 0 && Deno.args[0].startsWith("-")) {
+  console.error(
+    `[${
+      red("phylum")
+    }] This extension does not support arguments before the first subcommand.`,
+  );
+  Deno.exit(127);
+}
+
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
@@ -60,8 +69,8 @@ if (
     "udpate".startsWith(Deno.args[0])
   )
 ) {
-  const cmd = Deno.run({ cmd: ["npm", ...Deno.args] });
-  const status = await cmd.status();
+  const cmd = new Deno.Command("npm", { args: Deno.args });
+  const status = await cmd.spawn().status;
   Deno.exit(status.code);
 }
 
@@ -80,6 +89,8 @@ if (!root) {
 // Store initial package manager file state.
 const packageLockBackup = new FileBackup(root + "/package-lock.json");
 await packageLockBackup.backup();
+const shrinkwrapBackup = new FileBackup(root + "/npm-shrinkwrap.json");
+await shrinkwrapBackup.backup();
 const manifestBackup = new FileBackup(root + "/package.json");
 await manifestBackup.backup();
 
@@ -94,13 +105,13 @@ try {
 console.log(`[${green("phylum")}] Installing without build scripts…`);
 
 // Install packages without executing build scripts.
-const cmd = Deno.run({
-  cmd: ["npm", ...Deno.args, "--ignore-scripts"],
+const cmd = new Deno.Command("npm", {
+  args: [...Deno.args, "--ignore-scripts"],
   stdout: "inherit",
   stderr: "inherit",
   stdin: "inherit",
 });
-const status = await cmd.status();
+const status = await cmd.spawn().status;
 
 // Ensure install worked. Failure is still "safe" for the user.
 if (!status.success) {
@@ -117,7 +128,7 @@ const output = PhylumApi.runSandboxed({
   cmd: "npm",
   args: ["install"],
   exceptions: {
-    write: ["~/.npm/_logs", "./package-lock.json", "./node_modules"],
+    write: ["~/.npm/_logs", "./"],
     read: true,
     run: true,
     net: false,
@@ -156,9 +167,8 @@ if (!output.success) {
 async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  const cmd = Deno.run({
-    cmd: [
-      "npm",
+  const cmd = new Deno.Command("npm", {
+    args: [
       subcommand,
       "--package-lock-only",
       "--ignore-scripts",
@@ -168,7 +178,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     stderr: "inherit",
     stdin: "inherit",
   });
-  const status = await cmd.status();
+  const status = await cmd.spawn().status;
 
   // Ensure lockfile update was successful.
   if (!status.success) {
@@ -176,7 +186,22 @@ async function checkDryRun(subcommand: string, args: string[]) {
     await abort(status.code);
   }
 
-  const lockfile = await PhylumApi.parseLockfile("./package-lock.json", "npm");
+  // Use `npm-shrinkwrap.json` if it is present.
+  let lockfilePath = "./package-lock.json";
+  try {
+    await Deno.stat("./npm-shrinkwrap.json");
+    lockfilePath = "./npm-shrinkwrap.json";
+  } catch (_e) {
+    //
+  }
+
+  let lockfile;
+  try {
+    lockfile = await PhylumApi.parseLockfile(lockfilePath, "npm");
+  } catch (_e) {
+    console.warn(`[${yellow("phylum")}] No lockfile created.\n`);
+    return;
+  }
 
   // Ensure `checkDryRun` never modifies package manager files,
   // regardless of success.
@@ -190,12 +215,11 @@ async function checkDryRun(subcommand: string, args: string[]) {
     return;
   }
 
-  const jobId = await PhylumApi.analyze(lockfile.packages);
-  const jobStatus = await PhylumApi.getJobStatus(jobId);
+  const result = await PhylumApi.checkPackages(lockfile.packages);
 
-  if (!jobStatus.is_failure && jobStatus.is_complete) {
+  if (!result.is_failure && result.incomplete_count == 0) {
     console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!jobStatus.is_failure) {
+  } else if (!result.is_failure) {
     console.warn(
       `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
     );

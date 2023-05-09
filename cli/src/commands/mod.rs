@@ -10,6 +10,7 @@ pub mod parse;
 pub mod project;
 #[cfg(unix)]
 pub mod sandbox;
+pub mod status;
 #[cfg(feature = "selfmanage")]
 pub mod uninstall;
 

@@ -179,21 +179,21 @@ pub fn lockfiles(
     project: Option<&ProjectConfig>,
 ) -> Result<Vec<LockfileConfig>> {
     let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").unwrap_or(None);
-    let cli_lockfiles = matches.get_many::<String>("lockfile");
+    let cli_lockfiles = matches.try_get_many::<String>("lockfile");
 
     match cli_lockfiles {
-        Some(cli_lockfiles) => {
+        Ok(Some(cli_lockfiles)) => {
             let lockfile_type = cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into());
             Ok(cli_lockfiles
                 .map(|lockfile| LockfileConfig::new(lockfile, lockfile_type.clone()))
                 .collect())
         },
-        None => {
+        _ => {
             // Try the project file first.
             let project_lockfiles = project.map(|project| project.lockfiles());
 
             // Fallback to walking the directory.
-            let lockfiles = project_lockfiles.unwrap_or_else(|| find_lockfiles("."));
+            let lockfiles = project_lockfiles.unwrap_or_else(|| find_lockable_files("."));
 
             // Ask for explicit lockfile if none were found.
             if lockfiles.is_empty() {
@@ -205,9 +205,9 @@ pub fn lockfiles(
     }
 }
 
-/// Find lockfiles at or below the specified directory.
-pub fn find_lockfiles(directory: impl AsRef<Path>) -> Vec<LockfileConfig> {
-    phylum_lockfile::find_lockfiles_at(directory)
+/// Find lockfiles and manifests at or below the specified directory.
+fn find_lockable_files(directory: impl AsRef<Path>) -> Vec<LockfileConfig> {
+    phylum_lockfile::find_lockable_files_at(directory)
         .drain(..)
         .map(|(path, format)| LockfileConfig::new(path, format.to_string()))
         .collect()

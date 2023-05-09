@@ -30,16 +30,15 @@ class Phylum {
   }
 
   async run(args: string[], cwd?: string) {
-    const process = Deno.run({
-      cmd: ["phylum", ...args],
+    const process = new Deno.Command("phylum", {
+      args,
       env: { XDG_DATA_HOME: this.tempDir },
       cwd,
       stdout: "inherit",
       stderr: "inherit",
     });
 
-    const status = await process.status();
-    process.close();
+    const status = await process.spawn().status;
 
     return status;
   }

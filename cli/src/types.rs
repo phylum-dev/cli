@@ -38,7 +38,7 @@ impl FromStr for Role {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubRelease {
-    pub name: String,
+    pub tag_name: String,
     pub assets: Vec<GithubReleaseAsset>,
 }
 
@@ -53,7 +53,7 @@ pub struct GithubReleaseAsset {
 pub struct HistoryJob {
     pub id: String,
     pub created: DateTime<Utc>,
-    pub label: String,
+    pub label: Option<String>,
 }
 
 /// Request body for `/data/jobs/{job_id}/policy/evaluate`.
@@ -66,7 +66,7 @@ pub struct PolicyEvaluationRequest {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct PolicyEvaluationResponse {
     pub is_failure: bool,
-    pub is_complete: bool,
+    pub incomplete_count: u32,
     pub output: String,
     pub report: String,
 }

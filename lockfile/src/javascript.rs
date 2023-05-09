@@ -2,6 +2,12 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use lockfile_generator::npm::Npm as NpmGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::yarn::Yarn as YarnGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
@@ -111,7 +117,18 @@ impl Parse for PackageLock {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("package-lock.json"))
+        let file_name = path.file_name();
+        file_name == Some(OsStr::new("package-lock.json"))
+            || file_name == Some(OsStr::new("npm-shrinkwrap.json"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&NpmGenerator)
     }
 }
 
@@ -230,6 +247,15 @@ impl Parse for YarnLock {
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("yarn.lock"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&YarnGenerator)
     }
 }
 
@@ -404,5 +430,20 @@ mod tests {
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
         }
+    }
+
+    #[test]
+    fn empty_yarn_v1() {
+        let pkgs = YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.empty.lock")).unwrap();
+        assert!(pkgs.is_empty());
+    }
+
+    #[test]
+    fn empty_yarn_v2() {
+        // While this uses the same parser as the `empty_yarn_v1` test, this should make
+        // sure we do not accidentally introduce a regression if we ever remove the v1
+        // parser.
+        let pkgs = YarnLock.parse("").unwrap();
+        assert!(pkgs.is_empty());
     }
 }

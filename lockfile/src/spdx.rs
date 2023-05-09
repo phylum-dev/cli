@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
@@ -188,11 +189,15 @@ impl Parse for Spdx {
         Ok(packages)
     }
 
-    fn is_path_lockfile(&self, path: &std::path::Path) -> bool {
+    fn is_path_lockfile(&self, path: &Path) -> bool {
         path.ends_with(".spdx.json")
             || path.ends_with(".spdx.yaml")
             || path.ends_with(".spdx.yml")
             || path.ends_with(".spdx")
+    }
+
+    fn is_path_manifest(&self, _path: &Path) -> bool {
+        false
     }
 }
 

@@ -1,7 +1,19 @@
+# The full `pip` requirements file format is documented here:
+# https://pip.pypa.io/en/stable/reference/requirements-file-format/
 
 # This is a comment.
 
-flask==2.2.2
+# The next two packages are examples of output from using `pip-tools` to run a command like:
+# pip-compile requirements/requirements.in
+alembic==1.10.3
+    # via -r requirements/requirements.in
+amqp==5.0.9
+    # via kombu
+
+attrs==20.2.0   # This is an inline comment
+
+# The requirement specifier does not have to be at the beginning of the line
+    flask==2.2.2
 
 requests[security,tests]==2.28.1
 

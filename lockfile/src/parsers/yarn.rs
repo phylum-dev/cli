@@ -4,12 +4,18 @@ use super::*;
 use crate::{Package, PackageVersion};
 
 pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
-    let (i, _) = yarn_lock_header(input)?;
-    many1(entry)(i)
+    let (input, _) = yarn_lock_header(input)?;
+
+    // Ignore empty lockfiles.
+    if input.trim().is_empty() {
+        return Ok(("", Vec::new()));
+    }
+
+    many1(entry)(input)
 }
 
 fn yarn_lock_header(input: &str) -> Result<&str, &str> {
-    recognize(tuple((count(take_till_line_end, 2), multispace0)))(input)
+    recognize(opt(tuple((count(take_till_line_end, 2), multispace0))))(input)
 }
 
 fn entry(input: &str) -> Result<&str, Package> {

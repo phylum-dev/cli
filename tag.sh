@@ -26,7 +26,6 @@ if [ -z "${TAG_COMMIT}" ]; then
 fi
 
 TAG=$(git log --pretty="format:%(trailers:key=release-version,valueonly)" -1 "${TAG_COMMIT}")
-SUMMARY=$(git log --pretty="format:%(trailers:key=release-summary,valueonly)" -1 "${TAG_COMMIT}")
 
 if git show "tags/${TAG}" > /dev/null 2>&1; then
     echo "Tag ${TAG} already exists!" >&2
@@ -52,7 +51,7 @@ if [ -z "${SKIP_ORIGIN_HEAD_CHECK:-}" ]; then
     fi
 fi
 
-git tag --sign -m "${TAG} - ${SUMMARY}" "${TAG}" "${TAG_COMMIT}"
+git tag --sign -m "Phylum CLI ${TAG}" "${TAG}" "${TAG_COMMIT}"
 
 printf "\nOutput of the command: git show %s\n" "${TAG}"
 git show "${TAG}"

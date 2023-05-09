@@ -18,20 +18,25 @@ printf "version (w/o a leading 'v'): "
 read -r version
 TAG=v${version}
 
-printf "changelog (one line summary): "
-read -r changelog
-
+today=$(date '+%Y-%m-%d')
 printf "\nUpdating CHANGELOG, bumping version, running 'cargo check', and adding files for commit ...\n\n"
-sed -E -i'.bak' "1 s#^#* ${version} - ${changelog}\n#" CHANGELOG
-rm -f CHANGELOG.bak
+sed -i'.bak' "s/\(## \[Unreleased\]\)/\1\n\n## \[${version}\] - ${today}/" CHANGELOG.md
+sed -i'.bak' "s/^\[unreleased\]: \(.*\/compare\/\)\(.*\)...HEAD/[unreleased]: \1${TAG}...HEAD\n\[${version}\]: \1\2...${TAG}/" CHANGELOG.md
+rm -f CHANGELOG.md.bak
+
 sed -E -i'.bak' "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml
 rm -f cli/Cargo.toml.bak
 cargo check
 git add Cargo.lock
-git add CHANGELOG
+git add CHANGELOG.md
 git add cli/Cargo.toml
 
-commit_message="Bump to ${TAG} - ${changelog}"
+printf "\nUpdating extension changelog...\n"
+sed -i'.bak' "s/\(## Unreleased\)/\1\n\n## ${version} - ${today}/" extensions/CHANGELOG.md
+rm extensions/CHANGELOG.md.bak
+git add extensions/CHANGELOG.md
+
+commit_message="Bump to ${TAG}"
 printf "\nFiles to be added and committed with message: \"%s\"\n\n" "${commit_message}"
 git status
 
@@ -42,7 +47,6 @@ git commit -F - <<EOF
 ${commit_message}
 
 Release-Version: ${TAG}
-Release-Summary: ${changelog}
 EOF
 
 git log --pretty=fuller -1

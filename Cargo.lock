@@ -2692,6 +2692,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "lockfile_generator"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "log"
 version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3159,7 +3166,7 @@ dependencies = [
 
 [[package]]
 name = "phylum-cli"
-version = "4.8.0"
+version = "5.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3220,6 +3227,7 @@ dependencies = [
  "anyhow",
  "ignore",
  "lazy_static",
+ "lockfile_generator",
  "log",
  "nom",
  "packageurl",
@@ -3232,6 +3240,7 @@ dependencies = [
  "thiserror",
  "toml",
  "urlencoding",
+ "walkdir",
 ]
 
 [[package]]

@@ -107,7 +107,8 @@ fn incorrect_run_permission() {
     #[rustfmt::skip]
     test_cli
         .extension("
-            const output = await Deno.run({ cmd: ['echo', 'hello'] });
+            const cmd = new Deno.Command('echo', { args: ['hello'] });
+            const output = await cmd.spawn().status;
             Deno.exit(output.code);
         ")
         .with_permissions(Permissions {
@@ -127,7 +128,8 @@ fn correct_run_permission() {
     #[rustfmt::skip]
     test_cli
         .extension("
-            const output = await Deno.run({ cmd: ['echo', 'hello'] });
+            const cmd = new Deno.Command('echo', { args: ['hello'] });
+            const output = await cmd.spawn().status;
             Deno.exit(output.code);
         ")
         .with_permissions(Permissions {

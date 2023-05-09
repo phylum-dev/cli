@@ -59,7 +59,7 @@ allows for a boolean value.
 ## Limitations
 
 The `PhylumApi.runSandboxed` method is the only recommended means of spawning
-child processes from an extension. The `Deno.run` method should be avoided
+child processes from an extension. The `Deno.Command` method should be avoided
 in order to prevent extensions from escaping the sandbox, and will be disabled
 in a future version.
 

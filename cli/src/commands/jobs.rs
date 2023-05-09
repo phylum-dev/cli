@@ -102,7 +102,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             if pretty_print {
                 print_user_success!(
                     "Successfully parsed lockfile {:?} as type: {}",
-                    lockfile.path,
+                    res.path,
                     res.format.name()
                 );
             }
