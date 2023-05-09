@@ -86,7 +86,7 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
             external_refs: vec![external_ref],
         }))
     } else {
-        let kind = VerboseErrorKind::Context("Missing PURL");
+        let kind = VerboseErrorKind::Context("Missing package locator");
         let error = VerboseError { errors: vec![(input, kind)] };
         Err(NomErr::Failure(error))
     }
