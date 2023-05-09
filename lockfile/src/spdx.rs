@@ -574,4 +574,26 @@ mod tests {
             assert!(pkgs.contains(&expected_pkg));
         }
     }
+
+    #[test]
+    fn pkg_locator_tag_value() {
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx")).unwrap();
+
+        let expected_pkgs = [
+            Package {
+                name: "org.jruby:jruby-complete".into(),
+                version: PackageVersion::FirstParty("9.3.7.0".into()),
+                package_type: PackageType::Maven,
+            },
+            Package {
+                name: "org.jruby:jruby-complete".into(),
+                version: PackageVersion::FirstParty("9.2.1.0".into()),
+                package_type: PackageType::Maven,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
+    }
 }
