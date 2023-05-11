@@ -35,7 +35,10 @@ Doing so requires that a specific tool is installed and available in the environ
 The current list of supported manifests, with their required lockfile generation tool are:
 
 * npm
-  * `package.json` using either `npm` or `yarn`
+  * `package.json` using `npm`
+    * When lockfile type is `npm`
+  * `package.json` using `yarn`
+    * When lockfile type is `yarn`
 * PyPI
   * `requirements*.txt` using `pip-compile`
   * `requirements.in` using `pip-compile`
