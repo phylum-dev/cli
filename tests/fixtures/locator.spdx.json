@@ -26,8 +26,8 @@
             "externalRefs": [
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
-                    "referenceType": "maven",
-                    "referenceLocator": "org.jruby:jruby-complete@9.3.7.0"
+                    "referenceType": "maven-central",
+                    "referenceLocator": "org.jruby:jruby-complete:9.3.7.0"
                 }
             ]
         },
@@ -97,7 +97,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "nuget",
-                    "referenceLocator": "Newtonsoft.Json@13.0.1"
+                    "referenceLocator": "Newtonsoft.Json/13.0.1"
                 }
             ]
         },

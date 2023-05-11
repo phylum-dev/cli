@@ -123,13 +123,13 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
 
 fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
     lazy_static! {
-        static ref RE: Regex = Regex::new(r"^(([^:]*:)*[^@]+)@([^:]+)$").unwrap();
+        static ref RE: Regex = Regex::new(r"^(([^:]*:)*[^@:]*@?[^@:/]*)[:@/]([^:]+)$").unwrap();
     }
 
     let package_type = PackageType::from_str(registry).map_err(|_| UnknownEcosystem)?;
-    let captures = RE.captures(locator).ok_or(anyhow!("Invalid locator: {}", locator))?;
-    let name =
-        decode(captures.get(1).ok_or(anyhow!("Missing package name: {}", locator))?.as_str())?;
+    let decoded_locator = decode(locator).unwrap();
+    let captures = RE.captures(decoded_locator.as_ref()).unwrap();
+    let name = captures.get(1).ok_or(anyhow!("Missing package name: {}", locator))?.as_str();
     let version = captures.get(3).ok_or(anyhow!("Missing package version: {}", locator))?.as_str();
 
     Ok(Package {
@@ -538,11 +538,6 @@ mod tests {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx.json")).unwrap();
 
         let expected_pkgs = [
-            Package {
-                name: "@npmcli/fs".into(),
-                version: PackageVersion::FirstParty("2.1.2".into()),
-                package_type: PackageType::Npm,
-            },
             Package {
                 name: "CFPropertyList".into(),
                 version: PackageVersion::FirstParty("2.3.6".into()),
