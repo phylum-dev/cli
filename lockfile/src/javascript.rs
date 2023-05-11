@@ -53,6 +53,10 @@ impl Parse for PackageLock {
                 // Since we care more about the name of a local dependency than its package, we
                 // discard the version here and include the package later when it's mentioned by
                 // name.
+                if !name.starts_with("node_modules/") {
+                    continue;
+                }
+
                 let name = match name.rsplit_once("node_modules/") {
                     Some((_, name)) => name,
                     None => continue,
@@ -282,7 +286,7 @@ mod tests {
         let pkgs =
             PackageLock.parse(include_str!("../../tests/fixtures/package-lock.json")).unwrap();
 
-        assert_eq!(pkgs.len(), 54);
+        assert_eq!(pkgs.len(), 55);
 
         let expected_pkgs = [
             Package {
@@ -320,6 +324,11 @@ mod tests {
             Package {
                 name: "test".into(),
                 version: PackageVersion::Path(Some("../test".into())),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "parentlink".into(),
+                version: PackageVersion::Path(Some("../node_modules/parentlink".into())),
                 package_type: PackageType::Npm,
             },
         ];
