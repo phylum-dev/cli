@@ -132,7 +132,7 @@ fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
     }
     .ok_or(anyhow!("Invalid locator: {}", locator))?;
 
-    let name = decode(name).map_err(|e| anyhow!("Error: {:?} when decoding {}", e, name))?;
+    let name = decode(name).with_context(|| anyhow!("URL decode failed: {:?}", name))?;
 
     Ok(Package {
         name: name.into(),
