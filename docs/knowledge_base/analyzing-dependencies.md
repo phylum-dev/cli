@@ -9,12 +9,12 @@ The Phylum CLI natively supports processing lockfiles for several ecosystems, na
   * `package-lock.json`
   * `npm-shrinkwrap.json`
   * `yarn.lock` (Version 1 + 2)
-* RubyGems
-  * `Gemfile.lock`
 * PyPI
   * `requirements.txt`
   * `Pipfile.lock`
   * `poetry.lock` (Version 1 + 2)
+* RubyGems
+  * `Gemfile.lock`
 * NuGet
   * `*.csproj`
 * Maven
@@ -30,22 +30,31 @@ The Phylum CLI natively supports processing lockfiles for several ecosystems, na
   * `*.spdx.yml`
   * `*.spdx`
 
-When the ecosystem's package manager is available, it can also automatically
-generate lockfiles for the following manifest files:
+Lockfiles can also automatically be generated for the certain manifest files.
+Doing so requires that a specific tool is installed and available in the environment.
+The current list of supported manifests, with their required lockfile generator tool are:
 
 * npm
-    * `package.json` using either `npm` or `yarn`
-* PyPi
-    * `requirements.txt` using `pip-compile`
-    * `Pipfile` using `pipenv`
-    * `pyproject.toml` using `poetry`
+  * `package.json` using either `npm` or `yarn`
+* PyPI
+  * `requirements*.txt` using `pip-compile`
+  * `requirements.in` using `pip-compile`
+  * `setup.py` using `pip-compile`
+  * `setup.cfg` using `pip-compile`
+  * `pyproject.toml` using `pip-compile`
+    * When lockfile type is `pip`
+  * `Pipfile` using `pipenv`
+  * `pyproject.toml` using `poetry`
+    * When lockfile type is `poetry`
+* RubyGems
+  * `Gemfile` using `bundle`
 * Maven
-    * `pom.xml` using `mvn`
-    * `build.gradle` using `gradle`
+  * `pom.xml` using `mvn`
+  * `build.gradle` using `gradle`
 * Golang
-    * `go.sum` using `go`
+  * `go.mod` using `go`
 * Cargo
-    * `Cargo.toml` using `cargo`
+  * `Cargo.toml` using `cargo`
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
