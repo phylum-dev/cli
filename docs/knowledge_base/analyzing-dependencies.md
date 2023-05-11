@@ -30,9 +30,9 @@ The Phylum CLI natively supports processing lockfiles for several ecosystems, na
   * `*.spdx.yml`
   * `*.spdx`
 
-Lockfiles can also automatically be generated for the certain manifest files.
+Lockfiles can also automatically be generated for certain manifest files.
 Doing so requires that a specific tool is installed and available in the environment.
-The current list of supported manifests, with their required lockfile generator tool are:
+The current list of supported manifests, with their required lockfile generation tool are:
 
 * npm
   * `package.json` using either `npm` or `yarn`
