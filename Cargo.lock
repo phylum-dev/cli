@@ -3226,13 +3226,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "ignore",
- "lazy_static",
  "lockfile_generator",
  "log",
  "nom",
  "packageurl",
  "phylum_types",
- "regex",
  "serde",
  "serde-xml-rs",
  "serde_json",
@@ -3259,7 +3257,7 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#c689cc23dd651ca2c2cb36bd2db1af6b7102fcd2"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#a46a64523c24941eb464d24853f95e2927a2ebb4"
 dependencies = [
  "chrono",
  "schemars",

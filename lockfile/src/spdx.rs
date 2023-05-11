@@ -2,12 +2,10 @@ use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
-use lazy_static::lazy_static;
 use nom::error::convert_error;
 use nom::Finish;
 use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
-use regex::Regex;
 use serde::Deserialize;
 use thiserror::Error;
 use urlencoding::decode;
@@ -122,15 +120,19 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
 }
 
 fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"^(([^:]*:)*[^@:]*@?[^@:/]*)[:@/]([^:]+)$").unwrap();
-    }
-
     let package_type = PackageType::from_str(registry).map_err(|_| UnknownEcosystem)?;
-    let decoded_locator = decode(locator).unwrap();
-    let captures = RE.captures(decoded_locator.as_ref()).unwrap();
-    let name = captures.get(1).ok_or(anyhow!("Missing package name: {}", locator))?.as_str();
-    let version = captures.get(3).ok_or(anyhow!("Missing package version: {}", locator))?.as_str();
+    let (name, version) = match package_type {
+        PackageType::Npm => locator.rsplit_once('@'),
+        PackageType::Nuget => locator.rsplit_once('/'),
+        PackageType::Maven => locator.rsplit_once(':').filter(|(name, _)| name.contains(':')),
+        _ => {
+            // Not in the spec, but included for compatibility with our API
+            locator.rsplit_once('@')
+        },
+    }
+    .ok_or(anyhow!("Invalid locator: {}", locator))?;
+
+    let name = decode(name).map_err(|e| anyhow!("Error: {:?} when decoding {}", e, name))?;
 
     Ok(Package {
         name: name.into(),
@@ -538,6 +540,11 @@ mod tests {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx.json")).unwrap();
 
         let expected_pkgs = [
+            Package {
+                name: "@npmcli/fs".into(),
+                version: PackageVersion::FirstParty("2.1.2".into()),
+                package_type: PackageType::Npm,
+            },
             Package {
                 name: "CFPropertyList".into(),
                 version: PackageVersion::FirstParty("2.3.6".into()),

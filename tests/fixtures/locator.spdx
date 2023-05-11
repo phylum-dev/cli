@@ -21,7 +21,7 @@ PackageLicenseConcluded: NOASSERTION
 PackageLicenseDeclared: GPL-2.0,LGPL-2.1,EPL-2.0
 PackageCopyrightText: NOASSERTION
 PackageSupplier: NOASSERTION
-ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete@9.3.7.0
+ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete:9.3.7.0
 Relationship: SPDXRef-org.jruby:jruby-core-9.3.7.0 PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.3.7.0
 Relationship: SPDXRef-org.jruby:jruby-stdlib-9.3.7.0 PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.3.7.0
 
@@ -39,7 +39,7 @@ PackageLicenseConcluded: NOASSERTION
 PackageLicenseDeclared: 
 PackageCopyrightText: NOASSERTION
 PackageSupplier: NOASSERTION
-ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete@9.2.1.0
+ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete:9.2.1.0
 Relationship: SPDXRef-org.jruby:jruby-core-${project.version} PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.2.1.0
 Relationship: SPDXRef-org.jruby:jruby-stdlib-${project.version} PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.2.1.0
 
