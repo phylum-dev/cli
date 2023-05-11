@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Support more Python manifest files: `requirements.in`, `setup.py`, `setup.cfg`
 - Recognize all `requirements*.txt` file names as Python lockfiles
 
+### Fixed
+- Allow external `node_modules` dependencies in `package-lock.json`
+
 ## [5.1.0] - 2023-05-04
 
 ### Added
