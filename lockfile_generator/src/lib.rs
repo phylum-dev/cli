@@ -52,18 +52,17 @@ pub trait Generator {
         command.current_dir(project_path);
         command.stdin(Stdio::null());
         command.stdout(Stdio::null());
-        command.stderr(Stdio::null());
 
         // Provide better error message, including the failed program's name.
-        let mut child = command.spawn().map_err(|err| {
+        let output = command.output().map_err(|err| {
             let program = format!("{:?}", command.get_program());
             Error::ProcessCreation(program, err)
         })?;
 
         // Ensure generation was successful.
-        let status = child.wait()?;
-        if !status.success() {
-            return Err(Error::NonZeroExit);
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::NonZeroExit(stderr.into()));
         }
 
         // Ensure lockfile was created.
@@ -126,8 +125,8 @@ pub enum Error {
     InvalidManifest(PathBuf),
     #[error("failed to spawn command {0}: {1}")]
     ProcessCreation(String, io::Error),
-    #[error("package manager exited with non-zero status")]
-    NonZeroExit,
+    #[error("package manager exited with non-zero status:\n\n{0}")]
+    NonZeroExit(String),
     #[error("no lockfile was generated")]
     NoLockfileGenerated,
 }
