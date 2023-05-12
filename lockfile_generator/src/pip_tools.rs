@@ -5,9 +5,9 @@ use std::process::Command;
 
 use crate::Generator;
 
-pub struct PythonRequirements;
+pub struct PipTools;
 
-impl Generator for PythonRequirements {
+impl Generator for PipTools {
     fn lockfile_name(&self) -> &'static str {
         "requirements-locked.txt"
     }
