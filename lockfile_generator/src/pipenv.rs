@@ -5,9 +5,9 @@ use std::process::Command;
 
 use crate::Generator;
 
-pub struct Pip;
+pub struct Pipenv;
 
-impl Generator for Pip {
+impl Generator for Pipenv {
     fn lockfile_name(&self) -> &'static str {
         "Pipfile.lock"
     }

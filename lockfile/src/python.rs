@@ -4,11 +4,11 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
-use lockfile_generator::pip::Pip as PipGenerator;
+use lockfile_generator::pip_tools::PipTools as PipToolsGenerator;
+#[cfg(feature = "generator")]
+use lockfile_generator::pipenv::Pipenv as PipenvGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::poetry::Poetry as PoetryGenerator;
-#[cfg(feature = "generator")]
-use lockfile_generator::python_requirements::PythonRequirements as PythonRequirementsGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use nom::error::convert_error;
@@ -54,7 +54,7 @@ impl Parse for PyRequirements {
 
     #[cfg(feature = "generator")]
     fn generator(&self) -> Option<&'static dyn Generator> {
-        Some(&PythonRequirementsGenerator)
+        Some(&PipToolsGenerator)
     }
 }
 
@@ -107,7 +107,7 @@ impl Parse for PipFile {
 
     #[cfg(feature = "generator")]
     fn generator(&self) -> Option<&'static dyn Generator> {
-        Some(&PipGenerator)
+        Some(&PipenvGenerator)
     }
 }
 

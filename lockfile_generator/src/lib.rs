@@ -9,9 +9,9 @@ pub mod go;
 pub mod gradle;
 pub mod maven;
 pub mod npm;
-pub mod pip;
+pub mod pip_tools;
+pub mod pipenv;
 pub mod poetry;
-pub mod python_requirements;
 pub mod yarn;
 
 /// Lockfile generation.
