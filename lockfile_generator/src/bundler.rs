@@ -17,4 +17,8 @@ impl Generator for Bundler {
         command.args(["lock"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Bundler"
+    }
 }

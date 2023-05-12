@@ -17,4 +17,8 @@ impl Generator for Yarn {
         command.args(["install", "--mode=skip-build", "--mode=update-lockfile"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Yarn"
+    }
 }

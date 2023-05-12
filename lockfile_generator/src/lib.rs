@@ -24,6 +24,9 @@ pub trait Generator {
     /// Command for generating the lockfile.
     fn command(&self, manifest_path: &Path) -> Command;
 
+    /// Name of the tool used to generate the lockfile
+    fn tool(&self) -> &'static str;
+
     /// List of files conflicting with lockfile generation.
     ///
     /// These files are temporarily renamed during lockfile generation to ensure
@@ -58,7 +61,7 @@ pub trait Generator {
         // Provide better error message, including the failed program's name.
         let output = command.output().map_err(|err| {
             let program = format!("{:?}", command.get_program());
-            Error::ProcessCreation(program, err)
+            Error::ProcessCreation(program, self.tool().to_string(), err)
         })?;
 
         // Ensure generation was successful.
@@ -124,7 +127,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     Io(io::Error),
     InvalidManifest(PathBuf),
-    ProcessCreation(String, io::Error),
+    ProcessCreation(String, String, io::Error),
     NonZeroExit(Option<i32>, String),
     NoLockfileGenerated,
 }
@@ -133,7 +136,7 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Self::Io(err) => Some(err),
-            Self::ProcessCreation(_, err) => Some(err),
+            Self::ProcessCreation(_, _, err) => Some(err),
             _ => None,
         }
     }
@@ -144,8 +147,8 @@ impl Display for Error {
         match self {
             Self::Io(_) => write!(f, "I/O error"),
             Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
-            Self::ProcessCreation(program, _) => {
-                write!(f, "failed to spawn command {program}")
+            Self::ProcessCreation(program, tool, _) => {
+                write!(f, "failed to spawn command {program}: Is {tool} installed?")
             },
             Self::NonZeroExit(Some(code), stderr) => {
                 write!(f, "package manager exited with error code {code}:\n\n{stderr}")

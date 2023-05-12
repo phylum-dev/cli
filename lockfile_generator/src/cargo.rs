@@ -17,4 +17,8 @@ impl Generator for Cargo {
         command.args(["generate-lockfile"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Cargo"
+    }
 }
