@@ -1,0 +1,162 @@
+{
+    "spdxVersion": "SPDX-2.2",
+    "documentNamespace": "https://localmaven",
+    "creationInfo": {
+        "creators": [
+            "Tool: github.com/phylum-dev/cli"
+        ],
+        "created": "2023-04-04T20:15:57Z",
+        "licenseListVersion": "3.20",
+        "comment": "SBOM Document for the localmaven project from Phylum, Inc."
+    },
+    "dataLicense": "CC0-1.0",
+    "SPDXID": "SPDXRef-DOCUMENT",
+    "name": "localmaven-SBOM",
+    "packages": [
+        {
+            "SPDXID": "SPDXRef-org.jruby:jruby-complete-9.3.7.0",
+            "name": "org.jruby:jruby-complete",
+            "downloadLocation": "https://repo1.maven.org/maven2/org/jruby/jruby-complete/9.3.7.0/jruby-complete-9.3.7.0-sources.jar",
+            "filesAnalyzed": true,
+            "licenseConcluded": "NOASSERTION",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "9.3.7.0",
+            "supplier": "NOASSERTION",
+            "homepage": "https://central.sonatype.com/artifact/org.jruby/jruby-complete/9.3.7.0",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "maven-central",
+                    "referenceLocator": "org.jruby:jruby-complete:9.3.7.0"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-npm--npmcli-fs-8bd670e19b3d700",
+            "name": "@npmcli/fs",
+            "downloadLocation": "https://github.com/npm/fs.git",
+            "licenseConcluded": "ISC",
+            "licenseDeclared": "ISC",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "2.1.2",
+            "sourceInfo": "acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/@npmcli/fs/package.json",
+            "originator": "Person: GitHub Inc.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "npm",
+                    "referenceLocator": "%40npmcli/fs@2.1.2"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-go-module-gopkg.in-yaml.v2-538547a367f862a3",
+            "name": "gopkg.in/yaml.v2",
+            "downloadLocation": "NOASSERTION",
+            "licenseConcluded": "NONE",
+            "licenseDeclared": "NONE",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "v2.3.0",
+            "sourceInfo": "acquired package info from go module information: /root/go/pkg/mod/github.com/imdario/mergo@v0.3.12/go.mod",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "golang",
+                    "referenceLocator": "gopkg.in/yaml.v2@v2.3.0"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-python-async-timeout-62f2f5d69566701a",
+            "name": "async-timeout",
+            "downloadLocation": "NOASSERTION",
+            "licenseConcluded": "LicenseRef-Apache-2",
+            "licenseDeclared": "LicenseRef-Apache-2",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "4.0.2",
+            "sourceInfo": "acquired package info from installed python package manifest file: /usr/local/lib/python3.9/dist-packages/async_timeout-4.0.2.dist-info/METADATA, /usr/local/lib/python3.9/dist-packages/async_timeout-4.0.2.dist-info/RECORD, /usr/local/lib/python3.9/dist-packages/async_timeout-4.0.2.dist-info/top_level.txt",
+            "originator": "Person: Andrew Svetlov <andrew.svetlov@gmail.com> (andrew.svetlov@gmail.com)",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "pypi",
+                    "referenceLocator": "async-timeout@4.0.2"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-dotnet-Newtonsoft.Json-4655a9695632e63c",
+            "name": "Newtonsoft.Json",
+            "downloadLocation": "NOASSERTION",
+            "licenseConcluded": "NONE",
+            "licenseDeclared": "NONE",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "13.0.1",
+            "sourceInfo": "acquired package info from dotnet project assets file: /root/.dotnet/sdk/7.0.202/DotnetTools/dotnet-user-secrets/7.0.4-servicing.23119.3/tools/net7.0/any/dotnet-user-secrets.deps.json",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "nuget",
+                    "referenceLocator": "Newtonsoft.Json/13.0.1"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-gem-CFPropertyList-eb3a39685a2bb17e",
+            "name": "CFPropertyList",
+            "downloadLocation": "NOASSERTION",
+            "licenseConcluded": "MIT",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "2.3.6",
+            "sourceInfo": "acquired package info from installed gem metadata file: /var/lib/gems/2.7.0/specifications/CFPropertyList-2.3.6.gemspec",
+            "originator": "Person: Christian Kruse",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "gem",
+                    "referenceLocator": "CFPropertyList@2.3.6"
+                }
+            ]
+        },
+        {
+            "SPDXID": "SPDXRef-Package-rust-crate-env-logger-55bf38c005a6fe29",
+            "name": "env_logger",
+            "downloadLocation": "NOASSERTION",
+            "licenseConcluded": "NONE",
+            "licenseDeclared": "NONE",
+            "copyrightText": "NOASSERTION",
+            "versionInfo": "0.8.4",
+            "sourceInfo": "acquired package info from rust cargo manifest: /root/.cargo/registry/src/github.com-1ecc6299db9ec823/mio-0.8.6/Cargo.lock",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "cargo",
+                    "referenceLocator": "env_logger@0.8.4"
+                }
+            ]
+        }
+    ],
+    "relationships": [
+        {
+            "spdxElementId": "SPDXRef-org.jruby:jruby-core-9.3.7.0",
+            "relatedSpdxElement": "SPDXRef-org.jruby:jruby-complete-9.3.7.0",
+            "relationshipType": "PREREQUISITE_FOR"
+        },
+        {
+            "spdxElementId": "SPDXRef-org.jruby:jruby-stdlib-9.3.7.0",
+            "relatedSpdxElement": "SPDXRef-org.jruby:jruby-complete-9.3.7.0",
+            "relationshipType": "PREREQUISITE_FOR"
+        },
+        {
+            "spdxElementId": "SPDXRef-org.jruby:jruby-core-${project.version}",
+            "relatedSpdxElement": "SPDXRef-org.jruby:jruby-complete-9.2.1.0",
+            "relationshipType": "PREREQUISITE_FOR"
+        },
+        {
+            "spdxElementId": "SPDXRef-org.jruby:jruby-stdlib-${project.version}",
+            "relatedSpdxElement": "SPDXRef-org.jruby:jruby-complete-9.2.1.0",
+            "relationshipType": "PREREQUISITE_FOR"
+        }
+    ]
+}

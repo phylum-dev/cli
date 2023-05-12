@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Show correct error messages when parsing SPDX SBOMs
 
+### Added
+- Add support for parsing additional SPDX locator formats
+
 ## [5.2.0] - 2023-05-11
 
 ### Added

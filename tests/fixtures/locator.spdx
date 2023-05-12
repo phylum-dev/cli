@@ -1,0 +1,45 @@
+##Document Header
+SPDXVersion: SPDX-2.2
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: localmaven-SBOM
+DocumentNamespace: https://localmaven
+Creator: Tool: github.com/phylum-dev/cli
+Created: 2023-04-04T20:15:57Z
+CreatorComment: <text>SBOM Document for the localmaven project from Phylum, Inc.</text>
+
+##
+##Packages
+##
+PackageName: org.jruby:jruby-complete
+SPDXID: SPDXRef-org.jruby:jruby-complete-9.3.7.0
+PackageVersion: 9.3.7.0
+PackageDownloadLocation: https://repo1.maven.org/maven2/org/jruby/jruby-complete/9.3.7.0/jruby-complete-9.3.7.0-sources.jar
+FilesAnalyzed: true
+PackageHomePage: https://central.sonatype.com/artifact/org.jruby/jruby-complete/9.3.7.0
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: GPL-2.0,LGPL-2.1,EPL-2.0
+PackageCopyrightText: NOASSERTION
+PackageSupplier: NOASSERTION
+ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete:9.3.7.0
+Relationship: SPDXRef-org.jruby:jruby-core-9.3.7.0 PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.3.7.0
+Relationship: SPDXRef-org.jruby:jruby-stdlib-9.3.7.0 PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.3.7.0
+
+
+##
+##Packages
+##
+PackageName: org.jruby:jruby-complete
+SPDXID: SPDXRef-org.jruby:jruby-complete-9.2.1.0
+PackageVersion: 9.2.1.0
+PackageDownloadLocation: https://repo1.maven.org/maven2/org/jruby/jruby-complete/9.2.1.0/jruby-complete-9.2.1.0-sources.jar
+FilesAnalyzed: true
+PackageHomePage: https://central.sonatype.com/artifact/org.jruby/jruby-complete/9.2.1.0
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: 
+PackageCopyrightText: NOASSERTION
+PackageSupplier: NOASSERTION
+ExternalRef: PACKAGE-MANAGER maven org.jruby:jruby-complete:9.2.1.0
+Relationship: SPDXRef-org.jruby:jruby-core-${project.version} PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.2.1.0
+Relationship: SPDXRef-org.jruby:jruby-stdlib-${project.version} PREREQUISITE_FOR SPDXRef-org.jruby:jruby-complete-9.2.1.0
+

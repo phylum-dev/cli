@@ -28,8 +28,6 @@ fn package(input: &str) -> Result<&str, PackageInformation> {
         recognize(tuple((space0, alt((line_ending, eof))))),
     ))(i)?;
 
-    let (i, _) = alt((package_name, line_ending, eof))(i)?;
-
     let (_, my_entry) = parse_package(capture)?;
     Ok((i, my_entry))
 }
@@ -46,6 +44,7 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
 
     // PackageName is required
     let (i, _) = tag("PackageName:")(i)?;
+
     let (i, name) = recognize(ws(take_till_line_end))(i)?;
 
     // SPDXID is required
@@ -86,7 +85,7 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
             external_refs: vec![external_ref],
         }))
     } else {
-        let kind = VerboseErrorKind::Context("Missing PURL");
+        let kind = VerboseErrorKind::Context("Missing package locator");
         let error = VerboseError { errors: vec![(input, kind)] };
         Err(NomErr::Failure(error))
     }
@@ -94,8 +93,8 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
 
 fn extern_ref(input: &str) -> Result<&str, &str> {
     recognize(alt((
-        take_until("ExternalRef: PACKAGE-MANAGER purl"),
-        take_until("ExternalRef: PACKAGE_MANAGER purl"),
+        take_until("ExternalRef: PACKAGE-MANAGER"),
+        take_until("ExternalRef: PACKAGE_MANAGER"),
         take_till_blank_line,
     )))(input)
 }

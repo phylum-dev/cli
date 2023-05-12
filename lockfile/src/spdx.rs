@@ -8,6 +8,7 @@ use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 use thiserror::Error;
+use urlencoding::decode;
 
 use crate::parsers::spdx;
 use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
@@ -76,62 +77,88 @@ fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
     }
 }
 
+fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Package> {
+    let purl = PackageUrl::from_str(pkg_url)?;
+
+    let package_type = PackageType::from_str(purl.ty())
+        .or_else(|_| type_from_url(&pkg_info.download_location))
+        .context(UnknownEcosystem)?;
+
+    let name = match (package_type, purl.namespace()) {
+        (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
+        (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
+        _ => purl.name().into(),
+    };
+
+    let pkg_version = pkg_info
+        .version_info
+        .as_ref()
+        .ok_or(purl.version())
+        .map_err(|_| anyhow!("No version found for `{}`", pkg_info.name))?;
+
+    let version = purl
+        .qualifiers()
+        .iter()
+        .find_map(|(key, value)| match key.as_ref() {
+            "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
+                version: pkg_version.clone(),
+                registry: value.to_string(),
+            })),
+            "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
+            "vcs_url" => {
+                if value.as_ref().starts_with("git+") {
+                    Some(PackageVersion::Git(value.to_string()))
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        })
+        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()));
+
+    Ok(Package { name, version, package_type })
+}
+
+fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
+    let package_type = PackageType::from_str(registry).map_err(|_| UnknownEcosystem)?;
+    let (name, version) = match package_type {
+        PackageType::Npm => locator.rsplit_once('@'),
+        PackageType::Nuget => locator.rsplit_once('/'),
+        PackageType::Maven => locator.rsplit_once(':').filter(|(name, _)| name.contains(':')),
+        _ => {
+            // Not in the spec, but included for compatibility with our API
+            locator.rsplit_once('@')
+        },
+    }
+    .ok_or(anyhow!("Invalid locator: {}", locator))?;
+
+    let name = decode(name).with_context(|| anyhow!("URL decode failed: {:?}", name))?;
+
+    Ok(Package {
+        name: name.into(),
+        version: PackageVersion::FirstParty(version.into()),
+        package_type,
+    })
+}
+
 impl TryFrom<&PackageInformation> for Package {
     type Error = anyhow::Error;
 
     fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
-        let pkg_url = pkg_info
+        pkg_info
             .external_refs
             .iter()
             .find_map(|external| match external.reference_category {
                 ReferenceCategory::PackageManager => {
                     if external.reference_type == "purl" {
-                        Some(&external.reference_locator)
+                        Some(from_purl(&external.reference_locator, pkg_info))
                     } else {
-                        None
+                        Some(from_locator(&external.reference_type, &external.reference_locator))
                     }
                 },
                 _ => None,
             })
-            .ok_or(anyhow!("Missing PURL for {}", pkg_info.name))?;
-
-        let purl = PackageUrl::from_str(pkg_url)?;
-        let package_type = PackageType::from_str(purl.ty())
-            .or_else(|_| type_from_url(&pkg_info.download_location))
-            .context(UnknownEcosystem)?;
-        let name = match (package_type, purl.namespace()) {
-            (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
-            (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
-            _ => purl.name().into(),
-        };
-
-        let pkg_version = match (&pkg_info.version_info, purl.version()) {
-            (Some(v), _) => v.to_string(),
-            (None, Some(v)) => v.into(),
-            _ => bail!("Version not found for `{}`", pkg_info.name),
-        };
-
-        let version = purl
-            .qualifiers()
-            .iter()
-            .find_map(|(key, value)| match key.as_ref() {
-                "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
-                    version: pkg_version.clone(),
-                    registry: value.to_string(),
-                })),
-                "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
-                "vcs_url" => {
-                    if value.as_ref().starts_with("git+") {
-                        Some(PackageVersion::Git(value.to_string()))
-                    } else {
-                        None
-                    }
-                },
-                _ => None,
-            })
-            .unwrap_or(PackageVersion::FirstParty(pkg_version));
-
-        Ok(Package { name, version, package_type })
+            .ok_or(anyhow!("Missing package locator for {}", pkg_info.name))?
     }
 }
 
@@ -295,7 +322,7 @@ mod tests {
         }).to_string();
 
         let error = Spdx.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("Missing PURL"))
+        assert!(error.to_string().contains("Missing package locator"))
     }
 
     #[test]
@@ -335,7 +362,7 @@ mod tests {
         }).to_string();
 
         let error = Spdx.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("Version"))
+        assert!(error.to_string().contains("version"))
     }
 
     #[test]
@@ -403,7 +430,7 @@ mod tests {
             PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
 
         let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("Missing PURL"))
+        assert!(error.to_string().contains("Missing package locator"))
     }
 
     #[test]
@@ -430,7 +457,7 @@ mod tests {
             PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
 
         let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("Version"))
+        assert!(error.to_string().contains("version"))
     }
 
     #[test]
@@ -500,6 +527,74 @@ mod tests {
                 name: "env_logger".into(),
                 version: PackageVersion::FirstParty("0.8.4".into()),
                 package_type: PackageType::Cargo,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
+    }
+
+    fn pkg_locator() {
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx.json")).unwrap();
+
+        let expected_pkgs = [
+            Package {
+                name: "@npmcli/fs".into(),
+                version: PackageVersion::FirstParty("2.1.2".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "CFPropertyList".into(),
+                version: PackageVersion::FirstParty("2.3.6".into()),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "async-timeout".into(),
+                version: PackageVersion::FirstParty("4.0.2".into()),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "org.jruby:jruby-complete".into(),
+                version: PackageVersion::FirstParty("9.3.7.0".into()),
+                package_type: PackageType::Maven,
+            },
+            Package {
+                name: "Newtonsoft.Json".into(),
+                version: PackageVersion::FirstParty("13.0.1".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "gopkg.in/yaml.v2".into(),
+                version: PackageVersion::FirstParty("v2.3.0".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "env_logger".into(),
+                version: PackageVersion::FirstParty("0.8.4".into()),
+                package_type: PackageType::Cargo,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
+    }
+
+    #[test]
+    fn pkg_locator_tag_value() {
+        let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx")).unwrap();
+
+        let expected_pkgs = [
+            Package {
+                name: "org.jruby:jruby-complete".into(),
+                version: PackageVersion::FirstParty("9.3.7.0".into()),
+                package_type: PackageType::Maven,
+            },
+            Package {
+                name: "org.jruby:jruby-complete".into(),
+                version: PackageVersion::FirstParty("9.2.1.0".into()),
+                package_type: PackageType::Maven,
             },
         ];
 
