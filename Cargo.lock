@@ -3237,6 +3237,7 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "toml",
+ "urlencoding",
  "walkdir",
 ]
 
@@ -3256,7 +3257,7 @@ dependencies = [
 [[package]]
 name = "phylum_types"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/phylum-types?branch=development#c689cc23dd651ca2c2cb36bd2db1af6b7102fcd2"
+source = "git+https://github.com/phylum-dev/phylum-types?branch=development#a46a64523c24941eb464d24853f95e2927a2ebb4"
 dependencies = [
  "chrono",
  "schemars",
@@ -5326,6 +5327,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8db7427f936968176eaa7cdf81b7f98b980b18495ec28f1b5791ac3bfe3eea9"
 
 [[package]]
 name = "urlpattern"
