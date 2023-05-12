@@ -166,10 +166,10 @@ pub struct Spdx;
 
 impl Parse for Spdx {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let packages_info = if let Ok(lock) = serde_json::from_str::<SpdxInfo>(data) {
-            lock.packages
-        } else if let Ok(lock) = serde_yaml::from_str::<SpdxInfo>(data) {
-            lock.packages
+        let packages_info = if let Ok(lock) = serde_json::from_str::<serde_json::Value>(data) {
+            serde_json::from_value::<SpdxInfo>(lock)?.packages
+        } else if let Ok(lock) = serde_yaml::from_str::<serde_yaml::Value>(data) {
+            serde_yaml::from_value::<SpdxInfo>(lock)?.packages
         } else {
             spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?.1
         };
@@ -535,7 +535,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn pkg_locator() {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx.json")).unwrap();
 
@@ -602,5 +601,15 @@ mod tests {
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
         }
+    }
+
+    #[test]
+    fn test_file_type() {
+        let parse_results =
+            Spdx.parse(include_str!("../../tests/fixtures/appbomination.spdx.json"));
+        let expected = anyhow!("missing field `externalRefs`").to_string();
+        let actual = parse_results.err().unwrap().to_string();
+
+        assert_eq!(actual, expected)
     }
 }
