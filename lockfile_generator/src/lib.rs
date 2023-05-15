@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fs, io};
@@ -61,8 +62,9 @@ pub trait Generator {
 
         // Ensure generation was successful.
         if !output.status.success() {
+            let code = output.status.code();
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::NonZeroExit(stderr.into()));
+            return Err(Error::NonZeroExit(code, stderr.into()));
         }
 
         // Ensure lockfile was created.
@@ -119,14 +121,28 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Lockfile generation error.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-    #[error("invalid manifest path: {0:?}")]
     InvalidManifest(PathBuf),
-    #[error("failed to spawn command {0}: {1}")]
     ProcessCreation(String, io::Error),
-    #[error("package manager exited with non-zero status:\n\n{0}")]
-    NonZeroExit(String),
-    #[error("no lockfile was generated")]
+    NonZeroExit(Option<i32>, String),
     NoLockfileGenerated,
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(err) => write!(f, "I/O error: {err}"),
+            Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
+            Self::ProcessCreation(program, err) => {
+                write!(f, "failed to spawn command {program}: {err}")
+            },
+            Self::NonZeroExit(Some(code), stderr) => {
+                write!(f, "package manager exited with error code {code}:\n\n{stderr}")
+            },
+            Self::NonZeroExit(None, stderr) => {
+                write!(f, "package manager quit unexpectedly:\n\n{stderr}")
+            },
+            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
+        }
+    }
 }
