@@ -1,4 +1,6 @@
+use std::error::Error as StdError;
 use std::ffi::OsString;
+use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fs, io};
@@ -52,18 +54,18 @@ pub trait Generator {
         command.current_dir(project_path);
         command.stdin(Stdio::null());
         command.stdout(Stdio::null());
-        command.stderr(Stdio::null());
 
         // Provide better error message, including the failed program's name.
-        let mut child = command.spawn().map_err(|err| {
+        let output = command.output().map_err(|err| {
             let program = format!("{:?}", command.get_program());
             Error::ProcessCreation(program, err)
         })?;
 
         // Ensure generation was successful.
-        let status = child.wait()?;
-        if !status.success() {
-            return Err(Error::NonZeroExit);
+        if !output.status.success() {
+            let code = output.status.code();
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::NonZeroExit(code, stderr.into()));
         }
 
         // Ensure lockfile was created.
@@ -118,16 +120,38 @@ impl FileRelocator {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Lockfile generation error.
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug)]
 pub enum Error {
-    #[error("I/O error: {0}")]
-    Io(#[from] io::Error),
-    #[error("invalid manifest path: {0:?}")]
+    Io(io::Error),
     InvalidManifest(PathBuf),
-    #[error("failed to spawn command {0}: {1}")]
     ProcessCreation(String, io::Error),
-    #[error("package manager exited with non-zero status")]
-    NonZeroExit,
-    #[error("no lockfile was generated")]
+    NonZeroExit(Option<i32>, String),
     NoLockfileGenerated,
+}
+
+impl StdError for Error {}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(err) => write!(f, "I/O error: {err}"),
+            Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
+            Self::ProcessCreation(program, err) => {
+                write!(f, "failed to spawn command {program}: {err}")
+            },
+            Self::NonZeroExit(Some(code), stderr) => {
+                write!(f, "package manager exited with error code {code}:\n\n{stderr}")
+            },
+            Self::NonZeroExit(None, stderr) => {
+                write!(f, "package manager quit unexpectedly:\n\n{stderr}")
+            },
+            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Self::Io(err)
+    }
 }
