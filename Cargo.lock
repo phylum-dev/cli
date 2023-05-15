@@ -2694,9 +2694,6 @@ dependencies = [
 [[package]]
 name = "lockfile_generator"
 version = "0.1.0"
-dependencies = [
- "thiserror",
-]
 
 [[package]]
 name = "log"

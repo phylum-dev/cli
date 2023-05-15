@@ -1,3 +1,4 @@
+use std::error::Error as StdError;
 use std::ffi::OsString;
 use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
@@ -119,14 +120,16 @@ impl FileRelocator {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Lockfile generation error.
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug)]
 pub enum Error {
-    Io(#[from] io::Error),
+    Io(io::Error),
     InvalidManifest(PathBuf),
     ProcessCreation(String, io::Error),
     NonZeroExit(Option<i32>, String),
     NoLockfileGenerated,
 }
+
+impl StdError for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -144,5 +147,11 @@ impl Display for Error {
             },
             Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
         }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Self::Io(err)
     }
 }
