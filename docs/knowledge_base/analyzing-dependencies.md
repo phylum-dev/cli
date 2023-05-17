@@ -30,34 +30,9 @@ The Phylum CLI natively supports processing lockfiles for several ecosystems, na
   * `*.spdx.yml`
   * `*.spdx`
 
-Lockfiles can also automatically be generated for certain manifest files.
-Doing so requires that a specific tool is installed and available in the environment.
-The current list of supported manifests, with their required lockfile generation tool are:
+Lockfiles can also automatically be generated for certain manifest files. See [lockfile-generation][] for details.
 
-* npm
-  * `package.json` using `npm`
-    * When lockfile type is `npm`
-  * `package.json` using `yarn`
-    * When lockfile type is `yarn`
-* PyPI
-  * `requirements*.txt` using `pip-compile`
-  * `requirements.in` using `pip-compile`
-  * `setup.py` using `pip-compile`
-  * `setup.cfg` using `pip-compile`
-  * `pyproject.toml` using `pip-compile`
-    * When lockfile type is `pip`
-  * `Pipfile` using `pipenv`
-  * `pyproject.toml` using `poetry`
-    * When lockfile type is `poetry`
-* RubyGems
-  * `Gemfile` using `bundle`
-* Maven
-  * `pom.xml` using `mvn`
-  * `build.gradle` using `gradle`
-* Golang
-  * `go.mod` using `go`
-* Cargo
-  * `Cargo.toml` using `cargo`
+[lockfile-generation]: https://docs.phylum.io/docs/lockfile-generation
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
