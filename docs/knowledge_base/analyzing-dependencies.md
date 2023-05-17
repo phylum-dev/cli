@@ -4,31 +4,25 @@ category: 6255e67693d5200013b1fa41
 hidden: false
 ---
 
-The Phylum CLI natively supports processing lockfiles for several ecosystems, namely:
-* npm
-  * `package-lock.json`
-  * `npm-shrinkwrap.json`
-  * `yarn.lock` (Version 1 + 2)
-* PyPI
-  * `requirements.txt`
-  * `Pipfile.lock`
-  * `poetry.lock` (Version 1 + 2)
-* RubyGems
-  * `Gemfile.lock`
-* NuGet
-  * `*.csproj`
-* Maven
-  * `effective-pom.xml`
-  * `gradle.lockfile`
-* Golang
-  * `go.sum`
-* Cargo
-  * `Cargo.lock`
-* SPDX (Version 2.2 + 2.3)
-  * `*.spdx.json`
-  * `*.spdx.yaml`
-  * `*.spdx.yml`
-  * `*.spdx`
+The Phylum CLI supports processing many different lockfiles:
+
+| Lockfile type | Filenames |
+| ------------- | --------- |
+| `npm`         | `package-lock.json` <br /> `npm-shrinkwrap.json` |
+| `yarn`        | `yarn.lock` (Version 1 + 2) |
+| `pip`         | `requirements*.txt` |
+| `pipenv`      | `Pipfile.lock` |
+| `poetry`      | `poetry.lock` (Version 1 + 2) |
+| `gem`         | `Gemfile.lock` |
+| `nuget`       | `*.csproj` |
+| `mvn`         | `effective-pom.xml` |
+| `gradle`      | `gradle.lockfile` |
+| `go`          | `go.sum` |
+| `cargo`       | `Cargo.lock` |
+| `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
+
+The lockfile type will be automatically detected based on the filename. If needed, this can be overridden with the
+`--lockfile-type` (`-t`) option.
 
 Lockfiles can also automatically be generated for certain manifest files. See [lockfile-generation][] for details.
 
