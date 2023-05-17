@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa41
 hidden: false
 ---
 
-The Phylum CLI uses lockfile generators when it is given a manifest file with no matching lockfile.
+The Phylum CLI can generate a lockfile when it is given a manifest file.
 
 ### Lockfile generators
 
@@ -42,6 +42,21 @@ This can be overridden on the command line with the `--lockfile-type` (`-t`) opt
 ```
 phylum analyze -t yarn package.json
 ```
+
+### Lockfile detection
+
+The Phylum CLI prefers to work directly with lockfiles if they are available. So in a few cases, the CLI will
+automatically switch and use the corresponding lockfile.
+
+First, if a user runs `parse` or `analyze` on a manifest file without specifying a lockfile type, the Phylum CLI will
+opportunistically switch to the lockfile if it is available in the same directory. For example, `phylum analyze go.mod`
+will automatically switch to `go.sum` if available. To override this, simply specify a lockfile type (i.e., `phylum
+analyze -t go go.mod`)
+
+Second, during automatic lockfile detection, manifest files will only be used if there is no corresponding lockfile in
+the same directory or any parent directory. For example, a single `Cargo.lock` file at the root of the repository will
+be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run `phylum init` and
+specify all files that you want analyzed.
 
 ### Lockifests
 
