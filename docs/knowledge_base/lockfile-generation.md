@@ -8,18 +8,29 @@ The Phylum CLI uses lockfile generators when it is given a manifest file with no
 
 ### Lockfile generators
 
-| Lockfile type | Filenames        | Required tool |
-| ------------- | ---------        | ------------- |
-| `npm`         | `package.json`   | `npm`         |
-| `yarn`        | `package.json`   | `yarn`        |
-| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `setup.cfg` <br/> `pyproject.toml` | `pip-compile` (from `pip-tools`) |
-| `pipenv`      | `Pipfile`        | `pipenv`      |
-| `poetry`      | `pyproject.toml` | `poetry`      |
-| `gem`         | `Gemfile`        | `bundle` (from Bundler) |
-| `maven`       | `pom.xml`        | `mvn` (from Maven) |
-| `gradle`      | `build.gradle`   | `gradle`      |
-| `go`          | `go.mod`         | `go`          |
-| `cargo`       | `Cargo.toml`     | `cargo`       |
+| Lockfile type | Filenames        | Required tool               |
+| ------------- | ---------        | -------------               |
+| `npm`         | `package.json`   | [`npm`][npm]                |
+| `yarn`        | `package.json`   | [`yarn`][yarn]              |
+| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `setup.cfg` <br/> `pyproject.toml` | `pip-compile` (from [`pip-tools`][pip-tools]) |
+| `pipenv`      | `Pipfile`        | [`pipenv`][pipenv]          |
+| `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
+| `gem`         | `Gemfile`        | `bundle` (from [Bundler][]) |
+| `mvn`         | `pom.xml`        | `mvn` (from [Maven][])      |
+| `gradle`      | `build.gradle`   | [`gradle`][gradle]          |
+| `go`          | `go.mod`         | [`go`][go]                  |
+| `cargo`       | `Cargo.toml`     | [`cargo`][cargo]            |
+
+[npm]: https://nodejs.org/
+[yarn]: https://yarnpkg.com/
+[pip-tools]: https://github.com/jazzband/pip-tools/
+[pipenv]: https://github.com/pypa/pipenv
+[poetry]: https://python-poetry.org/
+[bundler]: https://bundler.io/
+[maven]: https://maven.apache.org/
+[gradle]: https://gradle.org/
+[go]: https://go.dev/
+[cargo]: https://www.rust-lang.org/
 
 For files that can be handled by multiple generators, a fallback is used:
 
