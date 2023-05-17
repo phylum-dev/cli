@@ -129,15 +129,23 @@ pub enum Error {
     NoLockfileGenerated,
 }
 
-impl StdError for Error {}
+impl StdError for Error {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            Self::Io(err) => Some(err),
+            Self::ProcessCreation(_, err) => Some(err),
+            _ => None,
+        }
+    }
+}
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Io(err) => write!(f, "I/O error: {err}"),
+            Self::Io(_) => write!(f, "I/O error"),
             Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
-            Self::ProcessCreation(program, err) => {
-                write!(f, "failed to spawn command {program}: {err}")
+            Self::ProcessCreation(program, _) => {
+                write!(f, "failed to spawn command {program}")
             },
             Self::NonZeroExit(Some(code), stderr) => {
                 write!(f, "package manager exited with error code {code}:\n\n{stderr}")
