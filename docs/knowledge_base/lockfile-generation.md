@@ -12,7 +12,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | ------------- | ---------        | -------------               |
 | `npm`         | `package.json`   | [`npm`][npm]                |
 | `yarn`        | `package.json`   | [`yarn`][yarn]              |
-| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `setup.cfg` <br/> `pyproject.toml` | `pip-compile` (from [`pip-tools`][pip-tools]) |
+| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `pyproject.toml` | `pip-compile` (from [`pip-tools`][pip-tools]) |
 | `pipenv`      | `Pipfile`        | [`pipenv`][pipenv]          |
 | `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
 | `gem`         | `Gemfile`        | `bundle` (from [Bundler][]) |
