@@ -17,4 +17,8 @@ impl Generator for Pipenv {
         command.args(["lock"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Pipenv"
+    }
 }

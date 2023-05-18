@@ -17,4 +17,8 @@ impl Generator for Maven {
         command.args(["help:effective-pom", &format!("-Doutput={}", self.lockfile_name())]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Maven"
+    }
 }

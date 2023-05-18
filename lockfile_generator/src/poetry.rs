@@ -17,4 +17,8 @@ impl Generator for Poetry {
         command.args(["lock"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Poetry"
+    }
 }

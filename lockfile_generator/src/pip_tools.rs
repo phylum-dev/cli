@@ -17,4 +17,8 @@ impl Generator for PipTools {
         command.arg("-o").arg(self.lockfile_name()).arg(manifest_path);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "pip-tools"
+    }
 }

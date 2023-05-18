@@ -21,4 +21,8 @@ impl Generator for Npm {
         command.args(["install", "--package-lock-only", "--ignore-scripts"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "npm"
+    }
 }

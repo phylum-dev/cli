@@ -17,4 +17,8 @@ impl Generator for Gradle {
         command.args(["dependencies", "--write-locks"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Gradle"
+    }
 }

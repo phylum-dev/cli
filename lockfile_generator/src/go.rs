@@ -17,4 +17,8 @@ impl Generator for Go {
         command.args(["get", "-d"]);
         command
     }
+
+    fn tool(&self) -> &'static str {
+        "Go"
+    }
 }

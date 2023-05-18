@@ -4,60 +4,29 @@ category: 6255e67693d5200013b1fa41
 hidden: false
 ---
 
-The Phylum CLI natively supports processing lockfiles for several ecosystems, namely:
-* npm
-  * `package-lock.json`
-  * `npm-shrinkwrap.json`
-  * `yarn.lock` (Version 1 + 2)
-* PyPI
-  * `requirements.txt`
-  * `Pipfile.lock`
-  * `poetry.lock` (Version 1 + 2)
-* RubyGems
-  * `Gemfile.lock`
-* NuGet
-  * `*.csproj`
-* Maven
-  * `effective-pom.xml`
-  * `gradle.lockfile`
-* Golang
-  * `go.sum`
-* Cargo
-  * `Cargo.lock`
-* SPDX (Version 2.2 + 2.3)
-  * `*.spdx.json`
-  * `*.spdx.yaml`
-  * `*.spdx.yml`
-  * `*.spdx`
+The Phylum CLI supports processing many different lockfiles:
 
-Lockfiles can also automatically be generated for certain manifest files.
-Doing so requires that a specific tool is installed and available in the environment.
-The current list of supported manifests, with their required lockfile generation tool are:
+| Lockfile type | Filenames |
+| ------------- | --------- |
+| `npm`         | `package-lock.json` <br /> `npm-shrinkwrap.json` |
+| `yarn`        | `yarn.lock` (Version 1 + 2) |
+| `pip`         | `requirements*.txt` |
+| `pipenv`      | `Pipfile.lock` |
+| `poetry`      | `poetry.lock` (Version 1 + 2) |
+| `gem`         | `Gemfile.lock` |
+| `nuget`       | `*.csproj` |
+| `mvn`         | `effective-pom.xml` |
+| `gradle`      | `gradle.lockfile` |
+| `go`          | `go.sum` |
+| `cargo`       | `Cargo.lock` |
+| `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
 
-* npm
-  * `package.json` using `npm`
-    * When lockfile type is `npm`
-  * `package.json` using `yarn`
-    * When lockfile type is `yarn`
-* PyPI
-  * `requirements*.txt` using `pip-compile`
-  * `requirements.in` using `pip-compile`
-  * `setup.py` using `pip-compile`
-  * `setup.cfg` using `pip-compile`
-  * `pyproject.toml` using `pip-compile`
-    * When lockfile type is `pip`
-  * `Pipfile` using `pipenv`
-  * `pyproject.toml` using `poetry`
-    * When lockfile type is `poetry`
-* RubyGems
-  * `Gemfile` using `bundle`
-* Maven
-  * `pom.xml` using `mvn`
-  * `build.gradle` using `gradle`
-* Golang
-  * `go.mod` using `go`
-* Cargo
-  * `Cargo.toml` using `cargo`
+The lockfile type will be automatically detected based on the filename. If needed, this can be overridden with the
+`--lockfile-type` (`-t`) option.
+
+Lockfiles can also automatically be generated for certain manifest files. See [lockfile-generation][] for details.
+
+[lockfile-generation]: https://docs.phylum.io/docs/lockfile-generation
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
 
