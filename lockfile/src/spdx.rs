@@ -535,6 +535,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn pkg_locator() {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/locator.spdx.json")).unwrap();
 
