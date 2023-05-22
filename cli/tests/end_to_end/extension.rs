@@ -94,11 +94,11 @@ pub async fn create_and_delete_project() {
                 throw `ERROR IDs: ${newPrj.id} vs ${existingPrj.id}`
             }
 
-            if (newPrj.status != "created") {
+            if (newPrj.status != "Created") {
                 throw `ERROR newPrj.status = ${newPrj.status}`
             }
 
-            if (existingPrj.status != "exists") {
+            if (existingPrj.status != "Exists") {
                 throw `ERROR existingPrj.status = ${existingPrj.status}`
             }
         "#,

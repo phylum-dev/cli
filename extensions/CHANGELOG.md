@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Uncaught extension errors now cause the CLI to exit with a non-zero exit code
+- Correct the type for `status` returned by `createProject()` (actual values are "Created" or "Exists")
 
 ## 5.1.0 - 2023-05-04
 
