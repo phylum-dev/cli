@@ -94,7 +94,7 @@ fn print_js_error(error: Error) -> CommandResult {
         return Err(anyhow!(message.to_owned()));
     }
 
-    println!("{}: {}", style("Extension error").red(), fmt_errors::format_js_error(&js_error));
+    eprintln!("{}: {}", style("Extension error").red(), fmt_errors::format_js_error(&js_error));
 
     Ok(ExitCode::JsError)
 }

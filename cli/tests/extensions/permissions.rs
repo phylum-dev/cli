@@ -96,8 +96,8 @@ fn correct_sandbox_run_permission_fail_on_windows() {
 
     test_cli
         .run(&["correct-run-perms"])
-        .success()
-        .stdout(predicate::str::contains("Extension sandboxing is not supported on this platform"));
+        .failure()
+        .stderr(predicate::str::contains("Extension sandboxing is not supported on this platform"));
 }
 
 #[test]

@@ -272,6 +272,13 @@ fn net_sandboxing_fail() {
         .failure();
 }
 
+#[test]
+fn extensions_errors_cause_failure() {
+    let test_cli = TestCli::builder().build();
+
+    test_cli.extension("throw 1;").build().run().failure();
+}
+
 // Networking succeeds with sandbox exception.
 #[cfg(unix)]
 #[test]
