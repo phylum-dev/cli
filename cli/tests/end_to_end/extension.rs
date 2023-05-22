@@ -131,7 +131,7 @@ pub async fn parse_lockfile() {
 
     let parse_lockfile = format!(
         "const lockfile = await PhylumApi.parseLockfile({lockfile:?}, 'yarn');
-         console.log(lockfile);",
+         console.log(JSON.stringify(lockfile));",
     );
     test_cli
         .extension(&parse_lockfile)
@@ -140,8 +140,8 @@ pub async fn parse_lockfile() {
         .run()
         .success()
         .stdout(
-            "{ packages: [ { name: \"accepts\", version: \"1.3.8\", type: \"npm\" } ], format: \
-             \"yarn\" }\n",
+            "{\"packages\":[{\"name\":\"accepts\",\"version\":\"1.3.8\",\"type\":\"npm\"}],\"\
+             format\":\"yarn\"}\n",
         );
 }
 

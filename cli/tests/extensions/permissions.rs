@@ -143,20 +143,15 @@ fn correct_run_permission() {
 }
 
 #[tokio::test]
-pub async fn get_package_details() {
+pub async fn disallow_permission_request() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension(
-            "\
-        await Deno.permissions.request({ name: 'net' });
-        await fetch('https://phylum.io');\
-             ",
-        )
+        .extension("await Deno.permissions.request({ name: 'net' });")
         .build()
         .run()
         .failure()
-        .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
+        .stderr(predicate::str::contains("TypeError: ops.op_request_permission is not a function"));
 }
 
 #[test]

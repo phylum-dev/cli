@@ -9,8 +9,8 @@ use console::style;
 use deno_ast::{MediaType, ParseParams, SourceTextInfo};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
-    self, Extension, ModuleCode, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier,
-    ModuleType, ResolutionKind,
+    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
+    ResolutionKind,
 };
 use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
@@ -152,7 +152,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
     fn load(
         &self,
         module_specifier: &ModuleSpecifier,
-        _maybe_referrer: Option<ModuleSpecifier>,
+        _maybe_referrer: Option<&ModuleSpecifier>,
         _is_dyn_import: bool,
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
@@ -201,12 +201,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
                 code = transpile(module_specifier.to_string(), code, media_type)?;
             }
 
-            Ok(ModuleSource {
-                module_type,
-                module_url_specified: module_specifier.to_string(),
-                module_url_found: module_specifier.to_string(),
-                code: ModuleCode::Owned(code.into_bytes()),
-            })
+            Ok(ModuleSource::new(module_type, code.into(), &module_specifier))
         })
     }
 }
@@ -230,13 +225,8 @@ fn transpile(
 
 /// Load the internal Phylum API module
 fn phylum_module() -> Result<ModuleSource> {
-    let module_url = "deno:phylum";
-    let code = transpile(module_url, EXTENSION_API, MediaType::TypeScript)?;
+    let module_url = ModuleSpecifier::parse("deno:phylum").unwrap();
+    let code = transpile(module_url.as_str(), EXTENSION_API, MediaType::TypeScript)?;
 
-    Ok(ModuleSource {
-        module_url_specified: module_url.into(),
-        module_url_found: module_url.into(),
-        module_type: ModuleType::JavaScript,
-        code: code.into(),
-    })
+    Ok(ModuleSource::new(ModuleType::JavaScript, code.into(), &module_url))
 }
