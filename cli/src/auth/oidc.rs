@@ -6,7 +6,8 @@ use std::net::ToSocketAddrs;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
-use base64;
+use base64::engine::general_purpose;
+use base64::Engine as _;
 use maplit::hashmap;
 use phylum_types::types::auth::{AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
@@ -66,7 +67,7 @@ impl CodeVerifier {
         let mut hasher = Sha256::new();
         hasher.update(&code_verifier);
         let hash = hasher.finalize();
-        let base_64_url_safe = base64::encode_config(hash, base64::URL_SAFE_NO_PAD);
+        let base_64_url_safe = general_purpose::URL_SAFE_NO_PAD.encode(hash);
         Ok((CodeVerifier(code_verifier), ChallengeCode(base_64_url_safe)))
     }
 }

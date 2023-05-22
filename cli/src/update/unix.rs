@@ -5,10 +5,12 @@ use std::str;
 use anyhow::{anyhow, Context};
 use log::debug;
 use reqwest::Client;
+use rsa::pkcs1v15::{Signature, VerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
-use rsa::{Hash, PaddingScheme, PublicKey, RsaPublicKey};
+use rsa::sha2::Sha256;
+use rsa::signature::Verifier;
+use rsa::RsaPublicKey;
 use serde::de::DeserializeOwned;
-use sha2::{Digest, Sha256};
 #[cfg(test)]
 use wiremock::MockServer;
 use zip::ZipArchive;
@@ -226,12 +228,10 @@ impl ApplicationUpdater {
     /// Verify that the downloaded binary matches the expected signature.
     /// Returns `true` for a valid signature, `false` otherwise.
     fn has_valid_signature(&self, bin: &[u8], sig: &[u8]) -> bool {
-        let verify_key = RsaPublicKey::from_public_key_pem(PUBKEY).expect("invalid public key");
+        let public_key = RsaPublicKey::from_public_key_pem(PUBKEY).expect("invalid public key");
+        let verifying_key = VerifyingKey::<Sha256>::new(public_key);
 
-        let hashed = Sha256::digest(bin);
-        verify_key
-            .verify(PaddingScheme::PKCS1v15Sign { hash: Some(Hash::SHA2_256) }, &hashed, sig)
-            .is_ok()
+        Signature::try_from(sig).map_or(false, |sig| verifying_key.verify(bin, &sig).is_ok())
     }
 }
 
