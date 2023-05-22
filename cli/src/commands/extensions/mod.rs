@@ -144,9 +144,7 @@ pub async fn handle_run_extension(
 
     let extension = Extension::load(name)?;
 
-    extension.run(api, options.unwrap_or_default()).await?;
-
-    Ok(ExitCode::Ok)
+    extension.run(api, options.unwrap_or_default()).await
 }
 
 /// Handle the `extension run <PATH>` command path.
@@ -173,9 +171,7 @@ pub async fn handle_run_extension_from_path(
         ask_permissions(&extension)?;
     }
 
-    extension.run(api, options.unwrap_or_default()).await?;
-
-    Ok(ExitCode::Ok)
+    extension.run(api, options.unwrap_or_default()).await
 }
 
 /// Handle the `extension install` subcommand path.
