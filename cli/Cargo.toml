@@ -19,14 +19,14 @@ end-to-end-tests = []
 [dependencies]
 anyhow = "1.0.44"
 atty = "0.2.14"
-base64 = "0.13.0"
+base64 = "0.21.1"
 bytes = "1.1.0"
 chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
 cidr = "0.2.0"
 clap = { version = "4.0.9", features = ["string", "wrap_help"] }
 console = "0.15.2"
 dialoguer = { version = "0.10.0", features = ["fuzzy-select"] }
-env_logger = "0.9.0"
+env_logger = "0.10.0"
 futures = "^0.3"
 git-version = "0.3.5"
 home = "0.5.3"
@@ -42,17 +42,17 @@ prettytable-rs = "0.10.0"
 rand = "0.8.4"
 reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }
 routerify = { version = "3.0.0", features =["all"] }
-rsa = "0.6.1"
+rsa = { version = "0.9.2", features = ["sha2"] }
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = "1.0.85"
 serde_yaml = "0.9.2"
 sha2 = "0.10.2"
 shellexpand = "3.0.0"
 tempfile = "3.3.0"
-textwrap = "0.15.0"
+textwrap = "0.16.0"
 thiserror = "1.0.29"
 tokio = { version = "^1.0", features = ["full"] }
-toml = "0.5.8"
+toml = "0.7.4"
 unicode-width = "0.1.9"
 url = { version = "2", features = ["serde"] }
 zip = { version = "0.6.2", default-features = false, features = ["deflate"] }

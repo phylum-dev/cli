@@ -182,9 +182,9 @@ impl TryFrom<PathBuf> for Extension {
             return Err(anyhow!("{}: missing {}", path.display(), MANIFEST_NAME));
         }
 
-        let buf = fs::read(manifest_path)?;
+        let buf = fs::read_to_string(manifest_path)?;
 
-        let manifest: ExtensionManifest = toml::from_slice(&buf)?;
+        let manifest: ExtensionManifest = toml::from_str(&buf)?;
         let entry_point_path = path.join(manifest.entry_point());
 
         if !entry_point_path.exists() {
