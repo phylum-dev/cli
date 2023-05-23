@@ -3,7 +3,10 @@ use std::ffi::OsString;
 use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::string::FromUtf8Error;
 use std::{fs, io};
+
+use serde_json::Error as JsonError;
 
 pub mod bundler;
 pub mod cargo;
@@ -11,7 +14,7 @@ pub mod go;
 pub mod gradle;
 pub mod maven;
 pub mod npm;
-pub mod pip_tools;
+pub mod pip;
 pub mod pipenv;
 pub mod poetry;
 pub mod yarn;
@@ -125,16 +128,21 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Lockfile generation error.
 #[derive(Debug)]
 pub enum Error {
+    InvalidUtf8(FromUtf8Error),
+    Json(JsonError),
     Io(io::Error),
-    InvalidManifest(PathBuf),
     ProcessCreation(String, String, io::Error),
     NonZeroExit(Option<i32>, String),
+    InvalidManifest(PathBuf),
+    PipReportVersionMismatch(&'static str, String),
     NoLockfileGenerated,
 }
 
 impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
+            Self::InvalidUtf8(err) => Some(err),
+            Self::Json(err) => Some(err),
             Self::Io(err) => Some(err),
             Self::ProcessCreation(_, _, err) => Some(err),
             _ => None,
@@ -145,6 +153,8 @@ impl StdError for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidUtf8(_) => write!(f, "utf8 parsing error"),
+            Self::Json(_) => write!(f, "json parsing error"),
             Self::Io(_) => write!(f, "I/O error"),
             Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
             Self::ProcessCreation(program, tool, _) => {
@@ -156,6 +166,9 @@ impl Display for Error {
             Self::NonZeroExit(None, stderr) => {
                 write!(f, "package manager quit unexpectedly:\n\n{stderr}")
             },
+            Self::PipReportVersionMismatch(expected, received) => {
+                write!(f, "unsupported pip report version {received:?}, expected {expected:?}")
+            },
             Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
         }
     }
@@ -164,5 +177,17 @@ impl Display for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Self::Io(err)
+    }
+}
+
+impl From<FromUtf8Error> for Error {
+    fn from(err: FromUtf8Error) -> Self {
+        Self::InvalidUtf8(err)
+    }
+}
+
+impl From<JsonError> for Error {
+    fn from(err: JsonError) -> Self {
+        Self::Json(err)
     }
 }

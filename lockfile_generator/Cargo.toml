@@ -5,3 +5,7 @@ authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
 rust-version = "1.68.0"
+
+[dependencies]
+serde = { version = "1.0.163", features = ["derive"] }
+serde_json = "1.0.96"
