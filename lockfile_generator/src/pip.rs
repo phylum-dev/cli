@@ -19,7 +19,7 @@ impl Generator for Pip {
 
     fn command(&self, manifest_path: &Path) -> Command {
         let mut command = Command::new("pip3");
-        command.args(["install", "--quiet", "--report", "-", "--dry-run"]);
+        command.args(["install", "--quiet", "--ignore-installed", "--report", "-", "--dry-run"]);
 
         // Check if we got a requirements file or a setup.py/pyproject.toml.
         let is_requirements_file =
