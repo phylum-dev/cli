@@ -111,7 +111,7 @@ fn check_pip_version(project_path: &Path) -> Result<()> {
         Error::ProcessCreation(program, String::from("pip"), err)
     })?;
 
-    let version_stdout = String::from_utf8(version_output.stdout)?;
+    let version_stdout = String::from_utf8(version_output.stdout)?.trim().to_owned();
 
     // Strip "pip " prefix.
     let version_start = match version_stdout.strip_prefix("pip ") {
