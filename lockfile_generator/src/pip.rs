@@ -52,6 +52,9 @@ impl Generator for Pip {
             .parent()
             .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
 
+        // Ensure correct pip version is available.
+        check_pip_version(project_path)?;
+
         // Execute pip inside the project.
         //
         // We still change directory here since it could impact pip's report generation.
@@ -95,6 +98,39 @@ impl Generator for Pip {
 
         Ok(lockfile)
     }
+}
+
+/// Ensure at least version 23 of pip is available.
+fn check_pip_version(project_path: &Path) -> Result<()> {
+    let mut version_command = Command::new("pip3");
+    version_command.current_dir(project_path);
+    version_command.arg("--version");
+
+    let version_output = version_command.output().map_err(|err| {
+        let program = format!("{:?}", version_command.get_program());
+        Error::ProcessCreation(program, String::from("pip"), err)
+    })?;
+
+    let version_stdout = String::from_utf8(version_output.stdout)?;
+
+    // Strip "pip " prefix.
+    let version_start = match version_stdout.strip_prefix("pip ") {
+        Some(version_start) => version_start,
+        None => return Err(Error::UnsupportedCommandVersion("pip", "23.0.0+", version_stdout)),
+    };
+
+    // Extract major version.
+    let major = match version_start.split_once('.') {
+        Some((major, _)) => major,
+        None => return Err(Error::UnsupportedCommandVersion("pip", "23.0.0+", version_stdout)),
+    };
+
+    // Ensure major version is at least 23.
+    if major.parse().map_or(true, |version: u32| version < 23) {
+        return Err(Error::UnsupportedCommandVersion("pip", "23.0.0+", version_stdout));
+    }
+
+    Ok(())
 }
 
 /// Pip install report output.

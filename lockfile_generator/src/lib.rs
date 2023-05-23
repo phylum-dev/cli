@@ -135,6 +135,7 @@ pub enum Error {
     NonZeroExit(Option<i32>, String),
     InvalidManifest(PathBuf),
     PipReportVersionMismatch(&'static str, String),
+    UnsupportedCommandVersion(&'static str, &'static str, String),
     NoLockfileGenerated,
 }
 
@@ -168,6 +169,9 @@ impl Display for Error {
             },
             Self::PipReportVersionMismatch(expected, received) => {
                 write!(f, "unsupported pip report version {received:?}, expected {expected:?}")
+            },
+            Self::UnsupportedCommandVersion(command, expected, received) => {
+                write!(f, "unsupported {command:?} version {received:?}, expected {expected:?}")
             },
             Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
         }
