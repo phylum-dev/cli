@@ -23,7 +23,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 
 [npm]: https://nodejs.org/
 [yarn]: https://yarnpkg.com/
-[pip3]: https://pip.pypa.io/en/stable/
+[pip3]: https://pip.pypa.io/
 [pipenv]: https://github.com/pypa/pipenv
 [poetry]: https://python-poetry.org/
 [bundler]: https://bundler.io/
