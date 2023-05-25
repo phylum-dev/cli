@@ -113,7 +113,7 @@ impl Generator for Pip {
 fn check_pip_version(project_path: &Path) -> Result<()> {
     let mut version_command = Command::new("python3");
     version_command.current_dir(project_path);
-    version_command.args(&["-m", "pip", "--version"]);
+    version_command.args(["-m", "pip", "--version"]);
 
     let version_output = version_command.output().map_err(|err| {
         let program = format!("{:?}", version_command.get_program());
