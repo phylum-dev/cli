@@ -35,7 +35,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 For files that can be handled by multiple generators, a fallback is used:
 
 * `package.json` will use `npm`
-* `pyproject.toml` will use `poetry`
+* `pyproject.toml` will use `pip`
 
 This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
 
