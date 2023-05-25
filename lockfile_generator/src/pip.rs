@@ -18,8 +18,17 @@ impl Generator for Pip {
     }
 
     fn command(&self, manifest_path: &Path) -> Command {
-        let mut command = Command::new("pip3");
-        command.args(["install", "--quiet", "--ignore-installed", "--report", "-", "--dry-run"]);
+        let mut command = Command::new("python3");
+        command.args([
+            "-m",
+            "pip",
+            "install",
+            "--quiet",
+            "--ignore-installed",
+            "--report",
+            "-",
+            "--dry-run",
+        ]);
 
         // Check if we got a requirements file or a setup.py/pyproject.toml.
         let is_requirements_file =
@@ -102,9 +111,9 @@ impl Generator for Pip {
 
 /// Ensure at least version 23 of pip is available.
 fn check_pip_version(project_path: &Path) -> Result<()> {
-    let mut version_command = Command::new("pip3");
+    let mut version_command = Command::new("python3");
     version_command.current_dir(project_path);
-    version_command.arg("--version");
+    version_command.args(&["-m", "pip", "--version"]);
 
     let version_output = version_command.output().map_err(|err| {
         let program = format!("{:?}", version_command.get_program());
