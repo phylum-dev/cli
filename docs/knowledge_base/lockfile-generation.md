@@ -12,7 +12,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | ------------- | ---------        | -------------               |
 | `npm`         | `package.json`   | [`npm`][npm]                |
 | `yarn`        | `package.json`   | [`yarn`][yarn]              |
-| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `pyproject.toml` | `pip-compile` (from [`pip-tools`][pip-tools]) |
+| `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `pyproject.toml` | [`pip`][pip] version 23.0.0+ |
 | `pipenv`      | `Pipfile`        | [`pipenv`][pipenv]          |
 | `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
 | `gem`         | `Gemfile`        | `bundle` (from [Bundler][]) |
@@ -23,7 +23,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 
 [npm]: https://nodejs.org/
 [yarn]: https://yarnpkg.com/
-[pip-tools]: https://github.com/jazzband/pip-tools/
+[pip]: https://pip.pypa.io/
 [pipenv]: https://github.com/pypa/pipenv
 [poetry]: https://python-poetry.org/
 [bundler]: https://bundler.io/
@@ -35,7 +35,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 For files that can be handled by multiple generators, a fallback is used:
 
 * `package.json` will use `npm`
-* `pyproject.toml` will use `poetry`
+* `pyproject.toml` will use `pip`
 
 This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
 

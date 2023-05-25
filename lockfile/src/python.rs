@@ -4,7 +4,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
-use lockfile_generator::pip_tools::PipTools as PipToolsGenerator;
+use lockfile_generator::pip::Pip as PipGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::pipenv::Pipenv as PipenvGenerator;
 #[cfg(feature = "generator")]
@@ -53,7 +53,7 @@ impl Parse for PyRequirements {
 
     #[cfg(feature = "generator")]
     fn generator(&self) -> Option<&'static dyn Generator> {
-        Some(&PipToolsGenerator)
+        Some(&PipGenerator)
     }
 }
 
