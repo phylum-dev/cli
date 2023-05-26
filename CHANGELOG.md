@@ -8,12 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Fixed
-- Show correct error messages when parsing SPDX SBOMs
-
 ### Added
 - Add support for parsing additional SPDX locator formats
 - Print package manager STDERR when lockfile generation fails
+
+### Changed
+- Use `pip` instead of `pip-tools` for Python lockfile generation
+
+### Fixed
+- Show correct error messages when parsing SPDX SBOMs
 
 ## [5.2.0] - 2023-05-11
 
