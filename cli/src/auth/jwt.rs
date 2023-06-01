@@ -45,8 +45,6 @@ pub enum RealmRole {
     Pro,
     #[serde(rename = "vulnreach")]
     Vulnreach,
-    #[serde(rename = "offline-access")]
-    OfflineAccess,
     #[serde(other)]
     Unknown,
 }

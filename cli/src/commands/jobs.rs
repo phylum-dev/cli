@@ -3,7 +3,6 @@ use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
-#[cfg(feature = "vulnreach")]
 use log::debug;
 use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
@@ -154,7 +153,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                     line.pop();
                     let mut pkg_info = line.split(':').collect::<Vec<&str>>();
                     if pkg_info.len() < 2 {
-                        log::debug!("Invalid package input: `{}`", line);
+                        debug!("Invalid package input: `{}`", line);
                         continue;
                     }
                     let pkg_version = pkg_info.pop().unwrap();
@@ -182,7 +181,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
         return Ok(ExitCode::Ok);
     }
 
-    log::debug!("Submitting request...");
+    debug!("Submitting request...");
     let job_id = api
         .submit_request(
             &packages,
@@ -191,7 +190,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             jobs_project.group,
         )
         .await?;
-    log::debug!("Response => {:?}", job_id);
+    debug!("Response => {:?}", job_id);
 
     if pretty_print {
         print_user_success!("Job ID: {}", job_id);
@@ -205,7 +204,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
             }
         }
 
-        log::debug!("Requesting status...");
+        debug!("Requesting status...");
         print_job_status(api, &job_id, ignored_packages, pretty_print).await
     } else {
         Ok(ExitCode::Ok)
@@ -312,7 +311,7 @@ fn job_from_packages(
         .map(|package| JobPackage {
             name: package.name,
             version: package.version,
-            ecosystem: "npm".into(),
+            ecosystem: package.package_type.into(),
         })
         .collect();
 
