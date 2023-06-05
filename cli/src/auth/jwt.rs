@@ -58,11 +58,11 @@ pub enum JwtError {
     MissingSignature,
     #[error("JWT cannot have more than 3 parts")]
     UnexpectedComponent,
-    #[error("invalid base64: {0}")]
+    #[error("invalid base64")]
     InvalidBase64(#[from] DecodeError),
-    #[error("invalid UTF-8: {0}")]
+    #[error("invalid UTF-8")]
     InvalidUtf8(#[from] FromUtf8Error),
-    #[error("invalid JSON: {0}")]
+    #[error("invalid JSON")]
     InvalidJson(#[from] JsonError),
 }
 
