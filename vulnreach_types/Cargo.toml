@@ -1,0 +1,9 @@
+[package]
+name = "vulnreach_types"
+version = "0.1.0"
+authors = ["Phylum, Inc. <engineering@phylum.io>"]
+edition = "2021"
+rust-version = "1.65.0"
+
+[dependencies]
+serde = { version = "1.0.152", features = ["derive"] }

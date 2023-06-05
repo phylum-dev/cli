@@ -1,3 +1,5 @@
+#[cfg(feature = "vulnreach")]
+use std::collections::HashSet;
 use std::io::{self, Write};
 use std::{cmp, str};
 
@@ -15,6 +17,8 @@ use prettytable::format::Alignment;
 use prettytable::{color as table_color, row, table, Attr, Cell, Row, Table};
 use serde::Serialize;
 use unicode_width::UnicodeWidthStr;
+#[cfg(feature = "vulnreach")]
+use vulnreach_types::Vulnerability;
 
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
@@ -33,6 +37,11 @@ pub trait Format: Serialize {
 
     /// Output human-friendly format.
     fn pretty<W: Write>(&self, writer: &mut W);
+
+    /// Output human-friendly format with additional information.
+    fn pretty_verbose<W: Write>(&self, writer: &mut W) {
+        self.pretty(writer);
+    }
 
     /// Output to stdout.
     fn write_stdout(&self, pretty: bool) {
@@ -248,6 +257,58 @@ impl Format for Vec<HistoryJob> {
             ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
         ]);
         let _ = writeln!(writer, "{table}");
+    }
+}
+
+#[cfg(feature = "vulnreach")]
+impl Format for Vulnerability {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        // Check if any import is calling this vulnerability.
+        let affected = if self.vulnerable_dependencies.is_empty() {
+            style("unaffected").green()
+        } else {
+            style("affected").red()
+        };
+
+        // Output heading.
+        let _ = writeln!(writer, "[{affected}] {} — {}", self.name, self.summary);
+    }
+
+    fn pretty_verbose<W: Write>(&self, writer: &mut W) {
+        // Print vulnerability summary.
+        self.pretty(writer);
+
+        // This should never happen, but skip it just in case.
+        if self.vulnerable_dependencies.is_empty() {
+            return;
+        }
+
+        // Output section heading.
+        let _ = writeln!(writer, "Reachability paths:");
+
+        // Filter out duplicate reachability paths.
+        let mut unique_paths = HashSet::new();
+        for path in &self.vulnerable_dependencies {
+            let packages = path.iter().map(|package| &package.name).collect::<Vec<_>>();
+            unique_paths.insert(packages);
+        }
+
+        // Print dependency paths causing this vulnerability to be reachable.
+        let arrow = style("->").blue();
+        for path in &unique_paths {
+            // This should never happen, but skip it just in case.
+            if path.is_empty() {
+                continue;
+            }
+
+            // Print the callchain as arrow-separated packages.
+            let _ = write!(writer, "    {}", path[0]);
+            for package in &path[1..] {
+                let _ = write!(writer, " {} {}", arrow, package);
+            }
+
+            let _ = writeln!(writer);
+        }
     }
 }
 

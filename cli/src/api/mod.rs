@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
@@ -20,11 +21,14 @@ use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::{DeserializeOwned, IgnoredAny};
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
+#[cfg(feature = "vulnreach")]
+use vulnreach_types::{Job, Vulnerability};
 
-use self::endpoints::BaseUriError;
+use crate::api::endpoints::BaseUriError;
 use crate::app::USER_AGENT;
+use crate::auth::jwt::RealmRole;
 use crate::auth::{
-    fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, AuthAction, UserInfo,
+    fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse};
@@ -34,6 +38,7 @@ pub mod endpoints;
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
 pub struct PhylumApi {
+    roles: HashSet<RealmRole>,
     config: Config,
     client: Client,
 }
@@ -86,6 +91,10 @@ struct ApiJsonError {
 }
 
 impl PhylumApi {
+    pub fn roles(&self) -> &HashSet<RealmRole> {
+        &self.roles
+    }
+
     async fn get<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
         self.send_request(Method::GET, path, None::<()>).await
     }
@@ -151,17 +160,16 @@ impl PhylumApi {
     /// any changes
     pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
         // Do we have a refresh token?
+        let ignore_certs = config.ignore_certs();
         let tokens: TokenResponse = match &config.auth_info.offline_access() {
             Some(refresh_token) => {
-                handle_refresh_tokens(refresh_token, config.ignore_certs(), &config.connection.uri)
+                handle_refresh_tokens(refresh_token, ignore_certs, &config.connection.uri)
                     .await
                     .context("Token refresh failed")?
             },
-            None => {
-                handle_auth_flow(AuthAction::Login, config.ignore_certs(), &config.connection.uri)
-                    .await
-                    .context("User login failed")?
-            },
+            None => handle_auth_flow(AuthAction::Login, ignore_certs, &config.connection.uri)
+                .await
+                .context("User login failed")?,
         };
 
         config.auth_info.set_offline_access(tokens.refresh_token.clone());
@@ -179,11 +187,14 @@ impl PhylumApi {
         let client = Client::builder()
             .user_agent(USER_AGENT.as_str())
             .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
-            .danger_accept_invalid_certs(config.ignore_certs())
+            .danger_accept_invalid_certs(ignore_certs)
             .default_headers(headers)
             .build()?;
 
-        Ok(Self { config, client })
+        // Try to parse token's roles.
+        let roles = jwt::user_roles(tokens.access_token.as_str()).unwrap_or_default();
+
+        Ok(Self { config, client, roles })
     }
 
     /// update auth info by forcing the login flow, using the given Auth
@@ -393,6 +404,13 @@ impl PhylumApi {
         let url = endpoints::set_owner(&self.config.connection.uri, group_name, new_owner_email)?;
         self.send_request_raw(Method::PUT, url, None::<()>).await?;
         Ok(())
+    }
+
+    /// Get reachable vulnerabilities.
+    #[cfg(feature = "vulnreach")]
+    pub async fn vulnerabilities(&self, job: Job) -> Result<Vec<Vulnerability>> {
+        let url = endpoints::vulnreach(&self.config.connection.uri)?;
+        self.post(url, job).await
     }
 
     pub fn config(&self) -> &Config {

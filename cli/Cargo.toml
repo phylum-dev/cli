@@ -13,6 +13,7 @@ path = "tests/integration.rs"
 
 [features]
 default = ["selfmanage"]
+vulnreach = ["ignore", "vuln-reach", "vulnreach_types"]
 selfmanage = []
 end-to-end-tests = []
 
@@ -38,6 +39,8 @@ open = "4.0.0"
 phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
+vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true }
+vulnreach_types = { path = "../vulnreach_types", optional = true }
 prettytable-rs = "0.10.0"
 rand = "0.8.4"
 reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }
@@ -64,6 +67,7 @@ deno_core = { version = "0.187.0" }
 deno_ast = { version = "0.26.0", features = ["transpiling"] }
 birdcage = { version = "0.2.0" }
 libc = "0.2.135"
+ignore = { version = "0.4.20", optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
