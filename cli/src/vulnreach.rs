@@ -69,18 +69,18 @@ mod tests {
     #[test]
     fn truncate() {
         // Paths imports.
-        assert_eq!(truncate_imports("./modules"), "./modules".to_string());
-        assert_eq!(truncate_imports("../modules"), "../modules".to_string());
-        assert_eq!(truncate_imports("/test"), "/test".to_string());
+        assert_eq!(truncate_imports("./modules"), None);
+        assert_eq!(truncate_imports("../modules"), None);
+        assert_eq!(truncate_imports("/test"), None);
 
         // Untruncated imports.
-        assert_eq!(truncate_imports("core-js"), "core-js".to_string());
-        assert_eq!(truncate_imports("@angular/http"), "@angular/http".to_string());
+        assert_eq!(truncate_imports("core-js"), Some("core-js".to_string()));
+        assert_eq!(truncate_imports("@angular/http"), Some("@angular/http".to_string()));
 
         // Truncated imports.
-        assert_eq!(truncate_imports("core-js/compat"), "core-js".to_string());
-        assert_eq!(truncate_imports("@angular/http/core"), "@angular/http".to_string());
-        assert_eq!(truncate_imports("core-js/compat/deep/stuff"), "core-js".to_string());
-        assert_eq!(truncate_imports("@angular/http/core/deep/stuff"), "@angular/http".to_string());
+        assert_eq!(truncate_imports("core-js/compat"), Some("core-js".to_string()));
+        assert_eq!(truncate_imports("@angular/http/core"), Some("@angular/http".to_string()));
+        assert_eq!(truncate_imports("core-js/compat/deep/stuff"), Some("core-js".to_string()));
+        assert_eq!(truncate_imports("@angular/http/core/deep/stuff"), Some("@angular/http".to_string()));
     }
 }
