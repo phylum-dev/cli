@@ -13,7 +13,7 @@ path = "tests/integration.rs"
 
 [features]
 default = ["selfmanage"]
-vulnreach = ["ignore", "vuln-reach", "vulnreach_types", "jsonwebtoken"]
+vulnreach = ["ignore", "vuln-reach", "vulnreach_types"]
 selfmanage = []
 end-to-end-tests = []
 
@@ -41,7 +41,6 @@ phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true }
 vulnreach_types = { path = "../vulnreach_types", optional = true }
-jsonwebtoken = { version = "8.3.0", optional = true }
 prettytable-rs = "0.10.0"
 rand = "0.8.4"
 reqwest = { version = "0.11.3", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }

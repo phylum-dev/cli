@@ -311,7 +311,7 @@ fn job_from_packages(
         .map(|package| JobPackage {
             name: package.name,
             version: package.version,
-            ecosystem: package.package_type.into(),
+            ecosystem: package.package_type.to_string(),
         })
         .collect();
 
