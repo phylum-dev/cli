@@ -81,6 +81,9 @@ mod tests {
         assert_eq!(truncate_imports("core-js/compat"), Some("core-js".to_string()));
         assert_eq!(truncate_imports("@angular/http/core"), Some("@angular/http".to_string()));
         assert_eq!(truncate_imports("core-js/compat/deep/stuff"), Some("core-js".to_string()));
-        assert_eq!(truncate_imports("@angular/http/core/deep/stuff"), Some("@angular/http".to_string()));
+        assert_eq!(
+            truncate_imports("@angular/http/core/deep/stuff"),
+            Some("@angular/http".to_string())
+        );
     }
 }
