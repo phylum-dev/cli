@@ -5822,7 +5822,7 @@ dependencies = [
 [[package]]
 name = "vuln-reach"
 version = "0.1.0"
-source = "git+https://github.com/phylum-dev/vuln-reach#bedbfb62d211363b07dba53b9840fef9a83ea084"
+source = "git+https://github.com/phylum-dev/vuln-reach#7f3f067c00028bf05f335ff8cff915acf816db92"
 dependencies = [
  "cc",
  "flate2",
