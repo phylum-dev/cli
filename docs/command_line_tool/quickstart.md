@@ -36,6 +36,10 @@ brew tap phylum-dev/cli
 brew install phylum
 ```
 
+_Note: When using Homebrew, [official extensions][] must be installed separately._
+
+[official extensions]: https://github.com/phylum-dev/cli/tree/main/extensions
+
 ## Quickstart for Linux or macOS
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
