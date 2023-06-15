@@ -441,6 +441,7 @@ mod tests {
     use super::*;
     use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
+    use crate::types::{EvaluatedDependency, PolicyRejection, RejectionSource};
 
     #[tokio::test]
     async fn create_client() -> Result<()> {
@@ -695,7 +696,29 @@ mod tests {
 
     #[tokio::test]
     async fn get_job_status_raw() -> Result<()> {
-        let body = todo!();
+        let body = PolicyEvaluationResponseRaw {
+            is_failure: false,
+            incomplete_packages_count: 3,
+            help: "help".into(),
+            dependencies: vec![EvaluatedDependency {
+                purl: "purl".into(),
+                registry: "registry".into(),
+                version: "version".into(),
+                rejections: vec![PolicyRejection {
+                    title: "title".into(),
+                    source: RejectionSource {
+                        source_type: "source_type".into(),
+                        tag: "tag".into(),
+                        domain: "domain".into(),
+                        severity: "severity".into(),
+                        description: "description".into(),
+                        reason: "reason".into(),
+                    },
+                    suppressed: false,
+                }],
+            }],
+            job_link: "job_link".into(),
+        };
         let expected_body = body.clone();
 
         let mock_server = build_mock_server().await;
@@ -708,7 +731,7 @@ mod tests {
         let client = build_phylum_api(&mock_server).await?;
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
-        let response = client.get_job_status(&job, []).await?;
+        let response = client.get_job_status_raw(&job, []).await?;
 
         assert_eq!(response, expected_body);
 

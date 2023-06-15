@@ -99,6 +99,8 @@ impl Format for PolicyEvaluationResponseRaw {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer);
 
+        // TODO: Print success/failure.
+
         // Print number of unprocessed packages.
         if self.incomplete_packages_count > 0 {
             let pluralization = if self.incomplete_packages_count == 1 { "" } else { "s" };
