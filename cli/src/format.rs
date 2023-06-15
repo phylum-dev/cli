@@ -99,7 +99,15 @@ impl Format for PolicyEvaluationResponseRaw {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer);
 
-        // TODO: Print success/failure.
+        // Print summary status.
+        let status = if self.is_failure {
+            style("FAILURE").red()
+        } else if self.incomplete_packages_count > 0 {
+            style("INCOMPLETE").yellow()
+        } else {
+            style("SUCCESS").green()
+        };
+        let _ = writeln!(writer, "Phylum Supply Chain Risk Analysis — {status}\n");
 
         // Print number of unprocessed packages.
         if self.incomplete_packages_count > 0 {
