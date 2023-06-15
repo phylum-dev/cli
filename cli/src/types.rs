@@ -78,7 +78,7 @@ pub struct PolicyEvaluationResponseRaw {
     pub incomplete_packages_count: u32,
     pub help: String,
     pub dependencies: Vec<EvaluatedDependency>,
-    pub job_link: String,
+    pub job_link: Option<String>,
 }
 
 /// Policy evaluation results for a dependency.

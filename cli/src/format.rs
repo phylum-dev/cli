@@ -132,7 +132,7 @@ impl Format for PolicyEvaluationResponseRaw {
                     Some("malicious_code") | Some("malicious") => "[MAL]",
                     Some("vulnerability") => "[VUL]",
                     Some("license") => "[LIC]",
-                    None | _ => "     ",
+                    _ => "     ",
                 };
                 let message = format!("{domain} {}", rejection.title);
 
@@ -150,7 +150,9 @@ impl Format for PolicyEvaluationResponseRaw {
         }
 
         // Print web URI for the job results.
-        let _ = writeln!(writer, "You can find the interactive report here:\n  {}", self.job_link);
+        if let Some(job_link) = &self.job_link {
+            let _ = writeln!(writer, "You can find the interactive report here:\n  {}", job_link);
+        }
     }
 }
 
