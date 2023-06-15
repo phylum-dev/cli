@@ -126,19 +126,19 @@ impl Format for PolicyEvaluationResponseRaw {
         // Write summary for each issue.
         for package in &self.dependencies {
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
-                let severity = match rejection.source.domain.as_str() {
-                    "author" => "AUT",
-                    "engineering" => "ENG",
-                    "malicious_code" | "malicious" => "MAL",
-                    "vulnerability" => "VUL",
-                    "license" => "LIC",
-                    _ => "UNK",
+                let domain = match rejection.source.domain.as_deref() {
+                    Some("author") => "[AUT]",
+                    Some("engineering") => "[ENG]",
+                    Some("malicious_code") | Some("malicious") => "[MAL]",
+                    Some("vulnerability") => "[VUL]",
+                    Some("license") => "[LIC]",
+                    None | _ => "     ",
                 };
-                let message = format!("[{severity}] {}", rejection.title);
+                let message = format!("{domain} {}", rejection.title);
 
-                let colored = match rejection.source.severity.as_str() {
-                    "low" | "info" => style(message).green(),
-                    "medium" => style(message).yellow(),
+                let colored = match rejection.source.severity.as_deref() {
+                    Some("low") | Some("info") => style(message).green(),
+                    Some("medium") => style(message).yellow(),
                     _ => style(message).red(),
                 };
 

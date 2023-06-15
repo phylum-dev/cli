@@ -103,11 +103,11 @@ pub struct PolicyRejection {
 pub struct RejectionSource {
     #[serde(rename = "type")]
     pub source_type: String,
-    pub tag: String,
-    pub domain: String,
-    pub severity: String,
-    pub description: String,
-    pub reason: String,
+    pub tag: Option<String>,
+    pub domain: Option<String>,
+    pub severity: Option<String>,
+    pub description: Option<String>,
+    pub reason: Option<String>,
 }
 
 #[cfg(test)]
