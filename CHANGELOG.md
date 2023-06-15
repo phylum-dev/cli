@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.3.0] - 2023-06-15
+
 ### Added
 - Add support for parsing additional SPDX locator formats
 - Print package manager STDERR when lockfile generation fails
@@ -511,7 +513,8 @@ before, the existing project ID will be re-linked.
 ## 0.0.1
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.2.0...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.3.0...HEAD
+[5.3.0]: https://github.com/phylum-dev/cli/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/phylum-dev/cli/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/phylum-dev/cli/compare/v5.0.1...v5.1.0
 [5.0.1]: https://github.com/phylum-dev/cli/compare/v5.0.0...v5.0.1
