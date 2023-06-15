@@ -29,7 +29,7 @@ pub async fn print_job_status(
     ignored_packages: impl Into<Vec<PackageDescriptor>>,
     pretty: bool,
 ) -> CommandResult {
-    let response = api.get_job_status(job_id, ignored_packages).await;
+    let response = api.get_job_status_raw(job_id, ignored_packages).await;
 
     // Provide nicer messages for specific errors.
     let status = match response {

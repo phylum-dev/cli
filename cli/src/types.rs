@@ -71,6 +71,45 @@ pub struct PolicyEvaluationResponse {
     pub report: String,
 }
 
+/// Response body for `/data/jobs/{job_id}/policy/evaluate/raw`.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct PolicyEvaluationResponseRaw {
+    pub is_failure: bool,
+    pub incomplete_packages_count: u32,
+    pub help: String,
+    pub dependencies: Vec<EvaluatedDependency>,
+    pub job_link: String,
+}
+
+/// Policy evaluation results for a dependency.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct EvaluatedDependency {
+    pub purl: String,
+    pub registry: String,
+    pub version: String,
+    pub rejections: Vec<PolicyRejection>,
+}
+
+/// Policy rejection cause.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct PolicyRejection {
+    pub title: String,
+    pub source: RejectionSource,
+    pub suppressed: bool,
+}
+
+/// Policy rejection source.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct RejectionSource {
+    #[serde(rename = "type")]
+    pub source_type: String,
+    pub tag: String,
+    pub domain: String,
+    pub severity: String,
+    pub description: String,
+    pub reason: String,
+}
+
 #[cfg(test)]
 mod tests {
     use phylum_types::types::package::RiskLevel;

@@ -40,6 +40,20 @@ pub fn get_job_status(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError
     Ok(url)
 }
 
+/// POST /data/jobs/{job_id}/policy/evaluate/raw
+pub fn get_job_status_raw(api_uri: &str, job_id: &JobId) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "data",
+        "jobs",
+        &job_id.to_string(),
+        "policy",
+        "evaluate",
+        "raw",
+    ]);
+    Ok(url)
+}
+
 /// POST /data/packages/check
 pub fn check_packages(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/check")?)

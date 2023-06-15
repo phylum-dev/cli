@@ -22,7 +22,7 @@ use vulnreach_types::Vulnerability;
 
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
-use crate::types::{HistoryJob, PolicyEvaluationResponse};
+use crate::types::{HistoryJob, PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -92,6 +92,55 @@ impl Format for PhylumStatus {
 impl Format for PolicyEvaluationResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer, "{}", self.report);
+    }
+}
+
+impl Format for PolicyEvaluationResponseRaw {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let _ = writeln!(writer);
+
+        // Print number of unprocessed packages.
+        if self.incomplete_packages_count > 0 {
+            let pluralization = if self.incomplete_packages_count == 1 { "" } else { "s" };
+            let unprocessed_text =
+                format!("{} unprocessed package{}", self.incomplete_packages_count, pluralization);
+            let incomplete_message = format!(
+                "The analysis contains {}, preventing a complete risk analysis. Phylum is \
+                 currently processing these packages and should complete soon. Please wait for up \
+                 to 30 minutes, then re-run the analysis.\n",
+                style(unprocessed_text).yellow(),
+            );
+            let _ = writeln!(writer, "{}", textwrap::fill(&incomplete_message, 80));
+        }
+
+        // Write summary for each issue.
+        for package in &self.dependencies {
+            for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
+                let severity = match rejection.source.domain.as_str() {
+                    "author" => "AUT",
+                    "engineering" => "ENG",
+                    "malicious_code" | "malicious" => "MAL",
+                    "vulnerability" => "VUL",
+                    "license" => "LIC",
+                    _ => "UNK",
+                };
+                let message = format!("[{severity}] {}", rejection.title);
+
+                let colored = match rejection.source.severity.as_str() {
+                    "low" | "info" => style(message).green(),
+                    "medium" => style(message).yellow(),
+                    _ => style(message).red(),
+                };
+
+                let _ = writeln!(writer, "{}", colored);
+            }
+        }
+        if !self.dependencies.is_empty() {
+            let _ = writeln!(writer);
+        }
+
+        // Print web URI for the job results.
+        let _ = writeln!(writer, "You can find the interactive report here:\n  {}", self.job_link);
     }
 }
 
