@@ -10,7 +10,7 @@ use phylum_types::types::group::{
 };
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
 use phylum_types::types::package::{
-    IssuesListItem, Package, PackageStatus, PackageStatusExtended, RiskLevel,
+    IssuesListItem, Package, PackageStatus, PackageStatusExtended, RiskLevel, RiskType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use prettytable::format::Alignment;
@@ -126,19 +126,15 @@ impl Format for PolicyEvaluationResponseRaw {
         // Write summary for each issue.
         for package in &self.dependencies {
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
-                let domain = match rejection.source.domain.as_deref() {
-                    Some("author") => "[AUT]",
-                    Some("engineering") => "[ENG]",
-                    Some("malicious_code") | Some("malicious") => "[MAL]",
-                    Some("vulnerability") => "[VUL]",
-                    Some("license") => "[LIC]",
-                    _ => "     ",
-                };
+                let domain = rejection.source.domain.map_or_else(
+                    || "     ".into(),
+                    |domain| format!("[{}]", RiskType::from(domain)),
+                );
                 let message = format!("{domain} {}", rejection.title);
 
-                let colored = match rejection.source.severity.as_deref() {
-                    Some("low") | Some("info") => style(message).green(),
-                    Some("medium") => style(message).yellow(),
+                let colored = match rejection.source.severity {
+                    Some(RiskLevel::Low) | Some(RiskLevel::Info) => style(message).green(),
+                    Some(RiskLevel::Medium) => style(message).yellow(),
                     _ => style(message).red(),
                 };
 

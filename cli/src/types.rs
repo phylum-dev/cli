@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
-use phylum_types::types::package::PackageDescriptor;
+use phylum_types::types::package::{PackageDescriptor, RiskDomain, RiskLevel};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,8 +104,8 @@ pub struct RejectionSource {
     #[serde(rename = "type")]
     pub source_type: String,
     pub tag: Option<String>,
-    pub domain: Option<String>,
-    pub severity: Option<String>,
+    pub domain: Option<RiskDomain>,
+    pub severity: Option<RiskLevel>,
     pub description: Option<String>,
     pub reason: Option<String>,
 }
