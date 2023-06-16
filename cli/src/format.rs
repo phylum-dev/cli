@@ -124,7 +124,9 @@ impl Format for PolicyEvaluationResponseRaw {
         }
 
         // Write summary for each issue.
-        for package in &self.dependencies {
+        for package in self.dependencies.iter().filter(|package| !package.rejections.is_empty()) {
+            let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
+
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
                 let domain = rejection.source.domain.map_or_else(
                     || "     ".into(),
@@ -138,7 +140,7 @@ impl Format for PolicyEvaluationResponseRaw {
                     _ => style(message).red(),
                 };
 
-                let _ = writeln!(writer, "{}", colored);
+                let _ = writeln!(writer, "  {}", colored);
             }
         }
         if !self.dependencies.is_empty() {

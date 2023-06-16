@@ -86,6 +86,7 @@ pub struct PolicyEvaluationResponseRaw {
 pub struct EvaluatedDependency {
     pub purl: String,
     pub registry: String,
+    pub name: String,
     pub version: String,
     pub rejections: Vec<PolicyRejection>,
 }
