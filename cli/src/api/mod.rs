@@ -429,11 +429,10 @@ impl PhylumApi {
 /// Tests
 #[cfg(test)]
 mod tests {
-
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
-    use phylum_types::types::package::PackageType;
+    use phylum_types::types::package::{PackageType, RiskDomain, RiskLevel};
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -703,14 +702,15 @@ mod tests {
             dependencies: vec![EvaluatedDependency {
                 purl: "purl".into(),
                 registry: "registry".into(),
+                name: "name".into(),
                 version: "version".into(),
                 rejections: vec![PolicyRejection {
                     title: "title".into(),
                     source: RejectionSource {
                         source_type: "source_type".into(),
                         tag: None,
-                        domain: Some("domain".into()),
-                        severity: Some("severity".into()),
+                        domain: Some(RiskDomain::Vulnerabilities),
+                        severity: Some(RiskLevel::Low),
                         description: None,
                         reason: None,
                     },
