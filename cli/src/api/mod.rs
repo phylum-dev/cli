@@ -708,16 +708,16 @@ mod tests {
                     title: "title".into(),
                     source: RejectionSource {
                         source_type: "source_type".into(),
-                        tag: "tag".into(),
-                        domain: "domain".into(),
-                        severity: "severity".into(),
-                        description: "description".into(),
-                        reason: "reason".into(),
+                        tag: None,
+                        domain: Some("domain".into()),
+                        severity: Some("severity".into()),
+                        description: None,
+                        reason: None,
                     },
                     suppressed: false,
                 }],
             }],
-            job_link: "job_link".into(),
+            job_link: Some("job_link".into()),
         };
         let expected_body = body.clone();
 
