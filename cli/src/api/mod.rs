@@ -10,9 +10,7 @@ use phylum_types::types::group::{
 use phylum_types::types::job::{
     AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
-use phylum_types::types::package::{
-    PackageDescriptor, PackageSpecifier, PackageSubmitResponse, PackageType,
-};
+use phylum_types::types::package::{PackageDescriptor, PackageSpecifier, PackageSubmitResponse};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
 };
@@ -283,9 +281,6 @@ impl PhylumApi {
     ) -> Result<JobId> {
         #[allow(deprecated)]
         let req = SubmitPackageRequest {
-            // This package_type is ignored by the API, but it still validates it, so we have to put
-            // something here.
-            package_type: Some(PackageType::Npm),
             packages: package_list.to_vec(),
             is_user: true,
             project,
@@ -425,6 +420,7 @@ mod tests {
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
+    use phylum_types::types::package::PackageType;
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
