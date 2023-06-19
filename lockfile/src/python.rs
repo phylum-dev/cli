@@ -33,7 +33,10 @@ fn is_requirements_file(path: &Path) -> bool {
 impl Parse for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let (_, entries) = pypi::parse(data)
+        // Ignore newlines with line continuation characters.
+        let input = data.replace(" \\\n", " ").replace(" \\\r\n", " ");
+
+        let (_, entries) = pypi::parse(&input)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse requirements file")?;
