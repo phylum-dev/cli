@@ -2,26 +2,34 @@ use std::path::PathBuf;
 
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until};
-use nom::character::complete::{alphanumeric1, char, not_line_ending, space0, space1};
+use nom::character::complete::{alphanumeric1, char, space1};
 use nom::combinator::{eof, opt, recognize, rest, verify};
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
-use nom::sequence::{delimited, pair, terminated};
+use nom::sequence::{delimited, pair, terminated, tuple};
 use nom::Err as NomErr;
 use phylum_types::types::package::PackageType;
 
-use crate::parsers::Result;
+use crate::parsers::{self, Result};
 use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
+pub fn parse(mut input: &str) -> Result<&str, Vec<Package>> {
     let mut pkgs = Vec::new();
 
-    for line in input
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.starts_with('#') && !line.is_empty())
-    {
-        let (_, line) = recognize(alt((take_until(" #"), not_line_ending)))(line)?;
+    while !input.is_empty() {
+        // Get the next line.
+        let (new_input, line) = line(input)?;
+        input = new_input;
+
+        // Ignore empty lines.
+        if line.is_empty() {
+            continue;
+        }
+
+        // Strip comments.
+        let (_, line) = recognize(alt((take_until(" #"), parsers::take_till_eof)))(line)?;
+
+        // Parse dependency.
         let (_, pkg) = package(line)?;
         pkgs.push(pkg);
     }
@@ -29,9 +37,27 @@ pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     Ok((input, pkgs))
 }
 
+/// Parse one line in the lockfile.
+fn line(input: &str) -> Result<&str, &str> {
+    // Take everything until the next newline.
+    //
+    // This takes line continuation characters into account.
+    let (input, mut line) = recognize(parsers::take_continued_line)(input)?;
+
+    // Remove irrelevant whitespace.
+    line = line.trim();
+
+    // Remove entirely commented out lines.
+    if line.starts_with('#') {
+        line = "";
+    }
+
+    Ok((input, line))
+}
+
 fn package(input: &str) -> Result<&str, Package> {
     // Ignore everything after `;`.
-    let (_, input) = recognize(alt((take_until(";"), not_line_ending)))(input)?;
+    let (_, input) = recognize(alt((take_until(";"), parsers::take_till_eof)))(input)?;
 
     // Parse for `-e` dependencies.
     if let Ok(editable) = editable(input) {
@@ -152,7 +178,7 @@ fn identifier_list(input: &str) -> Result<&str, &str> {
 
 fn line_done(input: &str) -> Result<&str, &str> {
     // Allow for spaces and arguments not impacting resolution.
-    let (input, _) = recognize(many0(alt((space1, package_hash))))(input)?;
+    let (input, _) = recognize(many0(alt((nl_space1, package_hash))))(input)?;
 
     eof(input)
 }
@@ -183,5 +209,24 @@ fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> Result<&str, &str>
 where
     F: Fn(&'a str) -> Result<&str, &str>,
 {
-    delimited(space0, inner, space0)
+    delimited(nl_space0, inner, nl_space0)
+}
+
+/// Newline-aware space0.
+///
+/// This automatically handles " \\\n" and treats it as normal space.
+fn nl_space0(input: &str) -> Result<&str, &str> {
+    recognize(many0(alt((space1, line_continuation))))(input)
+}
+
+/// Newline-aware space1.
+///
+/// This automatically handles " \\\n" and treats it as normal space.
+fn nl_space1(input: &str) -> Result<&str, &str> {
+    recognize(many1(alt((space1, line_continuation))))(input)
+}
+
+/// Recognize line continuations.
+fn line_continuation(input: &str) -> Result<&str, &str> {
+    recognize(tuple((tag("\\"), opt(tag("\r")), tag("\n"))))(input)
 }
