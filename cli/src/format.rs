@@ -10,7 +10,7 @@ use phylum_types::types::group::{
 };
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
 use phylum_types::types::package::{
-    IssuesListItem, Package, PackageStatus, PackageStatusExtended, RiskLevel,
+    IssuesListItem, Package, PackageStatus, PackageStatusExtended, RiskLevel, RiskType,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use prettytable::format::Alignment;
@@ -22,7 +22,7 @@ use vulnreach_types::Vulnerability;
 
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
-use crate::types::{HistoryJob, PolicyEvaluationResponse};
+use crate::types::{HistoryJob, PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -92,6 +92,65 @@ impl Format for PhylumStatus {
 impl Format for PolicyEvaluationResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer, "{}", self.report);
+    }
+}
+
+impl Format for PolicyEvaluationResponseRaw {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let _ = writeln!(writer);
+
+        // Print summary status.
+        let status = if self.is_failure {
+            style("FAILURE").red()
+        } else if self.incomplete_packages_count > 0 {
+            style("INCOMPLETE").yellow()
+        } else {
+            style("SUCCESS").green()
+        };
+        let _ = writeln!(writer, "Phylum Supply Chain Risk Analysis — {status}\n");
+
+        // Print number of unprocessed packages.
+        if self.incomplete_packages_count > 0 {
+            let pluralization = if self.incomplete_packages_count == 1 { "" } else { "s" };
+            let unprocessed_text =
+                format!("{} unprocessed package{}", self.incomplete_packages_count, pluralization);
+            let incomplete_message = format!(
+                "The analysis contains {}, preventing a complete risk analysis. Phylum is \
+                 currently processing these packages and should complete soon. Please wait for up \
+                 to 30 minutes, then re-run the analysis.\n",
+                style(unprocessed_text).yellow(),
+            );
+            let _ = writeln!(writer, "{}", textwrap::fill(&incomplete_message, 80));
+        }
+
+        // Write summary for each issue.
+        for package in self.dependencies.iter().filter(|package| !package.rejections.is_empty()) {
+            let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
+
+            for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
+                let domain = rejection.source.domain.map_or_else(
+                    || "     ".into(),
+                    |domain| format!("[{}]", RiskType::from(domain)),
+                );
+                let message = format!("{domain} {}", rejection.title);
+
+                let colored = match rejection.source.severity {
+                    Some(RiskLevel::Low) | Some(RiskLevel::Info) => style(message).green(),
+                    Some(RiskLevel::Medium) => style(message).yellow(),
+                    _ => style(message).red(),
+                };
+
+                let _ = writeln!(writer, "  {}", colored);
+            }
+        }
+        if !self.dependencies.is_empty() {
+            let _ = writeln!(writer);
+        }
+
+        // Print web URI for the job results.
+        if let Some(job_link) = &self.job_link {
+            let _ = writeln!(writer, "You can find the interactive report here:\n  {}", job_link);
+        }
     }
 }
 

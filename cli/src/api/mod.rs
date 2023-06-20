@@ -29,7 +29,10 @@ use crate::auth::{
     fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction, UserInfo,
 };
 use crate::config::{AuthInfo, Config};
-use crate::types::{HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse};
+use crate::types::{
+    HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
+    PolicyEvaluationResponseRaw,
+};
 
 pub mod endpoints;
 
@@ -303,6 +306,16 @@ impl PhylumApi {
         self.post(endpoints::get_job_status(&self.config.connection.uri, job_id)?, body).await
     }
 
+    /// Get the status of a previously submitted job.
+    pub async fn get_job_status_raw(
+        &self,
+        job_id: &JobId,
+        ignored: impl Into<Vec<PackageDescriptor>>,
+    ) -> Result<PolicyEvaluationResponseRaw> {
+        let body = PolicyEvaluationRequest { ignored_packages: ignored.into() };
+        self.post(endpoints::get_job_status_raw(&self.config.connection.uri, job_id)?, body).await
+    }
+
     /// Check a set of packages against the default policy
     pub async fn check_packages(
         &self,
@@ -416,11 +429,10 @@ impl PhylumApi {
 /// Tests
 #[cfg(test)]
 mod tests {
-
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
-    use phylum_types::types::package::PackageType;
+    use phylum_types::types::package::{PackageType, RiskDomain, RiskLevel};
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -428,6 +440,7 @@ mod tests {
     use super::*;
     use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
+    use crate::types::{EvaluatedDependency, PolicyRejection, RejectionSource};
 
     #[tokio::test]
     async fn create_client() -> Result<()> {
@@ -674,6 +687,51 @@ mod tests {
 
         let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
         let response = client.get_job_status(&job, []).await?;
+
+        assert_eq!(response, expected_body);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_job_status_raw() -> Result<()> {
+        let body = PolicyEvaluationResponseRaw {
+            is_failure: false,
+            incomplete_packages_count: 3,
+            help: "help".into(),
+            dependencies: vec![EvaluatedDependency {
+                purl: "purl".into(),
+                registry: "registry".into(),
+                name: "name".into(),
+                version: "version".into(),
+                rejections: vec![PolicyRejection {
+                    title: "title".into(),
+                    source: RejectionSource {
+                        source_type: "source_type".into(),
+                        tag: None,
+                        domain: Some(RiskDomain::Vulnerabilities),
+                        severity: Some(RiskLevel::Low),
+                        description: None,
+                        reason: None,
+                    },
+                    suppressed: false,
+                }],
+            }],
+            job_link: Some("job_link".into()),
+        };
+        let expected_body = body.clone();
+
+        let mock_server = build_mock_server().await;
+        Mock::given(method("POST"))
+            .and(path_regex(r"^/api/v0/data/jobs/[-\dabcdef]+/policy/evaluate/raw$".to_string()))
+            .respond_with_fn(move |_| ResponseTemplate::new(200).set_body_json(body.clone()))
+            .mount(&mock_server)
+            .await;
+
+        let client = build_phylum_api(&mock_server).await?;
+
+        let job = JobId::from_str("59482a54-423b-448d-8325-f171c9dc336b").unwrap();
+        let response = client.get_job_status_raw(&job, []).await?;
 
         assert_eq!(response, expected_body);
 

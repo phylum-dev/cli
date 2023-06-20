@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
-use phylum_types::types::package::PackageDescriptor;
+use phylum_types::types::package::{PackageDescriptor, RiskDomain, RiskLevel};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,6 +69,46 @@ pub struct PolicyEvaluationResponse {
     pub incomplete_count: u32,
     pub output: String,
     pub report: String,
+}
+
+/// Response body for `/data/jobs/{job_id}/policy/evaluate/raw`.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct PolicyEvaluationResponseRaw {
+    pub is_failure: bool,
+    pub incomplete_packages_count: u32,
+    pub help: String,
+    pub dependencies: Vec<EvaluatedDependency>,
+    pub job_link: Option<String>,
+}
+
+/// Policy evaluation results for a dependency.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct EvaluatedDependency {
+    pub purl: String,
+    pub registry: String,
+    pub name: String,
+    pub version: String,
+    pub rejections: Vec<PolicyRejection>,
+}
+
+/// Policy rejection cause.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct PolicyRejection {
+    pub title: String,
+    pub source: RejectionSource,
+    pub suppressed: bool,
+}
+
+/// Policy rejection source.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct RejectionSource {
+    #[serde(rename = "type")]
+    pub source_type: String,
+    pub tag: Option<String>,
+    pub domain: Option<RiskDomain>,
+    pub severity: Option<RiskLevel>,
+    pub description: Option<String>,
+    pub reason: Option<String>,
 }
 
 #[cfg(test)]
