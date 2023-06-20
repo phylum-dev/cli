@@ -33,7 +33,7 @@ fn is_requirements_file(path: &Path) -> bool {
 impl Parse for PyRequirements {
     /// Parses `requirements.txt` files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let (_, entries) = pypi::parse(&data)
+        let (_, entries) = pypi::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse requirements file")?;

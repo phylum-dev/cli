@@ -183,7 +183,7 @@ fn line_done(input: &str) -> Result<&str, &str> {
     eof(input)
 }
 
-/// Pares package hashes.
+/// Parse package hashes.
 ///
 /// Example:
 ///   --hash=sha256:
