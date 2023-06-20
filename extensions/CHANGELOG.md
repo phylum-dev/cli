@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.3.0 - 2023-06-15
+
 ### Fixed
 
 - Uncaught extension errors now cause the CLI to exit with a non-zero exit code
