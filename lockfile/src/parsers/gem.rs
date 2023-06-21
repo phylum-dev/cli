@@ -1,5 +1,3 @@
-use std::result::Result as StdResult;
-
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
@@ -10,7 +8,7 @@ use nom::sequence::{delimited, tuple};
 use nom::Err as NomErr;
 use phylum_types::types::package::PackageType;
 
-use crate::parsers::{take_till_blank_line, Result};
+use crate::parsers::{take_till_blank_line, IResult};
 use crate::{Package, PackageVersion, ThirdPartyVersion};
 
 /// URL of the first-party ruby registry.
@@ -30,7 +28,7 @@ struct Section<'a> {
 
 impl<'a> Section<'a> {
     /// Parse lockfile into dependency sections.
-    fn from_lockfile(mut input: &'a str) -> Result<&str, Vec<Self>> {
+    fn from_lockfile(mut input: &'a str) -> IResult<&str, Vec<Self>> {
         let mut sections = Vec::new();
 
         while !input.is_empty() {
@@ -67,7 +65,7 @@ impl<'a> Section<'a> {
     }
 
     /// Get dependencies in this dependency section.
-    fn packages(&self) -> Result<&'a str, Vec<Package>> {
+    fn packages(&self) -> IResult<&'a str, Vec<Package>> {
         match self.section_type {
             SectionType::Gem => self.gem_packages(),
             SectionType::Git => self.git_packages(),
@@ -76,7 +74,7 @@ impl<'a> Section<'a> {
     }
 
     /// Get all dependencies for a GEM section.
-    fn gem_packages(&self) -> Result<&'a str, Vec<Package>> {
+    fn gem_packages(&self) -> IResult<&'a str, Vec<Package>> {
         let (input, remote) = remote(self.content).unwrap_or((self.content, DEFAULT_REGISTRY));
 
         let (input, _) = specs(input)?;
@@ -98,13 +96,13 @@ impl<'a> Section<'a> {
 
                 Ok(Package { name, version, package_type: PackageType::RubyGems })
             })
-            .collect::<StdResult<_, _>>()?;
+            .collect::<Result<_, _>>()?;
 
         Ok((input, pkgs))
     }
 
     /// Get all dependencies for a GIT section.
-    fn git_packages(&self) -> Result<&'a str, Vec<Package>> {
+    fn git_packages(&self) -> IResult<&'a str, Vec<Package>> {
         // Parse git keys.
         let (input, remote) = remote(self.content)?;
         let (input, revision) = revision(input)?;
@@ -112,10 +110,8 @@ impl<'a> Section<'a> {
 
         // Parse specs section.
         let (input, _) = specs(input)?;
-        let mut specs_packages: Vec<SpecsPackage> = input
-            .lines()
-            .filter_map(|line| package(line).transpose())
-            .collect::<StdResult<_, _>>()?;
+        let mut specs_packages: Vec<SpecsPackage> =
+            input.lines().filter_map(|line| package(line).transpose()).collect::<Result<_, _>>()?;
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
@@ -135,16 +131,14 @@ impl<'a> Section<'a> {
     }
 
     /// Get all dependencies for a PATH section.
-    fn path_packages(&self) -> Result<&'a str, Vec<Package>> {
+    fn path_packages(&self) -> IResult<&'a str, Vec<Package>> {
         // Find filesystem path.
         let (input, path) = remote(self.content)?;
 
         // Parse specs section.
         let (input, _) = specs(input)?;
-        let mut specs_packages: Vec<SpecsPackage> = input
-            .lines()
-            .filter_map(|line| package(line).transpose())
-            .collect::<StdResult<_, _>>()?;
+        let mut specs_packages: Vec<SpecsPackage> =
+            input.lines().filter_map(|line| package(line).transpose()).collect::<Result<_, _>>()?;
 
         // Bail if there isn't exactly one member in the `specs` section.
         if specs_packages.len() != 1 {
@@ -179,7 +173,7 @@ struct SpecsPackage {
     version: String,
 }
 
-pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
+pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
     let (input, sections) = Section::from_lockfile(input)?;
 
     let mut packages = Vec::new();
@@ -190,21 +184,21 @@ pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     Ok((input, packages))
 }
 
-fn remote(input: &str) -> Result<&str, &str> {
+fn remote(input: &str) -> IResult<&str, &str> {
     key(input, "remote")
 }
 
-fn revision(input: &str) -> Result<&str, &str> {
+fn revision(input: &str) -> IResult<&str, &str> {
     key(input, "revision")
 }
 
-fn specs(input: &str) -> Result<&str, &str> {
+fn specs(input: &str) -> IResult<&str, &str> {
     recognize(many_till(take_till_line_end, recognize(tuple((space0, tag("specs:"), line_ending)))))(
         input,
     )
 }
 
-fn package(input: &str) -> StdResult<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {
+fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {
     let (input, name) = package_name(input)?;
     let (_, version) = loose_package_version(input)?;
 
@@ -223,14 +217,14 @@ fn package(input: &str) -> StdResult<Option<SpecsPackage>, NomErr<VerboseError<&
     Ok(Some(SpecsPackage { name: name.to_string(), version: version.into() }))
 }
 
-fn package_name(input: &str) -> Result<&str, &str> {
+fn package_name(input: &str) -> IResult<&str, &str> {
     let (input, _) = recognize(space0)(input)?;
     recognize(alt((take_until(" "), not_line_ending)))(input)
 }
 
 /// Parser allowing for loose `(>= 1.2.0, < 2.0, != 1.2.3)` and strict
 /// `(1.2.3-alpha+build3)` versions.
-fn loose_package_version(input: &str) -> Result<&str, &str> {
+fn loose_package_version(input: &str) -> IResult<&str, &str> {
     // Versions can be completely omitted for sub-dependencies.
     if input.is_empty() {
         return Ok(("", ""));
@@ -247,7 +241,7 @@ fn loose_package_version(input: &str) -> Result<&str, &str> {
 }
 
 /// Parser allowing only strict `1.2.3-alpha+build3` versions.
-fn strict_package_version(input: &str) -> Result<&str, &str> {
+fn strict_package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
     recognize(many1(satisfy(|c: char| {
         c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c)
@@ -255,14 +249,14 @@ fn strict_package_version(input: &str) -> Result<&str, &str> {
 }
 
 /// Get the value for a key in a `   key: value` line.
-fn key<'a>(input: &'a str, key: &str) -> Result<&'a str, &'a str> {
+fn key<'a>(input: &'a str, key: &str) -> IResult<&'a str, &'a str> {
     let (input, _key) = recognize(tuple((space0, tag(key), tag(": "))))(input)?;
     take_till_line_end(input)
 }
 
 /// Take everything until a line end, swallowing the line end character
 /// completely.
-fn take_till_line_end(input: &str) -> Result<&str, &str> {
+fn take_till_line_end(input: &str) -> IResult<&str, &str> {
     let (input, consumed) = recognize(alt((take_until("\n"), take_until("\r\n"))))(input)?;
     let (input, _) = alt((tag("\n"), tag("\r\n")))(input)?;
     Ok((input, consumed))

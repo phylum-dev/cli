@@ -10,10 +10,10 @@ use nom::sequence::{delimited, pair, terminated};
 use nom::Err as NomErr;
 use phylum_types::types::package::PackageType;
 
-use crate::parsers::{self, Result};
+use crate::parsers::{self, IResult};
 use crate::{Package, PackageVersion};
 
-pub fn parse(mut input: &str) -> Result<&str, Vec<Package>> {
+pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
     let mut pkgs = Vec::new();
 
     while !input.is_empty() {
@@ -38,7 +38,7 @@ pub fn parse(mut input: &str) -> Result<&str, Vec<Package>> {
 }
 
 /// Parse one line in the lockfile.
-fn line(input: &str) -> Result<&str, &str> {
+fn line(input: &str) -> IResult<&str, &str> {
     // Take everything until the next newline.
     //
     // This takes line continuation characters into account.
@@ -55,7 +55,7 @@ fn line(input: &str) -> Result<&str, &str> {
     Ok((input, line))
 }
 
-fn package(input: &str) -> Result<&str, Package> {
+fn package(input: &str) -> IResult<&str, Package> {
     // Ignore everything after `;`.
     let (_, input) = alt((take_until(";"), rest))(input)?;
 
@@ -98,7 +98,7 @@ fn package(input: &str) -> Result<&str, Package> {
 /// We'll use `/tmp/editable` as name here, since there's no other identifier
 /// attached. The path is left empty since this is usually just a git
 /// repository, which does not have any path.
-fn editable(input: &str) -> Result<&str, Package> {
+fn editable(input: &str) -> IResult<&str, Package> {
     // Ensure `-e` is present and skip it.
     let (input, _) = ws(tag("-e"))(input)?;
 
@@ -142,16 +142,16 @@ fn editable(input: &str) -> Result<&str, Package> {
 /// Find URI dependencies.
 ///
 /// This includes path, git and internet dependencies.
-fn uri_version(input: &str) -> Result<&str, &str> {
+fn uri_version(input: &str) -> IResult<&str, &str> {
     let (uri, _) = ws(tag("@"))(input)?;
     Ok(("", uri))
 }
 
-fn package_name(input: &str) -> Result<&str, &str> {
+fn package_name(input: &str) -> IResult<&str, &str> {
     terminated(ws(identifier), opt(ws(package_extras)))(input)
 }
 
-fn package_version(input: &str) -> Result<&str, &str> {
+fn package_version(input: &str) -> IResult<&str, &str> {
     // Ensure no `*` is in the version.
     let (_, input) = verify(rest, |s: &str| !s.contains('*'))(input)?;
 
@@ -162,21 +162,21 @@ fn package_version(input: &str) -> Result<&str, &str> {
     recognize(many1(alt((alphanumeric1, tag(".")))))(input)
 }
 
-fn identifier(input: &str) -> Result<&str, &str> {
+fn identifier(input: &str) -> IResult<&str, &str> {
     recognize(pair(alphanumeric1, many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag("."))))))))(
         input,
     )
 }
 
-fn package_extras(input: &str) -> Result<&str, &str> {
+fn package_extras(input: &str) -> IResult<&str, &str> {
     delimited(char('['), identifier_list, char(']'))(input)
 }
 
-fn identifier_list(input: &str) -> Result<&str, &str> {
+fn identifier_list(input: &str) -> IResult<&str, &str> {
     recognize(separated_list0(char(','), ws(identifier)))(input)
 }
 
-fn line_done(input: &str) -> Result<&str, &str> {
+fn line_done(input: &str) -> IResult<&str, &str> {
     // Allow for spaces and arguments not impacting resolution.
     let (input, _) = recognize(many0(alt((nl_space1, package_hash))))(input)?;
 
@@ -188,7 +188,7 @@ fn line_done(input: &str) -> Result<&str, &str> {
 /// Example:
 ///   --hash=sha256:
 /// 8c2f9abd47a9e8df7f0c3f091ce9497d011dc3b31effcf4c85a6e2b50f4114ef
-fn package_hash(input: &str) -> Result<&str, &str> {
+fn package_hash(input: &str) -> IResult<&str, &str> {
     // Argument name.
     let (input, _) = tag("--hash=")(input)?;
 
@@ -205,9 +205,9 @@ fn package_hash(input: &str) -> Result<&str, &str> {
 /// A combinator that takes a parser `inner` and produces a parser that also
 /// consumes both leading and trailing whitespace, returning the output of
 /// `inner`.
-fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> Result<&str, &str>
+fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&str, &str>
 where
-    F: Fn(&'a str) -> Result<&str, &str>,
+    F: Fn(&'a str) -> IResult<&str, &str>,
 {
     delimited(nl_space0, inner, nl_space0)
 }
@@ -215,18 +215,18 @@ where
 /// Newline-aware space0.
 ///
 /// This automatically handles " \\\n" and treats it as normal space.
-fn nl_space0(input: &str) -> Result<&str, &str> {
+fn nl_space0(input: &str) -> IResult<&str, &str> {
     recognize(many0(alt((space1, line_continuation))))(input)
 }
 
 /// Newline-aware space1.
 ///
 /// This automatically handles " \\\n" and treats it as normal space.
-fn nl_space1(input: &str) -> Result<&str, &str> {
+fn nl_space1(input: &str) -> IResult<&str, &str> {
     recognize(many1(alt((space1, line_continuation))))(input)
 }
 
 /// Recognize line continuations.
-fn line_continuation(input: &str) -> Result<&str, &str> {
+fn line_continuation(input: &str) -> IResult<&str, &str> {
     recognize(pair(tag("\\"), line_ending))(input)
 }

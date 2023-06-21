@@ -6,10 +6,10 @@ use nom::multi::many1;
 use nom::sequence::{preceded, tuple};
 use phylum_types::types::package::PackageType;
 
-use super::Result;
+use super::IResult;
 use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
+pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
     let (input, mut pkg_options) = many1(package)(input)?;
     let mut pkgs = pkg_options.drain(..).collect::<Vec<_>>();
 
@@ -20,7 +20,7 @@ pub fn parse(input: &str) -> Result<&str, Vec<Package>> {
     Ok((input, pkgs))
 }
 
-fn package(input: &str) -> Result<&str, Package> {
+fn package(input: &str) -> IResult<&str, Package> {
     let (input, name) = package_name(input)?;
     let (input, version) = package_version(input)?;
     let (input, _hash) = package_hash(input)?;
@@ -34,7 +34,7 @@ fn package(input: &str) -> Result<&str, Package> {
     Ok((input, package))
 }
 
-fn package_name(input: &str) -> Result<&str, &str> {
+fn package_name(input: &str) -> IResult<&str, &str> {
     // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
@@ -42,7 +42,7 @@ fn package_name(input: &str) -> Result<&str, &str> {
     recognize(take_until(" "))(input)
 }
 
-fn package_version(input: &str) -> Result<&str, &str> {
+fn package_version(input: &str) -> IResult<&str, &str> {
     // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
@@ -61,7 +61,7 @@ fn package_version(input: &str) -> Result<&str, &str> {
     Ok((input, version))
 }
 
-fn package_hash(input: &str) -> Result<&str, &str> {
+fn package_hash(input: &str) -> IResult<&str, &str> {
     // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
