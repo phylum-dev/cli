@@ -5,7 +5,7 @@ use nom::combinator::{eof, opt, recognize, rest};
 use nom::error::{context, VerboseError};
 use nom::multi::{count, many1, many_till};
 use nom::sequence::{delimited, terminated, tuple};
-use nom::{AsChar, IResult};
+use nom::AsChar;
 
 pub mod gem;
 pub mod go_sum;
@@ -15,12 +15,12 @@ pub mod spdx;
 pub mod yarn;
 
 /// Consume everything until the next `\n` or `\r\n`.
-fn take_till_line_end(input: &str) -> Result<&str, &str> {
+fn take_till_line_end(input: &str) -> IResult<&str, &str> {
     recognize(terminated(not_line_ending, line_ending))(input)
 }
 
 /// Consume everything until the next `\n\n` or `\r\n\r\n`.
-fn take_till_blank_line(input: &str) -> Result<&str, &str> {
+fn take_till_blank_line(input: &str) -> IResult<&str, &str> {
     recognize(alt((take_until("\n\n"), take_until("\r\n\r\n"))))(input)
 }
 
@@ -28,7 +28,7 @@ fn take_till_blank_line(input: &str) -> Result<&str, &str> {
 ///
 /// This supports both `\n` and `\r\n`. It also skips line continuations
 /// (`\\\n`, `\\\r\n`) and stops on EOF.
-fn take_continued_line(mut input: &str) -> Result<&str, ()> {
+fn take_continued_line(mut input: &str) -> IResult<&str, ()> {
     loop {
         // Get everything up to the next NL or EOF.
         let (new_input, line) = recognize(alt((take_till_line_end, rest)))(input)?;
@@ -43,4 +43,4 @@ fn take_continued_line(mut input: &str) -> Result<&str, ()> {
     Ok((input, ()))
 }
 
-type Result<T, U> = IResult<T, U, VerboseError<T>>;
+type IResult<T, U> = nom::IResult<T, U, VerboseError<T>>;

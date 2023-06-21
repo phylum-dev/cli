@@ -8,19 +8,19 @@ use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
 use nom::Err as NomErr;
 
-use crate::parsers::{take_till_blank_line, take_till_line_end, Result};
+use crate::parsers::{take_till_blank_line, take_till_line_end, IResult};
 use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory};
 
-pub(crate) fn parse(input: &str) -> Result<&str, Vec<PackageInformation>> {
+pub(crate) fn parse(input: &str) -> IResult<&str, Vec<PackageInformation>> {
     let (i, pkgs_info) = many1(package)(input)?;
     Ok((i, pkgs_info))
 }
 
-fn package_name(input: &str) -> Result<&str, &str> {
+fn package_name(input: &str) -> IResult<&str, &str> {
     recognize(take_until("PackageName:"))(input)
 }
 
-fn package(input: &str) -> Result<&str, PackageInformation> {
+fn package(input: &str) -> IResult<&str, PackageInformation> {
     let (i, _) = package_name(input)?;
 
     let (i, capture) = recognize(many_till(
@@ -32,14 +32,14 @@ fn package(input: &str) -> Result<&str, PackageInformation> {
     Ok((i, my_entry))
 }
 
-fn parse_package(input: &str) -> Result<&str, PackageInformation> {
+fn parse_package(input: &str) -> IResult<&str, PackageInformation> {
     context("package", package_info)(input).map(|(next_input, res)| {
         let pi = res;
         (next_input, pi)
     })
 }
 
-fn package_info(input: &str) -> Result<&str, PackageInformation> {
+fn package_info(input: &str) -> IResult<&str, PackageInformation> {
     let (i, _) = package_name(input)?;
 
     // PackageName is required
@@ -91,7 +91,7 @@ fn package_info(input: &str) -> Result<&str, PackageInformation> {
     }
 }
 
-fn extern_ref(input: &str) -> Result<&str, &str> {
+fn extern_ref(input: &str) -> IResult<&str, &str> {
     recognize(alt((
         take_until("ExternalRef: PACKAGE-MANAGER"),
         take_until("ExternalRef: PACKAGE_MANAGER"),
@@ -99,7 +99,7 @@ fn extern_ref(input: &str) -> Result<&str, &str> {
     )))(input)
 }
 
-fn parse_external_refs(input: &str) -> Result<&str, ExternalRefs> {
+fn parse_external_refs(input: &str) -> IResult<&str, ExternalRefs> {
     let input = input.trim_start_matches("ExternalRef:").trim();
     let purl = tuple((
         ws(take_while(|c: char| !c.is_whitespace())),
@@ -127,9 +127,9 @@ fn parse_external_refs(input: &str) -> Result<&str, ExternalRefs> {
 /// A combinator that takes a parser `inner` and produces a parser that also
 /// consumes both leading and trailing whitespace, returning the output of
 /// `inner`.
-fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> Result<&str, &str>
+fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&str, &str>
 where
-    F: Fn(&'a str) -> Result<&str, &str>,
+    F: Fn(&'a str) -> IResult<&str, &str>,
 {
     delimited(multispace0, inner, multispace0)
 }
