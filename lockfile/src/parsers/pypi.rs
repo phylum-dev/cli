@@ -2,11 +2,11 @@ use std::path::PathBuf;
 
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until};
-use nom::character::complete::{alphanumeric1, char, space1};
+use nom::character::complete::{alphanumeric1, char, line_ending, space1};
 use nom::combinator::{eof, opt, recognize, rest, verify};
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
-use nom::sequence::{delimited, pair, terminated, tuple};
+use nom::sequence::{delimited, pair, terminated};
 use nom::Err as NomErr;
 use phylum_types::types::package::PackageType;
 
@@ -27,7 +27,7 @@ pub fn parse(mut input: &str) -> Result<&str, Vec<Package>> {
         }
 
         // Strip comments.
-        let (_, line) = recognize(alt((take_until(" #"), parsers::take_till_eof)))(line)?;
+        let (_, line) = alt((take_until(" #"), rest))(line)?;
 
         // Parse dependency.
         let (_, pkg) = package(line)?;
@@ -57,7 +57,7 @@ fn line(input: &str) -> Result<&str, &str> {
 
 fn package(input: &str) -> Result<&str, Package> {
     // Ignore everything after `;`.
-    let (_, input) = recognize(alt((take_until(";"), parsers::take_till_eof)))(input)?;
+    let (_, input) = alt((take_until(";"), rest))(input)?;
 
     // Parse for `-e` dependencies.
     if let Ok(editable) = editable(input) {
@@ -228,5 +228,5 @@ fn nl_space1(input: &str) -> Result<&str, &str> {
 
 /// Recognize line continuations.
 fn line_continuation(input: &str) -> Result<&str, &str> {
-    recognize(tuple((tag("\\"), opt(tag("\r")), tag("\n"))))(input)
+    recognize(pair(tag("\\"), line_ending))(input)
 }
