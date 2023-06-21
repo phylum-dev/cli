@@ -28,7 +28,7 @@ fn take_till_blank_line(input: &str) -> Result<&str, &str> {
 ///
 /// This supports both `\n` and `\r\n`. It also skips line continuations
 /// (`\\\n`, `\\\r\n`) and stops on EOF.
-fn take_continued_line(mut input: &str) -> Result<&str, &str> {
+fn take_continued_line(mut input: &str) -> Result<&str, ()> {
     loop {
         // Get everything up to the next NL or EOF.
         let (new_input, line) = recognize(alt((take_till_line_end, rest)))(input)?;
@@ -40,7 +40,7 @@ fn take_continued_line(mut input: &str) -> Result<&str, &str> {
         }
     }
 
-    Ok((input, ""))
+    Ok((input, ()))
 }
 
 type Result<T, U> = IResult<T, U, VerboseError<T>>;
