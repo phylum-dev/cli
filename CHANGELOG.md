@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- New output format for `phylum analyze` and `phylum history <job-id>`
+
+### Fixed
+- Correctly handle line continuations and --hash in `requirements.txt` parser
+
 ## [5.3.0] - 2023-06-15
 
 ### Added
