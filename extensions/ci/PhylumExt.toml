@@ -1,0 +1,5 @@
+name = "ci"
+description = "Phylum CI analysis"
+
+[permissions]
+read = ["/"]

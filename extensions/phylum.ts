@@ -88,6 +88,7 @@ export class PhylumApi {
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
+   * @param label - Analysis label for this job
    *
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
@@ -95,6 +96,7 @@ export class PhylumApi {
     packages: Package[],
     project?: string,
     group?: string,
+    label?: string,
   ): Promise<string> {
     return DenoCore.opAsync(
       "analyze",
