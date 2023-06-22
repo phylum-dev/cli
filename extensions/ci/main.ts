@@ -10,7 +10,7 @@ if (Deno.args.length < 4 || Deno.args.length > 5) {
 
 // Find optional groups argument.
 let group = undefined;
-let groupArgsIndex = Deno.args.indexOf("--group");
+const groupArgsIndex = Deno.args.indexOf("--group");
 if (groupArgsIndex != -1) {
   const groupArgs = Deno.args.splice(groupArgsIndex, groupArgsIndex);
   group = groupArgs[1];

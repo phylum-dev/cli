@@ -103,6 +103,7 @@ export class PhylumApi {
       packages,
       project,
       group,
+      label,
     );
   }
 
