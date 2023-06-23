@@ -1,4 +1,4 @@
-import { PhylumApi, Package } from "phylum";
+import { Package, PhylumApi } from "phylum";
 
 // Ensure required arguments are present.
 const args = Deno.args.slice(0);
