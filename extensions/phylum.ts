@@ -1,18 +1,18 @@
 // @ts-ignore Deno[Deno.internal].core is not defined in types
 const DenoCore = Deno[Deno.internal].core;
 
-type Package = {
+export type Package = {
   name: string;
   version: string;
   type: string;
 };
 
-type Lockfile = {
+export type Lockfile = {
   packages: Package[];
   format: string;
 };
 
-type ProcessOutput = {
+export type ProcessOutput = {
   stdout: string;
   stderr: string;
   success: boolean;

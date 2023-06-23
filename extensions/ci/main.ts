@@ -1,4 +1,4 @@
-import { PhylumApi } from "phylum";
+import { PhylumApi, Package } from "phylum";
 
 // Ensure required arguments are present.
 const args = Deno.args.slice(0);
@@ -24,7 +24,7 @@ const base = args[2];
 const lockfiles = args.splice(3);
 
 // Parse new lockfiles.
-let packages = [];
+let packages: Package[] = [];
 for (const lockfile of lockfiles) {
   const lockfileDeps = await PhylumApi.parseLockfile(lockfile);
   packages = packages.concat(lockfileDeps.packages);
