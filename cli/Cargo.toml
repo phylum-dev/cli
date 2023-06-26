@@ -35,7 +35,7 @@ hyper = "0.14.16"
 lazy_static = "1.4.0"
 log = "0.4.6"
 maplit = "1.0.2"
-open = "4.0.0"
+open = "5.0.0"
 phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
