@@ -140,6 +140,7 @@ async fn analyze(
     packages: Vec<PackageDescriptor>,
     project: Option<String>,
     group: Option<String>,
+    label: Option<String>,
 ) -> Result<JobId> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -155,7 +156,7 @@ async fn analyze(
         },
     };
 
-    let job_id = api.submit_request(&packages, project, None, group.map(String::from)).await?;
+    let job_id = api.submit_request(&packages, project, label, group.map(String::from)).await?;
 
     Ok(job_id)
 }
