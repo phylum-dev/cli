@@ -38,11 +38,18 @@ pub trait Generator {
         vec![self.lockfile_name()]
     }
 
+    /// Verify that all the prerequisites for lockfile generation are met.
+    fn check_prerequisites(&self, _manifest_path: &Path) -> Result<()> {
+        Ok(())
+    }
+
     /// Generate the lockfile for a project.
     ///
     /// This will ignore all existing lockfiles and create a new lockfile based
     /// on the current project configuration.
     fn generate_lockfile(&self, manifest_path: &Path) -> Result<String> {
+        self.check_prerequisites(manifest_path)?;
+
         let canonicalized = fs::canonicalize(manifest_path)?;
         let project_path = canonicalized
             .parent()
