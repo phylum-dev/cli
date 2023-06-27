@@ -13,7 +13,7 @@ if (args.length < 4) {
 let group = undefined;
 const groupArgsIndex = args.indexOf("--group");
 if (groupArgsIndex != -1) {
-  const groupArgs = args.splice(groupArgsIndex, groupArgsIndex + 1);
+  const groupArgs = args.splice(groupArgsIndex, 2);
   group = groupArgs[1];
 }
 
