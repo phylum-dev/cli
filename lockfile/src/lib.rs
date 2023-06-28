@@ -488,8 +488,8 @@ mod tests {
         let tempdir = tempfile::tempdir().unwrap();
         let files = [
             tempdir.path().join("setup.py"),
-            tempdir.path().join("a/setup.py"),
-            tempdir.path().join("b/pyproject.toml"),
+            tempdir.path().join("b/setup.py"),
+            tempdir.path().join("a/pyproject.toml"),
         ];
         for file in &files {
             let dir = file.parent().unwrap();
@@ -498,12 +498,13 @@ mod tests {
         }
 
         // Find manifest files.
-        let lockable_files = find_lockable_files_at(tempdir.path());
+        let mut lockable_files = find_lockable_files_at(tempdir.path());
 
         // Compare results.
+        lockable_files.sort_unstable();
         let expected = vec![
-            (tempdir.path().join("b/pyproject.toml").to_path_buf(), LockfileFormat::Pip),
-            (tempdir.path().join("a/setup.py").to_path_buf(), LockfileFormat::Pip),
+            (tempdir.path().join("a/pyproject.toml").to_path_buf(), LockfileFormat::Pip),
+            (tempdir.path().join("b/setup.py").to_path_buf(), LockfileFormat::Pip),
             (tempdir.path().join("setup.py").to_path_buf(), LockfileFormat::Pip),
         ];
         assert_eq!(lockable_files, expected);
