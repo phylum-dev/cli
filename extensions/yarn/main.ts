@@ -50,72 +50,18 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
-// List with all of yarn's subcommands.
-const knownSubcommands = [
-  // Yarn v1+ subcommands.
-  "access",
-  "add",
-  "audit",
-  "autoclean",
-  "bin",
-  "cache",
-  "check",
-  "config",
-  "create",
-  "exec",
-  "generate-lock-entry",
-  "generateLockEntry",
-  "global",
-  "help",
-  "import",
-  "info",
-  "init",
-  "install",
-  "licenses",
-  "link",
-  "list",
-  "login",
-  "logout",
-  "node",
-  "outdated",
-  "owner",
-  "pack",
-  "policies",
-  "publish",
-  "remove",
-  "run",
-  "tag",
-  "team",
-  "unlink",
-  "unplug",
-  "upgrade",
-  "upgrade-interactive",
-  "upgradeInteractive",
-  "version",
-  "versions",
-  "why",
-  "workspace",
-  "workspaces",
-  // Yarn v2 subcommands.
-  "dedupe",
-  "dlx",
-  "explain",
-  "npm",
-  "patch",
-  "patch-commit",
-  "rebuild",
-  "set",
-  "up",
-  "plugin",
-  "workspace",
-];
-
-// Ensure the first argument is a known subcommand.
+// Ensure no arguments are passed before `add`/`install`/`up`/`dedupe` subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `yarn --cwd /tmp/project add package`).
 const subcommand = Deno.args[0];
-if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+if (
+  Deno.args.length != 0 &&
+    (Deno.args.includes("add") && subcommand !== "add") ||
+  (Deno.args.includes("install") && subcommand !== "install") ||
+  (Deno.args.includes("up") && subcommand !== "up") ||
+  (Deno.args.includes("dedupe") && subcommand !== "dedupe")
+) {
   console.error(
     `[${
       red("phylum")

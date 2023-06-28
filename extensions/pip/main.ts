@@ -5,33 +5,16 @@ import {
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
-// List with all of pip's subcommands.
-const knownSubcommands = [
-  "install",
-  "download",
-  "uninstall",
-  "freeze",
-  "inspect",
-  "list",
-  "show",
-  "check",
-  "config",
-  "search",
-  "cache",
-  "index",
-  "wheel",
-  "hash",
-  "completion",
-  "debug",
-  "help",
-];
-
-// Ensure the first argument is a known subcommand.
+// Ensure no arguments are passed before `install` subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `pip --no-color install package`).
 const subcommand = Deno.args[0];
-if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+if (
+  Deno.args.length != 0 &&
+  subcommand !== "install" &&
+  Deno.args.includes("install")
+) {
   console.error(
     `[${
       red("phylum")

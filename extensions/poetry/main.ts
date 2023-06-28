@@ -24,41 +24,17 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
-// List with all of poetry's subcommands.
-const knownSubcommands = [
-  "about",
-  "add",
-  "build",
-  "check",
-  "config",
-  "export",
-  "help",
-  "init",
-  "install",
-  "list",
-  "lock",
-  "new",
-  "publish",
-  "remove",
-  "run",
-  "search",
-  "shell",
-  "show",
-  "update",
-  "version",
-  "cache",
-  "debug",
-  "env",
-  "self",
-  "source",
-];
-
-// Ensure the first argument is a known subcommand.
+// Ensure no arguments are passed before `add`/`update`/`install` subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `poetry --no-color add package`).
 const subcommand = Deno.args[0];
-if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+if (
+  Deno.args.length != 0 &&
+    (Deno.args.includes("add") && subcommand !== "add") ||
+  (Deno.args.includes("update") && subcommand !== "update") ||
+  (Deno.args.includes("install") && subcommand !== "install")
+) {
   console.error(
     `[${
       red("phylum")
