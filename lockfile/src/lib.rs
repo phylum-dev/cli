@@ -270,8 +270,8 @@ pub fn find_lockfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat
 ///
 /// Paths excluded by gitignore are automatically ignored.
 pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
+    let mut manifests: Vec<(PathBuf, _)> = Vec::new();
     let mut lockfiles = Vec::new();
-    let mut manifests = Vec::new();
 
     let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
 
@@ -293,11 +293,28 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
         }
     }
 
-    // Filter out manifests with a lockfile in a directory above them.
-    manifests.retain(|(manifest_path, _)| {
+    for i in (0..manifests.len()).rev() {
+        let mut remove = false;
+
+        let (manifest_path, _) = &manifests[i];
+
+        // Filter out manifests with a lockfile in a directory above them.
         let mut lockfile_dirs = lockfiles.iter().filter_map(|(path, _)| path.parent());
-        lockfile_dirs.all(|lockfile_dir| !manifest_path.starts_with(lockfile_dir))
-    });
+        remove |= lockfile_dirs.any(|lockfile_dir| manifest_path.starts_with(lockfile_dir));
+
+        // Filter out `setup.py` files with `pyproject.toml` present.
+        if manifest_path.ends_with("setup.py") {
+            remove |= manifests.iter().any(|(path, _)| {
+                let dir = path.parent().unwrap();
+                manifest_path.starts_with(dir) && path.ends_with("pyproject.toml")
+            });
+        }
+
+        // Remove unwanted manifests.
+        if remove {
+            manifests.swap_remove(i);
+        }
+    }
 
     // Return all manifests and lockfiles.
     lockfiles.append(&mut manifests);
@@ -306,7 +323,7 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use std::fs::{self, File};
 
     use super::*;
 
@@ -439,5 +456,57 @@ mod tests {
                 "{format:?} successfully parsed: {parsed_lockfiles:?}"
             );
         }
+    }
+
+    #[test]
+    fn skip_setup_with_pyproject() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [
+            tempdir.path().join("pyproject.toml"),
+            tempdir.path().join("setup.py"),
+            tempdir.path().join("a/setup.py"),
+        ];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find manifest files.
+        let lockable_files = find_lockable_files_at(tempdir.path());
+
+        // Compare results.
+        let expected =
+            vec![(tempdir.path().join("pyproject.toml").to_path_buf(), LockfileFormat::Pip)];
+        assert_eq!(lockable_files, expected);
+    }
+
+    #[test]
+    fn setup_without_pyproject() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [
+            tempdir.path().join("setup.py"),
+            tempdir.path().join("b/setup.py"),
+            tempdir.path().join("a/pyproject.toml"),
+        ];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find manifest files.
+        let mut lockable_files = find_lockable_files_at(tempdir.path());
+
+        // Compare results.
+        lockable_files.sort_unstable();
+        let expected = vec![
+            (tempdir.path().join("a/pyproject.toml").to_path_buf(), LockfileFormat::Pip),
+            (tempdir.path().join("b/setup.py").to_path_buf(), LockfileFormat::Pip),
+            (tempdir.path().join("setup.py").to_path_buf(), LockfileFormat::Pip),
+        ];
+        assert_eq!(lockable_files, expected);
     }
 }

@@ -3537,6 +3537,7 @@ dependencies = [
  "serde-xml-rs",
  "serde_json",
  "serde_yaml",
+ "tempfile",
  "thiserror",
  "toml 0.7.5",
  "urlencoding",

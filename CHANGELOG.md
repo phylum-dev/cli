@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - New output format for `phylum analyze` and `phylum history <job-id>`
+- Ignore `setup.py` when a `pyproject.toml` is present
 
 ### Fixed
 - Correctly handle line continuations and --hash in `requirements.txt` parser
