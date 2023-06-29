@@ -24,21 +24,18 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
-// Ensure no arguments are passed before `add`/`update`/`install` subcommand.
+// Ensure no arguments are passed before a subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `poetry --no-color add package`).
-const subcommand = Deno.args[0];
-if (
-  Deno.args.length != 0 &&
-    (Deno.args.includes("add") && subcommand !== "add") ||
-  (Deno.args.includes("update") && subcommand !== "update") ||
-  (Deno.args.includes("install") && subcommand !== "install")
-) {
+const firstSubcommand = Deno.args.findIndex((arg) => !arg.startsWith("-"));
+if (firstSubcommand > 0) {
   console.error(
     `[${
       red("phylum")
-    }] This extension does not support arguments before the first subcommand. Please open an issue if "${subcommand}" is not an argument.`,
+    }] This extension does not support arguments before the first subcommand. Please open an issue if "${
+      Deno.args[0]
+    }" is not an argument.`,
   );
   Deno.exit(127);
 }
