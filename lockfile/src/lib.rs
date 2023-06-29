@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 pub use cargo::Cargo;
-pub use csharp::CSProj;
+pub use csharp::{CSProj, PackagesLock};
 pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
@@ -50,9 +50,9 @@ pub enum LockfileFormat {
     Gradle,
     // This is historically called "nuget" but it's actually for MSBuild project files.
     // Nuget has its own file formats that are not currently supported.
-    #[serde(rename = "nuget")]
-    #[serde(alias = "msbuild")]
+    #[serde(alias = "nuget")]
     Msbuild,
+    NugetLock,
     Go,
     Cargo,
     Spdx,
@@ -91,7 +91,8 @@ impl LockfileFormat {
             LockfileFormat::Poetry => "poetry",
             LockfileFormat::Maven => "mvn",
             LockfileFormat::Gradle => "gradle",
-            LockfileFormat::Msbuild => "nuget",
+            LockfileFormat::Msbuild => "msbuild",
+            LockfileFormat::NugetLock => "nugetlock",
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
             LockfileFormat::Spdx => "spdx",
@@ -111,6 +112,7 @@ impl LockfileFormat {
             LockfileFormat::Maven => &Pom,
             LockfileFormat::Gradle => &GradleLock,
             LockfileFormat::Msbuild => &CSProj,
+            LockfileFormat::NugetLock => &PackagesLock,
             LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
             LockfileFormat::Spdx => &Spdx,
@@ -145,10 +147,11 @@ impl Iterator for LockfileFormatIter {
             6 => LockfileFormat::Pipenv,
             7 => LockfileFormat::Maven,
             8 => LockfileFormat::Gradle,
-            9 => LockfileFormat::Msbuild,
-            10 => LockfileFormat::Go,
-            11 => LockfileFormat::Cargo,
-            12 => LockfileFormat::Spdx,
+            9 => LockfileFormat::NugetLock,
+            10 => LockfileFormat::Msbuild,
+            11 => LockfileFormat::Go,
+            12 => LockfileFormat::Cargo,
+            13 => LockfileFormat::Spdx,
             _ => return None,
         };
         self.0 += 1;
@@ -340,6 +343,7 @@ mod tests {
             ("npm-shrinkwrap.json", LockfileFormat::Npm),
             ("pnpm-lock.yaml", LockfileFormat::Pnpm),
             ("sample.csproj", LockfileFormat::Msbuild),
+            ("packages.lock.json", LockfileFormat::NugetLock),
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),
             ("requirements.txt", LockfileFormat::Pip),
@@ -372,6 +376,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
+            ("nugetlock", LockfileFormat::NugetLock),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
@@ -398,7 +403,8 @@ mod tests {
             ("poetry", LockfileFormat::Poetry),
             ("mvn", LockfileFormat::Maven),
             ("gradle", LockfileFormat::Gradle),
-            ("nuget", LockfileFormat::Msbuild),
+            ("msbuild", LockfileFormat::Msbuild),
+            ("nugetlock", LockfileFormat::NugetLock),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
@@ -440,6 +446,7 @@ mod tests {
             (LockfileFormat::Maven, 2),
             (LockfileFormat::Gradle, 1),
             (LockfileFormat::Msbuild, 2),
+            (LockfileFormat::NugetLock, 1),
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
             (LockfileFormat::Spdx, 6),
