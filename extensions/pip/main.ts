@@ -5,43 +5,24 @@ import {
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
 
-// List with all of pip's subcommands.
-const knownSubcommands = [
-  "install",
-  "download",
-  "uninstall",
-  "freeze",
-  "inspect",
-  "list",
-  "show",
-  "check",
-  "config",
-  "search",
-  "cache",
-  "index",
-  "wheel",
-  "hash",
-  "completion",
-  "debug",
-  "help",
-];
-
-// Ensure the first argument is a known subcommand.
+// Ensure no arguments are passed before `add`/`update`/`install` subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `pip --no-color install package`).
-const subcommand = Deno.args[0];
-if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+const firstSubcommand = Deno.args.findIndex((arg) => !arg.startsWith("-"));
+if (firstSubcommand > 0) {
   console.error(
     `[${
       red("phylum")
-    }] This extension does not support arguments before the first subcommand. Please open an issue if "${subcommand}" is not an argument.`,
+    }] This extension does not support arguments before the first subcommand. Please open an issue if "${
+      Deno.args[0]
+    }" is not an argument.`,
   );
   Deno.exit(125);
 }
 
 // Ignore all commands that shouldn't be intercepted.
-if (Deno.args.length == 0 || subcommand != "install") {
+if (Deno.args.length == 0 || Deno.args[0] != "install") {
   const cmd = new Deno.Command("pip3", { args: Deno.args });
   const status = await cmd.spawn().status;
   Deno.exit(status.code);

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Correctly handle line continuations and --hash in `requirements.txt` parser
+- Ecosystem extensions failing with valid arguments
 
 ### Removed
 - Lockfile generation for yarn v1

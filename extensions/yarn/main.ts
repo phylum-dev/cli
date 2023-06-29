@@ -50,76 +50,18 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
-// List with all of yarn's subcommands.
-const knownSubcommands = [
-  // Yarn v1+ subcommands.
-  "access",
-  "add",
-  "audit",
-  "autoclean",
-  "bin",
-  "cache",
-  "check",
-  "config",
-  "create",
-  "exec",
-  "generate-lock-entry",
-  "generateLockEntry",
-  "global",
-  "help",
-  "import",
-  "info",
-  "init",
-  "install",
-  "licenses",
-  "link",
-  "list",
-  "login",
-  "logout",
-  "node",
-  "outdated",
-  "owner",
-  "pack",
-  "policies",
-  "publish",
-  "remove",
-  "run",
-  "tag",
-  "team",
-  "unlink",
-  "unplug",
-  "upgrade",
-  "upgrade-interactive",
-  "upgradeInteractive",
-  "version",
-  "versions",
-  "why",
-  "workspace",
-  "workspaces",
-  // Yarn v2 subcommands.
-  "dedupe",
-  "dlx",
-  "explain",
-  "npm",
-  "patch",
-  "patch-commit",
-  "rebuild",
-  "set",
-  "up",
-  "plugin",
-  "workspace",
-];
-
-// Ensure the first argument is a known subcommand.
+// Ensure no arguments are passed before a subcommand.
 //
 // This prevents us from skipping the analysis when an argument is passed before
 // the first subcommand (i.e.: `yarn --cwd /tmp/project add package`).
-const subcommand = Deno.args[0];
-if (Deno.args.length != 0 && !knownSubcommands.includes(subcommand)) {
+const firstSubcommand = Deno.args.findIndex((arg) => !arg.startsWith("-"));
+if (firstSubcommand > 0) {
   console.error(
     `[${
       red("phylum")
-    }] This extension does not support arguments before the first subcommand. Please open an issue if "${subcommand}" is not an argument.`,
+    }] This extension does not support arguments before the first subcommand. Please open an issue if "${
+      Deno.args[0]
+    }" is not an argument.`,
   );
   Deno.exit(125);
 }

@@ -50,11 +50,15 @@ async function findRoot(manifest: string): Promise<string | undefined> {
   return undefined;
 }
 
-if (Deno.args.length != 0 && Deno.args[0].startsWith("-")) {
+// Ensure no arguments are passed before a subcommand.
+const firstSubcommand = Deno.args.findIndex((arg) => !arg.startsWith("-"));
+if (firstSubcommand > 0) {
   console.error(
     `[${
       red("phylum")
-    }] This extension does not support arguments before the first subcommand.`,
+    }] This extension does not support arguments before the first subcommand. Please open an issue if "${
+      Deno.args[0]
+    }" is not an argument.`,
   );
   Deno.exit(127);
 }
