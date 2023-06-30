@@ -1,7 +1,9 @@
 id: d84b0bb3-fb64-43cb-a473-dc96b54db662
 name: cli
-created_at: 2023-01-26T20:02:11.276987834+01:00
+created_at: 2023-06-30T14:51:32.604505-05:00
 group_name: integrations
 lockfiles:
-- path: Cargo.lock
+- path: ./Cargo.lock
   type: cargo
+- path: ./docusaurus/package-lock.json
+  type: npm
