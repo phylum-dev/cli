@@ -12,6 +12,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | ------------- | ---------        | -------------               |
 | `npm`         | `package.json`   | [`npm`][npm]                |
 | `yarn`        | `package.json`   | [`yarn`][yarn]              |
+| `pnpm`        | `package.json`   | [`pnpm`][pnpm]              |
 | `pip`         | `requirements*.txt` <br/> `requirements.in` <br/> `setup.py` <br/> `pyproject.toml` | [`pip`][pip] version 23.0.0+ |
 | `pipenv`      | `Pipfile`        | [`pipenv`][pipenv]          |
 | `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
@@ -21,16 +22,17 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | `go`          | `go.mod`         | [`go`][go]                  |
 | `cargo`       | `Cargo.toml`     | [`cargo`][cargo]            |
 
-[npm]: https://nodejs.org/
-[yarn]: https://yarnpkg.com/
-[pip]: https://pip.pypa.io/
+[npm]: https://nodejs.org
+[yarn]: https://yarnpkg.com
+[pnpm]: https://pnpm.io
+[pip]: https://pip.pypa.io
 [pipenv]: https://github.com/pypa/pipenv
-[poetry]: https://python-poetry.org/
-[bundler]: https://bundler.io/
-[maven]: https://maven.apache.org/
-[gradle]: https://gradle.org/
-[go]: https://go.dev/
-[cargo]: https://www.rust-lang.org/
+[poetry]: https://python-poetry.org
+[bundler]: https://bundler.io
+[maven]: https://maven.apache.org
+[gradle]: https://gradle.org
+[go]: https://go.dev
+[cargo]: https://www.rust-lang.org
 
 For files that can be handled by multiple generators, a fallback is used:
 

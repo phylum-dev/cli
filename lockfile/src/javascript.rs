@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -5,12 +6,15 @@ use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
 use lockfile_generator::npm::Npm as NpmGenerator;
 #[cfg(feature = "generator")]
+use lockfile_generator::pnpm::Pnpm as PnpmGenerator;
+#[cfg(feature = "generator")]
 use lockfile_generator::yarn::Yarn as YarnGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
+use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
@@ -263,6 +267,69 @@ impl Parse for YarnLock {
     }
 }
 
+pub struct Pnpm;
+
+impl Parse for Pnpm {
+    /// Parses `pnpm-lock.yaml` files into a vec of packages.
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        let lockfile: PnpmLock = serde_yaml::from_str(data)?;
+        lockfile.packages()
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("pnpm-lock.yaml"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&PnpmGenerator)
+    }
+}
+
+/// `pnpm-lock.yaml` structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmLock {
+    #[serde(rename = "lockfileVersion")]
+    _lockfile_version: String,
+    #[serde(default)]
+    packages: HashMap<String, serde_yaml::Value>,
+}
+
+impl PnpmLock {
+    /// Get all packages in the lockfile.
+    fn packages(&self) -> anyhow::Result<Vec<Package>> {
+        let mut packages = Vec::new();
+
+        // Convert `/@org/package@1.2.3(test@3.2.1)` to package.
+        for name in self.packages.keys() {
+            // Strip `/` prefix.
+            let name = &name[1..];
+
+            // Remove annotations.
+            let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
+
+            // Separate name and version.
+            let (name, version) = match name.rsplit_once('@') {
+                Some((name, version)) => (name, version),
+                None => return Err(anyhow!("Dependency '{name}' is missing a version")),
+            };
+
+            packages.push(Package {
+                name: name.into(),
+                version: PackageVersion::FirstParty(version.into()),
+                package_type: PackageType::Npm,
+            });
+        }
+
+        Ok(packages)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -453,6 +520,49 @@ mod tests {
         // sure we do not accidentally introduce a regression if we ever remove the v1
         // parser.
         let pkgs = YarnLock.parse("").unwrap();
+        assert!(pkgs.is_empty());
+    }
+
+    #[test]
+    fn pnpm() {
+        let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
+
+        assert_eq!(pkgs.len(), 61);
+
+        let expected_pkgs = [
+            Package {
+                name: "accepts".into(),
+                version: PackageVersion::FirstParty("1.3.8".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "bootstrap".into(),
+                version: PackageVersion::FirstParty("5.3.0".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "@babel/core".into(),
+                version: PackageVersion::FirstParty("7.22.5".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "bytes".into(),
+                version: PackageVersion::FirstParty("1.2.3-rc4".into()),
+                package_type: PackageType::Npm,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
+    }
+
+    #[test]
+    fn empty_pnpm() {
+        let lockfile = "lockfileVersion: '6.0'\n\nsettings:\n  autoInstallPeers: true\n  \
+                        excludeLinksFromLockfile: false\n";
+        let pkgs = Pnpm.parse(lockfile).unwrap();
+
         assert!(pkgs.is_empty());
     }
 }

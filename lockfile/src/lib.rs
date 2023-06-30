@@ -8,7 +8,7 @@ pub use csharp::CSProj;
 pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
-pub use javascript::{PackageLock, YarnLock};
+pub use javascript::{PackageLock, Pnpm, YarnLock};
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
@@ -39,6 +39,7 @@ const MAX_LOCKFILE_DEPTH: usize = 5;
 pub enum LockfileFormat {
     Yarn,
     Npm,
+    Pnpm,
     Gem,
     Pip,
     Pipenv,
@@ -83,6 +84,7 @@ impl LockfileFormat {
         match self {
             LockfileFormat::Yarn => "yarn",
             LockfileFormat::Npm => "npm",
+            LockfileFormat::Pnpm => "pnpm",
             LockfileFormat::Gem => "gem",
             LockfileFormat::Pip => "pip",
             LockfileFormat::Pipenv => "pipenv",
@@ -101,6 +103,7 @@ impl LockfileFormat {
         match self {
             LockfileFormat::Yarn => &YarnLock,
             LockfileFormat::Npm => &PackageLock,
+            LockfileFormat::Pnpm => &Pnpm,
             LockfileFormat::Gem => &GemLock,
             LockfileFormat::Pip => &PyRequirements,
             LockfileFormat::Pipenv => &PipFile,
@@ -135,16 +138,17 @@ impl Iterator for LockfileFormatIter {
         let item = match self.0 {
             0 => LockfileFormat::Npm,
             1 => LockfileFormat::Yarn,
-            2 => LockfileFormat::Gem,
-            3 => LockfileFormat::Pip,
-            4 => LockfileFormat::Poetry,
-            5 => LockfileFormat::Pipenv,
-            6 => LockfileFormat::Maven,
-            7 => LockfileFormat::Gradle,
-            8 => LockfileFormat::Msbuild,
-            9 => LockfileFormat::Go,
-            10 => LockfileFormat::Cargo,
-            11 => LockfileFormat::Spdx,
+            2 => LockfileFormat::Pnpm,
+            3 => LockfileFormat::Gem,
+            4 => LockfileFormat::Pip,
+            5 => LockfileFormat::Poetry,
+            6 => LockfileFormat::Pipenv,
+            7 => LockfileFormat::Maven,
+            8 => LockfileFormat::Gradle,
+            9 => LockfileFormat::Msbuild,
+            10 => LockfileFormat::Go,
+            11 => LockfileFormat::Cargo,
+            12 => LockfileFormat::Spdx,
             _ => return None,
         };
         self.0 += 1;
@@ -334,6 +338,7 @@ mod tests {
             ("yarn.lock", LockfileFormat::Yarn),
             ("package-lock.json", LockfileFormat::Npm),
             ("npm-shrinkwrap.json", LockfileFormat::Npm),
+            ("pnpm-lock.yaml", LockfileFormat::Pnpm),
             ("sample.csproj", LockfileFormat::Msbuild),
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),
@@ -357,6 +362,7 @@ mod tests {
         for (name, expected_format) in [
             ("yarn", LockfileFormat::Yarn),
             ("npm", LockfileFormat::Npm),
+            ("pnpm", LockfileFormat::Pnpm),
             ("gem", LockfileFormat::Gem),
             ("pip", LockfileFormat::Pip),
             ("pipenv", LockfileFormat::Pipenv),
@@ -385,6 +391,7 @@ mod tests {
         for (expected_name, format) in [
             ("yarn", LockfileFormat::Yarn),
             ("npm", LockfileFormat::Npm),
+            ("pnpm", LockfileFormat::Pnpm),
             ("gem", LockfileFormat::Gem),
             ("pip", LockfileFormat::Pip),
             ("pipenv", LockfileFormat::Pipenv),
@@ -426,6 +433,7 @@ mod tests {
         for (format, lockfile_count) in [
             (LockfileFormat::Yarn, 4),
             (LockfileFormat::Npm, 2),
+            (LockfileFormat::Pnpm, 1),
             (LockfileFormat::Gem, 1),
             (LockfileFormat::Pipenv, 1),
             (LockfileFormat::Poetry, 2),
