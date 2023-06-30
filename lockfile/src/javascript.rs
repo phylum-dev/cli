@@ -297,37 +297,69 @@ struct PnpmLock {
     #[serde(rename = "lockfileVersion")]
     _lockfile_version: String,
     #[serde(default)]
-    packages: HashMap<String, serde_yaml::Value>,
+    packages: HashMap<String, PnpmPackage>,
 }
 
 impl PnpmLock {
     /// Get all packages in the lockfile.
-    fn packages(&self) -> anyhow::Result<Vec<Package>> {
+    fn packages(self) -> anyhow::Result<Vec<Package>> {
         let mut packages = Vec::new();
 
         // Convert `/@org/package@1.2.3(test@3.2.1)` to package.
-        for name in self.packages.keys() {
-            // Strip `/` prefix.
-            let name = &name[1..];
-
-            // Remove annotations.
-            let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
-
-            // Separate name and version.
-            let (name, version) = match name.rsplit_once('@') {
-                Some((name, version)) => (name, version),
-                None => return Err(anyhow!("Dependency '{name}' is missing a version")),
+        for (name, package) in self.packages.into_iter() {
+            // Parse dependency.
+            let package = match name.strip_prefix('/') {
+                Some(name) => Self::firstparty_package(name)?,
+                None => Self::tarball_package(name, package)?,
             };
-
-            packages.push(Package {
-                name: name.into(),
-                version: PackageVersion::FirstParty(version.into()),
-                package_type: PackageType::Npm,
-            });
+            packages.push(package);
         }
 
         Ok(packages)
     }
+
+    /// Parse a first-party registry package.
+    fn firstparty_package(name: &str) -> anyhow::Result<Package> {
+        // Remove annotations.
+        let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
+
+        // Separate name and version.
+        match name.rsplit_once('@') {
+            Some((name, version)) => Ok(Package {
+                name: name.into(),
+                version: PackageVersion::FirstParty(version.into()),
+                package_type: PackageType::Npm,
+            }),
+            None => Err(anyhow!("Dependency '{name}' is missing a version")),
+        }
+    }
+
+    /// Parse a tarball package.
+    fn tarball_package(name: String, package: PnpmPackage) -> anyhow::Result<Package> {
+        match package.name.zip(package.resolution.tarball) {
+            Some((name, tarball)) => Ok(Package {
+                name,
+                version: PackageVersion::DownloadUrl(tarball),
+                package_type: PackageType::Npm,
+            }),
+            None => Err(anyhow!("Dependency '{name}' is missing fields")),
+        }
+    }
+}
+
+/// `pnpm-lock.yaml` package structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmPackage {
+    resolution: PnpmResolution,
+    name: Option<String>,
+}
+
+/// `pnpm-lock.yaml` resolution structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmResolution {
+    tarball: Option<String>,
 }
 
 #[cfg(test)]
@@ -527,7 +559,7 @@ mod tests {
     fn pnpm() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
 
-        assert_eq!(pkgs.len(), 61);
+        assert_eq!(pkgs.len(), 63);
 
         let expected_pkgs = [
             Package {
@@ -548,6 +580,16 @@ mod tests {
             Package {
                 name: "bytes".into(),
                 version: PackageVersion::FirstParty("1.2.3-rc4".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "typescript".into(),
+                version: PackageVersion::DownloadUrl("https://codeload.github.com/Microsoft/TypeScript/tar.gz/a437de66b6d6f36f205eafcd21a732a29f905486".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "demo".into(),
+                version: PackageVersion::DownloadUrl("https://gitlab.com/api/v4/projects/Phylum%2demo/repository/archive.tar.gz?ref=ab3010efa019564710a03010abace10afeb0a2fe".into()),
                 package_type: PackageType::Npm,
             },
         ];

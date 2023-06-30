@@ -458,3 +458,17 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: false
+
+  github.com/Microsoft/TypeScript/a437de66b6d6f36f205eafcd21a732a29f905486:
+    resolution: {tarball: https://codeload.github.com/Microsoft/TypeScript/tar.gz/a437de66b6d6f36f205eafcd21a732a29f905486}
+    name: typescript
+    version: 5.2.0
+    engines: {node: '>=14.17'}
+    hasBin: true
+    dev: false
+
+  gitlab.com/Phylum/demo/ab3010efa019564710a03010abace10afeb0a2fe:
+    resolution: {tarball: https://gitlab.com/api/v4/projects/Phylum%2demo/repository/archive.tar.gz?ref=ab3010efa019564710a03010abace10afeb0a2fe}
+    name: demo
+    version: 0.2.0
+    dev: false
