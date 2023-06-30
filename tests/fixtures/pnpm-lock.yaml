@@ -472,3 +472,9 @@ packages:
     name: demo
     version: 0.2.0
     dev: false
+
+  git.sr.ht/~undeadleech/pnpm-test/cf066e8d69df5ba2cf3d4275b9e775800148d7ff:
+    resolution: {commit: cf066e8d69df5ba2cf3d4275b9e775800148d7ff, repo: ssh://git@git.sr.ht/~undeadleech/pnpm-test, type: git}
+    name: testing
+    version: 1.0.0
+    dev: false

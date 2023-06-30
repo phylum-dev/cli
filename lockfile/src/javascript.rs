@@ -305,13 +305,16 @@ impl PnpmLock {
     fn packages(self) -> anyhow::Result<Vec<Package>> {
         let mut packages = Vec::new();
 
-        // Convert `/@org/package@1.2.3(test@3.2.1)` to package.
         for (name, package) in self.packages.into_iter() {
-            // Parse dependency.
-            let package = match name.strip_prefix('/') {
-                Some(name) => Self::firstparty_package(name)?,
-                None => Self::tarball_package(name, package)?,
+            // Parse package based on available fields.
+            let tarball = package.resolution.tarball;
+            let git = package.resolution.repo.zip(package.resolution.commit);
+            let package = match (tarball, git) {
+                (Some(tarball), _) => Self::tarball_package(tarball, package.name)?,
+                (_, Some((repo, commit))) => Self::git_package(repo, commit, package.name)?,
+                _ => Self::firstparty_package(&name)?,
             };
+
             packages.push(package);
         }
 
@@ -320,6 +323,11 @@ impl PnpmLock {
 
     /// Parse a first-party registry package.
     fn firstparty_package(name: &str) -> anyhow::Result<Package> {
+        // Remove `/` prefix.
+        let name = name
+            .strip_prefix('/')
+            .ok_or_else(|| anyhow!("Dependency '{name}' is missing '/' prefix"))?;
+
         // Remove annotations.
         let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
 
@@ -335,15 +343,22 @@ impl PnpmLock {
     }
 
     /// Parse a tarball package.
-    fn tarball_package(name: String, package: PnpmPackage) -> anyhow::Result<Package> {
-        match package.name.zip(package.resolution.tarball) {
-            Some((name, tarball)) => Ok(Package {
-                name,
-                version: PackageVersion::DownloadUrl(tarball),
-                package_type: PackageType::Npm,
-            }),
-            None => Err(anyhow!("Dependency '{name}' is missing fields")),
-        }
+    fn tarball_package(tarball: String, name: Option<String>) -> anyhow::Result<Package> {
+        let name = name.ok_or_else(|| anyhow!("Tarball '{tarball}' is missing a name"))?;
+
+        Ok(Package {
+            name,
+            version: PackageVersion::DownloadUrl(tarball),
+            package_type: PackageType::Npm,
+        })
+    }
+
+    /// Parse a git package.
+    fn git_package(repo: String, commit: String, name: Option<String>) -> anyhow::Result<Package> {
+        let name = name.ok_or_else(|| anyhow!("Tarball '{repo}#{commit}' is missing a name"))?;
+        let git_uri = format!("{repo}#{commit}");
+
+        Ok(Package { name, version: PackageVersion::Git(git_uri), package_type: PackageType::Npm })
     }
 }
 
@@ -360,6 +375,8 @@ struct PnpmPackage {
 #[serde(rename_all = "camelCase")]
 struct PnpmResolution {
     tarball: Option<String>,
+    commit: Option<String>,
+    repo: Option<String>,
 }
 
 #[cfg(test)]
@@ -559,7 +576,7 @@ mod tests {
     fn pnpm() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
 
-        assert_eq!(pkgs.len(), 63);
+        assert_eq!(pkgs.len(), 64);
 
         let expected_pkgs = [
             Package {
@@ -590,6 +607,11 @@ mod tests {
             Package {
                 name: "demo".into(),
                 version: PackageVersion::DownloadUrl("https://gitlab.com/api/v4/projects/Phylum%2demo/repository/archive.tar.gz?ref=ab3010efa019564710a03010abace10afeb0a2fe".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "testing".into(),
+                version: PackageVersion::Git("ssh://git@git.sr.ht/~undeadleech/pnpm-test#cf066e8d69df5ba2cf3d4275b9e775800148d7ff".into()),
                 package_type: PackageType::Npm,
             },
         ];
