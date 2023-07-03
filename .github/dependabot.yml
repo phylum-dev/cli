@@ -22,3 +22,13 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+
+  - package-ecosystem: "npm"
+    directory: "/docusaurus"
+    schedule:
+      interval: weekly
+    # Only worry about major version updates here. Other updates are accounted for in
+    # a separate workflow in an effort to reduce the number of PRs opened by Dependabot.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
