@@ -44,6 +44,7 @@ const config = {
                     editUrl:
                         'https://github.com/phylum-dev/cli/tree/main/docusaurus/',
                 },
+                blog: false,
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
                 },
