@@ -73,7 +73,7 @@ const config = {
                 items: [
                     {
                         type: 'docSidebar',
-                        sidebarId: 'tutorialSidebar',
+                        sidebarId: 'cliSidebar',
                         position: 'left',
                         label: 'Docs',
                     },
@@ -128,6 +128,11 @@ const config = {
             prism: {
                 theme: lightCodeTheme,
                 darkTheme: darkCodeTheme,
+            },
+            docs: {
+                sidebar: {
+                    hideable: true,
+                }
             },
         }),
 };
