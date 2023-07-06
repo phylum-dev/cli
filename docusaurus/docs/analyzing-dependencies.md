@@ -1,8 +1,8 @@
 ---
-title: Analyzing Dependencies
-category: 6255e67693d5200013b1fa41
-hidden: false
+sidebar_position: 2
 ---
+
+# Supported Lockfiles
 
 The Phylum CLI supports processing many different lockfiles:
 

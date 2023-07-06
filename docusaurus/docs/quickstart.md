@@ -1,6 +1,6 @@
 ---
+# Make this a docs-only site, with this doc as the front page
 slug: /
-sidebar_position: 1
 ---
 
 # Quickstart

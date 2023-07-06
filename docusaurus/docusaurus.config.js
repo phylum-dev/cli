@@ -42,7 +42,6 @@ const config = {
                     // Make this a "Docs-only" site
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars.js'),
-                    // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl: 'https://github.com/phylum-dev/cli/tree/main/docusaurus/',
                     showLastUpdateAuthor: true,
