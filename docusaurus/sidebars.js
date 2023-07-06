@@ -19,6 +19,7 @@ const sidebars = {
   // But you can create a sidebar manually
   cliSidebar: [
     'quickstart',
+    'alternate_install',
     'supported_lockfiles',
     'lockfile_generation',
     'analyzing_dependencies',

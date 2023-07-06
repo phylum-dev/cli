@@ -1,12 +1,8 @@
----
-title: Alternate Installation Methods
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# Alternate Installation Methods
 
 ## Build from source
 
-Phylum is written in Rust, so you'll need a recent Rust installation to build it (we tested with v1.61.0). [Install Rust](https://www.rust-lang.org/tools/install)
+Phylum is written in Rust, so you'll need a recent Rust installation to build it (we tested with v1.61.0). See [how to install Rust](https://www.rust-lang.org/tools/install) for more information.
 
 1. Clone repository
 
@@ -29,6 +25,7 @@ Phylum is written in Rust, so you'll need a recent Rust installation to build it
 ## Install with Python
 
 The [`phylum` Python package](https://pypi.org/project/phylum/) provides a script entry point, `phylum-init`, for bootstrapping the Phylum CLI.
+
 See the [phylum-ci](https://github.com/phylum-dev/phylum-ci) project for full detail.
 
 ```sh
