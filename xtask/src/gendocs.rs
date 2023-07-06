@@ -8,7 +8,7 @@ use clap_markdown::Generator;
 use phylum_cli::app;
 
 /// Output directory.
-const OUTPUT_DIR: &str = "./docs/command_line_tool";
+const OUTPUT_DIR: &str = "./docusaurus/docs/command_line_tool";
 
 /// Template directory.
 const TEMPLATE_DIR: &str = "./doc_templates";
@@ -16,8 +16,6 @@ const TEMPLATE_DIR: &str = "./doc_templates";
 /// File header inserted at the top of each page.
 const HEADER: &str = "---
 title: {PH-TITLE}
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---";
 
 /// Generate Phylum CLI documentation.

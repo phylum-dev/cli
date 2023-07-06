@@ -99,10 +99,11 @@ impl Markdown {
         if subcommands.peek().is_some() {
             let _ = writeln!(markdown, "\n### Commands\n");
         }
+        let mut subcommands: Vec<_> = subcommands.collect();
+        subcommands.sort_by_key(|cmd| cmd.get_name());
         for cmd in subcommands {
-            let name = cmd.get_name();
-            let human_path = format!("{} {name}", parents.join(" "));
-            let link_path = format!("{}_{name}", parents.join("_"));
+            let human_path = format!("{} {cmd}", parents.join(" "));
+            let link_path = format!("{}_{cmd}", parents.join("_"));
             let _ = writeln!(markdown, "* [{human_path}](./{link_path})");
         }
 
@@ -121,7 +122,7 @@ fn generate_argument(arg: &Arg) -> Option<String> {
 
     // Add short option.
     if let Some(short) = arg.get_short() {
-        let _ = write!(markdown, "-{short}");
+        let _ = write!(markdown, "`-{short}`");
     }
 
     // Add long option.
@@ -129,7 +130,7 @@ fn generate_argument(arg: &Arg) -> Option<String> {
         if !markdown.is_empty() {
             markdown += ", ";
         }
-        let _ = write!(markdown, "--{long}");
+        let _ = write!(markdown, "`--{long}`");
     }
 
     // Add arguments.
@@ -149,9 +150,9 @@ fn generate_argument(arg: &Arg) -> Option<String> {
             }
 
             if i >= min_required || all_optional {
-                let _ = write!(markdown, "[{value_name}]");
+                let _ = write!(markdown, "`[{value_name}]`");
             } else {
-                let _ = write!(markdown, "<{value_name}>");
+                let _ = write!(markdown, "`<{value_name}>`");
             }
         }
     }
