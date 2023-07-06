@@ -8,7 +8,7 @@ use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
 #[cfg(not(test))]
 use open;
-use phylum_types::types::auth::{AuthorizationCode, TokenResponse};
+use phylum_types::types::auth::{AuthorizationCode, RefreshToken};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -221,13 +221,15 @@ pub async fn handle_auth_flow(
     auth_action: AuthAction,
     ignore_certs: bool,
     api_uri: &str,
-) -> Result<TokenResponse> {
+) -> Result<RefreshToken> {
     let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
-    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier, ignore_certs).await
+    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier, ignore_certs)
+        .await
+        .map(|tokens| tokens.refresh_token)
 }
 
 #[cfg(test)]
