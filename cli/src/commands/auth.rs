@@ -77,9 +77,9 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
 
     if matches.get_flag("bearer") {
         let api_uri = &config.connection.uri;
-        let tokens =
+        let access_token =
             auth::handle_refresh_tokens(refresh_token, config.ignore_certs(), api_uri).await?;
-        println!("{}", tokens.access_token);
+        println!("{}", access_token);
         Ok(ExitCode::Ok)
     } else {
         println!("{refresh_token}");

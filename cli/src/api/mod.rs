@@ -175,9 +175,10 @@ impl PhylumApi {
             },
         };
 
-        let tokens = handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
-            .await
-            .context("Token refresh failed")?;
+        let access_token =
+            handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
+                .await
+                .context("Token refresh failed")?;
 
         let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do
@@ -185,7 +186,7 @@ impl PhylumApi {
         // here and be done.
         headers.insert(
             "Authorization",
-            HeaderValue::from_str(&format!("Bearer {}", tokens.access_token)).unwrap(),
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
         );
         headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
 
@@ -197,7 +198,7 @@ impl PhylumApi {
             .build()?;
 
         // Try to parse token's roles.
-        let roles = jwt::user_roles(tokens.access_token.as_str()).unwrap_or_default();
+        let roles = jwt::user_roles(access_token.as_str()).unwrap_or_default();
 
         Ok(Self { config, client, roles })
     }

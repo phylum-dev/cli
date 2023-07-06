@@ -9,7 +9,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::engine::general_purpose;
 use base64::Engine as _;
 use maplit::hashmap;
-use phylum_types::types::auth::{AuthorizationCode, RefreshToken, TokenResponse};
+use phylum_types::types::auth::{AccessToken, AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
@@ -281,9 +281,11 @@ pub async fn handle_refresh_tokens(
     refresh_token: &RefreshToken,
     ignore_certs: bool,
     api_uri: &str,
-) -> Result<TokenResponse> {
+) -> Result<AccessToken> {
     let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
-    refresh_tokens(&oidc_settings, refresh_token, ignore_certs).await
+    refresh_tokens(&oidc_settings, refresh_token, ignore_certs)
+        .await
+        .map(|token| token.access_token)
 }
 
 /// Represents the userdata stored for an authentication token.
