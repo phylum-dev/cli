@@ -1,6 +1,44 @@
-{PH-HEADER}
+---
+title: phylum analyze
+---
 
-{PH-MARKDOWN}
+Submit a request for analysis to the processing system
+
+```sh
+Usage: phylum analyze [OPTIONS] [LOCKFILE]...
+```
+
+### Arguments
+
+`[LOCKFILE]`
+&emsp; The package lock files to submit
+
+### Options
+
+`-l`, `--label` `<label>`
+&emsp; Specify a label to use for analysis
+
+`-j`, `--json`
+&emsp; Produce output in json format (default: false)
+
+`-p`, `--project` `<project_name>`
+&emsp; Specify a project to use for analysis
+
+`-g`, `--group` `<group_name>`
+&emsp; Specify a group to use for analysis
+
+`-t`, `--lockfile-type` `<type>`
+&emsp; Lock file type used for all lock files (default: auto)
+&emsp; Accepted values: `npm`, `yarn`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nuget`, `go`, `cargo`, `spdx`, `auto`
+
+`-v`, `--verbose`...
+&emsp; Increase the level of verbosity (the maximum is -vvv)
+
+`-q`, `--quiet`...
+&emsp; Reduce the level of verbosity (the maximum is -qq)
+
+`-h`, `--help`
+&emsp; Print help
 
 ### Details
 
