@@ -19,8 +19,9 @@ const sidebars = {
   // But you can create a sidebar manually
   cliSidebar: [
     'quickstart',
-    'analyzing-dependencies',
-    'lockfile-generation',
+    'supported_lockfiles',
+    'lockfile_generation',
+    'analyzing_dependencies',
     {
       type: 'category',
       label: 'Extensions',

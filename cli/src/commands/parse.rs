@@ -96,7 +96,9 @@ pub fn parse_lockfile(
     eprintln!("Generating lockfile for manifest {path:?} using {format:?}…");
 
     // Generate a new lockfile.
-    let generated_lockfile = generator.generate_lockfile(&path).context("Lockfile generation failed! For details, see: https://docs.phylum.io/docs/lockfile-generation")?;
+    let generated_lockfile = generator.generate_lockfile(&path).context(
+        "Lockfile generation failed! For details, see: https://cli.phylum.io/lockfile_generation",
+    )?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;

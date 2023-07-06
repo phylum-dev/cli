@@ -28,7 +28,11 @@ brew tap phylum-dev/cli
 brew install phylum
 ```
 
-_Note: When using Homebrew, [official extensions][] must be installed separately._
+:::info
+
+When using Homebrew, [official extensions][] must be installed separately.
+
+:::
 
 [official extensions]: https://github.com/phylum-dev/cli/tree/main/extensions
 
@@ -36,25 +40,25 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
 
-   ```
+   ```sh
    phylum auth register
    ```
 
 1. [Authenticate](https://docs.phylum.io/docs/phylum_auth_login) with Phylum
 
-   ```
+   ```sh
    phylum auth login
    ```
 
 1. [Setup your Phylum project](https://docs.phylum.io/docs/phylum_init) in your project directory
 
-   ```
+   ```sh
    phylum init
    ```
 
 1. [Submit your package lock file](https://docs.phylum.io/docs/phylum_analyze)
 
-   ```
+   ```sh
    phylum analyze
    ```
 
@@ -63,7 +67,7 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 ---
 ## License
 
-Copyright (C) 2022  Phylum, Inc.
+Copyright (C) 2023  Phylum, Inc.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
