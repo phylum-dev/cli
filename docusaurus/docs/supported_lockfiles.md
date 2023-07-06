@@ -17,9 +17,18 @@ The Phylum CLI supports processing many different lockfiles:
 | `cargo`       | `Cargo.lock` |
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
 
-The lockfile type will be automatically detected based on the filename. If needed, this can be overridden with the
-`--lockfile-type` (`-t`) option.
+:::note
+
+The lockfile type will be automatically detected based on the filename.
+
+If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
+
+:::
+
+:::tip Manifest Support
 
 Lockfiles can also automatically be generated for certain manifest files. See [lockfile_generation][] for details.
 
 [lockfile_generation]: https://docs.phylum.io/docs/lockfile_generation
+
+:::
