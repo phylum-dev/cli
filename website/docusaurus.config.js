@@ -43,7 +43,7 @@ const config = {
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars.js'),
                     // Remove this to remove the "edit this page" links.
-                    editUrl: 'https://github.com/phylum-dev/cli/tree/main/docusaurus/',
+                    editUrl: 'https://github.com/phylum-dev/cli/tree/main/website/',
                     showLastUpdateAuthor: true,
                     showLastUpdateTime: true,
                 },

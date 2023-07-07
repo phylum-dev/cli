@@ -5,5 +5,5 @@ group_name: integrations
 lockfiles:
 - path: ./Cargo.lock
   type: cargo
-- path: ./docusaurus/package-lock.json
+- path: ./website/package-lock.json
   type: npm

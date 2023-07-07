@@ -34,13 +34,13 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: docusaurus/package-lock.json
+          cache-dependency-path: website/package-lock.json
 
       - name: Update CLI Rust dependencies
         run: cargo update
 
       - name: Update Docusaurus Javascript dependencies
-        working-directory: ./docusaurus
+        working-directory: ./website
         run: npm update --save
 
       - name: Commit changes
@@ -65,7 +65,7 @@ jobs:
               head: "workflow-auto-updates",
               base: context.ref,
               title: "build: bump Rust and Javascript dependencies",
-              body: "Bump dependencies in `Cargo.lock` and `docusaurus/package-lock.json` "
+              body: "Bump dependencies in `Cargo.lock` and `website/package-lock.json` "
                   + "for all SemVer-compatible updates.",
             });
             console.log(response);

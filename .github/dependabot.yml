@@ -24,7 +24,7 @@ updates:
       interval: weekly
 
   - package-ecosystem: "npm"
-    directory: "/docusaurus"
+    directory: "/website"
     schedule:
       interval: weekly
     # Only worry about major version updates here. Other updates are accounted for in
