@@ -20,6 +20,23 @@ export type ProcessOutput = {
   code: number | null;
 };
 
+async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
+  const headers = new Headers(headersInit);
+
+  // Set Authorization header if it is missing.
+  if (!headers.has("Authorization")) {
+    const token = await PhylumApi.getAccessToken();
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  // Set Content-Type header if it is missing.
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return headers;
+}
+
 export class PhylumApi {
   /**
    * Send a request to the Phylum REST API.
@@ -37,21 +54,7 @@ export class PhylumApi {
     // Ensure header object is initialized.
     const fetchInit = init ?? {};
 
-    // Ensure consistent headers type.
-    fetchInit.headers = new Headers(fetchInit.headers);
-
-    // Set Authorization header if it is missing.
-    if (!fetchInit.headers.has("Authorization")) {
-      const token = await PhylumApi.getAccessToken();
-      fetchInit.headers.set("Authorization", `Bearer ${token}`);
-    }
-
-    // Set Content-Type header if it is missing.
-    if (fetchInit.headers.has("Content-Type")) {
-      fetchInit.headers.set("Content-Type", "application/json");
-    }
-
-    // Set Content-Type header if it is missing.
+    fetchInit.headers = await requestHeaders(fetchInit.headers);
 
     // Get API base URI without version.
     const baseUrl = await PhylumApi.apiBaseUrl();

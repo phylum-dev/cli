@@ -2,19 +2,20 @@
 
 The Phylum CLI supports processing many different lockfiles:
 
-| Lockfile type | Filenames |
-| ------------- | --------- |
-| `npm`         | `package-lock.json` <br /> `npm-shrinkwrap.json` |
-| `yarn`        | `yarn.lock` (Version 1 + 2) |
-| `pip`         | `requirements*.txt` |
-| `pipenv`      | `Pipfile.lock` |
-| `poetry`      | `poetry.lock` (Version 1 + 2) |
-| `gem`         | `Gemfile.lock` |
-| `nuget`       | `*.csproj` |
-| `mvn`         | `effective-pom.xml` |
-| `gradle`      | `gradle.lockfile` |
-| `go`          | `go.sum` |
-| `cargo`       | `Cargo.lock` |
+| Lockfile type | Filenames                                                              |
+| ------------- | ---------------------------------------------------------------------- |
+| `npm`         | `package-lock.json` <br /> `npm-shrinkwrap.json`                       |
+| `yarn`        | `yarn.lock` (Version 1 + 2)                                            |
+| `pnpm`        | `pnpm-lock.yaml`                                                       |
+| `pip`         | `requirements*.txt`                                                    |
+| `pipenv`      | `Pipfile.lock`                                                         |
+| `poetry`      | `poetry.lock` (Version 1 + 2)                                          |
+| `gem`         | `Gemfile.lock`                                                         |
+| `nuget`       | `*.csproj`                                                             |
+| `mvn`         | `effective-pom.xml`                                                    |
+| `gradle`      | `gradle.lockfile`                                                      |
+| `go`          | `go.sum`                                                               |
+| `cargo`       | `Cargo.lock`                                                           |
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
 
 :::note

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -5,12 +6,15 @@ use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
 use lockfile_generator::npm::Npm as NpmGenerator;
 #[cfg(feature = "generator")]
+use lockfile_generator::pnpm::Pnpm as PnpmGenerator;
+#[cfg(feature = "generator")]
 use lockfile_generator::yarn::Yarn as YarnGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
+use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use serde_yaml::Value as YamlValue;
 
@@ -263,6 +267,118 @@ impl Parse for YarnLock {
     }
 }
 
+pub struct Pnpm;
+
+impl Parse for Pnpm {
+    /// Parses `pnpm-lock.yaml` files into a vec of packages.
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        let lockfile: PnpmLock = serde_yaml::from_str(data)?;
+        lockfile.packages()
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("pnpm-lock.yaml"))
+    }
+
+    fn is_path_manifest(&self, path: &Path) -> bool {
+        path.file_name() == Some(OsStr::new("package.json"))
+    }
+
+    #[cfg(feature = "generator")]
+    fn generator(&self) -> Option<&'static dyn Generator> {
+        Some(&PnpmGenerator)
+    }
+}
+
+/// `pnpm-lock.yaml` structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmLock {
+    #[serde(rename = "lockfileVersion")]
+    _lockfile_version: String,
+    #[serde(default)]
+    packages: HashMap<String, PnpmPackage>,
+}
+
+impl PnpmLock {
+    /// Get all packages in the lockfile.
+    fn packages(self) -> anyhow::Result<Vec<Package>> {
+        let mut packages = Vec::new();
+
+        for (name, package) in self.packages.into_iter() {
+            // Parse package based on available fields.
+            let tarball = package.resolution.tarball;
+            let git = package.resolution.repo.zip(package.resolution.commit);
+            let package = match (tarball, git) {
+                (Some(tarball), _) => Self::tarball_package(tarball, package.name)?,
+                (_, Some((repo, commit))) => Self::git_package(repo, commit, package.name)?,
+                _ => Self::firstparty_package(&name)?,
+            };
+
+            packages.push(package);
+        }
+
+        Ok(packages)
+    }
+
+    /// Parse a first-party registry package.
+    fn firstparty_package(name: &str) -> anyhow::Result<Package> {
+        // Remove `/` prefix.
+        let name = name
+            .strip_prefix('/')
+            .ok_or_else(|| anyhow!("Dependency '{name}' is missing '/' prefix"))?;
+
+        // Remove annotations.
+        let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
+
+        // Separate name and version.
+        match name.rsplit_once('@') {
+            Some((name, version)) => Ok(Package {
+                name: name.into(),
+                version: PackageVersion::FirstParty(version.into()),
+                package_type: PackageType::Npm,
+            }),
+            None => Err(anyhow!("Dependency '{name}' is missing a version")),
+        }
+    }
+
+    /// Parse a tarball package.
+    fn tarball_package(tarball: String, name: Option<String>) -> anyhow::Result<Package> {
+        let name = name.ok_or_else(|| anyhow!("Tarball '{tarball}' is missing a name"))?;
+
+        Ok(Package {
+            name,
+            version: PackageVersion::DownloadUrl(tarball),
+            package_type: PackageType::Npm,
+        })
+    }
+
+    /// Parse a git package.
+    fn git_package(repo: String, commit: String, name: Option<String>) -> anyhow::Result<Package> {
+        let name = name.ok_or_else(|| anyhow!("Tarball '{repo}#{commit}' is missing a name"))?;
+        let git_uri = format!("{repo}#{commit}");
+
+        Ok(Package { name, version: PackageVersion::Git(git_uri), package_type: PackageType::Npm })
+    }
+}
+
+/// `pnpm-lock.yaml` package structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmPackage {
+    resolution: PnpmResolution,
+    name: Option<String>,
+}
+
+/// `pnpm-lock.yaml` resolution structure.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct PnpmResolution {
+    tarball: Option<String>,
+    commit: Option<String>,
+    repo: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -453,6 +569,64 @@ mod tests {
         // sure we do not accidentally introduce a regression if we ever remove the v1
         // parser.
         let pkgs = YarnLock.parse("").unwrap();
+        assert!(pkgs.is_empty());
+    }
+
+    #[test]
+    fn pnpm() {
+        let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
+
+        assert_eq!(pkgs.len(), 64);
+
+        let expected_pkgs = [
+            Package {
+                name: "accepts".into(),
+                version: PackageVersion::FirstParty("1.3.8".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "bootstrap".into(),
+                version: PackageVersion::FirstParty("5.3.0".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "@babel/core".into(),
+                version: PackageVersion::FirstParty("7.22.5".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "bytes".into(),
+                version: PackageVersion::FirstParty("1.2.3-rc4".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "typescript".into(),
+                version: PackageVersion::DownloadUrl("https://codeload.github.com/Microsoft/TypeScript/tar.gz/a437de66b6d6f36f205eafcd21a732a29f905486".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "demo".into(),
+                version: PackageVersion::DownloadUrl("https://gitlab.com/api/v4/projects/Phylum%2demo/repository/archive.tar.gz?ref=ab3010efa019564710a03010abace10afeb0a2fe".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "testing".into(),
+                version: PackageVersion::Git("ssh://git@git.sr.ht/~undeadleech/pnpm-test#cf066e8d69df5ba2cf3d4275b9e775800148d7ff".into()),
+                package_type: PackageType::Npm,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
+    }
+
+    #[test]
+    fn empty_pnpm() {
+        let lockfile = "lockfileVersion: '6.0'\n\nsettings:\n  autoInstallPeers: true\n  \
+                        excludeLinksFromLockfile: false\n";
+        let pkgs = Pnpm.parse(lockfile).unwrap();
+
         assert!(pkgs.is_empty());
     }
 }

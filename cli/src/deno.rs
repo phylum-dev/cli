@@ -41,7 +41,6 @@ pub async fn run(
         })
         .ops(api::api_decls())
         .state(|deno_state| deno_state.put(state))
-        .force_op_registration()
         .build();
 
     let main_module =
