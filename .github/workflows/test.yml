@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -50,13 +50,7 @@ jobs:
       - name: Test
         run: cargo test --locked
 
-      # Deal with Windows disk space issues
-      - name: Cargo clean
-        if: matrix.os == 'windows-latest'
-        run: cargo clean
-
       - name: Oldstable
-        if: matrix.os != 'windows-latest'
         run: |
           oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
           rustup toolchain install --profile minimal "$oldstable"
