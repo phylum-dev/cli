@@ -42,25 +42,25 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
 
-   ```
+   ```sh
    phylum auth register
    ```
 
 1. [Authenticate](https://docs.phylum.io/docs/phylum_auth_login) with Phylum
 
-   ```
+   ```sh
    phylum auth login
    ```
 
 1. [Setup your Phylum project](https://docs.phylum.io/docs/phylum_init) in your project directory
 
-   ```
+   ```sh
    phylum init
    ```
 
 1. [Submit your package lock file](https://docs.phylum.io/docs/phylum_analyze)
 
-   ```
+   ```sh
    phylum analyze
    ```
 
@@ -68,9 +68,7 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 
 ## Extensions
 
-Phylum CLI extensions allow you to extend the existing CLI functionality with
-new features. You can start exploring by taking a look at the official Phylum
-extensions:
+Phylum CLI extensions allow you to extend the existing CLI functionality with new features. You can start exploring by taking a look at the official Phylum extensions:
 
 <https://github.com/phylum-dev/cli/tree/main/extensions>
 
@@ -80,13 +78,9 @@ How-to articles for the extension framework can be found [here](https://dev.to/p
 
 ## musl binaries
 
-As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on
-`glibc`. We no longer provide binaries that are statically compiled with the
-`musl` libc.
+As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on `glibc`. We no longer provide binaries that are statically compiled with the `musl` libc.
 
-This means the provided binaries won't be executable in environments such as
-Alpine Linux. If your use case requires a lightweight Docker base image,
-consider using [Debian slim][debian-slim] instead.
+This means the provided binaries won't be executable in environments such as Alpine Linux. If your use case requires a lightweight Docker base image, consider using [Debian slim][debian-slim] instead.
 
 [debian-slim]: https://hub.docker.com/_/debian
 

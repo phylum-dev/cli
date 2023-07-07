@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+- Switch documentation hosting from Readme.com to Docusaurus
 - New output format for `phylum analyze` and `phylum history <job-id>`
 - Ignore `setup.py` when a `pyproject.toml` is present
 
