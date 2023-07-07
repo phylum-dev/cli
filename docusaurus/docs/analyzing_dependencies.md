@@ -1,6 +1,6 @@
 # Analyzing Dependencies
 
-After setting up a Phylum [project](https://docs.phylum.io/docs/phylum_init), you can begin analysis by running:
+After setting up a Phylum [project](commands/phylum_init.md), you can begin analysis by running:
 
 ```sh
 phylum analyze

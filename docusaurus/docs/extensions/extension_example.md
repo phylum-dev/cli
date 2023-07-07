@@ -177,9 +177,7 @@ Extension error: Uncaught (in promise) Error: Requires read access to "./package
     at async file:///tmp/duplicates/main.ts:12:14
 ```
 
-Phylum's extensions are executed in a sandbox with restricted access to operating system APIs. Since we want to read the lockfile from `./package-lock.json` with the `parseLockfile` method, we need to request read access to this file ahead of time. All available permissions are documented in the [extension manifest documentation].
-
-[extension manifest documentation]: https://docs.phylum.io/docs/extension_manifest#permissions
+Phylum's extensions are executed in a sandbox with restricted access to operating system APIs. Since we want to read the lockfile from `./package-lock.json` with the `parseLockfile` method, we need to request read access to this file ahead of time. All available permissions are documented in the [extension manifest documentation](./extension_manifest.md#permissions).
 
 While it would be possible to request read access to just `./package-lock.json`, this would only work for `package-lock.json` files defeating the purpose of passing the lockfile as a parameter. Instead, we request read access to all files in the working directory:
 

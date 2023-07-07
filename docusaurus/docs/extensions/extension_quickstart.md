@@ -14,9 +14,7 @@ Once finished, we should find a new directory called `my-extension` in our curre
 
 Extensions always contain at least two files, the manifest describing the extension (`PhylumExt.toml`), and the entrypoint where the extension's execution will begin. Any additional source files can be included in the extension directory and imported from the entrypoint.
 
-The manifest file contains metadata about the extension beyond its executable source code. All available options can be found in [the manifest format].
-
-[the manifest format]: https://docs.phylum.io/docs/extension_manifest
+The manifest file contains metadata about the extension beyond its executable source code. All available options can be found in [the manifest format](./extension_manifest.md).
 
 ## Installation
 

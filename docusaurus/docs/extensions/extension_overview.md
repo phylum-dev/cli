@@ -8,17 +8,16 @@ Extensions are executed in a [Deno] JavaScript runtime and have access to Phylum
 
 ## Usage
 
-If you're interested in using existing Phylum CLI extensions, you can take a look at the [CLI's extension documentation].
-
-[CLI's extension documentation]: https://docs.phylum.io/docs/phylum_extension
+If you're interested in using existing Phylum CLI extensions, you can take a look at the [CLI's extension documentation](../commands/phylum_extension.md).
 
 ## Writing Extensions
 
-* [Quickstart](https://docs.phylum.io/docs/extension_quickstart)
-* [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
-* [Extension API](https://docs.phylum.io/docs/extension_api)
-* [Example](https://docs.phylum.io/docs/extension_example)
-* [Direct Phylum API Requests](https://docs.phylum.io/docs/extension_rest_api)
+* [Quickstart](./extension_quickstart.md)
+* [Manifest Format](./extension_manifest.md)
+* [Extension API](./extension_api.md)
+* [Example](./extension_example.md)
+* [Extension Sandboxing](./extension_sandboxing.md)
+* [Direct Phylum API Requests](./extension_rest_api.md)
 
 :::tip More info
 

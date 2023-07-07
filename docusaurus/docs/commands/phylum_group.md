@@ -21,8 +21,8 @@ Usage: phylum group [OPTIONS] <COMMAND>
 
 ### Commands
 
-* [phylum group create](./phylum_group_create)
-* [phylum group delete](./phylum_group_delete)
-* [phylum group list](./phylum_group_list)
-* [phylum group member](./phylum_group_member)
-* [phylum group transfer](./phylum_group_transfer)
+* [phylum group create](./phylum_group_create.md)
+* [phylum group delete](./phylum_group_delete.md)
+* [phylum group list](./phylum_group_list.md)
+* [phylum group member](./phylum_group_member.md)
+* [phylum group transfer](./phylum_group_transfer.md)

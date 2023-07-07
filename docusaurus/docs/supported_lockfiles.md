@@ -27,8 +27,6 @@ If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
 
 :::tip Manifest Support
 
-Lockfiles can also automatically be generated for certain manifest files. See [lockfile_generation][] for details.
-
-[lockfile_generation]: https://docs.phylum.io/docs/lockfile_generation
+Lockfiles can also automatically be generated for certain manifest files. See [lockfile_generation](./lockfile_generation.md) for details.
 
 :::

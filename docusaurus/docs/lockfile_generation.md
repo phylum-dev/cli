@@ -70,6 +70,4 @@ Phylum handles these files by first attempting to analyze them as a lockfile. If
    npm install --package-lock-only --ignore-scripts
    ```
 
-7. The output lockfile (`package-lock.json`) is [analyzed][analyzing_dependencies]
-
-[analyzing_dependencies]: https://docs.phylum.io/docs/analyzing_dependencies
+7. The output lockfile (`package-lock.json`) is [analyzed](./analyzing_dependencies.md)

@@ -104,7 +104,7 @@ impl Markdown {
         for cmd in subcommands {
             let human_path = format!("{} {cmd}", parents.join(" "));
             let link_path = format!("{}_{cmd}", parents.join("_"));
-            let _ = writeln!(markdown, "* [{human_path}](./{link_path})");
+            let _ = writeln!(markdown, "* [{human_path}](./{link_path}.md)");
         }
 
         Self { command: parents, content: markdown }
