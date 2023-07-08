@@ -21,9 +21,11 @@ const config = {
     organizationName: 'phylum-dev', // Usually your GitHub org/user name.
     projectName: 'cli', // Usually your repo name.
     deploymentBranch: 'gh-pages',
+    trailingSlash: false,
 
     onBrokenLinks: 'throw',
-    onBrokenMarkdownLinks: 'warn',
+    onBrokenMarkdownLinks: 'throw',
+    onDuplicateRoutes: 'throw',
 
     // Even if you don't use internalization, you can use this field to set useful
     // metadata like html lang. For example, if your site is Chinese, you may want
@@ -59,9 +61,15 @@ const config = {
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             colorMode: {
-                defaultMode: 'light',
+                defaultMode: 'dark',
                 disableSwitch: false,
                 respectPrefersColorScheme: true,
+            },
+            // The announcement bar can be used to highlight big changes
+            announcementBar: {
+                content: 'Welcome to the new Phylum CLI documentation!',
+                textColor: '#fff',
+                backgroundColor: '#3480eb',
             },
             navbar: {
                 title: 'Phylum CLI',
@@ -69,6 +77,7 @@ const config = {
                     alt: 'Phylum Logo',
                     src: 'img/phylum_logo.svg',
                 },
+                hideOnScroll: false,
                 items: [
                     {
                         type: 'docSidebar',
@@ -78,20 +87,37 @@ const config = {
                     },
                     {
                         href: 'https://github.com/phylum-dev/cli',
-                        label: 'GitHub',
                         position: 'right',
+                        className: 'header-github-link',
+                        'aria-label': 'GitHub repository',
                     },
                 ],
             },
             footer: {
                 style: 'dark',
+                logo: {
+                    alt: 'Phylum Logo',
+                    src: 'img/phylum_logo.svg',
+                    height: 100,
+                    width: 100,
+                    href: 'https://phylum.io',
+                },
+                copyright: `Copyright © 2020-${new Date().getFullYear()} Phylum, Inc.`,
                 links: [
                     {
                         title: 'Docs',
                         items: [
                             {
-                                label: 'Tutorial',
-                                to: '/docs/intro',
+                                label: 'Quickstart',
+                                to: '/',
+                            },
+                            {
+                                label: 'Commands',
+                                to: 'commands/phylum',
+                            },
+                            {
+                                label: 'Extensions',
+                                to: 'extensions/extension_overview',
                             },
                         ],
                     },
@@ -99,16 +125,24 @@ const config = {
                         title: 'Community',
                         items: [
                             {
-                                label: 'Stack Overflow',
-                                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-                            },
-                            {
                                 label: 'Discord',
-                                href: 'https://discordapp.com/invite/docusaurus',
+                                href: 'https://discord.gg/c9QnknWxm3',
                             },
                             {
                                 label: 'Twitter',
-                                href: 'https://twitter.com/docusaurus',
+                                href: 'https://twitter.com/Phylum_IO',
+                            },
+                            {
+                                label: 'YouTube',
+                                href: 'https://www.youtube.com/@phylum_io',
+                            },
+                            {
+                                label: 'DEV',
+                                href: 'https://dev.to/phylum',
+                            },
+                            {
+                                label: 'LinkedIn',
+                                href: 'https://www.linkedin.com/company/phylum-io',
                             },
                         ],
                     },
@@ -122,7 +156,6 @@ const config = {
                         ],
                     },
                 ],
-                copyright: `Copyright © 2020-${new Date().getFullYear()} Phylum, Inc.`,
             },
             prism: {
                 theme: lightCodeTheme,
