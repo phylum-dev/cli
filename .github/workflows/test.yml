@@ -41,7 +41,7 @@ jobs:
 
       - name: Clippy
         if: github.event_name != 'schedule'
-        run: cargo clippy --locked -- -D warnings
+        run: cargo lint
 
       - name: Test generating shell completion files
         if: matrix.os == 'ubuntu-latest'
