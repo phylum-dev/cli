@@ -41,6 +41,7 @@ const config = {
             /** @type {import('@docusaurus/preset-classic').Options} */
             ({
                 docs: {
+                    path: '../docs',
                     // Make this a "Docs-only" site
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars.js'),

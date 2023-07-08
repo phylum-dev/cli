@@ -8,7 +8,7 @@ use clap_markdown::Generator;
 use phylum_cli::app;
 
 /// Output directory.
-const OUTPUT_DIR: &str = "./website/docs/commands";
+const OUTPUT_DIR: &str = "./docs/commands";
 
 /// Template directory.
 const TEMPLATE_DIR: &str = "./doc_templates";
