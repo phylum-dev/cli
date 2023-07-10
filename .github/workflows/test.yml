@@ -84,6 +84,26 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
+  doc-checks:
+    name: Test documentation website
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+      - name: Install local website package
+        working-directory: ./website
+        run: npm ci
+      - name: Ensure website builds
+        working-directory: ./website
+        run: npm run build
+
   # This job reports the results of the test matrix above
   test:
     if: always()
