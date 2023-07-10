@@ -186,7 +186,7 @@ fn handle_version(app_name: &str, ver: &str) -> CommandResult {
     Ok(ExitCode::Ok)
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     match handle_commands().await {
         Ok(code) => code.exit(),
