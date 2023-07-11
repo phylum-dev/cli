@@ -6,46 +6,40 @@ After setting up a Phylum [project](commands/phylum_init.md), you can begin anal
 phylum analyze
 ```
 
-The default response will provide you with a high-level overview of your packages, including the total project score, score distributions across all packages, whether or not this analysis was a pass or fail and the total number of packages still processing.
+The default response will provide an overall summary result to indicate whether the [project's established policy](https://docs.phylum.io/docs/policy) has been met. If there are still packages being processed, an incomplete status will be indicated. Any policy violations will be reported, along with a link to the complete report.
 
 ```console
 ❯ phylum analyze
-✅ Successfully parsed lockfile "./requirements.txt" as type: pip
-✅ Successfully parsed lockfile "./package-lock.json" as type: npm
-✅ Job ID: bbb6edae-e50b-4c6e-8386-34a5a56508e7
+✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./requirements.txt" as type: pip
+✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./package-lock.json" as type: npm
+✅ Job ID: 3accba15-b0dc-43d2-b8ce-f5700360e3bd
 
+Phylum Supply Chain Risk Analysis — FAILURE
 
-          Project: example-project                                         Label: uncategorized
-       Proj Score: 32                                                       Date: 2023-03-23 21:22:58 UTC
-         Num Deps: 58                                                     Job ID: bbb6edae-e50b-4c6e-8386-34a5a56508e7
-       Ecosystems: NPM, PyPI
+[npm] cacheable-request@6.1.0
+  [VLN] cacheable-request@6.1.0 is vulnerable to Regular Expression Denial of Service
+[npm] ci-info@3.8.0
+  [AUT] Author of ci-info@3.8.0 is using a disposable email domain
+[npm] trim@0.0.1
+  [VLN] trim@0.0.1 is vulnerable to Regular Expression Denial of Service
+[pypi] crpytography@0.1
+  [MAL] crpytography@0.1 may be a typosquatted package
+  [MAL] crpytography@0.1 is vulnerable to a dependency confusion attack.
+[pypi] cryptography@38.0.4
+  [VLN] cryptography@38.0.4 is vulnerable to Vulnerable OpenSSL included
+[pypi] ghostscript@0.7
+  [LIC] Commercial license risk detected in ghostscript@0.7
+[pypi] pyyaml@5.3.1
+  [VLN] PyYAML@5.3.1 is vulnerable to Improper Input Validation
 
-     Score       Count
-     91 - 100  [   55] ████████████████████████████████████████████████████████                        Thresholds:
-     81 - 90   [    0]                                                                              Project Score: 60
-     71 - 80   [    0]                                                                    Malicious Code Risk MAL: 60
-     61 - 70   [    0]                                                                     Vulnerability Risk VLN: 60
-     51 - 60   [    2] ████████████████                                                      Engineering Risk ENG: 60
-     41 - 50   [    0]                                                                            Author Risk AUT: 60
-     31 - 40   [    1] ████████                                                                  License Risk LIC: 60
-     21 - 30   [    0]
-     11 - 20   [    0]
-      0 - 10   [    0]
-
-           Status: FAIL
-           Reason: Project failed due to project_score threshold of 60 not being met
-```
-
-You can get more detailed output from the analysis, to include specific issues and their severity, by using the `--verbose` flag:
-
-```sh
-phylum analyze --verbose
+You can find the interactive report here:
+  https://app.phylum.io/projects/e5eab4d2-d27d-42ac-bbad-f3ff5c588f54?label=uncategorized
 ```
 
 If you prefer JSON formatted output, you can leverage the `--json` flag.
 
 ```sh
-phylum analyze --verbose --json > output.json
+phylum analyze --json > output.json
 ```
 
 If the analysis failed to meet the project's thresholds, the command's exit code will be set to `100`.
