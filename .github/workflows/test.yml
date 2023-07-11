@@ -26,6 +26,7 @@ jobs:
       # Workaround to provide additional free space for testing.
       # Reference: https://github.com/actions/runner-images/issues/2840
       - name: Free disk space
+        if: startsWith(runner.name, 'GitHub Actions') && startsWith(matrix.os, 'ubuntu')
         run: sudo rm -rf /usr/share/dotnet
 
       - name: Install Rust toolchain
