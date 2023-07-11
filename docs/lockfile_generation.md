@@ -4,7 +4,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 
 ## Lockfile generators
 
-| Lockfile type | Filenames        | Required tool               |
+| Lockfile type | Manifests        | Required tool               |
 | ------------- | ---------        | -------------               |
 | `npm`         | `package.json`   | [`npm`][npm]                |
 | `yarn`        | `package.json`   | [`yarn`][yarn]              |

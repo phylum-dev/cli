@@ -37,13 +37,13 @@ Serves the built website locally.
 Using SSH:
 
 ```sh
-USE_SSH=true npm deploy
+USE_SSH=true npm run deploy
 ```
 
 Not using SSH:
 
 ```sh
-GIT_USER=<Your GitHub username> npm deploy
+GIT_USER=<Your GitHub username> npm run deploy
 ```
 
 If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
