@@ -3,6 +3,8 @@
 ---
 name: Release
 
+concurrency: release
+
 on:
   # Allow running this workflow manually from the Actions tab
   workflow_dispatch:
@@ -144,7 +146,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-
   Release:
     name: Create release from tag
     needs: Build-Release-Artifacts
@@ -252,12 +253,5 @@ jobs:
     needs: Release
     # Don't trigger for pre-releases
     if: ${{ !contains(github.ref, 'rc') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Update v2-latest using rdme
-        uses: readmeio/rdme@01ed07d63eeeda9be92b4907c59bdf1283a0b4ce # v8.6.4
-        with:
-          rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
+    uses: ./.github/workflows/docs.yml
+    secrets: inherit

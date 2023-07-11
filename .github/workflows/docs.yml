@@ -1,0 +1,60 @@
+# Workflow for updating the documentation website
+---
+name: Update Documentation
+
+# Documentation updates can happen manually or within a release; allow only one at a time.
+concurrency: release
+
+on:
+  # Allow running this workflow manually from the Actions tab
+  workflow_dispatch:
+  # Allow this to be a reusable workflow, but only meant to be called from within the same repository
+  # Reference: https://docs.github.com/en/actions/using-workflows/reusing-workflows
+  workflow_call:
+    secrets:
+      PHYLUM_BOT_GPG_PRIVATE_KEY:
+        required: true
+      PHYLUM_BOT_GPG_PASSPHRASE:
+        required: true
+
+jobs:
+  Update-Documentation:
+    name: Update the documentation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    environment:
+      name: github-pages
+      url: https://cli.phylum.io
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+        # This GPG key is for the `phylum-bot` account and used in order to ensure commits are signed/verified
+      - name: Import GPG key for bot account
+        uses: crazy-max/ghaction-import-gpg@72b6676b71ab476b77e676928516f6982eef7a41 # v5.3.0
+        with:
+          gpg_private_key: ${{ secrets.PHYLUM_BOT_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PHYLUM_BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Set up Node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install local website package
+        working-directory: ./website
+        run: npm ci
+
+      - name: Build documentation website
+        working-directory: ./website
+        run: npm run build
+
+      - name: Deploy documentation website
+        working-directory: ./website
+        run: npm run deploy
