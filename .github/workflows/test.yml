@@ -44,7 +44,7 @@ jobs:
         run: cargo lint
 
       - name: Test generating shell completion files
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu')
         run: cargo xtask gencomp
 
       - name: Test
@@ -106,12 +106,27 @@ jobs:
         working-directory: ./website
         run: npm run build
 
-  # This job reports the results of the test matrix above
+  # This job reports the results of the test jobs above and is used to enforce status checks in
+  # the repo settings without needing to update those settings everytime the test jobs are updated.
   test:
     if: always()
-    needs: test-matrix
     runs-on: ubuntu-latest
+    needs: [test-matrix, deno-checks, shellcheck, doc-checks]
     steps:
-      - if: needs.test-matrix.result != 'success'
-        name: Fail the build
-        run: exit 1
+      - name: Check for test jobs failure
+        if: >
+          (needs.test-matrix.result != 'success')
+          || (needs.deno-checks.result != 'success')
+          || (needs.shellcheck.result != 'success')
+          || (needs.doc-checks.result != 'success')
+        run: |
+          echo "At least one test job was not successful"
+          exit 1
+
+      - name: Confirm test jobs success
+        if: >
+          (needs.test-matrix.result == 'success')
+          && (needs.deno-checks.result == 'success')
+          && (needs.shellcheck.result == 'success')
+          && (needs.doc-checks.result == 'success')
+        run: echo "All test jobs were successful"
