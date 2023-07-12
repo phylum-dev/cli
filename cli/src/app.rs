@@ -221,19 +221,19 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse lock files and output their packages as JSON").args(
+            Command::new("parse").about("Parse lockfiles and output their packages as JSON").args(
                 &[
                     Arg::new("lockfile")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock files to submit")
+                        .help("The package lockfiles to submit")
                         .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
                         .requires("lockfile")
-                        .help("Lock file type used for all lock files (default: auto)")
+                        .help("Lockfile type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 ],
             ),
@@ -266,14 +266,14 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("lockfile")
                         .value_name("LOCKFILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lock files to submit")
+                        .help("The package lockfiles to submit")
                         .action(ArgAction::Append),
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
                         .value_name("type")
                         .requires("lockfile")
-                        .help("Lock file type used for all lock files (default: auto)")
+                        .help("Lockfile type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                     Arg::new("base")
                         .short('b')
@@ -425,14 +425,14 @@ pub fn add_subcommands(command: Command) -> Command {
                     .short('l')
                     .long("lockfile")
                     .value_name("LOCKFILE")
-                    .help("Project-relative lock file path")
+                    .help("Project-relative lockfile path")
                     .action(ArgAction::Append),
                 Arg::new("lockfile-type")
                     .short('t')
                     .long("lockfile-type")
                     .value_name("type")
                     .requires("lockfile")
-                    .help("Lock file type used for all lock files (default: auto)")
+                    .help("Lockfile type used for all lockfiles (default: auto)")
                     .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 Arg::new("force")
                     .short('f')

@@ -19,10 +19,10 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 &emsp; Group which will be the owner of the project
 
 `-l`, `--lockfile` `<LOCKFILE>`
-&emsp; Project-relative lock file path
+&emsp; Project-relative lockfile path
 
 `-t`, `--lockfile-type` `<type>`
-&emsp; Lock file type used for all lock files (default: auto)
+&emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `auto`
 
 `-f`, `--force`

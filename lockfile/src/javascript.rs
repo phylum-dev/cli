@@ -161,7 +161,7 @@ impl Parse for YarnLock {
                 let (_, entries) = yarn::parse(data)
                     .finish()
                     .map_err(|e| anyhow!(convert_error(data, e)))
-                    .context("Failed to parse yarn lock file")?;
+                    .context("Failed to parse yarn lockfile")?;
                 return Ok(entries);
             },
         };
@@ -464,11 +464,14 @@ mod tests {
         let pkgs =
             YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
-        assert_eq!(pkgs, vec![Package {
-            name: "@yarnpkg/lockfile".to_string(),
-            version: PackageVersion::FirstParty("1.1.0".into()),
-            package_type: PackageType::Npm,
-        }]);
+        assert_eq!(
+            pkgs,
+            vec![Package {
+                name: "@yarnpkg/lockfile".to_string(),
+                version: PackageVersion::FirstParty("1.1.0".into()),
+                package_type: PackageType::Npm,
+            }]
+        );
     }
 
     #[test]
@@ -528,16 +531,20 @@ mod tests {
             },
             Package {
                 name: "ethereumjs-abi".into(),
-                version: PackageVersion::Git("https://github.com/ethereumjs/ethereumjs-abi.git\
+                version: PackageVersion::Git(
+                    "https://github.com/ethereumjs/ethereumjs-abi.git\
                     #commit=ee3994657fa7a427238e6ba92a84d0b529bbcde0"
-                    .into()),
+                        .into(),
+                ),
                 package_type: PackageType::Npm,
             },
             Package {
                 name: "@me/remote-patch".into(),
-                version: PackageVersion::Git("ssh://git@github.com:phylum/remote-patch\
+                version: PackageVersion::Git(
+                    "ssh://git@github.com:phylum/remote-patch\
                     #commit=d854c43ea177d1faeea56189249fff8c24a764bd"
-                    .into()),
+                        .into(),
+                ),
                 package_type: PackageType::Npm,
             },
             Package {

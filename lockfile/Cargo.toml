@@ -1,6 +1,6 @@
 [package]
 name = "phylum_lockfile"
-description = "Package lock file parsers used by Phylum"
+description = "Package lockfile parsers used by Phylum"
 version = "0.1.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 edition = "2021"

@@ -2,7 +2,7 @@
 title: phylum parse
 ---
 
-Parse lock files and output their packages as JSON
+Parse lockfiles and output their packages as JSON
 
 ```sh
 Usage: phylum parse [OPTIONS] [LOCKFILE]...
@@ -11,12 +11,12 @@ Usage: phylum parse [OPTIONS] [LOCKFILE]...
 ### Arguments
 
 `[LOCKFILE]`
-&emsp; The package lock files to submit
+&emsp; The package lockfiles to submit
 
 ### Options
 
 `-t`, `--lockfile-type` `<type>`
-&emsp; Lock file type used for all lock files (default: auto)
+&emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `auto`
 
 `-v`, `--verbose`...
