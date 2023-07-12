@@ -11,9 +11,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Support for NuGet's `packages.lock.json` lockfiles
 
-### Changed
-- Switch documentation hosting from Readme.com to Docusaurus
-
 ## [5.4.0] - 2023-07-06
 
 ### Added
