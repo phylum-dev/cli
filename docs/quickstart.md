@@ -7,9 +7,7 @@ slug: /
 
 The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). For more options, see [Alternate Installation Methods](./alternate_install.md).
 
-[![asciicast](https://asciinema.org/a/431262.svg)](https://asciinema.org/a/431262)
-
-## Install phylum
+## Install `phylum` CLI
 
 ### Install on Linux
 
@@ -56,7 +54,7 @@ When using Homebrew, [official extensions][] must be installed separately.
    phylum init
    ```
 
-4. [Submit your package lock file](./commands/phylum_analyze.md)
+4. [Submit your lockfiles and manifests](./commands/phylum_analyze.md) to [analyze dependencies](./analyzing_dependencies.md)
 
    ```sh
    phylum analyze
