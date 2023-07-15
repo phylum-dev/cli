@@ -47,7 +47,8 @@ Usage: phylum package [OPTIONS] <type> <name> <version>
 
 ### Details
 
-If the requested package has not yet been analyzed by Phylum, it will automatically be submitted for [processing].
+If the requested package has not yet been analyzed by Phylum, it will
+automatically be submitted for [processing].
 
 [processing]: https://docs.phylum.io/docs/processing
 
@@ -57,7 +58,9 @@ The following order is used to determine which lockfile will be parsed:
 - Lockfiles in the `.phylum_project` file specified during `phylum init`
 - Recursive filesystem search
 
-If any of these locations provides a lockfile, no further search will be done. Recursive filesystem search takes common ignore files like `.gitignore` and `.ignore` into account.
+If any of these locations provides a lockfile, no further search will be done.
+Recursive filesystem search takes common ignore files like `.gitignore` and
+`.ignore` into account.
 
 ### Examples
 

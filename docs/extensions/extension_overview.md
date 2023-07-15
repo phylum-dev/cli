@@ -1,14 +1,19 @@
 # Phylum CLI Extensions
 
-Phylum CLI extensions are optional plugins for the CLI which provide additional functionality in a modular fashion.
+Phylum CLI extensions are optional plugins for the CLI which provide additional
+functionality in a modular fashion.
 
-Extensions are executed in a [Deno] JavaScript runtime and have access to Phylum's API for commonly used operations. The capability-based permission system, together with Deno's sandbox, ensures that extensions can only do what they're supposed to.
+Extensions are executed in a [Deno] JavaScript runtime and have access to
+Phylum's API for commonly used operations. The capability-based permission
+system, together with Deno's sandbox, ensures that extensions can only do what
+they're supposed to.
 
 [Deno]: https://deno.land/
 
 ## Usage
 
-If you're interested in using existing Phylum CLI extensions, you can take a look at the [CLI's extension documentation](../commands/phylum_extension.md).
+If you're interested in using existing Phylum CLI extensions, you can take a
+look at the [CLI's extension documentation](../commands/phylum_extension.md).
 
 ## Writing Extensions
 
@@ -21,17 +26,20 @@ If you're interested in using existing Phylum CLI extensions, you can take a loo
 
 :::tip More info
 
-Additional how-to articles for the extension framework can be found [here](https://dev.to/phylum).
+Additional how-to articles for the extension framework can be found
+[here](https://dev.to/phylum).
 
 :::
 
 ## Official Extensions
 
-Official Phylum CLI extensions can be found [on GitHub]. These are a great place to get started if you want to try out some CLI extensions or write your own.
+Official Phylum CLI extensions can be found [on GitHub]. These are a great place
+to get started if you want to try out some CLI extensions or write your own.
 
 [on GitHub]: https://github.com/phylum-dev/cli/tree/main/extensions
 
-Additionally, many of the official extensions are distributed with the Phylum CLI and should already be available for use. The pre-installed extensions are:
+Additionally, many of the official extensions are distributed with the Phylum
+CLI and should already be available for use. The pre-installed extensions are:
 
 * [`npm`](https://github.com/phylum-dev/cli/tree/main/extensions/npm)
 * [`pip`](https://github.com/phylum-dev/cli/tree/main/extensions/pip)

@@ -29,6 +29,7 @@ If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
 
 :::tip Manifest Support
 
-Lockfiles can also automatically be generated for certain manifest files. See [lockfile_generation](./lockfile_generation.md) for details.
+Lockfiles can also automatically be generated for certain manifest files.
+See [lockfile_generation](./lockfile_generation.md) for details.
 
 :::

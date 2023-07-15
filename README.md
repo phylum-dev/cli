@@ -66,7 +66,9 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 
 ## Extensions
 
-Phylum CLI extensions allow you to extend the existing CLI functionality with new features. You can start exploring by taking a look at the official Phylum extensions:
+Phylum CLI extensions allow you to extend the existing CLI functionality with
+new features. You can start exploring by taking a look at the official Phylum
+extensions:
 
 <https://github.com/phylum-dev/cli/tree/main/extensions>
 
@@ -76,9 +78,13 @@ How-to articles for the extension framework can be found [here](https://dev.to/p
 
 ## musl binaries
 
-As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on `glibc`. We no longer provide binaries that are statically compiled with the `musl` libc.
+As of version 3.8.0, the provided Linux binaries of the Phylum CLI depend on
+`glibc`. We no longer provide binaries that are statically compiled with the
+`musl` libc.
 
-This means the provided binaries won't be executable in environments such as Alpine Linux. If your use case requires a lightweight Docker base image, consider using [Debian slim][debian-slim] instead.
+This means the provided binaries won't be executable in environments such as
+Alpine Linux. If your use case requires a lightweight Docker base image,
+consider using [Debian slim][debian-slim] instead.
 
 [debian-slim]: https://hub.docker.com/_/debian
 
