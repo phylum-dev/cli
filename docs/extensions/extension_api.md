@@ -11,11 +11,11 @@ functionality is documented in [Deno's API docs]. This functionality is
 available to all extensions without any imports.
 
 Additionally, Deno also provides a complementary standard library. This includes
- utility functions for several commonly used structures like collections, http,
- and async. These modules can be imported using the URLs documented in Deno's
- standard library documentation or by downloading them and including individual
- modules as files. All standard library functionality is documented in [Deno's
- standard library docs].
+utility functions for several commonly used structures like collections, http,
+and async. These modules can be imported using the URLs documented in Deno's
+standard library documentation or by downloading them and including individual
+modules as files. All standard library functionality is documented in [Deno's
+standard library docs].
 
 The following API methods are not supported:
 - <https://doc.deno.land/deno/stable/~/Deno.Permissions#request>
