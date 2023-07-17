@@ -49,7 +49,7 @@ jobs:
         run: cargo clippy --locked -- -D warnings
 
       - name: Test generating shell completion files
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: cargo xtask gencomp
 
       - name: Test
