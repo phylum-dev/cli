@@ -107,12 +107,12 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
-  # This job reports the results of the test matrix above
+  # This job reports the results of the matrixes above
   test:
     if: always()
     needs: [test-matrix, all-features, oldstable]
     runs-on: ubuntu-latest
     steps:
-      - if: contains(needs.*.result, 'failure')
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         name: Fail the build
         run: exit 1
