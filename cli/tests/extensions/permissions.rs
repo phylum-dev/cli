@@ -56,7 +56,7 @@ fn correct_net_permission_successful_install_and_run() {
     test_cli
         .run(["correct-net-perms"])
         .success()
-        .stdout(predicate::str::contains("<!doctype html>"));
+        .stdout(predicate::str::contains("<!DOCTYPE html>"));
 }
 
 #[test]
