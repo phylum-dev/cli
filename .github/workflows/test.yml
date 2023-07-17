@@ -48,10 +48,6 @@ jobs:
         if: github.event_name != 'schedule'
         run: cargo clippy --locked -- -D warnings
 
-      - name: Test generating shell completion files
-        if: matrix.os == 'ubuntu-20.04'
-        run: cargo xtask gencomp
-
       - name: Test
         run: cargo test --locked
 

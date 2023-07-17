@@ -80,6 +80,20 @@ mod gencomp {
 
         Ok(())
     }
+
+    #[cfg(test)]
+    mod test {
+        use tempfile::tempdir;
+
+        use super::*;
+
+        #[test]
+        fn generate_completions() {
+            let tmp_dir = tempdir().unwrap();
+
+            copy_completions(tmp_dir.path()).unwrap();
+        }
+    }
 }
 
 // CLI arguments test
