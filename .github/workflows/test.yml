@@ -23,6 +23,12 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
+      # Workaround to provide additional free space for testing.
+      # Reference: https://github.com/actions/runner-images/issues/2840
+      - name: Free disk space
+        if: startsWith(runner.name, 'GitHub Actions') && startsWith(matrix.os, 'ubuntu')
+        run: sudo rm -rf /usr/share/dotnet
+
       - name: Install Rust toolchain
         run: |
           rustup toolchain install --no-self-update stable --profile minimal -c clippy
