@@ -13,6 +13,19 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
+  rustfmt:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Install Rust nightly toolchain
+        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
+
+      - name: Format check
+        run: cargo +nightly fmt --all -- --check
+
   test-matrix:
     strategy:
       fail-fast: false
@@ -27,14 +40,6 @@ jobs:
         run: |
           rustup toolchain install --no-self-update stable --profile minimal -c clippy
           rustup default stable
-
-      - name: Install Rust nightly toolchain
-        if: github.event_name != 'schedule'
-        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
-
-      - name: Format check
-        if: github.event_name != 'schedule'
-        run: cargo +nightly fmt --all -- --check
 
       - name: Build
         run: cargo build --locked
