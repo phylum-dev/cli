@@ -45,7 +45,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked --all-features --all-targets -- -D warnings
 
-  build-and-test:
+  test-matrix:
     strategy:
       fail-fast: false
       matrix:
@@ -59,9 +59,6 @@ jobs:
         run: |
           rustup toolchain install --no-self-update stable --profile minimal
           rustup default stable
-
-      - name: Build
-        run: cargo build --locked
 
       - name: Test
         run: cargo test --locked
@@ -121,7 +118,7 @@ jobs:
   # This job reports the results of the matrixes above
   test:
     if: always()
-    needs: [clippy, build-and-test, all-features, oldstable]
+    needs: [clippy, test-matrix, all-features, oldstable]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
