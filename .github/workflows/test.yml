@@ -1,149 +1,149 @@
 ---
-  name: Test
+name: Test
 
-  on:
-    # Allow running this workflow manually from the Actions tab
-    workflow_dispatch:
-    pull_request:
-    push:
-      branches:
-        - main
-    # Run weekly on the default branch to make sure it always builds with the latest rust release
-    schedule:
-      - cron: '30 5 * * 1'
+on:
+  # Allow running this workflow manually from the Actions tab
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  # Run weekly on the default branch to make sure it always builds with the latest rust release
+  schedule:
+    - cron: '30 5 * * 1'
 
-  jobs:
-    rustfmt:
-      if: github.event_name != 'schedule'
-      runs-on: ubuntu-20.04
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+jobs:
+  rustfmt:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-        - name: Install Rust nightly toolchain
-          run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
+      - name: Install Rust nightly toolchain
+        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
 
-        - name: Format check
-          run: cargo +nightly fmt --all -- --check
+      - name: Format check
+        run: cargo +nightly fmt --all -- --check
 
-    clippy:
-      if: github.event_name != 'schedule'
-      strategy:
-        fail-fast: false
-        matrix:
-          os: [ubuntu-20.04, [self-hosted, macos, arm64]]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+  clippy:
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-        - name: Install Rust toolchain
-          run: |
-            rustup toolchain install --no-self-update stable --profile minimal -c clippy
-            rustup default stable
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install --no-self-update stable --profile minimal -c clippy
+          rustup default stable
 
-        - name: Clippy
-          run: cargo clippy --locked --all-features --all-targets -- -D warnings
+      - name: Clippy
+        run: cargo clippy --locked --all-features --all-targets -- -D warnings
 
-    test-matrix:
-      strategy:
-        fail-fast: false
-        matrix:
-          os: [ubuntu-20.04, [self-hosted, macos, arm64]]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+  test-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-        - name: Install Rust toolchain
-          run: |
-            rustup toolchain install --no-self-update stable --profile minimal
-            rustup default stable
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install --no-self-update stable --profile minimal
+          rustup default stable
 
-        - name: Test
-          run: cargo test --locked
+      - name: Test
+        run: cargo test --locked
 
-    oldstable:
-      strategy:
-        matrix:
-          os: [ubuntu-20.04, [self-hosted, macos, arm64]]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+  oldstable:
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-        - name: Oldstable
-          run: |
-            oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
-            rustup toolchain install --profile minimal "$oldstable"
-            cargo "+$oldstable" check
+      - name: Oldstable
+        run: |
+          oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
+          rustup toolchain install --profile minimal "$oldstable"
+          cargo "+$oldstable" check
 
-    all-features:
-      # Skip this job when the secret is unavailable
-      if: github.secret_source == 'Actions'
-      strategy:
-        matrix:
-          os: [ubuntu-20.04, [self-hosted, macos, arm64]]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+  all-features:
+    # Skip this job when the secret is unavailable
+    if: github.secret_source == 'Actions'
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-        - name: All Features
-          env:
-            PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
-          run: cargo test --all-features
+      - name: All Features
+        env:
+          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+        run: cargo test --all-features
 
-    deno-checks:
-      if: github.event_name != 'schedule'
-      runs-on: ubuntu-latest
-      container: denoland/deno
-      steps:
-        - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-        - name: deno fmt
-          run: deno fmt --check
-        - name: deno lint
-          run: deno lint
-        - name: deno check
-          run: deno check --no-lock extensions/**/*.ts
+  deno-checks:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    container: denoland/deno
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: deno fmt
+        run: deno fmt --check
+      - name: deno lint
+        run: deno lint
+      - name: deno check
+        run: deno check --no-lock extensions/**/*.ts
 
-    shellcheck:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-        - name: Script Style Check
-          if: github.event_name != 'schedule'
-          run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Script Style Check
+        if: github.event_name != 'schedule'
+        run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
-    doc-checks:
-      name: Test documentation website
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          shell: bash
-      steps:
-        - name: Checkout the repo
-          uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-        - name: Set up Node
-          uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-          with:
-            node-version: '*'
-            cache: 'npm'
-            cache-dependency-path: website/package-lock.json
-        - name: Install local website package
-          working-directory: ./website
-          run: npm ci
-        - name: Ensure website builds
-          working-directory: ./website
-          run: npm run build
+  doc-checks:
+    name: Test documentation website
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Set up Node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version: '*'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+      - name: Install local website package
+        working-directory: ./website
+        run: npm ci
+      - name: Ensure website builds
+        working-directory: ./website
+        run: npm run build
 
-    # This job reports the results of the test jobs above and is used to enforce status checks in
-    # the repo settings without needing to update those settings every time the test jobs are updated.
-    test:
-      if: always()
-      needs: [rustfmt, clippy, test-matrix, all-features, oldstable, deno-checks, shellcheck, doc-checks]
-      runs-on: ubuntu-latest
-      steps:
-        - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-          name: Fail the build
-          run: exit 1
+  # This job reports the results of the test jobs above and is used to enforce status checks in
+  # the repo settings without needing to update those settings every time the test jobs are updated.
+  test:
+    if: always()
+    needs: [rustfmt, clippy, test-matrix, all-features, oldstable, deno-checks, shellcheck, doc-checks]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        name: Fail the build
+        run: exit 1
