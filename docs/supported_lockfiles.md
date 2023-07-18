@@ -2,7 +2,7 @@
 
 The Phylum CLI supports processing many different lockfiles:
 
-| Lockfile type | Filenames                                                              |
+| Lockfile type | Lockfiles                                                              |
 | ------------- | ---------------------------------------------------------------------- |
 | `npm`         | `package-lock.json` <br /> `npm-shrinkwrap.json`                       |
 | `yarn`        | `yarn.lock` (Version 1 + 2)                                            |

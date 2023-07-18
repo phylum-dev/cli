@@ -161,6 +161,9 @@ const config = {
             prism: {
                 theme: lightCodeTheme,
                 darkTheme: darkCodeTheme,
+                additionalLanguages: [
+                    'toml',
+                ],
             },
             docs: {
                 sidebar: {

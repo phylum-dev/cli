@@ -102,7 +102,7 @@ this function is asynchronous, we need to `await` it.
 
 The lockfile object will look something like this:
 
-```js
+```text
 {
   packages: [
     { name: "accepts", version: "1.3.8" },
@@ -125,7 +125,7 @@ tell it which field to group by using `dep => dep.name`.
 
 This will transform our package list into the following:
 
-```js
+```text
 {
   accepts: [
       { name: "accepts", version: "1.3.8" },
@@ -146,7 +146,7 @@ for each dependency.
 
 This results in a simple array with all dependencies and their versions:
 
-```js
+```text
 {
   accepts: ["1.3.8", "1.0.0"],
   "array-flatten": ["1.1.1"]
