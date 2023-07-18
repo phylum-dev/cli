@@ -13,6 +13,38 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
+  rustfmt:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Install Rust nightly toolchain
+        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
+
+      - name: Format check
+        run: cargo +nightly fmt --all -- --check
+
+  clippy:
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install --no-self-update stable --profile minimal -c clippy
+          rustup default stable
+
+      - name: Clippy
+        run: cargo clippy --locked --all-features --all-targets -- -D warnings
+
   test-matrix:
     strategy:
       fail-fast: false
@@ -23,38 +55,22 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      # Workaround to provide additional free space for testing.
-      # Reference: https://github.com/actions/runner-images/issues/2840
-      - name: Free disk space
-        if: startsWith(runner.name, 'GitHub Actions') && startsWith(matrix.os, 'ubuntu')
-        run: sudo rm -rf /usr/share/dotnet
-
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install --no-self-update stable --profile minimal -c clippy
+          rustup toolchain install --no-self-update stable --profile minimal
           rustup default stable
-
-      - name: Install Rust nightly toolchain
-        if: github.event_name != 'schedule'
-        run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
-
-      - name: Format check
-        if: github.event_name != 'schedule'
-        run: cargo +nightly fmt --all -- --check
-
-      - name: Build
-        run: cargo build --locked
-
-      - name: Clippy
-        if: github.event_name != 'schedule'
-        run: cargo clippy --locked -- -D warnings
-
-      - name: Test generating shell completion files
-        if: matrix.os == 'ubuntu-latest'
-        run: cargo xtask gencomp
 
       - name: Test
         run: cargo test --locked
+
+  oldstable:
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Oldstable
         run: |
@@ -62,9 +78,18 @@ jobs:
           rustup toolchain install --profile minimal "$oldstable"
           cargo "+$oldstable" check
 
-      # Skip this step when the secret is unavailable
-      - if: github.secret_source == 'Actions'
-        name: All Features
+  all-features:
+    # Skip this job when the secret is unavailable
+    if: github.secret_source == 'Actions'
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: All Features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
         run: cargo test --all-features
@@ -90,12 +115,12 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
-  # This job reports the results of the test matrix above
+  # This job reports the results of the matrixes above
   test:
     if: always()
-    needs: test-matrix
+    needs: [clippy, test-matrix, all-features, oldstable]
     runs-on: ubuntu-latest
     steps:
-      - if: needs.test-matrix.result != 'success'
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         name: Fail the build
         run: exit 1

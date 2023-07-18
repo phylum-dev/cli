@@ -6485,6 +6485,7 @@ dependencies = [
  "log",
  "phylum-cli",
  "simplelog",
+ "tempfile",
 ]
 
 [[package]]

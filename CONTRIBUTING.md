@@ -72,7 +72,7 @@ All user-facing CLI changes require regenerating the CLI documentation. This is
 automatically validated by CI and can be done with the following command:
 
 ```sh
-cargo xtask gendocs
+cargo run -p xtask gendocs
 ```
 
 You can add a file to the [`doc_templates` directory](./doc_templates) to add
