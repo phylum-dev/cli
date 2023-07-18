@@ -3554,7 +3554,7 @@ dependencies = [
 
 [[package]]
 name = "phylum-cli"
-version = "5.4.0"
+version = "5.5.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -6485,6 +6485,7 @@ dependencies = [
  "log",
  "phylum-cli",
  "simplelog",
+ "tempfile",
 ]
 
 [[package]]
