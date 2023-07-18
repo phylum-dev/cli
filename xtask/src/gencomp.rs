@@ -7,7 +7,7 @@ use clap_complete::generate_to;
 use clap_complete::shells::{Bash, Fish, Zsh};
 use log::info;
 
-use crate::project_root;
+use crate::{cli_app, project_root};
 
 /// Generate shell completion files.
 pub fn gencomp() -> Result<()> {
@@ -20,7 +20,7 @@ pub fn gencomp() -> Result<()> {
 }
 
 fn copy_completions(completions_path: &Path) -> Result<()> {
-    let mut app = phylum_cli::app::app();
+    let mut app = cli_app();
 
     std::fs::create_dir_all(completions_path)?;
 
