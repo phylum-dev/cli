@@ -1,3 +1,0 @@
-[alias]
-xtask = "run --package xtask --"
-lint = "clippy --locked --all-features --all-targets -- -D warnings"

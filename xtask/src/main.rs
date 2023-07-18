@@ -40,7 +40,7 @@ fn print_help() {
         r#"
     Usage
 
-    cargo xtask <task>
+    cargo run -p xtask <task>
 
     Available tasks:
 
