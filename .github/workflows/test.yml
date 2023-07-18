@@ -43,7 +43,7 @@ jobs:
           rustup default stable
 
       - name: Clippy
-        run: cargo clippy --locked -- -D warnings
+        run: cargo clippy --locked --all-features --all-targets -- -D warnings
 
   build-and-test:
     strategy:

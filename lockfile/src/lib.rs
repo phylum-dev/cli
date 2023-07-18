@@ -492,8 +492,7 @@ mod tests {
         let lockable_files = find_lockable_files_at(tempdir.path());
 
         // Compare results.
-        let expected =
-            vec![(tempdir.path().join("pyproject.toml").to_path_buf(), LockfileFormat::Pip)];
+        let expected = vec![(tempdir.path().join("pyproject.toml"), LockfileFormat::Pip)];
         assert_eq!(lockable_files, expected);
     }
 
@@ -518,9 +517,9 @@ mod tests {
         // Compare results.
         lockable_files.sort_unstable();
         let expected = vec![
-            (tempdir.path().join("a/pyproject.toml").to_path_buf(), LockfileFormat::Pip),
-            (tempdir.path().join("b/setup.py").to_path_buf(), LockfileFormat::Pip),
-            (tempdir.path().join("setup.py").to_path_buf(), LockfileFormat::Pip),
+            (tempdir.path().join("a/pyproject.toml"), LockfileFormat::Pip),
+            (tempdir.path().join("b/setup.py"), LockfileFormat::Pip),
+            (tempdir.path().join("setup.py"), LockfileFormat::Pip),
         ];
         assert_eq!(lockable_files, expected);
     }
