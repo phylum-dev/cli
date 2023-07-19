@@ -1,3 +1,4 @@
+use std::io::{self, IsTerminal};
 use std::time;
 
 use futures::Future;
@@ -39,7 +40,7 @@ impl Spinner {
     }
 
     fn new_inner(message: Option<String>) -> Self {
-        if atty::is(atty::Stream::Stderr) {
+        if io::stderr().is_terminal() {
             let (tx, rx) = mpsc::channel(10);
             let handle = tokio::spawn(Self::spin(rx, message));
             Self { tx: Some(tx), handle: Some(handle) }
