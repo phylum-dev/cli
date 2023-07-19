@@ -8,7 +8,7 @@ phylum analyze
 
 The default response will provide an overall summary result to indicate whether the [project's established policy](https://docs.phylum.io/docs/policy) has been met. If there are still packages being processed, an incomplete status will be indicated. Any policy violations will be reported, along with a link to the complete report.
 
-```console
+```shellsession
 ❯ phylum analyze
 ✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./requirements.txt" as type: pip
 ✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./package-lock.json" as type: npm

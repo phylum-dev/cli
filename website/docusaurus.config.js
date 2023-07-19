@@ -163,6 +163,7 @@ const config = {
                 darkTheme: darkCodeTheme,
                 additionalLanguages: [
                     'toml',
+                    'shell-session',
                 ],
             },
             docs: {
