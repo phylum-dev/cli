@@ -24,7 +24,7 @@ export type PolicyEvaluationResponseRaw = {
   is_failure: boolean;
   incomplete_packages_count: number;
   help: string;
-  job_link: string | null;
+  job_link?: string;
   dependencies: EvaluatedDependencies[];
 };
 
@@ -44,11 +44,11 @@ export type PolicyRejection = {
 
 export type RejectionSource = {
   type: string;
-  tag: string | null;
-  domain: string | null;
-  severity: string | null;
-  description: string | null;
-  reason: string | null;
+  tag?: string;
+  domain?: string;
+  severity?: string;
+  description?: string;
+  reason?: string;
 };
 
 async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
@@ -236,7 +236,7 @@ export class PhylumApi {
    *   is_failure: false,
    *   incomplete_packages_count: 0,
    *   help: "The analysis contains 346 package(s) Phylum has not yet processed,\npreventing a complete risk analysis. Phylum is processing these\npackages currently and should complete soon.\nPlease wait for up to 30 minutes, then re-run the analysis.\n\nThis repository analyzes the risk of new dependencies. An\nadministrator of this repository has set requirements via Phylum policy.\n\nIf you see this comment, one or more dependencies have failed Phylum's risk analysis.",
-   *   job_link?: "https://phylum.io/projects/62a91e89-65cb-4597-8d4b-6ef119b29c5c",
+   *   job_link: "https://phylum.io/projects/62a91e89-65cb-4597-8d4b-6ef119b29c5c",
    *   dependencies: [
    *     purl: "pkg:cargo/birdcage@0.2.1",
    *     registry: "cargo",
@@ -247,11 +247,11 @@ export class PhylumApi {
    *       suppressed: false,
    *       source: {
    *         type: "Issue",
-   *         tag?: "HL0030",
-   *         domain?: "license",
-   *         severity?: "high",
-   *         description?: "### Overview\nThis package uses the **GPL-3.0-or-later** license, which is a **high** risk level to commercial use.",
-   *         reason?: "risk level cannot exceed medium"
+   *         tag: "HL0030",
+   *         domain: "license",
+   *         severity: "high",
+   *         description: "### Overview\nThis package uses the **GPL-3.0-or-later** license, which is a **high** risk level to commercial use.",
+   *         reason: "risk level cannot exceed medium"
    *       }
    *     ]
    *   ]

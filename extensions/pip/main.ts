@@ -206,15 +206,22 @@ function checkPipVersion() {
 
 // Write the analysis result status to STDOUT/STDERRR.
 function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
-  if (!result.is_failure && result.incomplete_packages_count == 0) {
-    console.log(
-      `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,
+  if (result.is_failure) {
+    console.error(
+      `[${red("phylum")}] Phylum Supply Chain Risk Analysis - FAILURE\n`,
     );
-  } else if (!result.is_failure) {
+  } else if (result.incomplete_packages_count > 0) {
     console.warn(
       `[${yellow("phylum")}] Phylum Supply Chain Risk Analysis - INCOMPLETE`,
     );
+  } else {
+    console.log(
+      `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,
+    );
+  }
 
+  // Print warning regarding incomplete packages.
+  if (result.incomplete_packages_count > 0) {
     // Ensure correct pluralization for incomplete packages.
     let unprocessedText =
       `${result.incomplete_packages_count} unprocessed package`;
@@ -226,56 +233,52 @@ function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
     console.warn(
       `[${yellowPhylum}] The analysis contains ${unprocessedText}, preventing a complete risk analysis. Phylum is currently processing these packages and should complete soon. Please wait for up to 30 minutes, then re-run the analysis.\n`,
     );
-  } else {
-    console.error(
-      `[${red("phylum")}] Phylum Supply Chain Risk Analysis - FAILURE\n`,
-    );
+  }
 
-    let output = "";
-    for (const pkg of result.dependencies) {
-      // Skip packages without policy rejections.
-      if (pkg.rejections.length === 0) {
+  // Print policy violations.
+  let output = "";
+  for (const pkg of result.dependencies) {
+    // Skip packages without policy rejections.
+    if (pkg.rejections.length === 0) {
+      continue;
+    }
+
+    output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+
+    for (const rejection of pkg.rejections) {
+      // Skip suppressed issues.
+      if (rejection.suppressed) {
         continue;
       }
 
-      output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+      // Format rejection title.
+      const domain = `[${rejection.source.domain || "     "}]`;
+      const message = `${domain} ${rejection.title}`;
 
-      for (const rejection of pkg.rejections) {
-        // Skip suppressed issues.
-        if (rejection.suppressed) {
-          continue;
-        }
-
-        // Format rejection title.
-        const domain = `[${rejection.source.domain || "     "}]`;
-        const message = `${domain} ${rejection.title}`;
-
-        // Color rejection based on severity.
-        let colored;
-        if (
-          rejection.source.severity === "low" ||
-          rejection.source.severity === "info"
-        ) {
-          colored = green(message);
-        } else if (rejection.source.severity === "medium") {
-          colored = yellow(message);
-        } else {
-          colored = red(message);
-        }
-
-        output += ` ${colored}\n`;
+      // Color rejection based on severity.
+      let colored;
+      if (
+        rejection.source.severity === "low" ||
+        rejection.source.severity === "info"
+      ) {
+        colored = green(message);
+      } else if (rejection.source.severity === "medium") {
+        colored = yellow(message);
+      } else {
+        colored = red(message);
       }
-    }
-    if (result.dependencies.length !== 0) {
-      output += "\n";
-    }
 
-    // Print web URI for the job results.
-    if (result.job_link) {
-      output +=
-        `You can find the interactive report here:\n ${result.job_link}\n`;
+      output += ` ${colored}\n`;
     }
+  }
+  if (output.length !== 0) {
+    console.error(output + "\n");
+  }
 
-    console.error(output);
+  // Print web URI for the job results.
+  if (result.job_link) {
+    console.log(
+      `You can find the interactive report here:\n ${result.job_link}\n`,
+    );
   }
 }
