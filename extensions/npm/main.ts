@@ -252,7 +252,7 @@ function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
     );
   } else if (result.incomplete_packages_count > 0) {
     console.warn(
-      `[${yellow("phylum")}] Phylum Supply Chain Risk Analysis - INCOMPLETE`,
+      `[${yellow("phylum")}] Phylum Supply Chain Risk Analysis - INCOMPLETE\n`,
     );
   } else {
     console.log(
