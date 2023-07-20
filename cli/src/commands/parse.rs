@@ -5,7 +5,7 @@ use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
-use phylum_types::types::package::PackageDescriptor;
+use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfilePath};
 use walkdir::WalkDir;
 
 use crate::commands::{CommandResult, ExitCode};
@@ -15,6 +15,19 @@ pub struct ParsedLockfile {
     pub path: PathBuf,
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
+}
+
+impl From<ParsedLockfile> for Vec<PackageDescriptorAndLockfilePath> {
+    fn from(value: ParsedLockfile) -> Self {
+        let mut packages = Vec::with_capacity(value.packages.len());
+        for pkg_descriptor in value.packages {
+            packages.push(PackageDescriptorAndLockfilePath {
+                package_descriptor: pkg_descriptor,
+                lockfile_path: Some(value.path.to_string_lossy().to_string()),
+            })
+        }
+        packages
+    }
 }
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
@@ -31,10 +44,12 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
 
-    let mut pkgs: Vec<PackageDescriptor> = Vec::new();
+    let mut pkgs: Vec<PackageDescriptorAndLockfilePath> = Vec::new();
 
     for lockfile in lockfiles {
-        pkgs.extend(parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?.packages);
+        let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
+        let parsed_packages = Vec::<PackageDescriptorAndLockfilePath>::from(parsed_lockfile);
+        pkgs.extend(parsed_packages);
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;

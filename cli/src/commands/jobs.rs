@@ -6,7 +6,9 @@ use console::style;
 use log::debug;
 use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::{
+    PackageDescriptor, PackageDescriptorAndLockfilePath, PackageType,
+};
 use reqwest::StatusCode;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, JobPackage};
@@ -116,7 +118,9 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            packages.extend(res.packages.into_iter());
+            let parsed_packages = Vec::<PackageDescriptorAndLockfilePath>::from(res);
+
+            packages.extend(parsed_packages.into_iter());
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
@@ -158,11 +162,15 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                     }
                     let pkg_version = pkg_info.pop().unwrap();
                     let pkg_name = pkg_info.join(":");
-
-                    packages.push(PackageDescriptor {
+                    let pkg_descriptor = PackageDescriptor {
                         name: pkg_name.to_owned(),
                         version: pkg_version.to_owned(),
                         package_type: request_type.to_owned(),
+                    };
+
+                    packages.push(PackageDescriptorAndLockfilePath {
+                        package_descriptor: pkg_descriptor,
+                        lockfile_path: None,
                     });
                     line.clear();
                 },
@@ -198,6 +206,8 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
     if synch {
         if pretty_print {
+            #[cfg(feature = "vulnreach")]
+            let packages: Vec<_> = packages.into_iter().map(|pkg| pkg.package_descriptor).collect();
             #[cfg(feature = "vulnreach")]
             if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
                 print_user_failure!("Reachability analysis failed: {err:?}");

@@ -10,7 +10,9 @@ use phylum_types::types::group::{
 use phylum_types::types::job::{
     AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
-use phylum_types::types::package::{PackageDescriptor, PackageSpecifier, PackageSubmitResponse};
+use phylum_types::types::package::{
+    PackageDescriptor, PackageDescriptorAndLockfilePath, PackageSpecifier, PackageSubmitResponse,
+};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
 };
@@ -277,7 +279,7 @@ impl PhylumApi {
     /// Submit a new request to the system
     pub async fn submit_request(
         &self,
-        package_list: &[PackageDescriptor],
+        package_list: &[PackageDescriptorAndLockfilePath],
         project: ProjectId,
         label: Option<String>,
         group_name: Option<String>,
@@ -492,11 +494,17 @@ mod tests {
 
         let client = build_phylum_api(&mock_server).await?;
 
-        let pkg = PackageDescriptor {
+        let package_descriptor = PackageDescriptor {
             name: "react".to_string(),
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
+
+        let pkg = PackageDescriptorAndLockfilePath {
+            package_descriptor,
+            lockfile_path: Some("package-lock.json".to_owned()),
+        };
+
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client.submit_request(&[pkg], project_id, label, None).await?;
@@ -522,11 +530,17 @@ mod tests {
 
         let client = build_phylum_api(&mock_server).await?;
 
-        let pkg = PackageDescriptor {
+        let package_descriptor = PackageDescriptor {
             name: "react".to_string(),
             version: "16.13.1".to_string(),
             package_type: PackageType::Npm,
         };
+
+        let pkg = PackageDescriptorAndLockfilePath {
+            package_descriptor,
+            lockfile_path: Some("package-lock.json".to_owned()),
+        };
+
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
         client.submit_request(&[pkg], project_id, label, None).await?;
@@ -546,9 +560,12 @@ mod tests {
                     "num_dependencies": 14,
                     "packages": [
                         {
-                            "name": "ansi-red",
-                            "type": "npm",
-                            "version": "0.1.1"
+                            "package_descriptor": {
+                                "name": "ansi-red",
+                                "version": "0.1.1",
+                                "type": "npm"
+                            },
+                            "lockfile_path": null
                         }
                      ],
                     "msg": "Project met threshold requirements",
@@ -566,9 +583,12 @@ mod tests {
                     "num_dependencies": 14,
                     "packages": [
                         {
-                            "name": "ansi-red",
-                            "type": "npm",
-                            "version": "0.1.1"
+                            "package_descriptor": {
+                                "name": "ansi-red",
+                                "version": "0.1.1",
+                                "type": "npm"
+                            },
+                            "lockfile_path": null
                         }
                      ],
                     "msg": "Project met threshold requirements",

@@ -38,7 +38,7 @@ maplit = "1.0.2"
 open = "5.0.0"
 phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
-phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
+phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "update-submit-package-request" }
 vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true }
 vulnreach_types = { path = "../vulnreach_types", optional = true }
 prettytable-rs = "0.10.0"

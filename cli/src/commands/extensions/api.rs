@@ -22,7 +22,8 @@ use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
+    Package, PackageDescriptor, PackageDescriptorAndLockfilePath,
+    PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
@@ -137,7 +138,7 @@ struct ProcessOutput {
 #[op]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    packages: Vec<PackageDescriptor>,
+    packages: Vec<PackageDescriptorAndLockfilePath>,
     project: Option<String>,
     group: Option<String>,
     label: Option<String>,
