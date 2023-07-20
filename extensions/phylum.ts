@@ -24,7 +24,7 @@ export type PolicyEvaluationResponseRaw = {
   is_failure: boolean;
   incomplete_packages_count: number;
   help: string;
-  job_link?: string;
+  job_link: string | null;
   dependencies: EvaluatedDependencies[];
 };
 
@@ -44,11 +44,11 @@ export type PolicyRejection = {
 
 export type RejectionSource = {
   type: string;
-  tag?: string;
-  domain?: string;
-  severity?: string;
-  description?: string;
-  reason?: string;
+  tag: string | null;
+  domain: string | null;
+  severity: string | null;
+  description: string | null;
+  reason: string | null;
 };
 
 async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
