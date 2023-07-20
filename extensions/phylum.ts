@@ -115,6 +115,19 @@ export class PhylumApi {
    *
    * @param packages - List of packages to check (see `analyze()` for details)
    *
+   * @returns Raw job analysis results (see `getJobStatusRaw()` for details)
+   */
+  static checkPackagesRaw(
+    packages: Package[],
+  ): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("check_packages_raw", packages);
+  }
+
+  /**
+   * Check a list of packages against the default policy.
+   *
+   * @param packages - List of packages to check (see `analyze()` for details)
+   *
    * @returns Job analysis results (see `getJobStatus()` for details)
    */
   static checkPackages(packages: Package[]): Promise<Record<string, unknown>> {
@@ -172,6 +185,49 @@ export class PhylumApi {
    * ```
    */
   static getJobStatus(
+    jobId: string,
+    ignoredPackages?: Package[],
+  ): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
+  }
+
+  /**
+   * Get job results.
+   *
+   * @param jobId - ID of the analysis job, see `PhylumApi.analyze`.
+   * @param ignoredPackages - List of packages which will be ignored in the report.
+   *
+   * @returns Raw job analysis results
+   *
+   * Job analysis results example:
+   * ```
+   * {
+   *   is_failure: false,
+   *   incomplete_packages_count: 0,
+   *   help: "The analysis contains 346 package(s) Phylum has not yet processed,\npreventing a complete risk analysis. Phylum is processing these\npackages currently and should complete soon.\nPlease wait for up to 30 minutes, then re-run the analysis.\n\nThis repository analyzes the risk of new dependencies. An\nadministrator of this repository has set requirements via Phylum policy.\n\nIf you see this comment, one or more dependencies have failed Phylum's risk analysis.",
+   *   job_link?: "https://phylum.io/projects/62a91e89-65cb-4597-8d4b-6ef119b29c5c",
+   *   dependencies: [
+   *     purl: "pkg:cargo/birdcage@0.2.1",
+   *     registry: "cargo",
+   *     name: "birdcage",
+   *     version: "0.2.1",
+   *     rejections: [
+   *       title: "Commercial license risk detected in birdcage@0.2.1",
+   *       suppressed: false,
+   *       source: {
+   *         type: "Issue",
+   *         tag?: "HL0030",
+   *         domain?: "license",
+   *         severity?: "high",
+   *         description?: "### Overview\nThis package uses the **GPL-3.0-or-later** license, which is a **high** risk level to commercial use.",
+   *         reason?: "risk level cannot exceed medium"
+   *       }
+   *     ]
+   *   ]
+   * }
+   * ```
+   */
+  static getJobStatusRaw(
     jobId: string,
     ignoredPackages?: Package[],
   ): Promise<Record<string, unknown>> {

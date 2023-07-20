@@ -193,26 +193,84 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const checkResult = await PhylumApi.checkPackages(packages);
+  const checkResult = await PhylumApi.checkPackagesRaw(packages);
+  logPackageAnalysisResults(result);
 
-  if (!checkResult.is_failure && checkResult.incomplete_count == 0) {
-    console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!checkResult.is_failure) {
-    console.warn(
-      `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
+  if (result.is_failure) {
+      Deno.exit(122);
+  } else if (result.incomplete_packages_count !== 0) {
+      Deno.exit(123);
+  }
+}
+
+// Write the analysis result status to STDOUT/STDERRR.
+function logPackageAnalysisResults(result: Record<string, unknown>) {
+  if (!result.is_failure && result.incomplete_packages_count == 0) {
+    console.log(
+      `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,
     );
+  } else if (!result.is_failure) {
     console.warn(
-      `[${
-        yellow(
-          "phylum",
-        )
-      }] Unknown packages were submitted for analysis, please check again later.\n`,
+      `[${yellow("phylum")}] Phylum Supply Chain Risk Analysis - INCOMPLETE`,
     );
-    Deno.exit(123);
+
+    // Ensure correct pluralization for incomplete packages.
+    let unprocessedText =
+      `${result.incomplete_packages_count} unprocessed package`;
+    if (result.incomplete_packages_count > 1) {
+      unprocessedText += "s";
+    }
+
+    const yellowPhylum = yellow("phylum");
+    console.warn(
+      `[${yellowPhylum}] The analysis contains ${unprocessedText}, preventing a complete risk analysis. Phylum is currently processing these packages and should complete soon. Please wait for up to 30 minutes, then re-run the analysis.\n`,
+    );
   } else {
     console.error(
-      `[${red("phylum")}] Supply Chain Risk Analysis - FAILURE\n`,
+      `[${red("phylum")}] Phylum Supply Chain Risk Analysis - FAILURE\n`,
     );
-    Deno.exit(122);
+
+    let output = "";
+    for (const pkg of result.dependencies) {
+        // Skip packages without policy rejections.
+        if (pkg.rejections.length === 0) {
+            continue;
+        }
+
+        output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+
+        for (const rejection of pkg.rejections) {
+            // Skip suppressed issues.
+            if (rejection.suppressed) {
+                continue;
+            }
+
+            // Format rejection title.
+            const domain = `[${rejection.source.domain || "     "}]`;
+            const message = `${domain} ${rejection.title}`;
+
+            // Color rejection based on severity.
+            let colored;
+            if (rejection.source.severity === "low" || rejection.source.severity === "info") {
+                colored = green(message);
+            } else if (rejection.source.severity === "medium") {
+                colored = yellow(message);
+            } else {
+                colored = red(message);
+            }
+
+            output += ` ${colored}\n`;
+        }
+    }
+    if (result.dependencies.length !== 0) {
+        output += "\n";
+    }
+
+    // Print web URI for the job results.
+    if (result.job_link) {
+        output += `You can find the interactive report here:\n ${result.job_link}\n`;
+    }
+
+    console.error(output);
   }
 }
