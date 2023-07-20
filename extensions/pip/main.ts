@@ -119,9 +119,9 @@ async function checkDryRun() {
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {
-      Deno.exit(127);
+    Deno.exit(127);
   } else if (result.incomplete_packages_count !== 0) {
-      Deno.exit(126);
+    Deno.exit(126);
   }
 }
 
@@ -233,43 +233,47 @@ function logPackageAnalysisResults(result: Record<string, unknown>) {
 
     let output = "";
     for (const pkg of result.dependencies) {
-        // Skip packages without policy rejections.
-        if (pkg.rejections.length === 0) {
-            continue;
+      // Skip packages without policy rejections.
+      if (pkg.rejections.length === 0) {
+        continue;
+      }
+
+      output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+
+      for (const rejection of pkg.rejections) {
+        // Skip suppressed issues.
+        if (rejection.suppressed) {
+          continue;
         }
 
-        output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+        // Format rejection title.
+        const domain = `[${rejection.source.domain || "     "}]`;
+        const message = `${domain} ${rejection.title}`;
 
-        for (const rejection of pkg.rejections) {
-            // Skip suppressed issues.
-            if (rejection.suppressed) {
-                continue;
-            }
-
-            // Format rejection title.
-            const domain = `[${rejection.source.domain || "     "}]`;
-            const message = `${domain} ${rejection.title}`;
-
-            // Color rejection based on severity.
-            let colored;
-            if (rejection.source.severity === "low" || rejection.source.severity === "info") {
-                colored = green(message);
-            } else if (rejection.source.severity === "medium") {
-                colored = yellow(message);
-            } else {
-                colored = red(message);
-            }
-
-            output += ` ${colored}\n`;
+        // Color rejection based on severity.
+        let colored;
+        if (
+          rejection.source.severity === "low" ||
+          rejection.source.severity === "info"
+        ) {
+          colored = green(message);
+        } else if (rejection.source.severity === "medium") {
+          colored = yellow(message);
+        } else {
+          colored = red(message);
         }
+
+        output += ` ${colored}\n`;
+      }
     }
     if (result.dependencies.length !== 0) {
-        output += "\n";
+      output += "\n";
     }
 
     // Print web URI for the job results.
     if (result.job_link) {
-        output += `You can find the interactive report here:\n ${result.job_link}\n`;
+      output +=
+        `You can find the interactive report here:\n ${result.job_link}\n`;
     }
 
     console.error(output);
