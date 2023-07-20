@@ -20,6 +20,37 @@ export type ProcessOutput = {
   code: number | null;
 };
 
+export type PolicyEvaluationResponseRaw = {
+  is_failure: boolean;
+  incomplete_packages_count: number;
+  help: string;
+  job_link: string | null;
+  dependencies: EvaluatedDependencies[];
+};
+
+export type EvaluatedDependencies = {
+  purl: string;
+  registry: string;
+  name: string;
+  version: string;
+  rejections: PolicyRejection[];
+};
+
+export type PolicyRejection = {
+  title: string;
+  suppressed: boolean;
+  source: RejectionSource;
+};
+
+export type RejectionSource = {
+  type: string;
+  tag: string | null;
+  domain: string | null;
+  severity: string | null;
+  description: string | null;
+  reason: string | null;
+};
+
 async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
   const headers = new Headers(headersInit);
 
@@ -119,7 +150,7 @@ export class PhylumApi {
    */
   static checkPackagesRaw(
     packages: Package[],
-  ): Promise<Record<string, unknown>> {
+  ): Promise<PolicyEvaluationResponseRaw> {
     return DenoCore.opAsync("check_packages_raw", packages);
   }
 
@@ -230,7 +261,7 @@ export class PhylumApi {
   static getJobStatusRaw(
     jobId: string,
     ignoredPackages?: Package[],
-  ): Promise<Record<string, unknown>> {
+  ): Promise<PolicyEvaluationResponseRaw> {
     return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
   }
 

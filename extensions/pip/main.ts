@@ -1,4 +1,4 @@
-import { PhylumApi } from "phylum";
+import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 import {
   green,
   red,
@@ -205,7 +205,7 @@ function checkPipVersion() {
 }
 
 // Write the analysis result status to STDOUT/STDERRR.
-function logPackageAnalysisResults(result: Record<string, unknown>) {
+function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
   if (!result.is_failure && result.incomplete_packages_count == 0) {
     console.log(
       `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,

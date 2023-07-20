@@ -3,7 +3,7 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "phylum";
+import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -236,7 +236,7 @@ async function restoreBackup() {
 }
 
 // Write the analysis result status to STDOUT/STDERRR.
-function logPackageAnalysisResults(result: Record<string, unknown>) {
+function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
   if (!result.is_failure && result.incomplete_packages_count == 0) {
     console.log(
       `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,
