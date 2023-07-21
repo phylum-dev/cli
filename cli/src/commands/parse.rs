@@ -1,6 +1,7 @@
 //! `phylum parse` command for lockfile parsing
 
 use std::path::{Path, PathBuf};
+use std::vec::IntoIter;
 use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
@@ -17,18 +18,34 @@ pub struct ParsedLockfile {
     pub packages: Vec<PackageDescriptor>,
 }
 
-impl From<ParsedLockfile> for Vec<PackageDescriptorAndLockfilePath> {
-    fn from(value: ParsedLockfile) -> Self {
-        let mut packages = Vec::with_capacity(value.packages.len());
-        for pkg_descriptor in value.packages {
-            packages.push(PackageDescriptorAndLockfilePath {
-                package_descriptor: pkg_descriptor,
-                lockfile_path: Some(value.path.to_string_lossy().into_owned()),
-            })
-        }
-        packages
+pub struct ParsedLockfileIterator {
+    path: PathBuf,
+    packages: IntoIter<PackageDescriptor>,
+}
+
+impl Iterator for ParsedLockfileIterator {
+    type Item = PackageDescriptorAndLockfilePath;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.packages.next().map(|package_descriptor| PackageDescriptorAndLockfilePath {
+            package_descriptor,
+            lockfile_path: Some(self.path.to_string_lossy().into_owned()),
+        })
     }
 }
+
+impl IntoIterator for ParsedLockfile {
+    type Item = PackageDescriptorAndLockfilePath;
+    type IntoIter = ParsedLockfileIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ParsedLockfileIterator {
+            path: self.path,
+            packages: self.packages.into_iter(),
+        }
+    }
+}
+
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();
@@ -48,8 +65,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     for lockfile in lockfiles {
         let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
-        let parsed_packages: Vec<PackageDescriptorAndLockfilePath> = parsed_lockfile.into();
-        pkgs.extend(parsed_packages);
+        pkgs.extend(parsed_lockfile.into_iter());
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;

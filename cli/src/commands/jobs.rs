@@ -6,9 +6,7 @@ use console::style;
 use log::debug;
 use phylum_project::LockfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::package::{
-    PackageDescriptor, PackageDescriptorAndLockfilePath, PackageType,
-};
+use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, JobPackage};
@@ -118,9 +116,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            let parsed_packages: Vec<PackageDescriptorAndLockfilePath> = res.into();
-
-            packages.extend(parsed_packages);
+            packages.extend(res.into_iter());
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
