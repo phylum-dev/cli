@@ -35,17 +35,13 @@ impl Iterator for ParsedLockfileIterator {
 }
 
 impl IntoIterator for ParsedLockfile {
-    type Item = PackageDescriptorAndLockfilePath;
     type IntoIter = ParsedLockfileIterator;
+    type Item = PackageDescriptorAndLockfilePath;
 
     fn into_iter(self) -> Self::IntoIter {
-        ParsedLockfileIterator {
-            path: self.path,
-            packages: self.packages.into_iter(),
-        }
+        ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
     }
 }
-
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();
