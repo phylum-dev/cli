@@ -5,7 +5,7 @@ export type Package = {
   name: string;
   version: string;
   type: string;
-  lockfile_path: string | null;
+  lockfile_path?: string;
 };
 
 export type Lockfile = {
