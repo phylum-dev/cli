@@ -5,6 +5,7 @@ export type Package = {
   name: string;
   version: string;
   type: string;
+  lockfile_path: string | null;
 };
 
 export type Lockfile = {
@@ -79,10 +80,10 @@ export class PhylumApi {
    *
    * ```
    * [
-   *   { name: "accepts", version: "1.3.8", type: "npm" },
-   *   { name: "ms", version: "2.0.0", type: "npm" },
-   *   { name: "negotiator", version: "0.6.3", type: "npm" },
-   *   { name: "ms", version: "2.1.3", type: "npm" }
+   *   { name: "accepts", version: "1.3.8", type: "npm", lockfile_path: "package-lock.json" },
+   *   { name: "ms", version: "2.0.0", type: "npm", lockfile_path: "package-lock.json" },
+   *   { name: "negotiator", version: "0.6.3", type: "npm", lockfile_path: "package-lock.json" },
+   *   { name: "ms", version: "2.1.3", type: "npm", lockfile_path: "package-lock.json" },
    * ]
    * ```
    *
