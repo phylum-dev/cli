@@ -23,7 +23,7 @@ impl From<ParsedLockfile> for Vec<PackageDescriptorAndLockfilePath> {
         for pkg_descriptor in value.packages {
             packages.push(PackageDescriptorAndLockfilePath {
                 package_descriptor: pkg_descriptor,
-                lockfile_path: Some(value.path.to_string_lossy().to_string()),
+                lockfile_path: Some(value.path.to_string_lossy().into_owned()),
             })
         }
         packages
