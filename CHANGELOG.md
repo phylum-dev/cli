@@ -7,6 +7,7 @@ The sections should follow the order `Packaging`, `Added`, `Changed`, `Fixed` an
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Add lockfile paths when submitting package descriptors
 
 ## [5.5.0] - 2023-07-18
 
