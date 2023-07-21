@@ -14,6 +14,7 @@ pub mod go;
 pub mod gradle;
 pub mod maven;
 pub mod npm;
+pub mod dotnet;
 pub mod pip;
 pub mod pipenv;
 pub mod pnpm;
