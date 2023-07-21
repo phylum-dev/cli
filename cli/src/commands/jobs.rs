@@ -118,9 +118,9 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            let parsed_packages = Vec::<PackageDescriptorAndLockfilePath>::from(res);
+            let parsed_packages: Vec<PackageDescriptorAndLockfilePath> = res.into();
 
-            packages.extend(parsed_packages.into_iter());
+            packages.extend(parsed_packages);
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
