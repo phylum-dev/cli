@@ -38,7 +38,7 @@ use crate::commands::parse;
 use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
-use crate::types::PolicyEvaluationResponse;
+use crate::types::{PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
 
 /// Parsed lockfile content.
 #[derive(Serialize, Deserialize, Debug)]
@@ -174,6 +174,18 @@ async fn check_packages(
     Ok(api.check_packages(&packages).await?)
 }
 
+/// Check a set of packages against the default policy.
+#[op]
+async fn check_packages_raw(
+    op_state: Rc<RefCell<OpState>>,
+    packages: Vec<PackageDescriptor>,
+) -> Result<PolicyEvaluationResponseRaw> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    Ok(api.check_packages_raw(&packages).await?)
+}
+
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
 #[op]
@@ -235,6 +247,23 @@ async fn get_job_status(
     let job_id = JobId::from_str(&job_id)?;
     let ignored_packages = ignored_packages.unwrap_or_default();
     let response = api.get_job_status(&job_id, ignored_packages).await?;
+
+    Ok(response)
+}
+
+/// Retrieve a job's status.
+#[op]
+async fn get_job_status_raw(
+    op_state: Rc<RefCell<OpState>>,
+    job_id: String,
+    ignored_packages: Option<Vec<PackageDescriptor>>,
+) -> Result<PolicyEvaluationResponseRaw> {
+    let state = ExtensionState::from(op_state);
+    let api = state.api().await?;
+
+    let job_id = JobId::from_str(&job_id)?;
+    let ignored_packages = ignored_packages.unwrap_or_default();
+    let response = api.get_job_status_raw(&job_id, ignored_packages).await?;
 
     Ok(response)
 }
@@ -487,10 +516,12 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::decl(),
         check_packages::decl(),
+        check_packages_raw::decl(),
         get_user_info::decl(),
         get_access_token::decl(),
         get_refresh_token::decl(),
         get_job_status::decl(),
+        get_job_status_raw::decl(),
         get_current_project::decl(),
         get_groups::decl(),
         get_projects::decl(),

@@ -59,6 +59,11 @@ pub fn check_packages(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/check")?)
 }
 
+/// POST /data/packages/check/raw
+pub fn check_packages_raw(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/packages/check/raw")?)
+}
+
 /// POST /data/packages/submit
 pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
