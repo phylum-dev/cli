@@ -48,7 +48,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     for lockfile in lockfiles {
         let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
-        let parsed_packages = Vec::<PackageDescriptorAndLockfilePath>::from(parsed_lockfile);
+        let parsed_packages: Vec<PackageDescriptorAndLockfilePath> = parsed_lockfile.into();
         pkgs.extend(parsed_packages);
     }
 

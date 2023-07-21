@@ -560,12 +560,9 @@ mod tests {
                     "num_dependencies": 14,
                     "packages": [
                         {
-                            "package_descriptor": {
-                                "name": "ansi-red",
-                                "version": "0.1.1",
-                                "type": "npm"
-                            },
-                            "lockfile_path": null
+                            "name": "ansi-red",
+                            "type": "npm",
+                            "version": "0.1.1"
                         }
                      ],
                     "msg": "Project met threshold requirements",
@@ -583,12 +580,9 @@ mod tests {
                     "num_dependencies": 14,
                     "packages": [
                         {
-                            "package_descriptor": {
-                                "name": "ansi-red",
-                                "version": "0.1.1",
-                                "type": "npm"
-                            },
-                            "lockfile_path": null
+                            "name": "ansi-red",
+                            "type": "npm",
+                            "version": "0.1.1"
                         }
                      ],
                     "msg": "Project met threshold requirements",

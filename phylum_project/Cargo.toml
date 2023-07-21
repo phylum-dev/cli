@@ -9,7 +9,7 @@ edition = "2021"
 rust-version = "1.64.0"
 
 [dependencies]
-phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "update-submit-package-request" }
+phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
 serde = { version = "1.0.144", features = ["derive"] }
 serde_yaml = "0.9.2"

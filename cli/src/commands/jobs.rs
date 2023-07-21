@@ -162,16 +162,15 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                     }
                     let pkg_version = pkg_info.pop().unwrap();
                     let pkg_name = pkg_info.join(":");
-                    let pkg_descriptor = PackageDescriptor {
-                        name: pkg_name.to_owned(),
-                        version: pkg_version.to_owned(),
-                        package_type: request_type.to_owned(),
-                    };
 
-                    packages.push(PackageDescriptorAndLockfilePath {
-                        package_descriptor: pkg_descriptor,
-                        lockfile_path: None,
-                    });
+                    packages.push(
+                        PackageDescriptor {
+                            name: pkg_name.to_owned(),
+                            version: pkg_version.to_owned(),
+                            package_type: request_type.to_owned(),
+                        }
+                        .into(),
+                    );
                     line.clear();
                 },
                 Err(err) => {
