@@ -1,4 +1,4 @@
-//! JavaScript yarn ecosystem.
+//! C# .NET ecosystem.
 
 use std::path::Path;
 use std::process::Command;
