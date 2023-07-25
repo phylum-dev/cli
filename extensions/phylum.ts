@@ -114,7 +114,7 @@ export class PhylumApi {
    *   { name: "accepts", version: "1.3.8", type: "npm", lockfile_path: "/path/to/lockfile" },
    *   { name: "ms", version: "2.0.0", type: "npm" },
    *   { name: "negotiator", version: "0.6.3", type: "npm" },
-   *   { name: "ms", version: "2.1.3", type: "npm" },
+   *   { name: "ms", version: "2.1.3", type: "npm" }
    * ]
    * ```
    *
