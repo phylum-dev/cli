@@ -116,7 +116,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            packages.extend(res.packages.into_iter());
+            packages.extend(res.into_iter());
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
@@ -159,11 +159,14 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                     let pkg_version = pkg_info.pop().unwrap();
                     let pkg_name = pkg_info.join(":");
 
-                    packages.push(PackageDescriptor {
-                        name: pkg_name.to_owned(),
-                        version: pkg_version.to_owned(),
-                        package_type: request_type.to_owned(),
-                    });
+                    packages.push(
+                        PackageDescriptor {
+                            name: pkg_name.to_owned(),
+                            version: pkg_version.to_owned(),
+                            package_type: request_type.to_owned(),
+                        }
+                        .into(),
+                    );
                     line.clear();
                 },
                 Err(err) => {
@@ -198,6 +201,8 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
     if synch {
         if pretty_print {
+            #[cfg(feature = "vulnreach")]
+            let packages: Vec<_> = packages.into_iter().map(|pkg| pkg.package_descriptor).collect();
             #[cfg(feature = "vulnreach")]
             if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
                 print_user_failure!("Reachability analysis failed: {err:?}");

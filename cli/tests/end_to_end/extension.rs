@@ -152,7 +152,8 @@ pub async fn get_job_status() {
     let project = create_project().await;
     let analyze = format!(
         "
-        const pkg = {{ name: 'typescript', version: '4.7.4', type: 'npm' }};
+        const pkg = {{ name: 'typescript', version: '4.7.4', type: 'npm', lockfile: \
+         'package-lock.json' }};
         const jobId = await PhylumApi.analyze([pkg], {project:?});
         console.log(await PhylumApi.getJobStatus(jobId));"
     );

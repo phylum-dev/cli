@@ -528,16 +528,20 @@ mod tests {
             },
             Package {
                 name: "ethereumjs-abi".into(),
-                version: PackageVersion::Git("https://github.com/ethereumjs/ethereumjs-abi.git\
+                version: PackageVersion::Git(
+                    "https://github.com/ethereumjs/ethereumjs-abi.git\
                     #commit=ee3994657fa7a427238e6ba92a84d0b529bbcde0"
-                    .into()),
+                        .into(),
+                ),
                 package_type: PackageType::Npm,
             },
             Package {
                 name: "@me/remote-patch".into(),
-                version: PackageVersion::Git("ssh://git@github.com:phylum/remote-patch\
+                version: PackageVersion::Git(
+                    "ssh://git@github.com:phylum/remote-patch\
                     #commit=d854c43ea177d1faeea56189249fff8c24a764bd"
-                    .into()),
+                        .into(),
+                ),
                 package_type: PackageType::Npm,
             },
             Package {
