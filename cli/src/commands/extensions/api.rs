@@ -22,7 +22,7 @@ use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageDescriptorAndLockfilePath,
+    Package, PackageDescriptor, PackageDescriptorAndLockfile,
     PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
 };
 use phylum_types::types::project::ProjectSummaryResponse;
@@ -138,7 +138,7 @@ struct ProcessOutput {
 #[op]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    packages: Vec<PackageDescriptorAndLockfilePath>,
+    packages: Vec<PackageDescriptorAndLockfile>,
     project: Option<String>,
     group: Option<String>,
     label: Option<String>,

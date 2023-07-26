@@ -11,7 +11,7 @@ use phylum_types::types::job::{
     AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
 use phylum_types::types::package::{
-    PackageDescriptor, PackageDescriptorAndLockfilePath, PackageSpecifier, PackageSubmitResponse,
+    PackageDescriptor, PackageDescriptorAndLockfile, PackageSpecifier, PackageSubmitResponse,
 };
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
@@ -279,7 +279,7 @@ impl PhylumApi {
     /// Submit a new request to the system
     pub async fn submit_request(
         &self,
-        package_list: &[PackageDescriptorAndLockfilePath],
+        package_list: &[PackageDescriptorAndLockfile],
         project: ProjectId,
         label: Option<String>,
         group_name: Option<String>,
@@ -508,9 +508,9 @@ mod tests {
             package_type: PackageType::Npm,
         };
 
-        let pkg = PackageDescriptorAndLockfilePath {
+        let pkg = PackageDescriptorAndLockfile {
             package_descriptor,
-            lockfile_path: Some("package-lock.json".to_owned()),
+            lockfile: Some("package-lock.json".to_owned()),
         };
 
         let project_id = ProjectId::new_v4();
@@ -544,9 +544,9 @@ mod tests {
             package_type: PackageType::Npm,
         };
 
-        let pkg = PackageDescriptorAndLockfilePath {
+        let pkg = PackageDescriptorAndLockfile {
             package_descriptor,
-            lockfile_path: Some("package-lock.json".to_owned()),
+            lockfile: Some("package-lock.json".to_owned()),
         };
 
         let project_id = ProjectId::new_v4();

@@ -6,7 +6,7 @@ use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
-use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfilePath};
+use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 use walkdir::WalkDir;
 
 use crate::commands::{CommandResult, ExitCode};
@@ -24,19 +24,19 @@ pub struct ParsedLockfileIterator {
 }
 
 impl Iterator for ParsedLockfileIterator {
-    type Item = PackageDescriptorAndLockfilePath;
+    type Item = PackageDescriptorAndLockfile;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.packages.next().map(|package_descriptor| PackageDescriptorAndLockfilePath {
+        self.packages.next().map(|package_descriptor| PackageDescriptorAndLockfile {
             package_descriptor,
-            lockfile_path: Some(self.path.to_string_lossy().into_owned()),
+            lockfile: Some(self.path.to_string_lossy().into_owned()),
         })
     }
 }
 
 impl IntoIterator for ParsedLockfile {
     type IntoIter = ParsedLockfileIterator;
-    type Item = PackageDescriptorAndLockfilePath;
+    type Item = PackageDescriptorAndLockfile;
 
     fn into_iter(self) -> Self::IntoIter {
         ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
@@ -57,7 +57,7 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
 
-    let mut pkgs: Vec<PackageDescriptorAndLockfilePath> = Vec::new();
+    let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
 
     for lockfile in lockfiles {
         let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;

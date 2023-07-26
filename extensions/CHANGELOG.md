@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Added `getJobStatusRaw` and `checkPackagesRaw` APIs for detailed analysis results
-- Allow `lockfile_path` in packages passed to `PhylumApi.analyze()`
+- Allow `lockfile` in packages passed to `PhylumApi.analyze()`
 
 ## 5.5.0 - 2023-07-18
 
