@@ -119,7 +119,7 @@ export class PhylumApi {
    * ```
    *
    * Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
-   * The `lockfile` is optional and if provided, should be a string representing the path to the lockfile.
+   * The `lockfile` is an optional string used to represent the path to the lockfile.
    *
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
