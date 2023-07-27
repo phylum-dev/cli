@@ -7,6 +7,7 @@ use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
+use crate::auth::is_locksmith_token;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::{auth, print_user_success, print_user_warning};
@@ -39,10 +40,14 @@ async fn handle_auth_login(
 
 /// Display the current authentication status to the user.
 pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> CommandResult {
-    if config.auth_info.offline_access().is_none() {
-        print_user_warning!("User is not currently authenticated");
-        return Ok(ExitCode::NotAuthenticated);
-    }
+    let auth_type = match config.auth_info.offline_access() {
+        Some(token) if is_locksmith_token(token) => "API key",
+        Some(_) => "OpenID Connect",
+        None => {
+            print_user_warning!("User is not currently authenticated");
+            return Ok(ExitCode::NotAuthenticated);
+        },
+    };
 
     // Create a client with our auth token attached.
     let api = PhylumApi::new(config, timeout).await?;
@@ -54,12 +59,13 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
     match user_info {
         Ok(user) => {
             print_user_success!(
-                "Currently authenticated as '{}<{}>'",
+                "Currently authenticated as '{}<{}>' via {}",
                 user.name.map_or(" ".into(), |mut n| {
                     n.push(' ');
                     n
                 }),
                 user.email,
+                auth_type,
             );
             Ok(ExitCode::Ok)
         },
