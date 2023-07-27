@@ -15,6 +15,7 @@ use rand::{thread_rng, Rng};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use uuid::Uuid;
 
 use super::ip_addr_ext::IpAddrExt;
 use super::is_locksmith_token;
@@ -25,6 +26,9 @@ pub const OIDC_SCOPES: [&str; 2] = ["openid", "offline_access"];
 
 /// OIDC Client id used to identify this client to the oidc server
 pub const OIDC_CLIENT_ID: &str = "phylum_cli";
+
+/// Client ID for Locksmith tokens
+pub const LOCKSMITH_CLIENT_ID: &str = "locksmith";
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AuthAction {
@@ -95,10 +99,7 @@ impl<'a> From<&'a CodeVerifier> for &'a str {
 /// We only deserialize the ones we care about.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OidcServerSettings {
-    pub issuer: Url,
-    pub authorization_endpoint: Url,
     pub token_endpoint: Url,
-    pub userinfo_endpoint: Url,
 }
 
 /// Locksmith URLs
@@ -108,21 +109,22 @@ pub struct LocksmithServerSettings {
     pub token_endpoint: Url,
     pub userinfo_endpoint: Url,
 }
-
 /// Using config information, build the url for the keycloak login page.
 pub fn build_auth_url(
     action: AuthAction,
-    oidc_settings: &OidcServerSettings,
+    locksmith_settings: &LocksmithServerSettings,
     callback_url: &Url,
     code_challenge: &ChallengeCode,
     state: impl AsRef<str>,
 ) -> Result<Url> {
     let mut auth_url = match action {
         // Login uses the oidc defined /auth endpoint as is
-        AuthAction::Login | AuthAction::Reauth => oidc_settings.authorization_endpoint.to_owned(),
+        AuthAction::Login | AuthAction::Reauth => {
+            locksmith_settings.authorization_endpoint.to_owned()
+        },
         // Register uses the non-standard /registrations endpoint
         AuthAction::Register => {
-            let mut auth_url = oidc_settings.authorization_endpoint.to_owned();
+            let mut auth_url = locksmith_settings.authorization_endpoint.to_owned();
             auth_url
                 .path_segments_mut()
                 .map_err(|_| anyhow!("Can not be base url"))?
@@ -135,7 +137,7 @@ pub fn build_auth_url(
     auth_url
         .query_pairs_mut()
         .clear()
-        .append_pair("client_id", OIDC_CLIENT_ID)
+        .append_pair("client_id", LOCKSMITH_CLIENT_ID)
         .append_pair("code_challenge", code_challenge.into())
         .append_pair("code_challenge_method", "S256")
         .append_pair("redirect_uri", callback_url.as_ref())
@@ -212,12 +214,13 @@ fn build_grant_type_auth_code_post_body(
     code_verfier: &CodeVerifier,
 ) -> Result<HashMap<String, String>> {
     let body = hashmap! {
-        "client_id".to_owned() => OIDC_CLIENT_ID.to_owned(),
+        "client_id".to_owned() => LOCKSMITH_CLIENT_ID.to_owned(),
         "code".to_owned() => authorization_code.into(),
         "code_verifier".to_owned() => code_verfier.into(),
         "grant_type".to_owned() => "authorization_code".to_owned(),
         // Must match previous request to /authorize but not redirected to by server
         "redirect_uri".to_owned() => redirect_url.to_string(),
+        "name".to_owned() => format!("phylum-cli-{}", Uuid::new_v4().as_hyphenated()),
     };
     Ok(body)
 }
@@ -235,13 +238,13 @@ fn build_grant_type_refresh_token_post_body(
 
 /// Acquire tokens with the auth code
 pub async fn acquire_tokens(
-    oidc_settings: &OidcServerSettings,
+    locksmith_settings: &LocksmithServerSettings,
     redirect_url: &Url,
     authorization_code: &AuthorizationCode,
     code_verifier: &CodeVerifier,
     ignore_certs: bool,
-) -> Result<TokenResponse> {
-    let token_url = oidc_settings.token_endpoint.clone();
+) -> Result<LocksmithTokenResponse> {
+    let token_url = locksmith_settings.token_endpoint.clone();
 
     let body =
         build_grant_type_auth_code_post_body(redirect_url, authorization_code, code_verifier)?;
@@ -274,7 +277,7 @@ pub async fn acquire_tokens(
 
         err
     } else {
-        Ok(response.json::<TokenResponse>().await?)
+        Ok(response.json::<LocksmithTokenResponse>().await?)
     }
 }
 
@@ -322,6 +325,11 @@ pub async fn handle_refresh_tokens(
     refresh_tokens(&oidc_settings, refresh_token, ignore_certs)
         .await
         .map(|token| token.access_token)
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct LocksmithTokenResponse {
+    pub token: RefreshToken,
 }
 
 /// Represents the userdata stored for an authentication token.

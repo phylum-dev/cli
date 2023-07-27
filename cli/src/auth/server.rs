@@ -18,8 +18,8 @@ use tokio::sync::oneshot::{self, Sender};
 use tokio::sync::Mutex;
 
 use super::oidc::{
-    acquire_tokens, build_auth_url, check_if_routable, fetch_oidc_server_settings, AuthAction,
-    ChallengeCode, CodeVerifier, OidcServerSettings,
+    acquire_tokens, build_auth_url, check_if_routable, fetch_locksmith_server_settings, AuthAction,
+    ChallengeCode, CodeVerifier, LocksmithServerSettings,
 };
 #[cfg(test)]
 use crate::test::open;
@@ -130,7 +130,7 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
 /// and return an authorization code and the callback uri of THIS client
 /// which then need to passed on to the /token endpoint to obtain tokens
 async fn spawn_server_and_get_auth_code(
-    oidc_settings: &OidcServerSettings,
+    locksmith_settings: &LocksmithServerSettings,
     redirect_type: AuthAction,
     code_challenge: &ChallengeCode,
     state: impl AsRef<str> + 'static,
@@ -168,7 +168,7 @@ async fn spawn_server_and_get_auth_code(
     });
 
     let authorization_url =
-        build_auth_url(redirect_type, oidc_settings, &callback_url, code_challenge, state)?;
+        build_auth_url(redirect_type, locksmith_settings, &callback_url, code_challenge, state)?;
 
     log::debug!("Authorization url is {}", authorization_url);
 
@@ -222,14 +222,15 @@ pub async fn handle_auth_flow(
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<RefreshToken> {
-    let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
+    let locksmith_settings = fetch_locksmith_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
     let (auth_code, callback_url) =
-        spawn_server_and_get_auth_code(&oidc_settings, auth_action, &challenge_code, state).await?;
-    acquire_tokens(&oidc_settings, &callback_url, &auth_code, &code_verifier, ignore_certs)
+        spawn_server_and_get_auth_code(&locksmith_settings, auth_action, &challenge_code, state)
+            .await?;
+    acquire_tokens(&locksmith_settings, &callback_url, &auth_code, &code_verifier, ignore_certs)
         .await
-        .map(|tokens| tokens.refresh_token)
+        .map(|tokens| tokens.token)
 }
 
 #[cfg(test)]
@@ -245,7 +246,8 @@ mod test {
     #[tokio::test]
     async fn when_started_with_good_configuration_spawn_server_and_get_auth_code_is_successful(
     ) -> Result<()> {
-        let oidc_settings = build_oidc_server_settings_mock_response("https://127.0.0.1/oauth");
+        let locksmith_settings =
+            build_locksmith_server_settings_mock_response("https://127.0.0.1/oauth");
 
         let (_verifier, challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
@@ -253,7 +255,7 @@ mod test {
         let state: String =
             thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
-        spawn_server_and_get_auth_code(&oidc_settings, AuthAction::Login, &challenge, state)
+        spawn_server_and_get_auth_code(&locksmith_settings, AuthAction::Login, &challenge, state)
             .await?;
 
         Ok(())
