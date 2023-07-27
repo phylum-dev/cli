@@ -2,6 +2,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
+use log::debug;
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
@@ -48,11 +49,17 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
 
     let user_info = api.user_info().await;
 
+    debug!("User info reponse: {:?}", user_info);
+
     match user_info {
         Ok(user) => {
             print_user_success!(
-                "Currently authenticated as '{}' with long lived refresh token",
-                user.email
+                "Currently authenticated as '{}<{}>'",
+                user.name.map_or(" ".into(), |mut n| {
+                    n.push(' ');
+                    n
+                }),
+                user.email,
             );
             Ok(ExitCode::Ok)
         },
