@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::ip_addr_ext::IpAddrExt;
+use super::is_locksmith_token;
 use crate::api::endpoints;
 use crate::app::USER_AGENT;
 
@@ -100,6 +101,14 @@ pub struct OidcServerSettings {
     pub userinfo_endpoint: Url,
 }
 
+/// Locksmith URLs
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LocksmithServerSettings {
+    pub authorization_endpoint: Url,
+    pub token_endpoint: Url,
+    pub userinfo_endpoint: Url,
+}
+
 /// Using config information, build the url for the keycloak login page.
 pub fn build_auth_url(
     action: AuthAction,
@@ -172,6 +181,28 @@ pub async fn fetch_oidc_server_settings(
         Err(anyhow!(response.text().await?)).context(error)
     } else {
         Ok(response.json::<OidcServerSettings>().await?)
+    }
+}
+
+pub async fn fetch_locksmith_server_settings(
+    ignore_certs: bool,
+    api_uri: &str,
+) -> Result<LocksmithServerSettings> {
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT.as_str())
+        .danger_accept_invalid_certs(ignore_certs)
+        .build()?;
+    let response = client
+        .get(endpoints::locksmith_discovery(api_uri)?)
+        .header("Accept", "application/json")
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await?;
+
+    if let Err(error) = response.error_for_status_ref() {
+        Err(anyhow!(response.text().await?)).context(error)
+    } else {
+        Ok(response.json::<LocksmithServerSettings>().await?)
     }
 }
 
@@ -282,6 +313,11 @@ pub async fn handle_refresh_tokens(
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<AccessToken> {
+    // Locksmith tokens are their own access tokens
+    if is_locksmith_token(refresh_token) {
+        return Ok(AccessToken::new(refresh_token));
+    }
+
     let oidc_settings = fetch_oidc_server_settings(ignore_certs, api_uri).await?;
     refresh_tokens(&oidc_settings, refresh_token, ignore_certs)
         .await

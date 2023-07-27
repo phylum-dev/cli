@@ -27,7 +27,8 @@ use crate::api::endpoints::BaseUriError;
 use crate::app::USER_AGENT;
 use crate::auth::jwt::RealmRole;
 use crate::auth::{
-    fetch_oidc_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction, UserInfo,
+    fetch_locksmith_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction,
+    UserInfo,
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
@@ -241,10 +242,12 @@ impl PhylumApi {
 
     /// Get information about the authenticated user
     pub async fn user_info(&self) -> Result<UserInfo> {
-        let oidc_settings =
-            fetch_oidc_server_settings(self.config.ignore_certs(), &self.config.connection.uri)
-                .await?;
-        self.get(oidc_settings.userinfo_endpoint).await
+        let locksmith_settings = fetch_locksmith_server_settings(
+            self.config.ignore_certs(),
+            &self.config.connection.uri,
+        )
+        .await?;
+        self.get(locksmith_settings.userinfo_endpoint).await
     }
 
     /// Create a new project
