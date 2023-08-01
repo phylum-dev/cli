@@ -14,10 +14,20 @@ use crate::{auth, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<()> {
+async fn handle_auth_register(
+    mut config: Config,
+    config_path: &Path,
+    matches: &ArgMatches,
+) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
-    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs, api_uri).await?;
+    config.auth_info = PhylumApi::register(
+        config.auth_info,
+        matches.get_one("token-name").cloned(),
+        ignore_certs,
+        api_uri,
+    )
+    .await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -31,9 +41,14 @@ async fn handle_auth_login(
 ) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
-    config.auth_info =
-        PhylumApi::login(config.auth_info, ignore_certs, api_uri, matches.get_flag("reauth"))
-            .await?;
+    config.auth_info = PhylumApi::login(
+        config.auth_info,
+        matches.get_one("token-name").cloned(),
+        ignore_certs,
+        api_uri,
+        matches.get_flag("reauth"),
+    )
+    .await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -140,7 +155,7 @@ pub async fn handle_auth(
     timeout: Option<u64>,
 ) -> CommandResult {
     match matches.subcommand() {
-        Some(("register", _)) => match handle_auth_register(config, config_path).await {
+        Some(("register", _)) => match handle_auth_register(config, config_path, matches).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok)

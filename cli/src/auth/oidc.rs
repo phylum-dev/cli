@@ -212,6 +212,7 @@ fn build_grant_type_auth_code_post_body(
     redirect_url: &Url,
     authorization_code: &AuthorizationCode,
     code_verfier: &CodeVerifier,
+    token_name: Option<String>,
 ) -> Result<HashMap<String, String>> {
     let body = hashmap! {
         "client_id".to_owned() => LOCKSMITH_CLIENT_ID.to_owned(),
@@ -220,7 +221,7 @@ fn build_grant_type_auth_code_post_body(
         "grant_type".to_owned() => "authorization_code".to_owned(),
         // Must match previous request to /authorize but not redirected to by server
         "redirect_uri".to_owned() => redirect_url.to_string(),
-        "name".to_owned() => format!("phylum-cli-{}", Uuid::new_v4().as_hyphenated()),
+        "name".to_owned() => token_name.unwrap_or_else(|| format!("phylum-cli-{}", Uuid::new_v4().as_hyphenated())),
     };
     Ok(body)
 }
@@ -242,12 +243,17 @@ pub async fn acquire_tokens(
     redirect_url: &Url,
     authorization_code: &AuthorizationCode,
     code_verifier: &CodeVerifier,
+    token_name: Option<String>,
     ignore_certs: bool,
 ) -> Result<LocksmithTokenResponse> {
     let token_url = locksmith_settings.token_endpoint.clone();
 
-    let body =
-        build_grant_type_auth_code_post_body(redirect_url, authorization_code, code_verifier)?;
+    let body = build_grant_type_auth_code_post_body(
+        redirect_url,
+        authorization_code,
+        code_verifier,
+        token_name,
+    )?;
 
     let client = reqwest::Client::builder()
         .user_agent(USER_AGENT.as_str())

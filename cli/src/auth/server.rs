@@ -219,6 +219,7 @@ async fn spawn_server_and_get_auth_code(
 /// Handle the user login/registration flow.
 pub async fn handle_auth_flow(
     auth_action: AuthAction,
+    token_name: Option<String>,
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<RefreshToken> {
@@ -228,9 +229,16 @@ pub async fn handle_auth_flow(
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&locksmith_settings, auth_action, &challenge_code, state)
             .await?;
-    acquire_tokens(&locksmith_settings, &callback_url, &auth_code, &code_verifier, ignore_certs)
-        .await
-        .map(|tokens| tokens.token)
+    acquire_tokens(
+        &locksmith_settings,
+        &callback_url,
+        &auth_code,
+        &code_verifier,
+        token_name,
+        ignore_certs,
+    )
+    .await
+    .map(|tokens| tokens.token)
 }
 
 #[cfg(test)]
@@ -270,7 +278,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Login, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Login, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
@@ -286,7 +294,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Register, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Register, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 

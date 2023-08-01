@@ -168,7 +168,7 @@ impl PhylumApi {
             Some(refresh_token) => refresh_token.clone(),
             None => {
                 let refresh_token =
-                    handle_auth_flow(AuthAction::Login, ignore_certs, &config.connection.uri)
+                    handle_auth_flow(AuthAction::Login, None, ignore_certs, &config.connection.uri)
                         .await
                         .context("User login failed")?;
                 config.auth_info.set_offline_access(refresh_token.clone());
@@ -209,12 +209,13 @@ impl PhylumApi {
     /// credentials. It is the duty of the calling code to save any changes
     pub async fn login(
         mut auth_info: AuthInfo,
+        token_name: Option<String>,
         ignore_certs: bool,
         api_uri: &str,
         reauth: bool,
     ) -> Result<AuthInfo> {
         let action = if reauth { AuthAction::Reauth } else { AuthAction::Login };
-        let refresh_token = handle_auth_flow(action, ignore_certs, api_uri).await?;
+        let refresh_token = handle_auth_flow(action, token_name, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
@@ -224,10 +225,12 @@ impl PhylumApi {
     /// credentials. It is the duty of the calling code to save any changes
     pub async fn register(
         mut auth_info: AuthInfo,
+        token_name: Option<String>,
         ignore_certs: bool,
         api_uri: &str,
     ) -> Result<AuthInfo> {
-        let refresh_token = handle_auth_flow(AuthAction::Register, ignore_certs, api_uri).await?;
+        let refresh_token =
+            handle_auth_flow(AuthAction::Register, token_name, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
