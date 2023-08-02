@@ -16,6 +16,9 @@ Usage: phylum auth login [OPTIONS]
 -r, --reauth
 &emsp; Force a login prompt
 
+-n, --token-name
+&emsp; API token name
+
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
