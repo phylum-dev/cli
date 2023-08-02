@@ -38,12 +38,10 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Install Rust toolchain
-        run: |
-          rustup toolchain install --no-self-update stable --profile minimal -c clippy
-          rustup default stable
+        run: rustup toolchain install --no-self-update stable --profile minimal -c clippy
 
       - name: Clippy
-        run: cargo clippy --locked --all-features --all-targets -- -D warnings
+        run: cargo +stable clippy --locked --all-features --all-targets -- -D warnings
 
   test-matrix:
     strategy:
@@ -56,12 +54,10 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Install Rust toolchain
-        run: |
-          rustup toolchain install --no-self-update stable --profile minimal
-          rustup default stable
+        run: rustup toolchain install --no-self-update stable --profile minimal
 
       - name: Test
-        run: cargo test --locked
+        run: cargo +stable test --locked
 
   oldstable:
     strategy:
@@ -90,14 +86,12 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Install Rust toolchain
-        run: |
-          rustup toolchain install --no-self-update stable --profile minimal
-          rustup default stable
+        run: rustup toolchain install --no-self-update stable --profile minimal
 
       - name: All Features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
-        run: cargo test --all-features
+        run: cargo +stable test --all-features
 
   deno-checks:
     if: github.event_name != 'schedule'
