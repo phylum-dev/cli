@@ -102,11 +102,18 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
 
         jobs_project = JobsProject::new(api, matches).await?;
 
+        // Get .phylum_project path
+        let project_root = phylum_project::get_current_project().map(|p| p.root().to_owned());
+
         for lockfile in jobs_project.lockfiles {
-            let res = parse::parse_lockfile(&lockfile.path, Some(&lockfile.lockfile_type))
-                .with_context(|| {
-                    format!("Unable to locate any valid package in lockfile {:?}", lockfile.path)
-                })?;
+            let res =
+                parse::parse_lockfile(&lockfile.path, &project_root, Some(&lockfile.lockfile_type))
+                    .with_context(|| {
+                        format!(
+                            "Unable to locate any valid package in lockfile {:?}",
+                            lockfile.path
+                        )
+                    })?;
 
             if pretty_print {
                 print_user_success!(

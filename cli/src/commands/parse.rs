@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 use std::vec::IntoIter;
-use std::{fs, io};
+use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
@@ -14,6 +14,7 @@ use crate::{config, print_user_warning};
 
 pub struct ParsedLockfile {
     pub path: PathBuf,
+    pub project_root: Option<PathBuf>,
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
 }
@@ -39,16 +40,18 @@ impl IntoIterator for ParsedLockfile {
     type Item = PackageDescriptorAndLockfile;
 
     fn into_iter(self) -> Self::IntoIter {
-        // Get .phylum_project path
-        let root = phylum_project::get_current_project().map(|p| p.root().to_owned());
-        // Strip root path when set
-        let relative_path = match root {
-            Some(base) => match self.path.strip_prefix(&base) {
-                Ok(rel_path) => rel_path.to_path_buf(),
-                Err(_) => self.path.to_owned(),
-            },
-            None => self.path.to_owned(),
-        };
+        let relative_path = match (self.project_root, self.path.is_absolute()) {
+            // Strip project root path when set
+            (Some(base), _) => self.path.strip_prefix(&base).ok().map(|p| p.to_path_buf()),
+            // Strip current directory if we have an absolute path but not a project root
+            (None, true) => env::current_dir()
+                .ok()
+                .and_then(|curr_dir| self.path.strip_prefix(&curr_dir).ok())
+                .map(|p| p.to_path_buf()),
+            // Default to current path
+            _ => None,
+        }
+        .unwrap_or_else(|| self.path.clone());
         ParsedLockfileIterator { path: relative_path, packages: self.packages.into_iter() }
     }
 }
@@ -65,12 +68,15 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
+    let project = phylum_project::get_current_project();
+    let project_root = project.as_ref().map(|p| p.root().to_owned());
+    let lockfiles = config::lockfiles(matches, project.as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
 
     for lockfile in lockfiles {
-        let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
+        let parsed_lockfile =
+            parse_lockfile(lockfile.path, &project_root, Some(&lockfile.lockfile_type))?;
         pkgs.extend(parsed_lockfile.into_iter());
     }
 
@@ -82,16 +88,18 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 /// Parse a package lockfile.
 pub fn parse_lockfile(
     path: impl Into<PathBuf>,
+    project_root: &Option<PathBuf>,
     lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
     let path = path.into();
     let format = find_lockfile_format(&path, lockfile_type);
+    let project_root = project_root.to_owned();
 
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
         Some(format) => format,
-        None => return try_get_packages(path),
+        None => return try_get_packages(path, project_root),
     };
 
     // Parse with the identified parser.
@@ -106,7 +114,9 @@ pub fn parse_lockfile(
         let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
 
         match packages {
-            Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
+            Ok(packages) => {
+                return Ok(ParsedLockfile { path: lockfile, project_root, format, packages })
+            },
             // Store error on failure.
             Err(err) => lockfile_error = Some(err),
         }
@@ -138,7 +148,7 @@ pub fn parse_lockfile(
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
 
-    Ok(ParsedLockfile { path, format, packages })
+    Ok(ParsedLockfile { path, project_root, format, packages })
 }
 
 /// Attempt to parse a lockfile.
@@ -209,7 +219,7 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
+fn try_get_packages(path: PathBuf, project_root: Option<PathBuf>) -> Result<ParsedLockfile> {
     let data = fs::read_to_string(&path)?;
 
     for format in LockfileFormat::iter() {
@@ -219,7 +229,7 @@ fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { path, packages, format });
+            return Ok(ParsedLockfile { path, project_root, packages, format });
         }
     }
 
@@ -294,7 +304,7 @@ mod tests {
         ];
 
         for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(PathBuf::from(file)).unwrap();
+            let parsed = try_get_packages(PathBuf::from(file), None).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }
