@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Include lockfile paths when analyzing projects
+- Remove root path from lockfile paths
 
 ## [5.5.0] - 2023-07-18
 

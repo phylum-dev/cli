@@ -39,7 +39,17 @@ impl IntoIterator for ParsedLockfile {
     type Item = PackageDescriptorAndLockfile;
 
     fn into_iter(self) -> Self::IntoIter {
-        ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
+        // Get .phylum_project path
+        let root = phylum_project::get_current_project().map(|p| p.root().to_owned());
+        // Strip root path when set
+        let relative_path = match root {
+            Some(base) => match self.path.strip_prefix(&base) {
+                Ok(rel_path) => rel_path.to_path_buf(),
+                Err(_) => self.path.to_owned(),
+            },
+            None => self.path.to_owned(),
+        };
+        ParsedLockfileIterator { path: relative_path, packages: self.packages.into_iter() }
     }
 }
 
