@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Include lockfile paths when analyzing projects
 
+### Fixed
+- Search for manifests' lockfiles in parent, rather than child directories
+
 ## [5.5.0] - 2023-07-18
 
 ### Added
