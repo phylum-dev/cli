@@ -181,26 +181,7 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 
     // Look for formats which already have a lockfile generated.
     let manifest_lockfile = formats.find_map(|format| {
-        // Check the root directory for a lockfile
-        let root_dir_entries = match fs::read_dir(manifest_dir) {
-            Ok(entries) => entries,
-            Err(_) => return None,
-        };
-
-        for entry_result in root_dir_entries {
-            match entry_result {
-                Ok(entry) => {
-                    if format.parser().is_path_lockfile(&entry.path()) {
-                        return Some((format, entry.path()));
-                    }
-                },
-                Err(_) => continue,
-            }
-        }
-
-        // If not found in root, then use WalkDir to search in the subdirectories
         let manifest_lockfile = WalkDir::new(manifest_dir)
-            .min_depth(1)
             .into_iter()
             .flatten()
             .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
@@ -306,12 +287,5 @@ mod tests {
             let parsed = try_get_packages(PathBuf::from(file)).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
-    }
-
-    #[test]
-    fn it_can_detect_correct_lockfile() {
-        let cli_cargo_toml = PathBuf::from("../Cargo.toml");
-        let (_, path) = find_manifest_format(&cli_cargo_toml).unwrap();
-        assert!(path.unwrap().ends_with("cli/Cargo.lock"));
     }
 }
