@@ -20,22 +20,26 @@ pub mod mockito {
 
     use phylum_types::types::auth::{AccessToken, IdToken, RefreshToken, TokenResponse};
     use reqwest::Url;
+    use serde_json::json;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockBuilder, MockServer, Request, Respond, ResponseTemplate};
 
     use crate::api::{PhylumApi, PhylumApiError};
-    use crate::auth::OidcServerSettings;
+    use crate::auth::{LocksmithServerSettings, OidcServerSettings};
     use crate::config::{AuthInfo, Config, ConnectionInfo};
 
     pub const DUMMY_REFRESH_TOKEN: &str = "DUMMY_REFRESH_TOKEN";
+    pub const DUMMY_LOCKSMITH_TOKEN: &str = "ph0_DUMMY_TOKEN";
     pub const DUMMY_ACCESS_TOKEN: &str = "DUMMY_ACCESS_TOKEN";
     pub const DUMMY_ID_TOKEN: &str = "DUMMY_ID_TOKEN";
     pub const DUMMY_AUTH_CODE: &str = "DUMMY_AUTH_CODE";
 
     pub const OIDC_URI: &str = "api/v0/.well-known/openid-configuration";
+    pub const LOCKSMITH_URI: &str = "api/v0/.well-known/locksmith-configuration";
     pub const AUTH_URI: &str = "auth";
     pub const USER_URI: &str = "user";
     pub const TOKEN_URI: &str = "token";
+    pub const LOCKSMITH_TOKEN_URI: &str = "locksmith-token";
 
     pub struct ResponderFn<F>(F)
     where
@@ -67,10 +71,16 @@ pub mod mockito {
 
     pub fn build_oidc_server_settings_mock_response(base_uri: &str) -> OidcServerSettings {
         let base_url = Url::from_str(base_uri).expect("Failed to parse base url");
-        OidcServerSettings {
-            issuer: base_url.clone(),
+        OidcServerSettings { token_endpoint: base_url.join(TOKEN_URI).unwrap() }
+    }
+
+    pub fn build_locksmith_server_settings_mock_response(
+        base_uri: &str,
+    ) -> LocksmithServerSettings {
+        let base_url = Url::from_str(base_uri).expect("Failed to parse base url");
+        LocksmithServerSettings {
             authorization_endpoint: base_url.join(AUTH_URI).unwrap(),
-            token_endpoint: base_url.join(TOKEN_URI).unwrap(),
+            token_endpoint: base_url.join(LOCKSMITH_TOKEN_URI).unwrap(),
             userinfo_endpoint: base_url.join(USER_URI).unwrap(),
         }
     }
@@ -85,6 +95,18 @@ pub mod mockito {
             .respond_with_fn(move |_| {
                 let oidc_response = build_oidc_server_settings_mock_response(&base_url);
                 ResponseTemplate::new(200).set_body_json(oidc_response)
+            })
+            .mount(&mock_server)
+            .await;
+
+        let base_url = mock_server.uri();
+
+        // Set Locksmith Server Settings Response
+        Mock::given(method("GET"))
+            .and(path(LOCKSMITH_URI))
+            .respond_with_fn(move |_| {
+                let locksmith_response = build_locksmith_server_settings_mock_response(&base_url);
+                ResponseTemplate::new(200).set_body_json(locksmith_response)
             })
             .mount(&mock_server)
             .await;
@@ -115,6 +137,17 @@ pub mod mockito {
                     id_token: IdToken::new(DUMMY_ID_TOKEN),
                     expires_in_seconds: 3600,
                 })
+            })
+            .mount(&mock_server)
+            .await;
+
+        // Set locksmith token endpoint response
+        Mock::given(method("POST"))
+            .and(path(LOCKSMITH_TOKEN_URI))
+            .respond_with_fn(|_| {
+                ResponseTemplate::new(200).set_body_json(json!({
+                    "token": DUMMY_LOCKSMITH_TOKEN,
+                }))
             })
             .mount(&mock_server)
             .await;

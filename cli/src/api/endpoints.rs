@@ -59,6 +59,11 @@ pub fn check_packages(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/check")?)
 }
 
+/// POST /data/packages/check/raw
+pub fn check_packages_raw(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("data/packages/check/raw")?)
+}
+
 /// POST /data/packages/submit
 pub fn post_submit_package(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/packages/submit")?)
@@ -153,6 +158,11 @@ pub fn set_owner(api_uri: &str, group: &str, owner: &str) -> Result<Url, BaseUri
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
+}
+
+/// GET /.well-known/locksmith-configuration
+pub fn locksmith_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join(".well-known/locksmith-configuration")?)
 }
 
 /// POST /reachability/vulnerabilities

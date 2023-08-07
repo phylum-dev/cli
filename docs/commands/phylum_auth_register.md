@@ -10,7 +10,10 @@ Usage: phylum auth register [OPTIONS]
 
 ### Options
 
-`-v`, `--verbose`...
+`-n`, `--token-name`
+&emsp; API token name
+
+`-v`, `--verbose...`
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
 `-q`, `--quiet`...

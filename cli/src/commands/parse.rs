@@ -1,12 +1,12 @@
 //! `phylum parse` command for lockfile parsing
 
 use std::path::{Path, PathBuf};
+use std::vec::IntoIter;
 use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
-use phylum_types::types::package::PackageDescriptor;
-use walkdir::WalkDir;
+use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 
 use crate::commands::{CommandResult, ExitCode};
 use crate::{config, print_user_warning};
@@ -15,6 +15,31 @@ pub struct ParsedLockfile {
     pub path: PathBuf,
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
+}
+
+pub struct ParsedLockfileIterator {
+    path: PathBuf,
+    packages: IntoIter<PackageDescriptor>,
+}
+
+impl Iterator for ParsedLockfileIterator {
+    type Item = PackageDescriptorAndLockfile;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.packages.next().map(|package_descriptor| PackageDescriptorAndLockfile {
+            package_descriptor,
+            lockfile: Some(self.path.to_string_lossy().into_owned()),
+        })
+    }
+}
+
+impl IntoIterator for ParsedLockfile {
+    type IntoIter = ParsedLockfileIterator;
+    type Item = PackageDescriptorAndLockfile;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
+    }
 }
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
@@ -31,10 +56,11 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
 
-    let mut pkgs: Vec<PackageDescriptor> = Vec::new();
+    let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
 
     for lockfile in lockfiles {
-        pkgs.extend(parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?.packages);
+        let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
+        pkgs.extend(parsed_lockfile.into_iter());
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
@@ -156,11 +182,10 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 
     // Look for formats which already have a lockfile generated.
     let manifest_lockfile = formats.find_map(|format| {
-        let manifest_lockfile = WalkDir::new(manifest_dir)
-            .into_iter()
-            .flatten()
-            .find(|entry| format.parser().is_path_lockfile(entry.path()))?;
-        Some((format, manifest_lockfile.path().to_owned()))
+        let manifest_lockfile = find_direntry_upwards::<32, _>(manifest_dir, |path| {
+            format.parser().is_path_lockfile(path)
+        })?;
+        Some((format, manifest_lockfile))
     });
 
     // Return existing lockfile or format capable of generating it.
@@ -226,8 +251,36 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
         .collect()
 }
 
+/// Find a file by walking from a directory towards the root.
+///
+/// `MAX_DEPTH` is the maximum number of directory traversals before the search
+/// will be abandoned. A `MAX_DEPTH` of `0` will only search the `origin`
+/// directory.
+fn find_direntry_upwards<const MAX_DEPTH: usize, P>(
+    mut origin: &Path,
+    mut predicate: P,
+) -> Option<PathBuf>
+where
+    P: FnMut(&Path) -> bool,
+{
+    for _ in 0..=MAX_DEPTH {
+        for entry in fs::read_dir(origin).ok()?.flatten() {
+            let path = entry.path();
+            if predicate(&path) {
+                return Some(path);
+            }
+        }
+
+        origin = origin.parent()?;
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
+    use std::fs::{self, File};
+
     use super::*;
 
     #[test]
@@ -262,5 +315,48 @@ mod tests {
             let parsed = try_get_packages(PathBuf::from(file)).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
+    }
+
+    #[test]
+    fn find_lockfile_for_manifest() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let tempdir = tempdir.path().canonicalize().unwrap();
+
+        // Create manifest.
+        let manifest_dir = tempdir.join("manifest");
+        let manifest_path = manifest_dir.join("Cargo.toml");
+        fs::create_dir_all(&manifest_dir).unwrap();
+        File::create(&manifest_path).unwrap();
+
+        // Ensure lockfiles below manifest are ignored.
+
+        // Create lockfile below manifest.
+        let child_lockfile_dir = manifest_dir.join("sub");
+        fs::create_dir_all(&child_lockfile_dir).unwrap();
+        File::create(child_lockfile_dir.join("Cargo.lock")).unwrap();
+
+        let (_, path) = find_manifest_format(&manifest_path).unwrap();
+
+        assert_eq!(path, None);
+
+        // Accept lockfiles above the manifest.
+
+        // Create lockfile above manifest.
+        let parent_lockfile_path = tempdir.join("Cargo.lock");
+        File::create(&parent_lockfile_path).unwrap();
+
+        let (_, path) = find_manifest_format(&manifest_path).unwrap();
+
+        assert_eq!(path, Some(parent_lockfile_path));
+
+        // Prefer lockfiles "closer" to the manifest.
+
+        // Create lockfile in the manifest directory.
+        let sibling_lockfile_path = manifest_dir.join("Cargo.lock");
+        File::create(&sibling_lockfile_path).unwrap();
+
+        let (_, path) = find_manifest_format(&manifest_path).unwrap();
+
+        assert_eq!(path, Some(sibling_lockfile_path));
     }
 }

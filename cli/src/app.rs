@@ -188,15 +188,32 @@ pub fn add_subcommands(command: Command) -> Command {
                 .about("Manage authentication, registration, and API keys")
                 .arg_required_else_help(true)
                 .subcommand_required(true)
-                .subcommand(Command::new("register").about("Register a new account"))
                 .subcommand(
-                    Command::new("login").about("Login to an existing account").arg(
-                        Arg::new("reauth")
-                            .action(ArgAction::SetTrue)
-                            .short('r')
-                            .long("reauth")
-                            .help("Force a login prompt"),
+                    Command::new("register").about("Register a new account").arg(
+                        Arg::new("token-name")
+                            .action(ArgAction::Set)
+                            .short('n')
+                            .long("token-name")
+                            .help("API token name"),
                     ),
+                )
+                .subcommand(
+                    Command::new("login")
+                        .about("Login to an existing account")
+                        .arg(
+                            Arg::new("reauth")
+                                .action(ArgAction::SetTrue)
+                                .short('r')
+                                .long("reauth")
+                                .help("Force a login prompt"),
+                        )
+                        .arg(
+                            Arg::new("token-name")
+                                .action(ArgAction::Set)
+                                .short('n')
+                                .long("token-name")
+                                .help("API token name"),
+                        ),
                 )
                 .subcommand(
                     Command::new("status").about("Return the current authentication status"),

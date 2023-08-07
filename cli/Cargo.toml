@@ -4,7 +4,7 @@ version = "5.5.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.68.0"
+rust-version = "1.70.0"
 autotests = false
 
 [[test]]
@@ -19,7 +19,6 @@ end-to-end-tests = []
 
 [dependencies]
 anyhow = "1.0.44"
-atty = "0.2.14"
 base64 = "0.21.1"
 bytes = "1.1.0"
 chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
@@ -68,6 +67,7 @@ deno_ast = { version = "0.27.2", features = ["transpiling"] }
 birdcage = { version = "0.2.0" }
 libc = "0.2.135"
 ignore = { version = "0.4.20", optional = true }
+uuid = "1.4.1"
 
 [dev-dependencies]
 assert_cmd = "2.0.4"

@@ -3,7 +3,7 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "phylum";
+import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -219,27 +219,13 @@ async function checkDryRun(subcommand: string, args: string[]) {
     return;
   }
 
-  const result = await PhylumApi.checkPackages(lockfile.packages);
+  const result = await PhylumApi.checkPackagesRaw(lockfile.packages);
+  logPackageAnalysisResults(result);
 
-  if (!result.is_failure && result.incomplete_count == 0) {
-    console.log(`[${green("phylum")}] Supply Chain Risk Analysis - SUCCESS\n`);
-  } else if (!result.is_failure) {
-    console.warn(
-      `[${yellow("phylum")}] Supply Chain Risk Analysis - INCOMPLETE`,
-    );
-    console.warn(
-      `[${
-        yellow(
-          "phylum",
-        )
-      }] Unknown packages were submitted for analysis, please check again later.\n`,
-    );
-    Deno.exit(126);
-  } else {
-    console.error(
-      `[${red("phylum")}] Supply Chain Risk Analysis - FAILURE\n`,
-    );
+  if (result.is_failure) {
     Deno.exit(127);
+  } else if (result.incomplete_packages_count !== 0) {
+    Deno.exit(126);
   }
 }
 
@@ -256,4 +242,83 @@ async function abort(code: number) {
 async function restoreBackup() {
   await packageLockBackup.restoreOrDelete();
   await manifestBackup.restoreOrDelete();
+}
+
+// Write the analysis result status to STDOUT/STDERRR.
+function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
+  if (result.is_failure) {
+    console.error(
+      `[${red("phylum")}] Phylum Supply Chain Risk Analysis - FAILURE\n`,
+    );
+  } else if (result.incomplete_packages_count > 0) {
+    console.warn(
+      `[${yellow("phylum")}] Phylum Supply Chain Risk Analysis - INCOMPLETE\n`,
+    );
+  } else {
+    console.log(
+      `[${green("phylum")}] Phylum Supply Chain Risk Analysis - SUCCESS\n`,
+    );
+  }
+
+  // Print warning regarding incomplete packages.
+  if (result.incomplete_packages_count > 0) {
+    // Ensure correct pluralization for incomplete packages.
+    let unprocessedText =
+      `${result.incomplete_packages_count} unprocessed package`;
+    if (result.incomplete_packages_count > 1) {
+      unprocessedText += "s";
+    }
+
+    const yellowPhylum = yellow("phylum");
+    console.warn(
+      `[${yellowPhylum}] The analysis contains ${unprocessedText}, preventing a complete risk analysis. Phylum is currently processing these packages and should complete soon. Please wait for up to 30 minutes, then re-run the analysis.\n`,
+    );
+  }
+
+  // Print policy violations.
+  let output = "";
+  for (const pkg of result.dependencies) {
+    // Skip packages without policy rejections.
+    if (pkg.rejections.length === 0) {
+      continue;
+    }
+
+    output += `[${pkg.registry}] ${pkg.name}@${pkg.version}\n`;
+
+    for (const rejection of pkg.rejections) {
+      // Skip suppressed issues.
+      if (rejection.suppressed) {
+        continue;
+      }
+
+      // Format rejection title.
+      const domain = `[${rejection.source.domain || "     "}]`;
+      const message = `${domain} ${rejection.title}`;
+
+      // Color rejection based on severity.
+      let colored;
+      if (
+        rejection.source.severity === "low" ||
+        rejection.source.severity === "info"
+      ) {
+        colored = green(message);
+      } else if (rejection.source.severity === "medium") {
+        colored = yellow(message);
+      } else {
+        colored = red(message);
+      }
+
+      output += ` ${colored}\n`;
+    }
+  }
+  if (output.length !== 0) {
+    console.error(output + "\n");
+  }
+
+  // Print web URI for the job results.
+  if (result.job_link) {
+    console.log(
+      `You can find the interactive report here:\n ${result.job_link}\n`,
+    );
+  }
 }

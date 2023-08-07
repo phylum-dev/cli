@@ -5,6 +5,7 @@ export type Package = {
   name: string;
   version: string;
   type: string;
+  lockfile?: string;
 };
 
 export type Lockfile = {
@@ -18,6 +19,37 @@ export type ProcessOutput = {
   success: boolean;
   signal: number | null;
   code: number | null;
+};
+
+export type PolicyEvaluationResponseRaw = {
+  is_failure: boolean;
+  incomplete_packages_count: number;
+  help: string;
+  job_link: string | null;
+  dependencies: EvaluatedDependencies[];
+};
+
+export type EvaluatedDependencies = {
+  purl: string;
+  registry: string;
+  name: string;
+  version: string;
+  rejections: PolicyRejection[];
+};
+
+export type PolicyRejection = {
+  title: string;
+  suppressed: boolean;
+  source: RejectionSource;
+};
+
+export type RejectionSource = {
+  type: string;
+  tag: string | null;
+  domain: string | null;
+  severity: string | null;
+  description: string | null;
+  reason: string | null;
 };
 
 async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
@@ -79,7 +111,7 @@ export class PhylumApi {
    *
    * ```
    * [
-   *   { name: "accepts", version: "1.3.8", type: "npm" },
+   *   { name: "accepts", version: "1.3.8", type: "npm", lockfile: "/path/to/lockfile" },
    *   { name: "ms", version: "2.0.0", type: "npm" },
    *   { name: "negotiator", version: "0.6.3", type: "npm" },
    *   { name: "ms", version: "2.1.3", type: "npm" }
@@ -87,6 +119,7 @@ export class PhylumApi {
    * ```
    *
    * Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
+   * The `lockfile` is an optional string used to represent the path to the lockfile.
    *
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
@@ -108,6 +141,19 @@ export class PhylumApi {
       group,
       label,
     );
+  }
+
+  /**
+   * Check a list of packages against the default policy.
+   *
+   * @param packages - List of packages to check (see `analyze()` for details)
+   *
+   * @returns Raw job analysis results (see `getJobStatusRaw()` for details)
+   */
+  static checkPackagesRaw(
+    packages: Package[],
+  ): Promise<PolicyEvaluationResponseRaw> {
+    return DenoCore.opAsync("check_packages_raw", packages);
   }
 
   /**
@@ -175,6 +221,49 @@ export class PhylumApi {
     jobId: string,
     ignoredPackages?: Package[],
   ): Promise<Record<string, unknown>> {
+    return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
+  }
+
+  /**
+   * Get job results.
+   *
+   * @param jobId - ID of the analysis job, see `PhylumApi.analyze`.
+   * @param ignoredPackages - List of packages which will be ignored in the report.
+   *
+   * @returns Raw job analysis results
+   *
+   * Job analysis results example:
+   * ```
+   * {
+   *   is_failure: false,
+   *   incomplete_packages_count: 0,
+   *   help: "The analysis contains 346 package(s) Phylum has not yet processed,\npreventing a complete risk analysis. Phylum is processing these\npackages currently and should complete soon.\nPlease wait for up to 30 minutes, then re-run the analysis.\n\nThis repository analyzes the risk of new dependencies. An\nadministrator of this repository has set requirements via Phylum policy.\n\nIf you see this comment, one or more dependencies have failed Phylum's risk analysis.",
+   *   job_link: "https://phylum.io/projects/62a91e89-65cb-4597-8d4b-6ef119b29c5c",
+   *   dependencies: [
+   *     purl: "pkg:cargo/birdcage@0.2.1",
+   *     registry: "cargo",
+   *     name: "birdcage",
+   *     version: "0.2.1",
+   *     rejections: [
+   *       title: "Commercial license risk detected in birdcage@0.2.1",
+   *       suppressed: false,
+   *       source: {
+   *         type: "Issue",
+   *         tag: "HL0030",
+   *         domain: "license",
+   *         severity: "high",
+   *         description: "### Overview\nThis package uses the **GPL-3.0-or-later** license, which is a **high** risk level to commercial use.",
+   *         reason: "risk level cannot exceed medium"
+   *       }
+   *     ]
+   *   ]
+   * }
+   * ```
+   */
+  static getJobStatusRaw(
+    jobId: string,
+    ignoredPackages?: Package[],
+  ): Promise<PolicyEvaluationResponseRaw> {
     return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
   }
 
