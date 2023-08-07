@@ -2,20 +2,32 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
+use log::debug;
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
+use crate::auth::is_locksmith_token;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::{auth, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(mut config: Config, config_path: &Path) -> Result<()> {
+async fn handle_auth_register(
+    mut config: Config,
+    config_path: &Path,
+    matches: &ArgMatches,
+) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
-    config.auth_info = PhylumApi::register(config.auth_info, ignore_certs, api_uri).await?;
+    config.auth_info = PhylumApi::register(
+        config.auth_info,
+        matches.get_one("token-name").cloned(),
+        ignore_certs,
+        api_uri,
+    )
+    .await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
@@ -29,30 +41,46 @@ async fn handle_auth_login(
 ) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
-    config.auth_info =
-        PhylumApi::login(config.auth_info, ignore_certs, api_uri, matches.get_flag("reauth"))
-            .await?;
+    config.auth_info = PhylumApi::login(
+        config.auth_info,
+        matches.get_one("token-name").cloned(),
+        ignore_certs,
+        api_uri,
+        matches.get_flag("reauth"),
+    )
+    .await?;
     save_config(config_path, &config).map_err(|error| anyhow!(error))?;
     Ok(())
 }
 
 /// Display the current authentication status to the user.
 pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> CommandResult {
-    if config.auth_info.offline_access().is_none() {
-        print_user_warning!("User is not currently authenticated");
-        return Ok(ExitCode::NotAuthenticated);
-    }
+    let auth_type = match config.auth_info.offline_access() {
+        Some(token) if is_locksmith_token(token) => "API key",
+        Some(_) => "OpenID Connect",
+        None => {
+            print_user_warning!("User is not currently authenticated");
+            return Ok(ExitCode::NotAuthenticated);
+        },
+    };
 
     // Create a client with our auth token attached.
     let api = PhylumApi::new(config, timeout).await?;
 
     let user_info = api.user_info().await;
 
+    debug!("User info reponse: {:?}", user_info);
+
     match user_info {
         Ok(user) => {
             print_user_success!(
-                "Currently authenticated as '{}' with long lived refresh token",
-                user.email
+                "Currently authenticated as '{}<{}>' via {}",
+                user.name.map_or_else(Default::default, |mut n| {
+                    n.push(' ');
+                    n
+                }),
+                user.email,
+                auth_type,
             );
             Ok(ExitCode::Ok)
         },
@@ -77,9 +105,9 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
 
     if matches.get_flag("bearer") {
         let api_uri = &config.connection.uri;
-        let tokens =
+        let access_token =
             auth::handle_refresh_tokens(refresh_token, config.ignore_certs(), api_uri).await?;
-        println!("{}", tokens.access_token);
+        println!("{}", access_token);
         Ok(ExitCode::Ok)
     } else {
         println!("{refresh_token}");
@@ -127,7 +155,7 @@ pub async fn handle_auth(
     timeout: Option<u64>,
 ) -> CommandResult {
     match matches.subcommand() {
-        Some(("register", _)) => match handle_auth_register(config, config_path).await {
+        Some(("register", _)) => match handle_auth_register(config, config_path, matches).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok)

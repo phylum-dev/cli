@@ -160,6 +160,11 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
 }
 
+/// GET /.well-known/locksmith-configuration
+pub fn locksmith_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join(".well-known/locksmith-configuration")?)
+}
+
 /// POST /reachability/vulnerabilities
 pub fn vulnreach(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(parse_base_url(api_uri)?.join("reachability/vulnerabilities")?)
