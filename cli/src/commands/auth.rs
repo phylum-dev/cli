@@ -75,7 +75,7 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
         Ok(user) => {
             print_user_success!(
                 "Currently authenticated as '{}<{}>' via {}",
-                user.name.map_or(" ".into(), |mut n| {
+                user.name.map_or_else(Default::default, |mut n| {
                     n.push(' ');
                     n
                 }),
