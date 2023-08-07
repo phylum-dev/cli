@@ -84,7 +84,7 @@ pub fn parse_lockfile(
     let project_root = project_root.to_owned();
 
     // Attempt to strip root path
-    let path = strip_root_path(path, &project_root)?;
+    let path = strip_root_path(path, &project_root);
 
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
@@ -99,7 +99,7 @@ pub fn parse_lockfile(
     let mut lockfile_error = None;
     if let Some(lockfile) = lockfile {
         // Attempt to strip root path for identified lockfile
-        let lockfile = strip_root_path(lockfile, &project_root)?;
+        let lockfile = strip_root_path(lockfile, &project_root);
 
         // Parse lockfile content.
         let content = fs::read_to_string(&lockfile).map_err(Into::into);
@@ -262,19 +262,20 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
 }
 
 /// Strip root prefix from lockfile paths
-fn strip_root_path(path: PathBuf, project_root: &Option<PathBuf>) -> Result<PathBuf> {
-    let relative_path = match (project_root, path.is_absolute()) {
+fn strip_root_path(path: PathBuf, project_root: &Option<PathBuf>) -> PathBuf {
+    match (project_root, path.is_absolute()) {
         // Strip project root path when set
-        (Some(base), _) => path.strip_prefix(base)?,
+        (Some(base), _) => path.strip_prefix(base).unwrap_or(&path),
+
         // Strip current directory if we have an absolute path but not a project root
         (None, true) => {
-            let curr_dir = env::current_dir()?;
-            path.strip_prefix(&curr_dir)?
+            let curr_dir = env::current_dir().unwrap_or_else(|_| path.clone());
+            path.strip_prefix(&curr_dir).unwrap_or(&path)
         },
-        (None, false) => path.as_ref(),
-    };
 
-    Ok(relative_path.to_path_buf())
+        (None, false) => &path,
+    }
+    .to_path_buf()
 }
 
 #[cfg(test)]
