@@ -2,7 +2,6 @@
 //! and templatized html for redirecting a browser to them
 
 use std::collections::HashMap;
-use std::fmt::Display;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 
@@ -347,12 +346,12 @@ pub struct UserInfo {
     pub name: Option<String>,
 }
 
-impl Display for UserInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(name) = &self.name {
-            write!(f, "{} ", name)?;
+impl UserInfo {
+    pub fn identity(&self) -> String {
+        match &self.name {
+            Some(name) => format!("{} <{}>", name, self.email),
+            None => format!("<{}>", self.email),
         }
-        write!(f, "<{}>", self.email)
     }
 }
 
@@ -367,11 +366,11 @@ mod test {
     use super::*;
 
     #[test]
-    fn user_info_display() {
+    fn user_info_identity() {
         let named = UserInfo { email: "john@example.com".into(), name: Some("John Doe".into()) };
-        assert_eq!(named.to_string(), "John Doe <john@example.com>");
+        assert_eq!(named.identity(), "John Doe <john@example.com>");
 
         let nameless = UserInfo { email: "prince@example.com".into(), name: None };
-        assert_eq!(nameless.to_string(), "<prince@example.com>");
+        assert_eq!(nameless.identity(), "<prince@example.com>");
     }
 }

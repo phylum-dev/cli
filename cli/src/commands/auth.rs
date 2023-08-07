@@ -70,7 +70,11 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
 
     match user_info {
         Ok(user) => {
-            print_user_success!("Currently authenticated as '{}' via {}", user, auth_type);
+            print_user_success!(
+                "Currently authenticated as '{}' via {}",
+                user.identity(),
+                auth_type
+            );
             Ok(ExitCode::Ok)
         },
         Err(_err) => {
