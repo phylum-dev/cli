@@ -317,7 +317,8 @@ pub async fn refresh_tokens(
     }
 }
 
-pub async fn handle_refresh_tokens(
+/// Get a new access token using the refresh token.
+pub async fn renew_access_token(
     refresh_token: &RefreshToken,
     ignore_certs: bool,
     api_uri: &str,
