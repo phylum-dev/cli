@@ -13,7 +13,7 @@ Usage: phylum auth register [OPTIONS]
 `-n`, `--token-name`
 &emsp; API token name
 
-`-v`, `--verbose...`
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
 `-q`, `--quiet`...
