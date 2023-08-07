@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Include lockfile paths when analyzing projects
+- Generate and use API Keys instead of OpenID Connect tokens
 
 ### Fixed
 - Search for manifests' lockfiles in parent, rather than child directories
