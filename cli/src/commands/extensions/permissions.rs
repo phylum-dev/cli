@@ -261,7 +261,6 @@ impl From<&Permissions> for PermissionsOptions {
             allow_sys: None,
             allow_ffi: None,
             allow_hrtime: false,
-
             deny_read: None,
             deny_write: None,
             deny_run: None,
@@ -270,7 +269,6 @@ impl From<&Permissions> for PermissionsOptions {
             deny_sys: None,
             deny_ffi: None,
             deny_hrtime: false,
-
             prompt: false,
         }
     }
