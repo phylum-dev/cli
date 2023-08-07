@@ -2,6 +2,7 @@
 //! and templatized html for redirecting a browser to them
 
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 
@@ -346,8 +347,31 @@ pub struct UserInfo {
     pub name: Option<String>,
 }
 
+impl Display for UserInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(name) = &self.name {
+            write!(f, "{} ", name)?;
+        }
+        write!(f, "<{}>", self.email)
+    }
+}
+
 /// Keycloak error response.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseError {
     error: String,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn user_info_display() {
+        let named = UserInfo { email: "john@example.com".into(), name: Some("John Doe".into()) };
+        assert_eq!(named.to_string(), "John Doe <john@example.com>");
+
+        let nameless = UserInfo { email: "prince@example.com".into(), name: None };
+        assert_eq!(nameless.to_string(), "<prince@example.com>");
+    }
 }
