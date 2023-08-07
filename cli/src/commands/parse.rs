@@ -14,7 +14,6 @@ use crate::{config, print_user_warning};
 
 pub struct ParsedLockfile {
     pub path: PathBuf,
-    pub project_root: Option<PathBuf>,
     pub format: LockfileFormat,
     pub packages: Vec<PackageDescriptor>,
 }
@@ -40,19 +39,7 @@ impl IntoIterator for ParsedLockfile {
     type Item = PackageDescriptorAndLockfile;
 
     fn into_iter(self) -> Self::IntoIter {
-        let relative_path = match (self.project_root, self.path.is_absolute()) {
-            // Strip project root path when set
-            (Some(base), _) => self.path.strip_prefix(&base).ok().map(|p| p.to_path_buf()),
-            // Strip current directory if we have an absolute path but not a project root
-            (None, true) => env::current_dir()
-                .ok()
-                .and_then(|curr_dir| self.path.strip_prefix(&curr_dir).ok())
-                .map(|p| p.to_path_buf()),
-            // Default to current path
-            _ => None,
-        }
-        .unwrap_or_else(|| self.path.clone());
-        ParsedLockfileIterator { path: relative_path, packages: self.packages.into_iter() }
+        ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
     }
 }
 
@@ -96,27 +83,30 @@ pub fn parse_lockfile(
     let format = find_lockfile_format(&path, lockfile_type);
     let project_root = project_root.to_owned();
 
+    // Attempt to strip root path
+    let path = strip_root_path(path, &project_root)?;
+
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
         Some(format) => format,
-        None => return try_get_packages(path, project_root),
+        None => return try_get_packages(path),
     };
 
     // Parse with the identified parser.
-
     let parser = format.parser();
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
     if let Some(lockfile) = lockfile {
+        // Attempt to strip root path for identified lockfile
+        let lockfile = strip_root_path(lockfile, &project_root)?;
+
         // Parse lockfile content.
         let content = fs::read_to_string(&lockfile).map_err(Into::into);
         let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
 
         match packages {
-            Ok(packages) => {
-                return Ok(ParsedLockfile { path: lockfile, project_root, format, packages })
-            },
+            Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
             // Store error on failure.
             Err(err) => lockfile_error = Some(err),
         }
@@ -148,7 +138,7 @@ pub fn parse_lockfile(
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
 
-    Ok(ParsedLockfile { path, project_root, format, packages })
+    Ok(ParsedLockfile { path, format, packages })
 }
 
 /// Attempt to parse a lockfile.
@@ -219,7 +209,7 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: PathBuf, project_root: Option<PathBuf>) -> Result<ParsedLockfile> {
+fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
     let data = fs::read_to_string(&path)?;
 
     for format in LockfileFormat::iter() {
@@ -229,7 +219,7 @@ fn try_get_packages(path: PathBuf, project_root: Option<PathBuf>) -> Result<Pars
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { path, project_root, packages, format });
+            return Ok(ParsedLockfile { path, packages, format });
         }
     }
 
@@ -271,6 +261,22 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
         .collect()
 }
 
+/// Strip root prefix from lockfile paths
+fn strip_root_path(path: PathBuf, project_root: &Option<PathBuf>) -> Result<PathBuf> {
+    let relative_path = match (project_root, path.is_absolute()) {
+        // Strip project root path when set
+        (Some(base), _) => path.strip_prefix(base)?,
+        // Strip current directory if we have an absolute path but not a project root
+        (None, true) => {
+            let curr_dir = env::current_dir()?;
+            path.strip_prefix(&curr_dir)?
+        },
+        (None, false) => path.as_ref(),
+    };
+
+    Ok(relative_path.to_path_buf())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,7 +310,7 @@ mod tests {
         ];
 
         for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(PathBuf::from(file), None).unwrap();
+            let parsed = try_get_packages(PathBuf::from(file)).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }
