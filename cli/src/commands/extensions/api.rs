@@ -14,7 +14,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Error, Result};
-use deno_runtime::deno_core::{op, OpState};
+use deno_runtime::deno_core::{op, Op, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
 use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
@@ -512,23 +512,25 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
     Ok(url)
 }
 
-deno_core::ops!(api_decls, [
-    analyze,
-    check_packages,
-    check_packages_raw,
-    get_user_info,
-    get_access_token,
-    get_refresh_token,
-    get_job_status,
-    get_job_status_raw,
-    get_current_project,
-    get_groups,
-    get_projects,
-    create_project,
-    delete_project,
-    get_package_details,
-    parse_lockfile,
-    run_sandboxed,
-    op_permissions,
-    api_base_url,
-]);
+pub(crate) fn api_decls() -> Vec<OpDecl> {
+    vec![
+        analyze::DECL,
+        check_packages::DECL,
+        check_packages_raw::DECL,
+        get_user_info::DECL,
+        get_access_token::DECL,
+        get_refresh_token::DECL,
+        get_job_status::DECL,
+        get_job_status_raw::DECL,
+        get_current_project::DECL,
+        get_groups::DECL,
+        get_projects::DECL,
+        create_project::DECL,
+        delete_project::DECL,
+        get_package_details::DECL,
+        parse_lockfile::DECL,
+        run_sandboxed::DECL,
+        op_permissions::DECL,
+        api_base_url::DECL,
+    ]
+}
