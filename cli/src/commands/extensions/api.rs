@@ -211,8 +211,7 @@ async fn get_access_token(
 
     let access_token =
         crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
-            .await?
-            .access_token;
+            .await?;
     Ok(access_token)
 }
 

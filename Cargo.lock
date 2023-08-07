@@ -3654,6 +3654,7 @@ dependencies = [
  "toml 0.7.6",
  "unicode-width",
  "url",
+ "uuid",
  "vuln-reach",
  "vulnreach_types",
  "walkdir",
