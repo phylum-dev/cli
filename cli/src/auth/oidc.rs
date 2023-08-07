@@ -343,12 +343,7 @@ pub struct LocksmithTokenResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UserInfo {
     pub email: String,
-    pub sub: Option<String>,
     pub name: Option<String>,
-    pub given_name: Option<String>,
-    pub family_name: Option<String>,
-    pub preferred_username: Option<String>,
-    pub email_verified: Option<bool>,
 }
 
 /// Keycloak error response.
