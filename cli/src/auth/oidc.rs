@@ -215,7 +215,7 @@ fn build_grant_type_auth_code_post_body(
     token_name: Option<String>,
 ) -> Result<HashMap<String, String>> {
     let body = hashmap! {
-        "client_id".to_owned() => LOCKSMITH_CLIENT_ID.to_owned(),
+        "client_id".to_owned() => Default::default(),
         "code".to_owned() => authorization_code.into(),
         "code_verifier".to_owned() => code_verfier.into(),
         "grant_type".to_owned() => "authorization_code".to_owned(),
