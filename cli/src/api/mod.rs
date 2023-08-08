@@ -27,7 +27,7 @@ use crate::api::endpoints::BaseUriError;
 use crate::app::USER_AGENT;
 use crate::auth::jwt::RealmRole;
 use crate::auth::{
-    fetch_locksmith_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction,
+    fetch_locksmith_server_settings, handle_auth_flow, jwt, renew_access_token, AuthAction,
     UserInfo,
 };
 use crate::config::{AuthInfo, Config};
@@ -176,10 +176,9 @@ impl PhylumApi {
             },
         };
 
-        let access_token =
-            handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
-                .await
-                .context("Token refresh failed")?;
+        let access_token = renew_access_token(&refresh_token, ignore_certs, &config.connection.uri)
+            .await
+            .context("Token refresh failed")?;
 
         let mut headers = HeaderMap::new();
         // the cli runs a command or a few short commands then exits, so we do

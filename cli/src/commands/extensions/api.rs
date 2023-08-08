@@ -210,7 +210,7 @@ async fn get_access_token(
     let config = api.config();
 
     let access_token =
-        crate::auth::handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
+        crate::auth::renew_access_token(&refresh_token, ignore_certs, &config.connection.uri)
             .await?;
     Ok(access_token)
 }

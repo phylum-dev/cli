@@ -194,7 +194,7 @@ pub fn add_subcommands(command: Command) -> Command {
                             .action(ArgAction::Set)
                             .short('n')
                             .long("token-name")
-                            .help("API token name"),
+                            .help("Unique name for the new token that will be created"),
                     ),
                 )
                 .subcommand(
@@ -212,7 +212,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .action(ArgAction::Set)
                                 .short('n')
                                 .long("token-name")
-                                .help("API token name"),
+                                .help("Unique name for the new token that will be created"),
                         ),
                 )
                 .subcommand(
