@@ -2,7 +2,6 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
-use log::debug;
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
@@ -69,18 +68,12 @@ pub async fn handle_auth_status(config: Config, timeout: Option<u64>) -> Command
 
     let user_info = api.user_info().await;
 
-    debug!("User info reponse: {:?}", user_info);
-
     match user_info {
         Ok(user) => {
             print_user_success!(
-                "Currently authenticated as '{}<{}>' via {}",
-                user.name.map_or_else(Default::default, |mut n| {
-                    n.push(' ');
-                    n
-                }),
-                user.email,
-                auth_type,
+                "Currently authenticated as '{}' via {}",
+                user.identity(),
+                auth_type
             );
             Ok(ExitCode::Ok)
         },
@@ -106,7 +99,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
     if matches.get_flag("bearer") {
         let api_uri = &config.connection.uri;
         let access_token =
-            auth::handle_refresh_tokens(refresh_token, config.ignore_certs(), api_uri).await?;
+            auth::renew_access_token(refresh_token, config.ignore_certs(), api_uri).await?;
         println!("{}", access_token);
         Ok(ExitCode::Ok)
     } else {

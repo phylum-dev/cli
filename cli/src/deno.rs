@@ -34,14 +34,16 @@ pub async fn run(
     args: Vec<String>,
 ) -> CommandResult {
     let state = ExtensionState::new(api, extension.clone());
-    let phylum_api = Extension::builder("phylum-ext")
-        .middleware(|op| match op.name {
+    let phylum_api = Extension {
+        name: "phylum-ext",
+        middleware_fn: Some(Box::new(|op| match op.name {
             "op_request_permission" => op.disable(),
             _ => op,
-        })
-        .ops(api::api_decls())
-        .state(|deno_state| deno_state.put(state))
-        .build();
+        })),
+        ops: api::api_decls().into(),
+        op_state_fn: Some(Box::new(|deno_state| deno_state.put(state))),
+        ..Default::default()
+    };
 
     let main_module =
         deno_core::resolve_path(&extension.entry_point().to_string_lossy(), &PathBuf::from("."))?;
