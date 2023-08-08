@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.6.0] - 2023-08-08
+
 ### Added
 - Generating lockfiles for `*.csproj` files
 
@@ -540,7 +542,8 @@ before, the existing project ID will be re-linked.
 ## 0.0.1
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.5.0...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.6.0...HEAD
+[5.6.0]: https://github.com/phylum-dev/cli/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/phylum-dev/cli/compare/v5.3.0...v5.5.0
 [5.3.0]: https://github.com/phylum-dev/cli/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/phylum-dev/cli/compare/v5.1.0...v5.2.0

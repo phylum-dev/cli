@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.6.0 - 2023-08-08
+
 ### Added
 
 - Added `getJobStatusRaw` and `checkPackagesRaw` APIs for detailed analysis results
