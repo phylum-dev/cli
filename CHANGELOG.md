@@ -18,9 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Search for manifests' lockfiles in parent, rather than child directories
 
-### Removed
-- Support for `*.csproj` manifests using .NET 4 or below
-
 ## [5.5.0] - 2023-07-18
 
 ### Added
