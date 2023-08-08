@@ -383,8 +383,12 @@ async fn parse_lockfile(
         permissions.check_read(Path::new(&lockfile), "phylum")?;
     }
 
+    // Get .phylum_project path
+    let current_project = phylum_project::get_current_project();
+    let project_root = current_project.as_ref().map(|p| p.root());
+
     // Attempt to parse as requested lockfile type.
-    let parsed = parse::parse_lockfile(lockfile, lockfile_type.as_deref())?;
+    let parsed = parse::parse_lockfile(lockfile, project_root, lockfile_type.as_deref())?;
 
     Ok(PackageLock { packages: parsed.packages, format: parsed.format })
 }

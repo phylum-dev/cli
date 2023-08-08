@@ -1,8 +1,9 @@
 //! `phylum parse` command for lockfile parsing
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::vec::IntoIter;
-use std::{fs, io};
+use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
@@ -54,12 +55,15 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
-    let lockfiles = config::lockfiles(matches, phylum_project::get_current_project().as_ref())?;
+    let project = phylum_project::get_current_project();
+    let project_root = project.as_ref().map(|p| p.root());
+    let lockfiles = config::lockfiles(matches, project.as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
 
     for lockfile in lockfiles {
-        let parsed_lockfile = parse_lockfile(lockfile.path, Some(&lockfile.lockfile_type))?;
+        let parsed_lockfile =
+            parse_lockfile(lockfile.path, project_root, Some(&lockfile.lockfile_type))?;
         pkgs.extend(parsed_lockfile.into_iter());
     }
 
@@ -71,6 +75,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 /// Parse a package lockfile.
 pub fn parse_lockfile(
     path: impl Into<PathBuf>,
+    project_root: Option<&PathBuf>,
     lockfile_type: Option<&str>,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
@@ -80,11 +85,10 @@ pub fn parse_lockfile(
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
         Some(format) => format,
-        None => return try_get_packages(path),
+        None => return try_get_packages(path, project_root),
     };
 
     // Parse with the identified parser.
-
     let parser = format.parser();
 
     // Attempt to parse the identified lockfile.
@@ -93,6 +97,9 @@ pub fn parse_lockfile(
         // Parse lockfile content.
         let content = fs::read_to_string(&lockfile).map_err(Into::into);
         let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
+
+        // Attempt to strip root path for identified lockfile
+        let lockfile = strip_root_path(lockfile, project_root)?;
 
         match packages {
             Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
@@ -197,8 +204,9 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
+fn try_get_packages(path: PathBuf, project_root: Option<&PathBuf>) -> Result<ParsedLockfile> {
     let data = fs::read_to_string(&path)?;
+    let lockfile = strip_root_path(path, project_root)?;
 
     for format in LockfileFormat::iter() {
         let parser = format.parser();
@@ -207,11 +215,11 @@ fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { path, packages, format });
+            return Ok(ParsedLockfile { path: lockfile, packages, format });
         }
     }
 
-    Err(anyhow!("Failed to identify type for lockfile {path:?}"))
+    Err(anyhow!("Failed to identify type for lockfile {lockfile:?}"))
 }
 
 /// Filter packages for submission.
@@ -275,6 +283,48 @@ where
     None
 }
 
+/// Modify the provided path to be relative to a given project root or the
+/// current directory.
+///
+/// If a project root is provided and the path starts with this root, the
+/// function will return a path relative to this root. If no project root is
+/// provided, or if the path doesn't start with the project root, the function
+/// will return a path relative to the current directory.
+fn strip_root_path(path: PathBuf, project_root: Option<&PathBuf>) -> Result<PathBuf> {
+    let base: Cow<'_, Path> = match project_root {
+        Some(p) => p.into(),
+        None => env::current_dir()?.into(),
+    };
+
+    relative_path(&base, &path)
+}
+
+/// Computes the relative path from the `from` path to the `to` path.
+///
+/// This function iterates through the components of both paths in tandem. It
+/// skips the common prefix and then, for each remaining component in the
+/// starting directory (`from`), it adds a `..` to the result. Finally, it
+/// appends the unique components of the target path (`to`).
+fn relative_path(from: &Path, to: &Path) -> Result<PathBuf> {
+    let from = from.canonicalize()?;
+    let to = to.canonicalize()?;
+
+    let mut from_components = from.components().peekable();
+    let mut to_components = to.components().peekable();
+
+    while from_components.peek() == to_components.peek() {
+        from_components.next();
+        to_components.next();
+    }
+
+    let mut result = PathBuf::new();
+    while from_components.next().is_some() {
+        result.push("..");
+    }
+    result.extend(to_components);
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs::{self, File};
@@ -310,7 +360,7 @@ mod tests {
         ];
 
         for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(PathBuf::from(file)).unwrap();
+            let parsed = try_get_packages(PathBuf::from(file), None).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }
@@ -356,5 +406,51 @@ mod tests {
         let (_, path) = find_manifest_format(&manifest_path).unwrap();
 
         assert_eq!(path, Some(sibling_lockfile_path));
+    }
+
+    #[test]
+    fn test_relative_path() {
+        // Set up a temporary directory for testing.
+        let tempdir = tempfile::tempdir().unwrap();
+        let tempdir = tempdir.path().canonicalize().unwrap();
+
+        // Create a sample project directory named "sample" inside the "projects"
+        // directory. Also create a "Cargo.lock" file inside the "sample"
+        // directory.
+        let sample_dir = tempdir.join("sample");
+        let lockfile_path = sample_dir.join("Cargo.lock");
+        fs::create_dir_all(&sample_dir).unwrap();
+        File::create(&lockfile_path).unwrap();
+
+        // Change the current directory to the "sample" project directory.
+        let path = relative_path(&sample_dir, &lockfile_path).unwrap();
+        // The path to the lockfile should now be just the filename since it's in the
+        // current directory.
+        assert_eq!(path.as_os_str(), "Cargo.lock");
+
+        // Create a subdirectory named "sub" within the "sample" project directory.
+        let sub_dir = sample_dir.join("sub");
+        fs::create_dir_all(&sub_dir).unwrap();
+
+        // Change the current directory to the new "sub" directory.
+        let rel_lockfile_path = sub_dir.join("../Cargo.lock");
+
+        // Get the relative path from the sub directory to the lockfile in the sample
+        // directory.
+        let path = relative_path(&sample_dir, &rel_lockfile_path).unwrap();
+        // The path to the lockfile should be the same as before since we are looking
+        // relative to the sample directory.
+        assert_eq!(path.as_os_str(), "Cargo.lock");
+
+        // Create another "Cargo.lock" file one level above the "sample" directory.
+        let above_lockfile_path = tempdir.join("Cargo.lock");
+        File::create(above_lockfile_path).unwrap();
+        let rel_lockfile_path = sub_dir.join("../../Cargo.lock");
+
+        // Although the current directory is still "sub", get the relative path to the
+        // lockfile above the "sample" directory.
+        let path = relative_path(&sample_dir, &rel_lockfile_path).unwrap();
+        // The path to the lockfile should be relative to the "sample" directory.
+        assert_eq!(path.as_os_str(), "../Cargo.lock");
     }
 }
