@@ -82,13 +82,10 @@ pub fn parse_lockfile(
     let format = find_lockfile_format(&path, lockfile_type);
     let project_root = project_root.to_owned();
 
-    // Attempt to strip root path
-    let path = strip_root_path(path, &project_root);
-
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
         Some(format) => format,
-        None => return try_get_packages(path),
+        None => return try_get_packages(path, &project_root),
     };
 
     // Parse with the identified parser.
@@ -97,12 +94,12 @@ pub fn parse_lockfile(
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
     if let Some(lockfile) = lockfile {
-        // Attempt to strip root path for identified lockfile
-        let lockfile = strip_root_path(lockfile, &project_root);
-
         // Parse lockfile content.
         let content = fs::read_to_string(&lockfile).map_err(Into::into);
         let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
+
+        // Attempt to strip root path for identified lockfile
+        let lockfile = strip_root_path(lockfile, &project_root);
 
         match packages {
             Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
@@ -207,8 +204,9 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
+fn try_get_packages(path: PathBuf, project_root: &Option<PathBuf>) -> Result<ParsedLockfile> {
     let data = fs::read_to_string(&path)?;
+    let lockfile = strip_root_path(path, project_root);
 
     for format in LockfileFormat::iter() {
         let parser = format.parser();
@@ -217,11 +215,11 @@ fn try_get_packages(path: PathBuf) -> Result<ParsedLockfile> {
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { path, packages, format });
+            return Ok(ParsedLockfile { path: lockfile, packages, format });
         }
     }
 
-    Err(anyhow!("Failed to identify type for lockfile {path:?}"))
+    Err(anyhow!("Failed to identify type for lockfile {lockfile:?}"))
 }
 
 /// Filter packages for submission.
@@ -285,21 +283,52 @@ where
     None
 }
 
-/// Strip root prefix from lockfile paths
+/// Modify the provided path to be relative to a given project root or the
+/// current directory.
+///
+/// If a project root is provided and the path starts with this root, the
+/// function will return a path relative to this root. If no project root is
+/// provided, or if the path doesn't start with the project root, the function
+/// will return a path relative to the current directory.
 fn strip_root_path(path: PathBuf, project_root: &Option<PathBuf>) -> PathBuf {
-    match (project_root, path.is_absolute()) {
-        // Strip project root path when set
-        (Some(base), _) => path.strip_prefix(base).unwrap_or(&path),
+    let canonical_path = path.canonicalize().unwrap_or(path.clone());
+    let canonical_project_root =
+        project_root.as_ref().map(|p| p.canonicalize().unwrap_or(p.clone()));
 
-        // Strip current directory if we have an absolute path but not a project root
-        (None, true) => {
-            let curr_dir = env::current_dir().unwrap_or_else(|_| path.clone());
-            path.strip_prefix(&curr_dir).unwrap_or(&path)
-        },
-
-        (None, false) => &path,
+    // If the canonical path starts with the provided project root, return the
+    // relative path.
+    if let Some(base) = &canonical_project_root {
+        return relative_from_to(base, &canonical_path);
     }
-    .to_path_buf()
+
+    // If there's no project root, return the path relative to the current
+    // directory.
+    let curr_dir = env::current_dir().unwrap_or_default();
+    relative_from_to(&curr_dir, &canonical_path)
+}
+
+/// Calculate a relative path from a starting directory (`from`) to a target
+/// path (`to`).
+///
+/// This function iterates through the components of both paths in tandem. It
+/// skips the common prefix and then, for each remaining component in the
+/// starting directory, it adds a `..` to the result. Finally, it appends the
+/// unique components of the target path.
+fn relative_from_to(from: &Path, to: &Path) -> PathBuf {
+    let mut from_components = from.components().peekable();
+    let mut to_components = to.components().peekable();
+
+    while from_components.peek() == to_components.peek() {
+        from_components.next();
+        to_components.next();
+    }
+
+    let mut result = PathBuf::new();
+    while from_components.next().is_some() {
+        result.push("..");
+    }
+    result.extend(to_components);
+    result
 }
 
 #[cfg(test)]
@@ -337,7 +366,7 @@ mod tests {
         ];
 
         for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(PathBuf::from(file)).unwrap();
+            let parsed = try_get_packages(PathBuf::from(file), &None).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", file);
         }
     }
@@ -383,5 +412,66 @@ mod tests {
         let (_, path) = find_manifest_format(&manifest_path).unwrap();
 
         assert_eq!(path, Some(sibling_lockfile_path));
+    }
+
+    #[test]
+    fn test_relative_path() {
+        // Set up a temporary directory for testing.
+        let tempdir = tempfile::tempdir().unwrap();
+        let tempdir = tempdir.path().canonicalize().unwrap();
+        let curr_dir = env::current_dir().unwrap();
+
+        // Create a parent directory named "projects" within the temp directory.
+        let all_projects = tempdir.join("projects");
+        fs::create_dir_all(&all_projects).unwrap();
+
+        // Create a sample project directory named "sample" inside the "projects"
+        // directory. Also create a "Cargo.lock" file inside the "sample"
+        // directory.
+        let sample_dir = all_projects.join("sample");
+        let lockfile_path = sample_dir.join("Cargo.lock");
+        fs::create_dir_all(&sample_dir).unwrap();
+        File::create(&lockfile_path).unwrap();
+
+        // Change the current directory to the "sample" project directory.
+        env::set_current_dir(&sample_dir).unwrap();
+        let path = strip_root_path(lockfile_path.clone(), &Some(sample_dir.clone()));
+        // The path to the lockfile should now be just the filename since it's in the
+        // current directory.
+        assert_eq!(path.as_os_str(), "Cargo.lock");
+
+        // Create a subdirectory named "sub" within the "sample" project directory.
+        let sub_dir = sample_dir.join("sub");
+        fs::create_dir_all(&sub_dir).unwrap();
+
+        // Change the current directory to the new "sub" directory.
+        env::set_current_dir(&sub_dir).unwrap();
+        let mut rel_lockfile_path = sub_dir.clone();
+        rel_lockfile_path.push("..");
+        rel_lockfile_path.push("Cargo.lock");
+
+        // Get the relative path from the sub directory to the lockfile in the sample
+        // directory.
+        let path = strip_root_path(rel_lockfile_path.clone(), &Some(sample_dir.clone()));
+        // The path to the lockfile should be the same as before since we are looking
+        // relative to the sample directory.
+        assert_eq!(path.as_os_str(), "Cargo.lock");
+
+        // Create another "Cargo.lock" file one level above the "sample" directory.
+        let above_lockfile_path = all_projects.join("Cargo.lock");
+        File::create(above_lockfile_path).unwrap();
+        let mut rel_lockfile_path = sub_dir;
+        rel_lockfile_path.push("..");
+        rel_lockfile_path.push("..");
+        rel_lockfile_path.push("Cargo.lock");
+
+        // Although the current directory is still "sub", get the relative path to the
+        // lockfile above the "sample" directory.
+        let path = strip_root_path(rel_lockfile_path.clone(), &Some(sample_dir.clone()));
+        // The path to the lockfile should be relative to the "sample" directory.
+        assert_eq!(path.as_os_str(), "../Cargo.lock");
+
+        // Restore the original working directory after the test.
+        env::set_current_dir(curr_dir).unwrap();
     }
 }
