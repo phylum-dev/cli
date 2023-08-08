@@ -21,6 +21,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | `gradle`      | `build.gradle`   | [`gradle`][gradle]          |
 | `go`          | `go.mod`         | [`go`][go]                  |
 | `cargo`       | `Cargo.toml`     | [`cargo`][cargo]            |
+| `nugetlock`   | `*.csproj`       | [`dotnet`][dotnet]          |
 
 [npm]: https://nodejs.org
 [yarn]: https://yarnpkg.com
@@ -33,6 +34,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 [gradle]: https://gradle.org
 [go]: https://go.dev
 [cargo]: https://www.rust-lang.org
+[dotnet]: https://dotnet.microsoft.com
 
 For files that can be handled by multiple generators, a fallback is used:
 

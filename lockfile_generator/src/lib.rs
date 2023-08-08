@@ -10,6 +10,7 @@ use serde_json::Error as JsonError;
 
 pub mod bundler;
 pub mod cargo;
+pub mod dotnet;
 pub mod go;
 pub mod gradle;
 pub mod maven;

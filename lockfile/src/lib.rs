@@ -48,8 +48,6 @@ pub enum LockfileFormat {
     #[serde(alias = "maven")]
     Maven,
     Gradle,
-    // This is historically called "nuget" but it's actually for MSBuild project files.
-    // Nuget has its own file formats that are not currently supported.
     #[serde(alias = "nuget")]
     Msbuild,
     NugetLock,
@@ -453,6 +451,11 @@ mod tests {
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {
+                // Skip directories.
+                if lockfile.file_type().unwrap().is_dir() {
+                    continue;
+                }
+
                 let lockfile_path = lockfile.path();
                 let lockfile_content = fs::read_to_string(&lockfile_path).unwrap();
 
