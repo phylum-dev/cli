@@ -4,7 +4,11 @@ use url::{ParseError, Url};
 
 use super::JobId;
 
+/// Phylum API base path.
 const API_PATH: &str = "api/v0/";
+
+/// Locksmith API base path.
+const LOCKSMITH_PATH: &str = "locksmith/v1/";
 
 // This wrapper provides important context to the user when their configuration
 // has a bad URL. Without it, the message can be something like "empty host".
@@ -162,7 +166,12 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
 
 /// GET /.well-known/locksmith-configuration
 pub fn locksmith_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join(".well-known/locksmith-configuration")?)
+    Ok(get_locksmith_path(api_uri)?.join(".well-known/locksmith-configuration")?)
+}
+
+/// GET /tokens
+pub fn list_tokens(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_locksmith_path(api_uri)?.join("tokens")?)
 }
 
 /// POST /reachability/vulnerabilities
@@ -189,6 +198,10 @@ fn parse_base_url(api_uri: &str) -> Result<Url, BaseUriError> {
 
 fn get_api_path(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(parse_base_url(api_uri)?.join(API_PATH)?)
+}
+
+fn get_locksmith_path(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(parse_base_url(api_uri)?.join(LOCKSMITH_PATH)?)
 }
 
 #[cfg(test)]

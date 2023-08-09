@@ -111,6 +111,15 @@ pub struct RejectionSource {
     pub reason: Option<String>,
 }
 
+/// Locksmith token details accessible after creation.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct UserToken {
+    pub name: String,
+    pub creation_time: DateTime<Utc>,
+    pub access_time: Option<DateTime<Utc>>,
+    pub expiry: Option<DateTime<Utc>>,
+}
+
 #[cfg(test)]
 mod tests {
     use phylum_types::types::package::RiskLevel;
