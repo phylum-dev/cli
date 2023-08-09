@@ -227,7 +227,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
 /// Perform vulnerability reachability analysis.
 #[cfg(feature = "vulnreach")]
 async fn vulnreach(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     matches: &clap::ArgMatches,
     packages: Vec<PackageDescriptor>,
     job_id: String,
