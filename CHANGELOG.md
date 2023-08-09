@@ -8,11 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- `phylum auth list-tokens` subcommand to list API tokens
+
 ## [5.6.0] - 2023-08-08
 
 ### Added
 - Generating lockfiles for `*.csproj` files
-- `phylum auth list-tokens` subcommand to list API tokens
 
 ### Changed
 - Include lockfile paths when analyzing projects
