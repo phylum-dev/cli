@@ -28,3 +28,4 @@ Usage: phylum auth [OPTIONS] <COMMAND>
 * [phylum auth status](./phylum_auth_status)
 * [phylum auth set-token](./phylum_auth_set-token)
 * [phylum auth token](./phylum_auth_token)
+* [phylum auth list-tokens](./phylum_auth_list-tokens)
