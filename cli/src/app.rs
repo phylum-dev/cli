@@ -234,6 +234,17 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("bearer")
                             .help("Output the short-lived bearer token for the Phylum API"),
                     ),
+                )
+                .subcommand(
+                    Command::new("list-tokens")
+                        .about("List all tokens associated with the logged-in user")
+                        .arg(
+                            Arg::new("json")
+                                .action(ArgAction::SetTrue)
+                                .short('j')
+                                .long("json")
+                                .help("Produce output in json format (default: false)"),
+                        ),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))

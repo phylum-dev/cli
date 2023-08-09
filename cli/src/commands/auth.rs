@@ -9,6 +9,7 @@ use crate::api::PhylumApi;
 use crate::auth::is_locksmith_token;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
+use crate::format::Format;
 use crate::{auth, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
@@ -140,6 +141,23 @@ pub async fn handle_auth_set_token(
     Ok(ExitCode::Ok)
 }
 
+/// List all tokens associated with the logged-in user.
+pub async fn handle_auth_list_tokens(
+    config: Config,
+    matches: &clap::ArgMatches,
+    timeout: Option<u64>,
+) -> CommandResult {
+    // Create a client with our auth token attached.
+    let api = PhylumApi::new(config, timeout).await?;
+
+    let tokens = api.list_tokens().await?;
+
+    let pretty_print = !matches.get_flag("json");
+    tokens.write_stdout(pretty_print);
+
+    Ok(ExitCode::Ok)
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -165,6 +183,7 @@ pub async fn handle_auth(
         Some(("status", _)) => handle_auth_status(config, timeout).await,
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
         Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
+        Some(("list-tokens", matches)) => handle_auth_list_tokens(config, matches, timeout).await,
         _ => unreachable!("invalid clap configuration"),
     }
 }
