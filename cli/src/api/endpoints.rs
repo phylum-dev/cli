@@ -166,7 +166,7 @@ pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
 
 /// GET /.well-known/locksmith-configuration
 pub fn locksmith_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join(".well-known/locksmith-configuration")?)
+    Ok(get_locksmith_path(api_uri)?.join(".well-known/locksmith-configuration")?)
 }
 
 /// GET /tokens
