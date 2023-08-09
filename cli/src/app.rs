@@ -245,6 +245,14 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("json")
                                 .help("Produce output in json format (default: false)"),
                         ),
+                )
+                .subcommand(
+                    Command::new("revoke-token").about("Revoke an API token").arg(
+                        Arg::new("token-name")
+                            .long("token-name")
+                            .help("Unique token name which identifies the token")
+                            .required(true),
+                    ),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))

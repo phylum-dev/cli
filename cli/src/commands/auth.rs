@@ -158,6 +158,15 @@ pub async fn handle_auth_list_tokens(
     Ok(ExitCode::Ok)
 }
 
+/// Revoke the specified authentication token.
+pub async fn handle_auth_set_token(
+    mut config: Config,
+    matches: &clap::ArgMatches,
+    timeout: Option<u64>,
+) -> CommandResult {
+    todo!()
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
