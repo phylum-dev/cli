@@ -120,6 +120,12 @@ pub struct UserToken {
     pub expiry: Option<DateTime<Utc>>,
 }
 
+/// Request body for `/locksmith/v1/revoke`.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct RevokeTokenRequest<'a> {
+    pub name: &'a str,
+}
+
 #[cfg(test)]
 mod tests {
     use phylum_types::types::package::RiskLevel;

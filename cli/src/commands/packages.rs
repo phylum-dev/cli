@@ -21,7 +21,7 @@ fn parse_package(matches: &ArgMatches) -> Result<PackageSpecifier> {
 }
 
 /// Handle the subcommands for the `package` subcommand.
-pub async fn handle_get_package(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_get_package(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.get_flag("json");
 
     let pkg = parse_package(matches)?;

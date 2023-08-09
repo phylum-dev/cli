@@ -64,7 +64,7 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
         .uri()
         .query()
         .map(|v| url::form_urlencoded::parse(v.as_bytes()).into_owned().collect())
-        .unwrap_or_else(HashMap::new);
+        .unwrap_or_default();
 
     // Check that XSRF prevention state was properly returned.
     match query_parameters.get("state") {

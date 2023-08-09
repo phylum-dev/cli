@@ -64,7 +64,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     for lockfile in lockfiles {
         let parsed_lockfile =
             parse_lockfile(lockfile.path, project_root, Some(&lockfile.lockfile_type))?;
-        pkgs.extend(parsed_lockfile.into_iter());
+        pkgs.extend(parsed_lockfile);
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;

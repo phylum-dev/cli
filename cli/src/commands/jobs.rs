@@ -24,7 +24,7 @@ use crate::{config, print_user_success, print_user_warning};
 
 /// Output analysis job results.
 pub async fn print_job_status(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     job_id: &JobId,
     ignored_packages: impl Into<Vec<PackageDescriptor>>,
     pretty: bool,
@@ -55,7 +55,7 @@ pub async fn print_job_status(
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_history(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let pretty_print = !matches.get_flag("json");
 
     if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
@@ -87,7 +87,7 @@ pub async fn handle_history(api: &mut PhylumApi, matches: &clap::ArgMatches) -> 
 
 /// Handles submission of packages to the system for analysis and
 /// displays summary information about the submitted package(s)
-pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     let mut ignored_packages: Vec<PackageDescriptor> = vec![];
     let mut packages = vec![];
     let mut synch = false; // get status after submission
@@ -124,7 +124,7 @@ pub async fn handle_submission(api: &mut PhylumApi, matches: &clap::ArgMatches) 
                 );
             }
 
-            packages.extend(res.into_iter());
+            packages.extend(res);
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
@@ -281,7 +281,7 @@ impl JobsProject {
     ///
     /// Assumes that the clap `matches` has a `project` and `group` arguments
     /// option.
-    async fn new(api: &mut PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
+    async fn new(api: &PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
         let current_project = phylum_project::get_current_project();
         let lockfiles = config::lockfiles(matches, current_project.as_ref())?;
 

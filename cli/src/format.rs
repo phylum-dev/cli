@@ -322,7 +322,9 @@ impl Format for Vec<HistoryJob> {
 impl Format for Vec<UserToken> {
     fn pretty<W: Write>(&self, writer: &mut W) {
         // Maximum length of the token name column.
-        const MAX_TOKEN_WIDTH: usize = 30;
+        //
+        // We use `48` here since it is the default CLI token length.
+        const MAX_TOKEN_WIDTH: usize = 48;
 
         let table = format_table::<fn(&UserToken) -> String, _>(self, &[
             ("Name", |token| print::truncate(&token.name, MAX_TOKEN_WIDTH).into_owned()),

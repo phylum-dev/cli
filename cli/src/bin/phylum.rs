@@ -142,15 +142,11 @@ async fn handle_commands() -> CommandResult {
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
-        "project" => project::handle_project(&mut Spinner::wrap(api).await?, sub_matches).await,
-        "package" => {
-            packages::handle_get_package(&mut Spinner::wrap(api).await?, sub_matches).await
-        },
-        "history" => jobs::handle_history(&mut Spinner::wrap(api).await?, sub_matches).await,
-        "group" => group::handle_group(&mut Spinner::wrap(api).await?, sub_matches).await,
-        "analyze" | "batch" => {
-            jobs::handle_submission(&mut Spinner::wrap(api).await?, &matches).await
-        },
+        "project" => project::handle_project(&Spinner::wrap(api).await?, sub_matches).await,
+        "package" => packages::handle_get_package(&Spinner::wrap(api).await?, sub_matches).await,
+        "history" => jobs::handle_history(&Spinner::wrap(api).await?, sub_matches).await,
+        "group" => group::handle_group(&Spinner::wrap(api).await?, sub_matches).await,
+        "analyze" | "batch" => jobs::handle_submission(&Spinner::wrap(api).await?, &matches).await,
         "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
         "status" => status::handle_status(sub_matches).await,
 

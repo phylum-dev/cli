@@ -249,9 +249,8 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("revoke-token").about("Revoke an API token").arg(
                         Arg::new("token-name")
-                            .long("token-name")
-                            .help("Unique token name which identifies the token")
-                            .required(true),
+                            .action(ArgAction::Append)
+                            .help("Unique token names which identify the tokens"),
                     ),
                 ),
         )

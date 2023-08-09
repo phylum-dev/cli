@@ -33,7 +33,7 @@ use crate::auth::{
 use crate::config::{AuthInfo, Config};
 use crate::types::{
     HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, UserToken,
+    PolicyEvaluationResponseRaw, RevokeTokenRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -430,6 +430,14 @@ impl PhylumApi {
     pub async fn list_tokens(&self) -> Result<Vec<UserToken>> {
         let url = endpoints::list_tokens(&self.config.connection.uri)?;
         self.get(url).await
+    }
+
+    /// Revoke a locksmith token.
+    pub async fn revoke_token(&self, name: &str) -> Result<()> {
+        let url = endpoints::revoke_token(&self.config.connection.uri)?;
+        let body = RevokeTokenRequest { name };
+        self.send_request_raw(Method::POST, url, Some(body)).await?;
+        Ok(())
     }
 
     /// Get reachable vulnerabilities.
