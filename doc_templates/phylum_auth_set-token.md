@@ -11,9 +11,9 @@ hidden: false
 
 ```sh
 # Supply the token directly on the command line
-$ phylum auth set-token phylum-cli-2781cedc-1d1d-40a8-a508-c56595c015b7
+$ phylum auth set-token ph0_UyqKk8yRmuO4gRx52os3obQevBluJTGsepQw0bLRmX0
 
 # Supply the token on stdin
 $ phylum auth set-token
-phylum-cli-2781cedc-1d1d-40a8-a508-c56595c015b7
+ph0_UyqKk8yRmuO4gRx52os3obQevBluJTGsepQw0bLRmX0
 ```
