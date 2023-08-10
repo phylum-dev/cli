@@ -8,12 +8,12 @@ hidden: false
 Set the current authentication token
 
 ```sh
-Usage: phylum auth set-token [OPTIONS] [token]
+Usage: phylum auth set-token [OPTIONS] [TOKEN]
 ```
 
 ### Arguments
 
-
+[TOKEN]
 &emsp; Authentication token to store (read from stdin if omitted)
 
 ### Options

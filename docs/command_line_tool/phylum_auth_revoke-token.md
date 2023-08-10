@@ -7,12 +7,12 @@ hidden: false
 Revoke an API token
 
 ```sh
-Usage: phylum auth revoke-token [OPTIONS] [token-name]...
+Usage: phylum auth revoke-token [OPTIONS] [TOKEN_NAME]...
 ```
 
 ### Arguments
 
-
+[TOKEN_NAME]
 &emsp; Unique token names which identify the tokens
 
 ### Options

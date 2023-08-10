@@ -13,7 +13,7 @@ Usage: phylum auth register [OPTIONS]
 
 ### Options
 
--n, --token-name
+-n, --token-name <token-name>
 &emsp; Unique name for the new token that will be created
 
 -v, --verbose...
