@@ -16,7 +16,7 @@ Usage: phylum auth login [OPTIONS]
 -r, --reauth
 &emsp; Force a login prompt
 
--n, --token-name
+-n, --token-name <token-name>
 &emsp; Unique name for the new token that will be created
 
 -v, --verbose...

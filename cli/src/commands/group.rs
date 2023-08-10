@@ -10,7 +10,7 @@ use crate::format::Format;
 use crate::{print_user_failure, print_user_success, print_user_warning};
 
 /// Handle `phylum group` subcommand.
-pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_group(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     match matches.subcommand() {
         Some(("list", matches)) => handle_group_list(api, matches).await,
         Some(("create", matches)) => handle_group_create(api, matches).await,
@@ -31,7 +31,7 @@ pub async fn handle_group(api: &mut PhylumApi, matches: &ArgMatches) -> CommandR
 }
 
 /// Handle `phylum group create` subcommand.
-pub async fn handle_group_create(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_group_create(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     let group_name = matches.get_one::<String>("group_name").unwrap();
     match api.create_group(group_name).await {
         Ok(response) => {
@@ -47,7 +47,7 @@ pub async fn handle_group_create(api: &mut PhylumApi, matches: &ArgMatches) -> C
 }
 
 /// Handle `phylum group delete` subcommand.
-pub async fn handle_group_delete(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_group_delete(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     let group_name = matches.get_one::<String>("group_name").unwrap();
     api.delete_group(group_name).await?;
 
@@ -57,7 +57,7 @@ pub async fn handle_group_delete(api: &mut PhylumApi, matches: &ArgMatches) -> C
 }
 
 /// Handle `phylum group list` subcommand.
-pub async fn handle_group_list(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_group_list(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     let response = api.get_groups_list().await?;
 
     let pretty = !matches.get_flag("json");
@@ -68,7 +68,7 @@ pub async fn handle_group_list(api: &mut PhylumApi, matches: &ArgMatches) -> Com
 
 /// Handle `phylum group member add` subcommand.
 pub async fn handle_member_add(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     matches: &ArgMatches,
     group: &str,
 ) -> CommandResult {
@@ -84,7 +84,7 @@ pub async fn handle_member_add(
 
 /// Handle `phylum group member remove` subcommand.
 pub async fn handle_member_remove(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     matches: &ArgMatches,
     group: &str,
 ) -> CommandResult {
@@ -100,7 +100,7 @@ pub async fn handle_member_remove(
 
 /// Handle `phylum group member` subcommand.
 pub async fn handle_member_list(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     matches: &ArgMatches,
     group: &str,
 ) -> CommandResult {
@@ -113,7 +113,7 @@ pub async fn handle_member_list(
 }
 
 /// Handle `phylum group transfer` subcommand.
-pub async fn handle_group_transfer(api: &mut PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_group_transfer(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
     let group = matches.get_one::<String>("group").unwrap();
     let user = matches.get_one::<String>("user").unwrap();
 

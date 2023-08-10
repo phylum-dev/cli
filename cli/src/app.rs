@@ -221,6 +221,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("set-token").about("Set the current authentication token").arg(
                         Arg::new("token")
+                            .value_name("TOKEN")
                             .action(ArgAction::Set)
                             .required(false)
                             .help("Authentication token to store (read from stdin if omitted)"),
@@ -245,6 +246,14 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("json")
                                 .help("Produce output in json format (default: false)"),
                         ),
+                )
+                .subcommand(
+                    Command::new("revoke-token").about("Revoke an API token").arg(
+                        Arg::new("token-name")
+                            .value_name("TOKEN_NAME")
+                            .action(ArgAction::Append)
+                            .help("Unique token names which identify the tokens"),
+                    ),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))

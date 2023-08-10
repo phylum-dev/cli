@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
+use dialoguer::MultiSelect;
 use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
@@ -10,7 +12,7 @@ use crate::auth::is_locksmith_token;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::format::Format;
-use crate::{auth, print_user_success, print_user_warning};
+use crate::{auth, print_user_failure, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
@@ -158,6 +160,54 @@ pub async fn handle_auth_list_tokens(
     Ok(ExitCode::Ok)
 }
 
+/// Revoke the specified authentication token.
+pub async fn handle_auth_revoke_token(
+    config: Config,
+    matches: &clap::ArgMatches,
+    timeout: Option<u64>,
+) -> CommandResult {
+    // Create a client with our auth token attached.
+    let api = PhylumApi::new(config, timeout).await?;
+
+    // If no name is provided, we show a simple selection UI.
+    let names = match matches.get_many::<String>("token-name") {
+        Some(names) => names.into_iter().map(Cow::Borrowed).collect(),
+        None => {
+            // Get all available tokens from Locksmith API.
+            let tokens = api.list_tokens().await?;
+            let mut token_names = tokens.into_iter().map(|token| token.name).collect::<Vec<_>>();
+
+            // Prompt user to select all tokens.
+            let prompt = "[SPACE] Select  [ENTER] Confirm\nAPI tokens which will be revoked";
+            let indices = MultiSelect::new().with_prompt(prompt).items(&token_names).interact()?;
+
+            // Get names for all selected tokens.
+            indices
+                .into_iter()
+                .rev()
+                .map(|index| Cow::Owned(token_names.swap_remove(index)))
+                .collect::<Vec<_>>()
+        },
+    };
+
+    println!();
+
+    // Indicate to user why no action was taken.
+    if names.is_empty() {
+        print_user_warning!("Skipping revocation: No token selected");
+    }
+
+    // Revoke all selected tokens.
+    for name in names {
+        match api.revoke_token(&name).await {
+            Ok(()) => print_user_success!("Successfully revoked token {name:?}"),
+            Err(err) => print_user_failure!("Could not revoke token {name:?}: {err}"),
+        }
+    }
+
+    Ok(ExitCode::Ok)
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -184,6 +234,7 @@ pub async fn handle_auth(
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
         Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
         Some(("list-tokens", matches)) => handle_auth_list_tokens(config, matches, timeout).await,
+        Some(("revoke-token", matches)) => handle_auth_revoke_token(config, matches, timeout).await,
         _ => unreachable!("invalid clap configuration"),
     }
 }

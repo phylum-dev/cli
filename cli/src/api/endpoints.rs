@@ -174,6 +174,11 @@ pub fn list_tokens(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_locksmith_path(api_uri)?.join("tokens")?)
 }
 
+/// POST /revoke
+pub fn revoke_token(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_locksmith_path(api_uri)?.join("revoke")?)
+}
+
 /// POST /reachability/vulnerabilities
 pub fn vulnreach(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(parse_base_url(api_uri)?.join("reachability/vulnerabilities")?)

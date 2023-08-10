@@ -133,12 +133,16 @@ fn generate_argument(arg: &Arg) -> Option<String> {
     }
 
     // Add arguments.
-    let min_required = arg.get_num_args().map_or(0, |num| num.min_values());
-    let all_optional = arg.is_positional() && !arg.is_required_set();
-    if let Some(value_names) = arg.get_value_names() {
+    if arg.get_num_args().map_or(false, |range| range.max_values() > 0) {
+        let default_name = [arg.get_id().to_string().into()];
+        let value_names = arg.get_value_names().unwrap_or(&default_name);
+
         if !markdown.is_empty() {
             markdown += " ";
         }
+
+        let min_required = arg.get_num_args().map_or(0, |num| num.min_values());
+        let all_optional = arg.is_positional() && !arg.is_required_set();
 
         let delimiter = arg.get_value_delimiter().unwrap_or(' ');
 

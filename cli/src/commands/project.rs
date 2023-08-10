@@ -15,7 +15,7 @@ use crate::{print_user_failure, print_user_success};
 
 /// List the projects in this account.
 pub async fn get_project_list(
-    api: &mut PhylumApi,
+    api: &PhylumApi,
     pretty_print: bool,
     group: Option<&str>,
 ) -> Result<()> {
@@ -27,7 +27,7 @@ pub async fn get_project_list(
 }
 
 /// Handle the project subcommand.
-pub async fn handle_project(api: &mut PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_project(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
     if let Some(matches) = matches.subcommand_matches("create") {
         let name = matches.get_one::<String>("name").unwrap();
         let group = matches.get_one::<String>("group").cloned();

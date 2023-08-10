@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - `phylum auth list-tokens` subcommand to list API tokens
+- `phylum auth revoke-token` subcommand to revoke API tokens
 
 ## [5.6.0] - 2023-08-08
 
