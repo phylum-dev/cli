@@ -182,13 +182,11 @@ pub async fn handle_auth_revoke_token(
             let indices = MultiSelect::new().with_prompt(prompt).items(&token_names).interact()?;
 
             // Get names for all selected tokens.
-            let tokens = indices
+            indices
                 .into_iter()
                 .rev()
                 .map(|index| Cow::Owned(token_names.swap_remove(index)))
-                .collect::<Vec<_>>();
-
-            tokens
+                .collect::<Vec<_>>()
         },
     };
 
