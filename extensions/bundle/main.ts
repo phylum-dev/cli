@@ -121,7 +121,14 @@ async function checkDryRun(subcommand: string, args: string[]) {
       args: [subcommand, "--skip-install", ...args],
       exceptions: {
         run: ["/bin", "/usr/bin", "/usr/local/bin"],
-        read: ["./", "/dev/urandom", "/etc/passwd", "/etc/gemrc", "/proc", "~/.bundle"],
+        read: [
+          "./",
+          "/dev/urandom",
+          "/etc/passwd",
+          "/etc/gemrc",
+          "/proc",
+          "~/.bundle",
+        ],
         write: ["./", "~/.bundle"],
         net: true,
       },
@@ -130,7 +137,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     // Ensure lockfile update was successful.
     if (!status.success) {
       console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-      await abort(status.code);
+      await abort(status.code ?? 255);
     }
   }
 
@@ -149,7 +156,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Lockfile updated successfully.\n`);
   console.log(`[${green("phylum")}] Analyzing packages…`);
 
-  if (lockfile.packages.length === 0) {
+  if (!lockfile || lockfile.packages.length === 0) {
     console.log(`[${green("phylum")}] No packages found in lockfile.\n`);
     return;
   }

@@ -1,7 +1,7 @@
 # Phylum Bundler extension
 
-A [Phylum CLI] extension that checks your [bundle] dependencies through
-[Phylum] before installing them.
+A [Phylum CLI] extension that checks your [bundle] dependencies through [Phylum]
+before installing them.
 
 ## Installation
 
