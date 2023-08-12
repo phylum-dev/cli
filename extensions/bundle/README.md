@@ -33,8 +33,8 @@ bundle add my-package  # This will be checked by Phylum!
 
 ## How it works
 
-When invoking `phylum bundle`, subcommands that would modify the `Gemfile`, or
-`Gemfile.lock` files will trigger a Phylum analysis.
+When invoking `phylum bundle`, subcommands that would install gems will trigger
+a Phylum analysis first.
 
 - If the analysis is successful, the corresponding changes will be applied.
 - If the analysis is unsuccessful because some of the new dependencies don't
