@@ -115,8 +115,9 @@ async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   // Update lockfile if a new dependency is being added.
+  let status;
   if ("add".startsWith(subcommand)) {
-    const status = PhylumApi.runSandboxed({
+    status = PhylumApi.runSandboxed({
       cmd: "bundle",
       args: [subcommand, "--skip-install", ...args],
       exceptions: {
@@ -133,12 +134,30 @@ async function checkDryRun(subcommand: string, args: string[]) {
         net: true,
       },
     });
+  } else {
+    status = PhylumApi.runSandboxed({
+      cmd: "bundle",
+      args: ["lock"],
+      exceptions: {
+        run: ["/bin", "/usr/bin", "/usr/local/bin"],
+        read: [
+          "./",
+          "/dev/urandom",
+          "/etc/passwd",
+          "/etc/gemrc",
+          "/proc",
+          "~/.bundle",
+        ],
+        write: ["./", "~/.bundle"],
+        net: true,
+      },
+    });
+  }
 
-    // Ensure lockfile update was successful.
-    if (!status.success) {
-      console.error(`[${red("phylum")}] Lockfile update failed.\n`);
-      await abort(status.code ?? 255);
-    }
+  // Ensure lockfile update was successful.
+  if (!status.success) {
+    console.error(`[${red("phylum")}] Lockfile update failed.\n`);
+    await abort(status.code ?? 255);
   }
 
   let lockfile;
