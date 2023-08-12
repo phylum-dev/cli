@@ -21,14 +21,14 @@ phylum extension install cli/extensions/bundle
 Prepend `phylum` to your `bundle` command invocations:
 
 ```console
-phylum bundle install my-package  # This will be checked by Phylum!
+phylum bundle add my-package  # This will be checked by Phylum!
 ```
 
 Or set up an alias in your shell to make it transparent:
 
 ```console
 alias bundle="phylum bundle"
-bundle install my-package  # This will be checked by Phylum!
+bundle add my-package  # This will be checked by Phylum!
 ```
 
 ## How it works
