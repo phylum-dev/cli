@@ -218,23 +218,21 @@ impl ModuleLoader for ExtensionsModuleLoader {
 
 impl SourceMapGetter for ExtensionsModuleLoader {
     fn get_source_map(&self, file_name: &str) -> Option<Vec<u8>> {
-        let transpiled = self.transpiler.cache.get(file_name)?;
+        let transpiled = self.transpiler.transpiled_cache.get(file_name)?;
         transpiled.source_map.clone().map(|map| map.into_bytes())
     }
 
     fn get_source_line(&self, file_name: &str, line_number: usize) -> Option<String> {
-        let source_map = self.get_source_map(file_name)?;
-
-        let text = String::from_utf8(source_map).ok()?;
-
-        text.lines().nth(line_number).map(|line| line.to_owned())
+        let source = self.transpiler.source_cache.get(file_name)?;
+        source.lines().nth(line_number).map(|line| line.to_owned())
     }
 }
 
 /// Module transpilation cache.
 #[derive(Default)]
 struct Transpiler {
-    cache: DashMap<String, TranspiledSource>,
+    transpiled_cache: DashMap<String, TranspiledSource>,
+    source_cache: DashMap<String, String>,
 }
 
 impl Transpiler {
@@ -252,10 +250,15 @@ impl Transpiler {
         let specifier = specifier.into();
 
         // Load module if it is not in the cache.
-        if !self.cache.contains_key(&specifier) {
+        if !self.transpiled_cache.contains_key(&specifier) {
+            let code = code.into();
+
+            // Add the original code to the cache.
+            self.source_cache.insert(specifier.clone(), code.clone());
+
             // Parse module.
             let parsed = deno_ast::parse_module(ParseParams {
-                text_info: SourceTextInfo::from_string(code.into()),
+                text_info: SourceTextInfo::from_string(code),
                 specifier: specifier.clone(),
                 capture_tokens: false,
                 scope_analysis: false,
@@ -268,11 +271,11 @@ impl Transpiler {
             let transpiled = parsed.transpile(&options)?;
 
             // Insert into our cache.
-            self.cache.insert(specifier.clone(), transpiled);
+            self.transpiled_cache.insert(specifier.clone(), transpiled);
         }
 
         // Clone fields manually, since derive is missing.
-        let transpiled = self.cache.get(&specifier).unwrap();
+        let transpiled = self.transpiled_cache.get(&specifier).unwrap();
         Ok(TranspiledSource {
             source_map: transpiled.source_map.clone(),
             text: transpiled.text.clone(),
