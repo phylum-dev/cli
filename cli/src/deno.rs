@@ -6,11 +6,12 @@ use std::rc::Rc;
 
 use anyhow::{anyhow, Context, Error, Result};
 use console::style;
-use deno_ast::{MediaType, ParseParams, SourceTextInfo};
+use dashmap::DashMap;
+use deno_ast::{EmitOptions, MediaType, ParseParams, SourceTextInfo, TranspiledSource};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
     self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
-    ResolutionKind,
+    ResolutionKind, SourceMapGetter,
 };
 use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
@@ -55,9 +56,13 @@ pub async fn run(
         ..Default::default()
     };
 
+    let module_loader = Rc::new(ExtensionsModuleLoader::new(extension.path()));
+    let source_map_getter: Box<dyn SourceMapGetter> = Box::new(module_loader.clone());
+
     let options = WorkerOptions {
+        module_loader,
         bootstrap,
-        module_loader: Rc::new(ExtensionsModuleLoader::new(extension.path())),
+        source_map_getter: Some(source_map_getter),
         extensions: vec![phylum_api],
         ..Default::default()
     };
@@ -103,11 +108,12 @@ fn print_js_error(error: Error) -> CommandResult {
 /// See https://github.com/denoland/deno/blob/main/core/examples/ts_module_loader.rs.
 struct ExtensionsModuleLoader {
     extension_path: Rc<PathBuf>,
+    transpiler: Rc<Transpiler>,
 }
 
 impl ExtensionsModuleLoader {
     fn new(extension_path: PathBuf) -> Self {
-        Self { extension_path: Rc::new(extension_path) }
+        Self { extension_path: Rc::new(extension_path), transpiler: Rc::new(Transpiler::new()) }
     }
 
     async fn load_from_filesystem(extension_path: &Path, path: &Url) -> Result<String> {
@@ -158,11 +164,12 @@ impl ModuleLoader for ExtensionsModuleLoader {
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
         let extension_path = self.extension_path.clone();
+        let transpiler = self.transpiler.clone();
 
         Box::pin(async move {
             // Inject Phylum API module.
             if module_specifier.as_str() == "deno:phylum" {
-                return phylum_module();
+                return phylum_module(&transpiler);
             }
 
             // Determine source file type.
@@ -199,7 +206,9 @@ impl ModuleLoader for ExtensionsModuleLoader {
             };
 
             if should_transpile {
-                code = transpile(module_specifier.to_string(), code, media_type)?;
+                let transpiled =
+                    transpiler.transpile(module_specifier.to_string(), code, media_type)?;
+                code = transpiled.text.clone();
             }
 
             Ok(ModuleSource::new(module_type, code.into(), &module_specifier))
@@ -207,27 +216,76 @@ impl ModuleLoader for ExtensionsModuleLoader {
     }
 }
 
-/// Transpile code to JavaScript.
-fn transpile(
-    specifier: impl Into<String>,
-    code: impl Into<String>,
-    media_type: MediaType,
-) -> Result<String> {
-    let parsed = deno_ast::parse_module(ParseParams {
-        text_info: SourceTextInfo::from_string(code.into()),
-        specifier: specifier.into(),
-        capture_tokens: false,
-        scope_analysis: false,
-        maybe_syntax: None,
-        media_type,
-    })?;
-    Ok(parsed.transpile(&Default::default())?.text)
+impl SourceMapGetter for ExtensionsModuleLoader {
+    fn get_source_map(&self, file_name: &str) -> Option<Vec<u8>> {
+        let transpiled = self.transpiler.cache.get(file_name)?;
+        transpiled.source_map.clone().map(|map| map.into_bytes())
+    }
+
+    fn get_source_line(&self, file_name: &str, line_number: usize) -> Option<String> {
+        let source_map = self.get_source_map(file_name)?;
+
+        let text = String::from_utf8(source_map).ok()?;
+
+        text.lines().nth(line_number).map(|line| line.to_owned())
+    }
+}
+
+/// Module transpilation cache.
+#[derive(Default)]
+struct Transpiler {
+    cache: DashMap<String, TranspiledSource>,
+}
+
+impl Transpiler {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    /// Transpile code to JavaScript.
+    fn transpile(
+        &self,
+        specifier: impl Into<String>,
+        code: impl Into<String>,
+        media_type: MediaType,
+    ) -> Result<TranspiledSource> {
+        let specifier = specifier.into();
+
+        // Load module if it is not in the cache.
+        if !self.cache.contains_key(&specifier) {
+            // Parse module.
+            let parsed = deno_ast::parse_module(ParseParams {
+                text_info: SourceTextInfo::from_string(code.into()),
+                specifier: specifier.clone(),
+                capture_tokens: false,
+                scope_analysis: false,
+                maybe_syntax: None,
+                media_type,
+            })?;
+
+            // Transpile to JavaScript.
+            let options = EmitOptions { inline_source_map: false, ..EmitOptions::default() };
+            let transpiled = parsed.transpile(&options)?;
+
+            // Insert into our cache.
+            self.cache.insert(specifier.clone(), transpiled);
+        }
+
+        // Clone fields manually, since derive is missing.
+        let transpiled = self.cache.get(&specifier).unwrap();
+        Ok(TranspiledSource {
+            source_map: transpiled.source_map.clone(),
+            text: transpiled.text.clone(),
+        })
+    }
 }
 
 /// Load the internal Phylum API module
-fn phylum_module() -> Result<ModuleSource> {
+fn phylum_module(transpiler: &Transpiler) -> Result<ModuleSource> {
     let module_url = ModuleSpecifier::parse("deno:phylum").unwrap();
-    let code = transpile(module_url.as_str(), EXTENSION_API, MediaType::TypeScript)?;
+    let transpiled =
+        transpiler.transpile(module_url.as_str(), EXTENSION_API, MediaType::TypeScript)?;
+    let code = transpiled.text.clone();
 
     Ok(ModuleSource::new(ModuleType::JavaScript, code.into(), &module_url))
 }
