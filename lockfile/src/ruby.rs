@@ -90,4 +90,10 @@ mod tests {
             assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
         }
     }
+
+    #[test]
+    fn empty_lockfile() {
+        let pkgs = GemLock.parse(include_str!("../../tests/fixtures/Gemfile.empty.lock")).unwrap();
+        assert!(pkgs.is_empty());
+    }
 }
