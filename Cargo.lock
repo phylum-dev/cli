@@ -3622,6 +3622,7 @@ dependencies = [
  "cidr",
  "clap",
  "console",
+ "dashmap",
  "deno_ast",
  "deno_core",
  "deno_runtime",
