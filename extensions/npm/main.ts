@@ -203,8 +203,8 @@ async function checkDryRun(subcommand: string, args: string[]) {
   } else {
     // Run just install if no new package is added.
     //
-    // This is necessary since `update` and `remove` do not have
-    // `package-lock-only` and/or `ignore-scripts` options.
+    // This is necessary since `update` does not have the `package-lock-only`
+    // and `ignore-scripts` options.
     const cmd = new Deno.Command("npm", {
       args: [
         "install",
