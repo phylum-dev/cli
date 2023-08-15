@@ -1,0 +1,10 @@
+name = "bundle"
+description = "Bundler package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+write = ["./", "/tmp", "~/.bundle"]
+read = true
+run = true
+net = true
+unsandboxed_run = ["bundle"]
