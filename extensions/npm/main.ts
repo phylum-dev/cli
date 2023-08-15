@@ -74,6 +74,7 @@ if (
     "udpate".startsWith(Deno.args[0]) ||
     "upgrade".startsWith(Deno.args[0]) ||
     "unlink".startsWith(Deno.args[0]) ||
+    "uninstall".startsWith(Deno.args[0]) ||
     "remove".startsWith(Deno.args[0]) ||
     "rm".startsWith(Deno.args[0])
   )
@@ -181,7 +182,10 @@ async function checkDryRun(subcommand: string, args: string[]) {
   if (
     "install".startsWith(subcommand) ||
     "isntall".startsWith(subcommand) ||
-    "add".startsWith(subcommand)
+    "add".startsWith(subcommand) ||
+    "update".startsWith(subcommand) ||
+    "udpate".startsWith(subcommand) ||
+    "upgrade".startsWith(subcommand)
   ) {
     // Run the command without installation if a new package is installed.
     const cmd = new Deno.Command("npm", {
@@ -215,7 +219,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   }
 
   // Ensure lockfile update was successful.
-  if (status && !status.success) {
+  if (!status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
     await abort(status.code);
   }
