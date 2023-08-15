@@ -69,7 +69,7 @@ if (firstSubcommand > 0) {
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
-  !["add", "install", "up", "dedupe"].includes(Deno.args[0])
+  !["add", "install", "up", "dedupe", "remove"].includes(Deno.args[0])
 ) {
   const cmd = new Deno.Command("yarn", { args: Deno.args });
   const status = await cmd.spawn().status;
@@ -96,7 +96,7 @@ await packageLockBackup.backup();
 const manifestBackup = new FileBackup(root + "/package.json");
 await manifestBackup.backup();
 
-// Analyze new dependencies with phylum before install/update.
+// Analyze new dependencies with phylum.
 try {
   await checkDryRun();
 } catch (e) {
