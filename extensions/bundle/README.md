@@ -33,7 +33,7 @@ bundle add my-package  # This will be checked by Phylum!
 
 ## How it works
 
-Wher running the package manager through this extension, subcommands which would
+When running the package manager through this extension, subcommands which would
 install new packages will trigger a Phylum analysis first. Once that analysis
 passes Phylum's default policy, the installation is performed. If it did not
 pass the analysis, the command will return early with an error.
