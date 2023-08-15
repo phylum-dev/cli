@@ -69,6 +69,7 @@ if (
   !(
     "install".startsWith(Deno.args[0]) ||
     "update".startsWith(Deno.args[0]) ||
+    "remove".startsWith(Deno.args[0]) ||
     "add".startsWith(Deno.args[0])
   )
 ) {
@@ -95,7 +96,7 @@ await packageLockBackup.backup();
 const manifestBackup = new FileBackup(root + "/Gemfile");
 await manifestBackup.backup();
 
-// Analyze new dependencies with phylum before install/update.
+// Analyze new dependencies with phylum.
 try {
   await checkDryRun(Deno.args[0], Deno.args.slice(1));
 } catch (e) {
