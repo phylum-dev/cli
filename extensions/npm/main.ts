@@ -226,7 +226,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     await Deno.stat("./npm-shrinkwrap.json");
     lockfilePath = "./npm-shrinkwrap.json";
   } catch (_e) {
-      //
+    //
   }
 
   let lockfile;
