@@ -4,8 +4,8 @@ use std::str::FromStr;
 use anyhow::{anyhow, bail, Context};
 use nom::error::convert_error;
 use nom::Finish;
-use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
+use purl::GenericPurl;
 use serde::Deserialize;
 use thiserror::Error;
 use urlencoding::decode;
@@ -78,9 +78,9 @@ fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
 }
 
 fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Package> {
-    let purl = PackageUrl::from_str(pkg_url)?;
+    let purl = GenericPurl::<String>::from_str(pkg_url)?;
 
-    let package_type = PackageType::from_str(purl.ty())
+    let package_type = PackageType::from_str(purl.package_type())
         .or_else(|_| type_from_url(&pkg_info.download_location))
         .context(UnknownEcosystem)?;
 
@@ -106,7 +106,7 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
             })),
             "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
             "vcs_url" => {
-                if value.as_ref().starts_with("git+") {
+                if value.starts_with("git+") {
                     Some(PackageVersion::Git(value.to_string()))
                 } else {
                     None
