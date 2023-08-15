@@ -69,8 +69,13 @@ if (
   !(
     "install".startsWith(Deno.args[0]) ||
     "isntall".startsWith(Deno.args[0]) ||
+    "add".startsWith(Deno.args[0]) ||
     "update".startsWith(Deno.args[0]) ||
-    "udpate".startsWith(Deno.args[0])
+    "udpate".startsWith(Deno.args[0]) ||
+    "upgrade".startsWith(Deno.args[0]) ||
+    "unlink".startsWith(Deno.args[0]) ||
+    "remove".startsWith(Deno.args[0]) ||
+    "rm".startsWith(Deno.args[0])
   )
 ) {
   const cmd = new Deno.Command("npm", { args: Deno.args });
@@ -171,21 +176,46 @@ if (!output.success) {
 async function checkDryRun(subcommand: string, args: string[]) {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  const cmd = new Deno.Command("npm", {
-    args: [
-      subcommand,
-      "--package-lock-only",
-      "--ignore-scripts",
-      ...args,
-    ],
-    stdout: "inherit",
-    stderr: "inherit",
-    stdin: "inherit",
-  });
-  const status = await cmd.spawn().status;
+  // Ensure lockfile is up to date.
+  let status;
+  if (
+    "install".startsWith(subcommand) ||
+    "isntall".startsWith(subcommand) ||
+    "add".startsWith(subcommand)
+  ) {
+    // Run the command without installation if a new package is installed.
+    const cmd = new Deno.Command("npm", {
+      args: [
+        subcommand,
+        "--package-lock-only",
+        "--ignore-scripts",
+        ...args,
+      ],
+      stdout: "inherit",
+      stderr: "inherit",
+      stdin: "inherit",
+    });
+    status = await cmd.spawn().status;
+  } else {
+    // Run just install if no new package is added.
+    //
+    // This is necessary since `update` and `remove` do not have
+    // `package-lock-only` and/or `ignore-scripts` options.
+    const cmd = new Deno.Command("npm", {
+      args: [
+        "install",
+        "--package-lock-only",
+        "--ignore-scripts",
+      ],
+      stdout: "inherit",
+      stderr: "inherit",
+      stdin: "inherit",
+    });
+    status = await cmd.spawn().status;
+  }
 
   // Ensure lockfile update was successful.
-  if (!status.success) {
+  if (status && !status.success) {
     console.error(`[${red("phylum")}] Lockfile update failed.\n`);
     await abort(status.code);
   }
@@ -195,9 +225,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   try {
     await Deno.stat("./npm-shrinkwrap.json");
     lockfilePath = "./npm-shrinkwrap.json";
-  } catch (_e) {
-    //
-  }
+  } catch (_e) {}
 
   let lockfile;
   try {
