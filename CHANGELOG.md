@@ -14,9 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - `Gemfile.lock` parsing with zero dependencies
-
-### Fixed
 - Incorrect line numbers when printing errors in TypeScript extensions
+- Absolute paths submitted when analyzing manifest files
 
 ## [5.6.0] - 2023-08-08
 

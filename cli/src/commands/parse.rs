@@ -126,7 +126,9 @@ pub fn parse_lockfile(
         None => return Err(anyhow!("unsupported manifest file {path:?}")),
     };
 
-    eprintln!("Generating lockfile for manifest {path:?} using {format:?}…");
+    let display_path = strip_root_path(path.to_path_buf(), project_root)?;
+
+    eprintln!("Generating lockfile for manifest {display_path:?} using {format:?}…");
 
     // Generate a new lockfile.
     let generated_lockfile = generator.generate_lockfile(&path).context("Lockfile generation failed! For details, see: https://docs.phylum.io/docs/lockfile-generation")?;
@@ -134,7 +136,7 @@ pub fn parse_lockfile(
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
 
-    Ok(ParsedLockfile { path, format, packages })
+    Ok(ParsedLockfile { path: display_path, format, packages })
 }
 
 /// Attempt to parse a lockfile.
