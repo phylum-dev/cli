@@ -8,7 +8,13 @@ pub fn data_dir() -> Result<PathBuf> {
     if let Some(path) = env_path("XDG_DATA_HOME") {
         return Ok(path);
     }
-    Ok(home_dir()?.join(".local/share"))
+
+    // Allow compile-time override of default data directory
+    if let Some(path) = option_env!("PHYLUM_OVERRIDE_DATA_DIR") {
+        Ok(PathBuf::from(path))
+    } else {
+        Ok(home_dir()?.join(".local/share"))
+    }
 }
 
 /// Resolve XDG config directory.
