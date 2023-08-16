@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
 #[cfg(not(test))]
@@ -220,6 +221,7 @@ async fn spawn_server_and_get_auth_code(
 pub async fn handle_auth_flow(
     auth_action: AuthAction,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<RefreshToken> {
@@ -235,6 +237,7 @@ pub async fn handle_auth_flow(
         &auth_code,
         &code_verifier,
         token_name,
+        expiry,
         ignore_certs,
     )
     .await

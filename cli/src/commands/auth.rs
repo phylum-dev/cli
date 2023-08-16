@@ -221,8 +221,12 @@ pub async fn handle_auth_create_token(
     let ignore_certs = api.config().ignore_certs();
     let api_uri = &api.config().connection.uri;
 
+    // TODO
+    let expiry = None;
+
     let token =
-        auth::handle_auth_flow(AuthAction::Login, Some(token_name), ignore_certs, api_uri).await?;
+        auth::handle_auth_flow(AuthAction::Login, Some(token_name), expiry, ignore_certs, api_uri)
+            .await?;
 
     eprintln!();
     print_user_success!("API token: {token}");

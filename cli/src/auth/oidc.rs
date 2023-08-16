@@ -8,6 +8,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use base64::engine::general_purpose;
 use base64::Engine as _;
+use chrono::{DateTime, Utc};
 use maplit::hashmap;
 use phylum_types::types::auth::{AccessToken, AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
@@ -213,8 +214,9 @@ fn build_grant_type_auth_code_post_body(
     authorization_code: &AuthorizationCode,
     code_verfier: &CodeVerifier,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
 ) -> Result<HashMap<String, String>> {
-    let body = hashmap! {
+    let mut body = hashmap! {
         "client_id".to_owned() => Default::default(),
         "code".to_owned() => authorization_code.into(),
         "code_verifier".to_owned() => code_verfier.into(),
@@ -223,6 +225,11 @@ fn build_grant_type_auth_code_post_body(
         "redirect_uri".to_owned() => redirect_url.to_string(),
         "name".to_owned() => token_name.unwrap_or_else(|| format!("phylum-cli-{}", Uuid::new_v4().as_hyphenated())),
     };
+
+    if let Some(expiry) = expiry {
+        body.insert("expiry".to_owned(), expiry.to_string());
+    }
+
     Ok(body)
 }
 
@@ -244,6 +251,7 @@ pub async fn acquire_tokens(
     authorization_code: &AuthorizationCode,
     code_verifier: &CodeVerifier,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
     ignore_certs: bool,
 ) -> Result<LocksmithTokenResponse> {
     let token_url = locksmith_settings.token_endpoint.clone();
@@ -253,6 +261,7 @@ pub async fn acquire_tokens(
         authorization_code,
         code_verifier,
         token_name,
+        expiry,
     )?;
 
     let client = reqwest::Client::builder()

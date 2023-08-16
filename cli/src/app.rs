@@ -256,13 +256,19 @@ pub fn add_subcommands(command: Command) -> Command {
                     ),
                 )
                 .subcommand(
-                    Command::new("create-token").about("Create a new API token").arg(
+                    Command::new("create-token").about("Create a new API token").args(&[
                         Arg::new("token-name")
                             .value_name("TOKEN_NAME")
                             .action(ArgAction::Set)
                             .required(true)
                             .help("Unique name to identify the new token"),
-                    ),
+                        Arg::new("expiry")
+                            .value_name("DAYS")
+                            .short('e')
+                            .long("expiry")
+                            .action(ArgAction::Set)
+                            .help("Number of days the token will be valid for"),
+                    ]),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
