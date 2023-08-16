@@ -30,3 +30,4 @@ Usage: phylum auth [OPTIONS] <COMMAND>
 * [phylum auth token](./phylum_auth_token)
 * [phylum auth list-tokens](./phylum_auth_list-tokens)
 * [phylum auth revoke-token](./phylum_auth_revoke-token)
+* [phylum auth create-token](./phylum_auth_create-token)
