@@ -281,7 +281,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Login, None, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
@@ -297,7 +297,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Register, None, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Register, None, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
