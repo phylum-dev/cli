@@ -8,7 +8,7 @@ use phylum_types::types::auth::RefreshToken;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 use crate::api::PhylumApi;
-use crate::auth::is_locksmith_token;
+use crate::auth::{is_locksmith_token, AuthAction};
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::{save_config, Config};
 use crate::format::Format;
@@ -208,6 +208,28 @@ pub async fn handle_auth_revoke_token(
     Ok(ExitCode::Ok)
 }
 
+/// Create a new Locksmith token.
+pub async fn handle_auth_create_token(
+    config: Config,
+    matches: &clap::ArgMatches,
+    timeout: Option<u64>,
+) -> CommandResult {
+    // Create a client with our auth token attached.
+    let api = PhylumApi::new(config, timeout).await?;
+
+    let token_name = matches.get_one::<String>("token-name").unwrap().to_string();
+    let ignore_certs = api.config().ignore_certs();
+    let api_uri = &api.config().connection.uri;
+
+    let token =
+        auth::handle_auth_flow(AuthAction::Login, Some(token_name), ignore_certs, api_uri).await?;
+
+    eprintln!();
+    print_user_success!("API token: {token}");
+
+    Ok(ExitCode::Ok)
+}
+
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
@@ -235,6 +257,7 @@ pub async fn handle_auth(
         Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
         Some(("list-tokens", matches)) => handle_auth_list_tokens(config, matches, timeout).await,
         Some(("revoke-token", matches)) => handle_auth_revoke_token(config, matches, timeout).await,
+        Some(("create-token", matches)) => handle_auth_create_token(config, matches, timeout).await,
         _ => unreachable!("invalid clap configuration"),
     }
 }

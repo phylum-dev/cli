@@ -254,6 +254,15 @@ pub fn add_subcommands(command: Command) -> Command {
                             .action(ArgAction::Append)
                             .help("Unique token names which identify the tokens"),
                     ),
+                )
+                .subcommand(
+                    Command::new("create-token").about("Create a new API token").arg(
+                        Arg::new("token-name")
+                            .value_name("TOKEN_NAME")
+                            .action(ArgAction::Set)
+                            .required(true)
+                            .help("Unique name to identify the new token"),
+                    ),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
