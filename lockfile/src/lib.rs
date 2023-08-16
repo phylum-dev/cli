@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 pub use cargo::Cargo;
 pub use csharp::{CSProj, PackagesLock};
+pub use cyclonedx::CycloneDX;
 pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
@@ -21,6 +22,7 @@ use walkdir::WalkDir;
 
 mod cargo;
 mod csharp;
+mod cyclonedx;
 mod golang;
 mod java;
 mod javascript;
@@ -54,6 +56,7 @@ pub enum LockfileFormat {
     Go,
     Cargo,
     Spdx,
+    CycloneDX,
 }
 
 impl FromStr for LockfileFormat {
@@ -94,6 +97,7 @@ impl LockfileFormat {
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
             LockfileFormat::Spdx => "spdx",
+            LockfileFormat::CycloneDX => "cyclonedx",
         }
     }
 
@@ -114,6 +118,7 @@ impl LockfileFormat {
             LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
             LockfileFormat::Spdx => &Spdx,
+            LockfileFormat::CycloneDX => &CycloneDX,
         }
     }
 
@@ -150,6 +155,7 @@ impl Iterator for LockfileFormatIter {
             11 => LockfileFormat::Go,
             12 => LockfileFormat::Cargo,
             13 => LockfileFormat::Spdx,
+            14 => LockfileFormat::CycloneDX,
             _ => return None,
         };
         self.0 += 1;
@@ -351,6 +357,8 @@ mod tests {
             ("Cargo.lock", LockfileFormat::Cargo),
             (".spdx.json", LockfileFormat::Spdx),
             (".spdx.yaml", LockfileFormat::Spdx),
+            ("bom.json", LockfileFormat::CycloneDX),
+            ("bom.xml", LockfileFormat::CycloneDX),
         ];
 
         for (file, expected_type) in test_cases {
@@ -378,6 +386,7 @@ mod tests {
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
+            ("cyclonedx", LockfileFormat::CycloneDX),
         ] {
             let actual_format =
                 name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
@@ -406,6 +415,7 @@ mod tests {
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
+            ("cyclonedx", LockfileFormat::CycloneDX),
         ] {
             let actual_name = format.to_string();
             assert_eq!(
@@ -448,6 +458,7 @@ mod tests {
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
             (LockfileFormat::Spdx, 6),
+            (LockfileFormat::CycloneDX, 4),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {
