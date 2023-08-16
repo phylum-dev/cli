@@ -5,12 +5,18 @@ use anyhow::{anyhow, Result};
 
 /// Resolve XDG data directory.
 pub fn data_dir() -> Result<PathBuf> {
-    xdg_dir("XDG_DATA_HOME", ".local/share")
+    if let Some(path) = env_path("XDG_DATA_HOME") {
+        return Ok(path);
+    }
+    Ok(home_dir()?.join(".local/share"))
 }
 
 /// Resolve XDG config directory.
 pub fn config_dir() -> Result<PathBuf> {
-    xdg_dir("XDG_CONFIG_HOME", ".config")
+    if let Some(path) = env_path("XDG_CONFIG_HOME") {
+        return Ok(path);
+    }
+    Ok(home_dir()?.join(".config"))
 }
 
 /// XDG binary directory.
@@ -23,12 +29,9 @@ pub fn home_dir() -> Result<PathBuf> {
     home::home_dir().ok_or_else(|| anyhow!("Couldn't find the user's home directory"))
 }
 
-/// Resolve an XDG directory.
-pub fn xdg_dir(env_var: &str, path_suffix: impl AsRef<Path>) -> Result<PathBuf> {
-    env::var_os(env_var)
-        .filter(|s| !s.is_empty())
-        .map(|var| Ok(PathBuf::from(var)))
-        .unwrap_or_else(|| Ok(home_dir()?.join(path_suffix)))
+/// Resolve a path from an environment variable.
+pub fn env_path(env_var: &str) -> Option<PathBuf> {
+    env::var_os(env_var).filter(|s| !s.is_empty()).map(PathBuf::from)
 }
 
 /// Expand leading tildes to the user's home path.
