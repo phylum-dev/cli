@@ -100,8 +100,8 @@ const status = PhylumApi.runSandboxed({
   args: Deno.args,
   exceptions: {
     run: ["cargo", "~/.rustup"],
-    read: ["./", "~/.cargo", "~/.rustup", "/etc/passwd"],
-    write: ["./", "~/.cargo"],
+    read: ["./", "/etc/passwd"],
+    write: ["./"],
     net: true,
   },
 });
