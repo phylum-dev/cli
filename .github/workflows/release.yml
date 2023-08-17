@@ -97,7 +97,7 @@ jobs:
             archive=$(echo "${archive}" | sed -e "s/\/$//")
             cp -R shell-completions "${archive}/completions"
             mkdir "${archive}/extensions"
-            for extension in npm poetry yarn pip bundle
+            for extension in npm poetry yarn pip bundle cargo
             do
               cp -R "cli/extensions/${extension}" "${archive}/extensions/${extension}"
             done
