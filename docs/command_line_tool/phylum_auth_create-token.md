@@ -18,7 +18,7 @@ Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
 ### Options
 
 -e, --expiry <DAYS>
-&emsp; Number of days the token will be valid for
+&emsp; Number of days the token will be valid
 
 -v, --verbose...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

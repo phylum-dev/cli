@@ -267,7 +267,7 @@ pub fn add_subcommands(command: Command) -> Command {
                             .short('e')
                             .long("expiry")
                             .action(ArgAction::Set)
-                            .help("Number of days the token will be valid for"),
+                            .help("Number of days the token will be valid"),
                     ]),
                 ),
         )
