@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
+use chrono::{Duration, Utc};
 use clap::ArgMatches;
 use dialoguer::MultiSelect;
 use phylum_types::types::auth::RefreshToken;
@@ -217,12 +218,21 @@ pub async fn handle_auth_create_token(
     // Create a client with our auth token attached.
     let api = PhylumApi::new(config, timeout).await?;
 
+    // Get config options.
     let token_name = matches.get_one::<String>("token-name").unwrap().to_string();
+    let expiry = matches.get_one::<String>("expiry");
     let ignore_certs = api.config().ignore_certs();
     let api_uri = &api.config().connection.uri;
 
-    // TODO
-    let expiry = None;
+    // Try to parse expiry.
+    let expiry = match expiry.map(|expiry| expiry.parse()) {
+        Some(Ok(expiry)) => Some(Utc::now() + Duration::days(expiry)),
+        Some(Err(err)) => {
+            print_user_failure!("invalid token expiry: {err}");
+            return Ok(ExitCode::InvalidTokenExpiration);
+        },
+        None => None,
+    };
 
     let token =
         auth::handle_auth_flow(AuthAction::Login, Some(token_name), expiry, ignore_certs, api_uri)
