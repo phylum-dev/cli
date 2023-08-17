@@ -7,15 +7,13 @@ use nom::Finish;
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
 use serde::Deserialize;
-use thiserror::Error;
 use urlencoding::decode;
 
 use crate::parsers::spdx;
-use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
-
-#[derive(Error, Debug)]
-#[error("Could not determine ecosystem")]
-struct UnknownEcosystem;
+use crate::{
+    determine_package_version, formatted_package_name, Package, PackageVersion, Parse,
+    UnknownEcosystem,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -84,11 +82,8 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
         .or_else(|_| type_from_url(&pkg_info.download_location))
         .context(UnknownEcosystem)?;
 
-    let name = match (package_type, purl.namespace()) {
-        (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
-        (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
-        _ => purl.name().into(),
-    };
+    // Determine the package name based on its type and namespace.
+    let name = formatted_package_name(&package_type, &purl);
 
     let pkg_version = pkg_info
         .version_info
@@ -96,25 +91,8 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
         .ok_or(purl.version())
         .map_err(|_| anyhow!("No version found for `{}`", pkg_info.name))?;
 
-    let version = purl
-        .qualifiers()
-        .iter()
-        .find_map(|(key, value)| match key.as_ref() {
-            "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
-                version: pkg_version.clone(),
-                registry: value.to_string(),
-            })),
-            "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
-            "vcs_url" => {
-                if value.starts_with("git+") {
-                    Some(PackageVersion::Git(value.to_string()))
-                } else {
-                    None
-                }
-            },
-            _ => None,
-        })
-        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()));
+    // Use the qualifiers from the PURL to determine the version details.
+    let version = determine_package_version(pkg_version, &purl);
 
     Ok(Package { name, version, package_type })
 }
@@ -208,6 +186,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+    use crate::PackageVersion;
 
     #[test]
     fn parse_spdx_2_2_json() {

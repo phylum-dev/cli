@@ -13,11 +13,13 @@ pub use javascript::{PackageLock, Pnpm, YarnLock};
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
+use purl::GenericPurl;
 pub use python::{PipFile, Poetry, PyRequirements};
 pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 pub use spdx::Spdx;
+use thiserror::Error;
 use walkdir::WalkDir;
 
 mod cargo;
@@ -332,6 +334,85 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
     lockfiles
 }
 
+/// Define a custom error for unknown ecosystems.
+#[derive(Error, Debug)]
+#[error("Could not determine ecosystem")]
+pub(crate) struct UnknownEcosystem;
+
+/// Generates a formatted package name based on the given package type and Purl.
+///
+/// This function formats package names differently depending on the package
+/// type:
+///
+/// - For `Maven` packages, the format is `"namespace:name"`.
+/// - For `Npm` and `Golang` packages, the format is `"namespace/name"`.
+/// - For other package types, or if no namespace is provided, it defaults to
+///   the package name.
+///
+/// # Arguments
+///
+/// - `package_type`: The type of the package.
+/// - `purl`: A reference to the Purl struct which contains details about the
+///   package.
+///
+/// # Returns
+///
+/// - A `String` representation of the formatted package name.
+pub(crate) fn formatted_package_name(
+    package_type: &PackageType,
+    purl: &GenericPurl<String>,
+) -> String {
+    match (package_type, purl.namespace()) {
+        (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
+        (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
+        _ => purl.name().into(),
+    }
+}
+
+/// Determines the package version from Purl qualifiers.
+///
+/// This function parses the qualifiers of a Purl object and returns the
+/// corresponding `PackageVersion` based on the provided key:
+///
+/// - "repository_url": returns a `ThirdParty` version.
+/// - "download_url": returns a `DownloadUrl` version.
+/// - "vcs_url": checks if it starts with "git+" and returns a `Git` version.
+/// - For other keys or in absence of any known key, it defaults to the
+///   `FirstParty` version.
+///
+/// # Arguments
+///
+/// - `purl`: A reference to the Purl struct which contains package details.
+/// - `pkg_version`: The default version to use if no specific qualifier is
+///   found.
+///
+/// # Returns
+///
+/// - A `PackageVersion` representing the determined version.
+pub(crate) fn determine_package_version(
+    pkg_version: &str,
+    purl: &GenericPurl<String>,
+) -> PackageVersion {
+    purl.qualifiers()
+        .iter()
+        .find_map(|(key, value)| match key.as_ref() {
+            "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
+                version: pkg_version.to_string(),
+                registry: value.to_string(),
+            })),
+            "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
+            "vcs_url" => {
+                if value.starts_with("git+") {
+                    Some(PackageVersion::Git(value.to_string()))
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        })
+        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs::{self, File};
@@ -458,7 +539,7 @@ mod tests {
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
             (LockfileFormat::Spdx, 6),
-            (LockfileFormat::CycloneDX, 4),
+            (LockfileFormat::CycloneDX, 5),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {

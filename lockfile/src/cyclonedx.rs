@@ -6,16 +6,10 @@ use anyhow::anyhow;
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
 use serde::Deserialize;
-use thiserror::Error;
 
-use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
+use crate::{determine_package_version, formatted_package_name, Package, Parse, UnknownEcosystem};
 
-// Define a custom error for unknown ecosystems.
-#[derive(Error, Debug)]
-#[error("Could not determine ecosystem")]
-struct UnknownEcosystem;
-
-// Define the generic trait for components.
+/// Define the generic trait for components.
 trait Component {
     fn component_type(&self) -> &str;
     fn name(&self) -> &str;
@@ -27,21 +21,21 @@ trait Component {
         Self: Sized;
 }
 
-// CycloneDX BOM.
+/// CycloneDX BOM.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Bom<T> {
     components: Option<T>,
 }
 
-// Struct for wrapping a list of components from XML.
+/// Struct for wrapping a list of components from XML.
 #[derive(Clone, Debug, Deserialize)]
 struct Components<T> {
     #[serde(rename = "component")]
     components: Vec<T>,
 }
 
-// Represents a single XML component.
+/// Represents a single XML component.
 #[derive(Clone, Debug, Deserialize)]
 struct XmlComponent {
     #[serde(rename = "type")]
@@ -74,15 +68,12 @@ impl Component for XmlComponent {
         self.purl.as_deref()
     }
 
-    fn components(&self) -> Option<&[Self]>
-    where
-        Self: Sized,
-    {
+    fn components(&self) -> Option<&[Self]> {
         self.components.as_ref().map(|comps| comps.components.as_slice())
     }
 }
 
-// Represents a single JSON component.
+/// Represents a single JSON component.
 #[derive(Clone, Debug, Deserialize)]
 struct JsonComponent {
     #[serde(rename = "type")]
@@ -91,7 +82,8 @@ struct JsonComponent {
     version: String,
     scope: Option<String>,
     purl: Option<String>,
-    components: Option<Vec<JsonComponent>>,
+    #[serde(default)]
+    components: Vec<JsonComponent>,
 }
 
 impl Component for JsonComponent {
@@ -115,15 +107,12 @@ impl Component for JsonComponent {
         self.purl.as_deref()
     }
 
-    fn components(&self) -> Option<&[Self]>
-    where
-        Self: Sized,
-    {
-        self.components.as_deref()
+    fn components(&self) -> Option<&[Self]> {
+        Some(&self.components)
     }
 }
 
-// Filter components based on their type and scope.
+/// Filter components based on the type and scope.
 fn filter_components<T: Component>(components: &[T]) -> impl Iterator<Item = &'_ T> {
     components
         .iter()
@@ -132,7 +121,8 @@ fn filter_components<T: Component>(components: &[T]) -> impl Iterator<Item = &'_
                 || comp.component_type() == "framework"
                 || comp.component_type() == "library";
 
-            // Check if the scope is "required" or not specified (required)
+            // The scope is optional and can be required, optional, or excluded
+            // If the scope is None, the spec implies required
             let scope_check = match comp.scope() {
                 Some(scope) => scope == "required",
                 None => true,
@@ -149,7 +139,7 @@ fn filter_components<T: Component>(components: &[T]) -> impl Iterator<Item = &'_
         })
 }
 
-// Convert a component's Package URL (PURL) into a Package object.
+/// Convert a component's package URL (PURL) into a package object.
 fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
     let purl_str = component
         .purl()
@@ -158,11 +148,7 @@ fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
     let package_type = PackageType::from_str(purl.package_type()).map_err(|_| UnknownEcosystem)?;
 
     // Determine the package name based on its type and namespace.
-    let name = match (package_type, purl.namespace()) {
-        (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
-        (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
-        _ => purl.name().into(),
-    };
+    let name = formatted_package_name(&package_type, &purl);
 
     // Extract the package version
     let pkg_version = purl
@@ -171,25 +157,7 @@ fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
         .map_err(|_| anyhow!("No version found for `{}`", name))?;
 
     // Use the qualifiers from the PURL to determine the version details.
-    let version = purl
-        .qualifiers()
-        .iter()
-        .find_map(|(key, value)| match key.as_ref() {
-            "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
-                version: pkg_version.into(),
-                registry: value.to_string(),
-            })),
-            "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
-            "vcs_url" => {
-                if value.starts_with("git+") {
-                    Some(PackageVersion::Git(value.to_string()))
-                } else {
-                    None
-                }
-            },
-            _ => None,
-        })
-        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()));
+    let version = determine_package_version(pkg_version, &purl);
 
     Ok(Package { name, version, package_type })
 }
@@ -198,18 +166,21 @@ pub struct CycloneDX;
 
 impl Parse for CycloneDX {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        if let Ok(lock) = serde_json::from_str::<serde_json::Value>(data) {
-            let parsed: Bom<Vec<JsonComponent>> = serde_json::from_value(lock)?;
-            parsed.components.map_or(Ok(vec![]), |comp| {
-                let component_iter = filter_components(&comp);
-                component_iter.map(from_purl).collect()
-            })
-        } else {
-            let parsed: Bom<Components<XmlComponent>> = serde_xml_rs::from_str(data)?;
-            parsed.components.map_or(Ok(vec![]), |comp| {
-                let component_iter = filter_components(&comp.components);
-                component_iter.map(from_purl).collect()
-            })
+        match serde_json::from_str::<serde_json::Value>(data) {
+            Ok(lock) => {
+                let parsed: Bom<Vec<JsonComponent>> = serde_json::from_value(lock)?;
+                parsed.components.map_or(Ok(Vec::new()), |comp| {
+                    let component_iter = filter_components(&comp);
+                    component_iter.map(from_purl).collect()
+                })
+            },
+            Err(_) => {
+                let parsed: Bom<Components<XmlComponent>> = serde_xml_rs::from_str(data)?;
+                parsed.components.map_or(Ok(Vec::new()), |comp| {
+                    let component_iter = filter_components(&comp.components);
+                    component_iter.map(from_purl).collect()
+                })
+            },
         }
     }
 
@@ -225,49 +196,11 @@ impl Parse for CycloneDX {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
+    use crate::PackageVersion;
 
     #[test]
     fn parse_cyclonedx_1_5_json() {
-        let sample_data = r#"
-        {
-            "bomFormat": "CycloneDX",
-            "specVersion": "1.5",
-            "components": [
-                {
-                    "type": "framework",
-                    "name": "FrameworkA",
-                    "version": "1.0",
-                    "scope": "required",
-                    "purl": "pkg:npm/FrameworkA@1.0",
-                    "components": [
-                        {
-                            "type": "library",
-                            "name": "LibA",
-                            "version": "1.1",
-                            "scope": "required",
-                            "purl": "pkg:npm/LibA@1.1"
-                        },
-                        {
-                            "type": "library",
-                            "name": "LibB",
-                            "version": "1.2",
-                            "purl": "pkg:pypi/LibB@1.2"
-                        }
-                    ]
-                },
-                {
-                    "type": "application",
-                    "name": "AppA",
-                    "version": "1.0",
-                    "scope": "required",
-                    "purl": "pkg:pypi/AppA@1.0"
-                }
-            ]
-        }
-        "#;
-
         let expected_pkgs = vec![
             Package {
                 name: "FrameworkA".into(),
@@ -291,7 +224,7 @@ mod tests {
             },
         ];
 
-        let pkgs = CycloneDX.parse(sample_data).unwrap();
+        let pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/bom.1.5.json")).unwrap();
         assert_eq!(pkgs, expected_pkgs);
     }
 
