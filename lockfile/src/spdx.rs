@@ -192,10 +192,11 @@ impl Parse for Spdx {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.ends_with(".spdx.json")
+        (path.ends_with(".spdx.json")
             || path.ends_with(".spdx.yaml")
             || path.ends_with(".spdx.yml")
-            || path.ends_with(".spdx")
+            || path.ends_with(".spdx"))
+            && path.is_file()
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {

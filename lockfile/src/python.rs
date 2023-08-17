@@ -41,14 +41,15 @@ impl Parse for PyRequirements {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        is_requirements_file(path)
+        is_requirements_file(path) && path.is_file()
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("requirements.in"))
+        (path.file_name() == Some(OsStr::new("requirements.in"))
             || path.file_name() == Some(OsStr::new("pyproject.toml"))
             || path.file_name() == Some(OsStr::new("setup.py"))
-            || is_requirements_file(path)
+            || is_requirements_file(path))
+            && path.is_file()
     }
 
     #[cfg(feature = "generator")]

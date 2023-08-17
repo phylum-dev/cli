@@ -91,11 +91,11 @@ impl Parse for Cargo {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("Cargo.lock"))
+        path.file_name() == Some(OsStr::new("Cargo.lock")) && path.is_file()
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("Cargo.toml"))
+        path.file_name() == Some(OsStr::new("Cargo.toml")) && path.is_file()
     }
 
     #[cfg(feature = "generator")]

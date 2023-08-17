@@ -47,7 +47,7 @@ impl Parse for PackagesLock {
         };
 
         // Accept both `packages.lock.json` and `packages.<project_name>.lock.json`.
-        file_name.starts_with("packages.") && file_name.ends_with(".lock.json")
+        file_name.starts_with("packages.") && file_name.ends_with(".lock.json") && path.is_file()
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {

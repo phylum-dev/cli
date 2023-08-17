@@ -353,8 +353,14 @@ mod tests {
             (".spdx.yaml", LockfileFormat::Spdx),
         ];
 
+        let dir = tempfile::tempdir().unwrap();
+
         for (file, expected_type) in test_cases {
-            let pkg_type = get_path_format(Path::new(file));
+            // Create file, so we can read its metadata.
+            let path = dir.path().join(file);
+            File::create(&path).unwrap();
+
+            let pkg_type = get_path_format(&path);
             assert_eq!(pkg_type, Some(*expected_type), "{}", file);
         }
     }

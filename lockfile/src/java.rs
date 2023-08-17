@@ -31,11 +31,11 @@ impl Parse for GradleLock {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("gradle.lockfile"))
+        path.file_name() == Some(OsStr::new("gradle.lockfile")) && path.is_file()
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("build.gradle"))
+        path.file_name() == Some(OsStr::new("build.gradle")) && path.is_file()
     }
 
     #[cfg(feature = "generator")]
