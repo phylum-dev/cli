@@ -239,7 +239,7 @@ pub async fn handle_auth_create_token(
             .await?;
 
     eprintln!();
-    print_user_success!("API token: {token}");
+    println!("{token}");
 
     Ok(ExitCode::Ok)
 }

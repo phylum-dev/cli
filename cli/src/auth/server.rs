@@ -190,8 +190,8 @@ async fn spawn_server_and_get_auth_code(
         ));
     }
 
-    println!("Please use browser window to complete login process");
-    println!(
+    eprintln!("Please use browser window to complete login process");
+    eprintln!(
         "If browser window doesn't open, you can use the link below:\n    {authorization_url}"
     );
 
