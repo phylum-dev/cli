@@ -27,14 +27,14 @@ trait Component {
         Self: Sized;
 }
 
-// CycloneDX BOM
+// CycloneDX BOM.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Bom<T> {
     components: Option<T>,
 }
 
-// Struct for wrapping a list of components from XML
+// Struct for wrapping a list of components from XML.
 #[derive(Clone, Debug, Deserialize)]
 struct Components<T> {
     #[serde(rename = "component")]
@@ -157,7 +157,7 @@ fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
     let purl = GenericPurl::<String>::from_str(purl_str)?;
     let package_type = PackageType::from_str(purl.package_type()).map_err(|_| UnknownEcosystem)?;
 
-    // Determine the package name based on its type and potential namespace.
+    // Determine the package name based on its type and namespace.
     let name = match (package_type, purl.namespace()) {
         (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
         (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
