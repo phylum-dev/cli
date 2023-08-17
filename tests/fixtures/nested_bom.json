@@ -1,0 +1,36 @@
+{
+    "$schema": "https://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "components": [
+        {
+            "type": "framework",
+            "name": "FrameworkA",
+            "version": "1.0",
+            "scope": "required",
+            "purl": "pkg:npm/FrameworkA@1.0",
+            "components": [
+                {
+                    "type": "library",
+                    "name": "LibA",
+                    "version": "1.1",
+                    "scope": "required",
+                    "purl": "pkg:npm/LibA@1.1"
+                },
+                {
+                    "type": "library",
+                    "name": "LibB",
+                    "version": "1.2",
+                    "purl": "pkg:pypi/LibB@1.2"
+                }
+            ]
+        },
+        {
+            "type": "application",
+            "name": "AppA",
+            "version": "1.0",
+            "scope": "required",
+            "purl": "pkg:pypi/AppA@1.0"
+        }
+    ]
+}

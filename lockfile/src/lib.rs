@@ -539,7 +539,7 @@ mod tests {
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
             (LockfileFormat::Spdx, 6),
-            (LockfileFormat::CycloneDX, 5),
+            (LockfileFormat::CycloneDX, 7),
         ] {
             let mut parsed_lockfiles = Vec::new();
             for lockfile in fs::read_dir("../tests/fixtures").unwrap().flatten() {

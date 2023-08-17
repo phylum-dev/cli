@@ -200,7 +200,7 @@ mod tests {
     use crate::PackageVersion;
 
     #[test]
-    fn parse_cyclonedx_1_5_json() {
+    fn parse_cyclonedx_nested_components() {
         let expected_pkgs = vec![
             Package {
                 name: "FrameworkA".into(),
@@ -224,8 +224,16 @@ mod tests {
             },
         ];
 
-        let pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/bom.1.5.json")).unwrap();
+        let pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/nested_bom.json")).unwrap();
         assert_eq!(pkgs, expected_pkgs);
+    }
+
+    #[test]
+    fn parse_cyclonedx_1_5() {
+        let json_pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/bom.1.5.json")).unwrap();
+        let xml_pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/bom.1.5.xml")).unwrap();
+        assert_eq!(json_pkgs.len(), xml_pkgs.len());
+        assert_eq!(json_pkgs, xml_pkgs);
     }
 
     #[test]
