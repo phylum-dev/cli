@@ -63,7 +63,10 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     for lockfile in lockfiles {
         let parsed_lockfile =
-            parse_lockfile(lockfile.path, project_root, Some(&lockfile.lockfile_type))?;
+            parse_lockfile(&lockfile.path, project_root, Some(&lockfile.lockfile_type))
+                .with_context(|| {
+                    format!("could not parse lockfile: {}", lockfile.path.display())
+                })?;
         pkgs.extend(parsed_lockfile);
     }
 
