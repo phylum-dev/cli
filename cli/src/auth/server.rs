@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
 #[cfg(not(test))]
@@ -189,8 +190,8 @@ async fn spawn_server_and_get_auth_code(
         ));
     }
 
-    println!("Please use browser window to complete login process");
-    println!(
+    eprintln!("Please use browser window to complete login process");
+    eprintln!(
         "If browser window doesn't open, you can use the link below:\n    {authorization_url}"
     );
 
@@ -220,6 +221,7 @@ async fn spawn_server_and_get_auth_code(
 pub async fn handle_auth_flow(
     auth_action: AuthAction,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
     ignore_certs: bool,
     api_uri: &str,
 ) -> Result<RefreshToken> {
@@ -235,6 +237,7 @@ pub async fn handle_auth_flow(
         &auth_code,
         &code_verifier,
         token_name,
+        expiry,
         ignore_certs,
     )
     .await
@@ -278,7 +281,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Login, None, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
@@ -294,7 +297,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Register, None, false, &api_uri).await?;
+        let result = handle_auth_flow(AuthAction::Register, None, None, false, &api_uri).await?;
 
         log::debug!("{:?}", result);
 
