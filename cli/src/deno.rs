@@ -10,7 +10,7 @@ use dashmap::DashMap;
 use deno_ast::{EmitOptions, MediaType, ParseParams, SourceTextInfo, TranspiledSource};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
-    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
+    self, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
     ResolutionKind, SourceMapGetter,
 };
 use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};
@@ -21,12 +21,27 @@ use tokio::fs;
 use url::Url;
 
 use crate::api::PhylumApi;
+use crate::commands::extensions::api::api_decls;
+use crate::commands::extensions::extension;
 use crate::commands::extensions::state::ExtensionState;
-use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
 
 /// Load Phylum API for module injection.
 const EXTENSION_API: &str = include_str!("../../extensions/phylum.ts");
+
+deno_core::extension!(phylum_api,
+    ops_fn = api_decls,
+    options = {
+        extension_state: ExtensionState,
+    },
+    middleware = |op| match op.name {
+        "op_request_permission" => op.disable(),
+        _ => op,
+    },
+    state = |state, options| {
+        state.put(options.extension_state)
+    },
+);
 
 /// Execute Phylum extension.
 pub async fn run(
@@ -34,17 +49,7 @@ pub async fn run(
     extension: extension::Extension,
     args: Vec<String>,
 ) -> CommandResult {
-    let state = ExtensionState::new(api, extension.clone());
-    let phylum_api = Extension {
-        name: "phylum-ext",
-        middleware_fn: Some(Box::new(|op| match op.name {
-            "op_request_permission" => op.disable(),
-            _ => op,
-        })),
-        ops: api::api_decls().into(),
-        op_state_fn: Some(Box::new(|deno_state| deno_state.put(state))),
-        ..Default::default()
-    };
+    let extension_state = ExtensionState::new(api, extension.clone());
 
     let main_module =
         deno_core::resolve_path(&extension.entry_point().to_string_lossy(), &PathBuf::from("."))?;
@@ -63,7 +68,7 @@ pub async fn run(
         module_loader,
         bootstrap,
         source_map_getter: Some(source_map_getter),
-        extensions: vec![phylum_api],
+        extensions: vec![phylum_api::init_ops_and_esm(extension_state)],
         ..Default::default()
     };
 
