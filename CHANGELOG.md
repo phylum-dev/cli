@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Support for ingesting CycloneDX `bom.json` and `bom.xml` files
 - `phylum auth list-tokens` subcommand to list API tokens
 - `phylum auth revoke-token` subcommand to revoke API tokens
 - `phylum auth create-token` subcommand to create API tokens

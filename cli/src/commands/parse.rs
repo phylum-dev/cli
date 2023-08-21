@@ -360,6 +360,10 @@ mod tests {
             ("../tests/fixtures/spdx-2.2.spdx.json", LockfileFormat::Spdx),
             ("../tests/fixtures/spdx-2.3.spdx.json", LockfileFormat::Spdx),
             ("../tests/fixtures/spdx-2.3.spdx.yaml", LockfileFormat::Spdx),
+            ("../tests/fixtures/bom.1.3.json", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.1.3.xml", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.json", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.xml", LockfileFormat::CycloneDX),
         ];
 
         for (file, expected_format) in test_cases {

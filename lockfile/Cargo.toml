@@ -16,8 +16,8 @@ ignore = "0.4.20"
 lockfile_generator = { path = "../lockfile_generator", optional = true }
 log = "0.4.6"
 nom = "7.1.1"
-packageurl = "0.3.0"
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
+purl = "0.1.1"
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = "1.0.85"
 serde_yaml = "0.9.2"
