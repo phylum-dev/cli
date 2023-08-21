@@ -37,6 +37,12 @@ if (
   console.log(
     "    --skip-files         Only check directories, speeding up the process",
   );
+  console.log(
+    "    --allow-read         Always allow reading from the specified directory.",
+  );
+  console.log(
+    "    --allow-read         Always allow writing to the specified directory.",
+  );
   console.log("    --strict             Use strict sandboxing mode");
   Deno.exit(0);
 }
@@ -76,6 +82,28 @@ const skipFiles = Deno.args.includes("--skip-files");
 
 // Check if sandboxing should be strict.
 const strict = Deno.args.includes("--strict");
+
+// Collect read exceptions.
+const readExceptions: string[] = [];
+for (let i = 0; true; i++) {
+  const option = getArgOption("--allow-read", i);
+  if (option === undefined) {
+    break;
+  } else {
+    readExceptions.push(option);
+  }
+}
+
+// Collect write exceptions.
+const writeExceptions: string[] = [];
+for (let i = 0; true; i++) {
+  const option = getArgOption("--allow-write", i);
+  if (option === undefined) {
+    break;
+  } else {
+    writeExceptions.push(option);
+  }
+}
 
 // Required sandboxing exceptions.
 const requiredPaths: string[] = [];
@@ -173,19 +201,20 @@ function test(directories: string[]): boolean {
 
   // Run pre-test setup executable.
   if (pre_test_bin) {
-    const pre_status = PhylumApi.runSandboxed({
+    const preStatus = PhylumApi.runSandboxed({
       cmd: pre_test_bin,
-      stdout: "null",
-      stderr: "null",
       exceptions: {
         write: true,
         read: true,
-        execute: true,
+        run: true,
+        env: true,
         net: true,
       },
+      stdout: "null",
+      stderr: "null",
     });
 
-    if (!pre_status.success) {
+    if (!preStatus.success) {
       console.error(`${red("Pre-test executable failed")}`);
 
       // Assume test would fail if setup didn't even run.
@@ -195,6 +224,10 @@ function test(directories: string[]): boolean {
 
   // Add `test_bin` path to run permissions.
   read.push(test_bin);
+
+  // Add read/write exceptions.
+  write = write.concat(writeExceptions);
+  read = read.concat(readExceptions);
 
   // Run test against test executable.
   let output = undefined;
@@ -206,6 +239,7 @@ function test(directories: string[]): boolean {
         write,
         read,
         run: read,
+        env: true,
         net: true,
       },
       stdout: "null",
@@ -219,14 +253,15 @@ function test(directories: string[]): boolean {
   if (post_test_bin) {
     const post_status = PhylumApi.runSandboxed({
       cmd: post_test_bin,
-      stdout: "null",
-      stderr: "null",
       exceptions: {
         write: true,
         read: true,
-        execute: true,
+        run: true,
+        env: true,
         net: true,
       },
+      stdout: "null",
+      stderr: "null",
     });
 
     if (!post_status.success) {
@@ -241,10 +276,27 @@ function test(directories: string[]): boolean {
 }
 
 // Get the value of a CLI argument.
-function getArgOption(option: string): string | undefined {
-  const option_index = Deno.args.findIndex((arg) => arg === option);
-  if (option_index !== -1) {
-    return Deno.args[option_index + 1];
+//
+// This will skip `offset` number of matching options.
+function getArgOption(option: string, offset?: number): string | undefined {
+  offset = offset ?? 0;
+
+  let optionIndex = -1;
+  for (let i = 0; i < Deno.args.length; i++) {
+    if (Deno.args[i] !== option) {
+      continue;
+    }
+
+    if (offset <= 0) {
+      optionIndex = i;
+      break;
+    }
+
+    offset -= 1;
+  }
+
+  if (optionIndex !== -1) {
+    return Deno.args[optionIndex + 1];
   } else {
     return undefined;
   }
