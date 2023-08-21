@@ -1,0 +1,12 @@
+EXCLUDED:
+    "/home/chris/.cargo"
+
+CLI:
+    "/usr/include/",
+    "/tmp/",
+    "/etc/",
+    "/home/chris/programming/phylum/birdcage/",
+    "/home/chris/programming/phylum/cli/",
+    "/home/chris/.rustup/",
+    "/home/chris/.config/git/",
+    "/proc/",

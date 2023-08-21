@@ -53,16 +53,9 @@ async function findRoot(manifest: string): Promise<string | undefined> {
 
 /// Check if there is a cache entry for this lockfile's hash.
 async function hasSuccessCached(lockfilePath: string): Promise<boolean> {
+  // Check that extension is installed and cache dir exists.
   // Skip cache check if the extension is not installed.
-  const cargoExtensionDir = PhylumApi.extensionsDir() + "/cargo";
-  try {
-    await Deno.stat(cargoExtensionDir);
-  } catch (_e) {
-    return false;
-  }
-
-  // Check if cache dir exists.
-  const cacheDir = cargoExtensionDir + "/cache";
+  const cacheDir = PhylumApi.extensionsDir() + "/cargo/cache";
   try {
     await Deno.stat(cacheDir);
   } catch (_e) {
@@ -95,13 +88,17 @@ async function writeSuccessCache(lockfilePath: string) {
   try {
     await Deno.mkdir(cacheDir);
   } catch (e) {
-    console.error(`[${red("phylum")}] Could not create cache dir: `, e);
+    console.warn(`[${yellow("phylum")}] Could not create cache dir: `, e);
     return;
   }
 
   // Write cache entry.
   const hash = await hashFile(lockfilePath);
-  await Deno.create(cacheDir + "/" + hash);
+  try {
+    await Deno.create(cacheDir + "/" + hash);
+  } catch (e) {
+    console.warn(`[${yellow("phylum")}] Could not write cache file: `, e);
+  }
 }
 
 /// Generate a hash for the contents of a file.
@@ -208,8 +205,8 @@ async function checkDryRun() {
   let lockfile;
   try {
     lockfile = await PhylumApi.parseLockfile("./Cargo.lock", "cargo");
-  } catch (_e) {
-    console.warn(`[${yellow("phylum")}] No lockfile present.\n`);
+  } catch (e) {
+    console.error(`[${red("phylum")}] Lockfile parsing failed: ${e}.\n`);
     await abort(125);
   }
   console.log(`[${green("phylum")}] Lockfile parsed successfully.\n`);

@@ -21,14 +21,14 @@ phylum extension install cli/extensions/cargo
 Prepend `phylum` to your `cargo` command invocations:
 
 ```console
-phylum cargo add my-package  # This will be checked by Phylum!
+phylum cargo build  # This will be checked by Phylum!
 ```
 
 Or set up an alias in your shell to make it transparent:
 
 ```console
 alias cargo="phylum cargo"
-cargo add my-package  # This will be checked by Phylum!
+cargo clippy  # This will be checked by Phylum!
 ```
 
 ## How it works
