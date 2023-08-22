@@ -39,7 +39,7 @@ fn extension_is_installed_correctly() {
     test_cli.install_extension(&fixtures_path().join("sample")).success();
 
     let _guard = ENV_MUTEX.lock().unwrap();
-    env::set_var("XDG_DATA_HOME", test_cli.temp_path());
+    env::set_var("XDG_DATA_HOME", test_cli.data_home());
 
     let installed_ext = Extension::load("sample").unwrap();
     assert_eq!(installed_ext.name(), "sample");
@@ -90,9 +90,7 @@ fn unsuccessful_installation_prints_failure_message() {
     // Try to install the extension from the installed path. Should fail with an
     // error.
     test_cli
-        .install_extension(
-            &test_cli.temp_path().to_owned().join("phylum").join("extensions").join("sample"),
-        )
+        .install_extension(&test_cli.data_home().join("phylum").join("extensions").join("sample"))
         .failure()
         .stderr(predicate::str::contains("skipping"));
 }
@@ -105,8 +103,7 @@ fn extension_is_uninstalled_correctly() {
 
     test_cli.install_extension(&fixtures_path().join("sample")).success();
 
-    let extension_path =
-        test_cli.temp_path().to_path_buf().join("phylum").join("extensions").join("sample");
+    let extension_path = test_cli.data_home().join("phylum").join("extensions").join("sample");
 
     assert!(walkdir::WalkDir::new(&extension_path).into_iter().count() > 1);
 

@@ -51,8 +51,7 @@ fn module_with_traversal_fails_to_load() {
 #[test]
 fn symlinks_are_resolved() {
     let test_cli = TestCli::builder().build();
-    let ext_path =
-        test_cli.temp_path().to_owned().join("phylum").join("extensions").join("symlink");
+    let ext_path = test_cli.data_home().join("phylum").join("extensions").join("symlink");
 
     test_cli.install_extension(&fixtures_path().join("symlink")).success();
 
@@ -68,8 +67,7 @@ fn symlinks_are_resolved() {
 #[test]
 fn symlinks_with_traversal_fail() {
     let test_cli = TestCli::builder().build();
-    let ext_path =
-        test_cli.temp_path().to_owned().join("phylum").join("extensions").join("symlink");
+    let ext_path = test_cli.data_home().join("phylum").join("extensions").join("symlink");
 
     test_cli.install_extension(&fixtures_path().join("module-import").join("successful")).success();
     test_cli.install_extension(&fixtures_path().join("symlink")).success();
