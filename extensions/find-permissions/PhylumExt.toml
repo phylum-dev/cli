@@ -5,5 +5,5 @@ description = "Find required sandbox permissions"
 read = true
 write = true
 run = true
+env = true
 net = true
-
