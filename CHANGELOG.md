@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `phylum auth list-tokens` subcommand to list API tokens
 - `phylum auth revoke-token` subcommand to revoke API tokens
 - `phylum auth create-token` subcommand to create API tokens
+- Ruby ecosystem extension for `bundle`
+- Rust ecosystem extension for `cargo`
 
 ### Fixed
 - `Gemfile.lock` parsing with zero dependencies
@@ -25,7 +27,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Generating lockfiles for `*.csproj` files
-- Ruby ecosystem extension for `bundle`
 
 ### Changed
 - Include lockfile paths when analyzing projects
