@@ -3,7 +3,7 @@ description = "Cargo package manager hooks"
 entry_point = "main.ts"
 
 [permissions]
-write = ["./", "~/.cargo", "~/.local/share/phylum/extensions/cargo"]
+write = ["./", "~/.cargo"]
 read = true
 run = true
 net = true
