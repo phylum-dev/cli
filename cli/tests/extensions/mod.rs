@@ -381,6 +381,27 @@ fn help_contains_description() {
         .stdout(predicate::str::contains("This extension does a thing"));
 }
 
+#[test]
+fn local_storage() {
+    let test_cli = TestCli::builder().build();
+
+    // Uninstalled extension should show -1 (because localStorage is disabled)
+    test_cli
+        .run(["extension", "run", &fixtures_path().join("run-count").to_string_lossy()])
+        .success()
+        .stdout(predicate::str::contains("Run Count: -1"));
+
+    // Installed extension should increment run count
+    test_cli.install_extension(&fixtures_path().join("run-count")).success();
+    test_cli.run(["run-count"]).success().stdout(predicate::str::contains("Run Count: 0"));
+    test_cli.run(["run-count"]).success().stdout(predicate::str::contains("Run Count: 1"));
+
+    // Uninstall should clear run count
+    test_cli.run(["extension", "uninstall", "run-count"]);
+    test_cli.install_extension(&fixtures_path().join("run-count")).success();
+    test_cli.run(["run-count"]).success().stdout(predicate::str::contains("Run Count: 0"));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities
 ////////////////////////////////////////////////////////////////////////////////
