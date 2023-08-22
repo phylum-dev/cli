@@ -126,7 +126,7 @@ impl Extension {
 
         fs::remove_dir_all(&self.path)?;
 
-        if let Ok(state_path) = self.state_path() {
+        if let Some(state_path) = self.state_path() {
             // Ignore errors since this may not exist
             let _ = fs::remove_dir_all(state_path);
         }
@@ -137,7 +137,7 @@ impl Extension {
     }
 
     /// Return true if this is an installed extension.
-    pub fn installed(&self) -> bool {
+    fn installed(&self) -> bool {
         let installed_path = extension_path(self.name())
             .ok()
             .and_then(|installed_path| installed_path.canonicalize().ok());
@@ -156,8 +156,12 @@ impl Extension {
     }
 
     /// A directory where installed extensions can store state.
-    pub fn state_path(&self) -> Result<PathBuf> {
-        extension_state_path(self.name())
+    pub fn state_path(&self) -> Option<PathBuf> {
+        if self.installed() {
+            extension_state_path(self.name()).ok()
+        } else {
+            None
+        }
     }
 
     /// Return the path to this extension's entry point.

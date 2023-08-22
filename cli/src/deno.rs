@@ -59,8 +59,7 @@ pub async fn run(
     let module_loader = Rc::new(ExtensionsModuleLoader::new(extension.path()));
     let source_map_getter: Box<dyn SourceMapGetter> = Box::new(module_loader.clone());
 
-    let origin_storage_dir =
-        if extension.installed() { Some(extension.state_path()?) } else { None };
+    let origin_storage_dir = extension.state_path();
 
     let options = WorkerOptions {
         origin_storage_dir,
