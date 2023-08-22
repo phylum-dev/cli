@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::env;
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 #[cfg(unix)]
 use std::process::{Command, Stdio};
 use std::rc::Rc;
@@ -31,7 +31,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
-use crate::commands::extensions::extension;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
@@ -516,12 +515,6 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
     Ok(url)
 }
 
-/// Get the extension directory.
-#[op]
-fn extensions_dir(_op_state: Rc<RefCell<OpState>>) -> Result<PathBuf> {
-    extension::extensions_path()
-}
-
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::DECL,
@@ -542,6 +535,5 @@ pub(crate) fn api_decls() -> Vec<OpDecl> {
         run_sandboxed::DECL,
         op_permissions::DECL,
         api_base_url::DECL,
-        extensions_dir::DECL,
     ]
 }

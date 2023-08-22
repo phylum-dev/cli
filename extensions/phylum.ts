@@ -537,13 +537,6 @@ export class PhylumApi {
   static permissions(): Record<string, unknown> {
     return DenoCore.ops.op_permissions();
   }
-
-  /**
-   * Get the extension directory path.
-   */
-  static extensionsDir(): string {
-    return DenoCore.ops.extensions_dir();
-  }
 }
 
 /** Available Phylum REST API versions. **/

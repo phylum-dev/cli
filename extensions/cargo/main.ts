@@ -53,21 +53,11 @@ async function findRoot(manifest: string): Promise<string | undefined> {
 
 /// Check if there is a cache entry for this lockfile's hash.
 async function hasSuccessCached(lockfilePath: string): Promise<boolean> {
-  // Check that extension is installed and cache dir exists.
-  // Skip cache check if the extension is not installed.
-  const cacheDir = PhylumApi.extensionsDir() + "/cargo/cache";
-  try {
-    await Deno.stat(cacheDir);
-  } catch (_e) {
-    return false;
-  }
-
   // Check if sucess is cached.
   const hash = await hashFile(lockfilePath);
-  const cacheFile = cacheDir + "/" + hash;
+
   try {
-    await Deno.stat(cacheFile);
-    return true;
+    return localStorage.getItem(hash) === "success";
   } catch (_e) {
     return false;
   }
@@ -75,29 +65,11 @@ async function hasSuccessCached(lockfilePath: string): Promise<boolean> {
 
 /// Create a cache entry for a successful analysis.
 async function writeSuccessCache(lockfilePath: string) {
-  // Skip cache write if the extension is not installed.
-  const cargoExtensionDir = PhylumApi.extensionsDir() + "/cargo";
   try {
-    await Deno.stat(cargoExtensionDir);
+    const hash = await hashFile(lockfilePath);
+    localStorage.setItem(hash, "success");
   } catch (_e) {
-    return;
-  }
-
-  // Ensure cache dir exists.
-  const cacheDir = cargoExtensionDir + "/cache";
-  try {
-    await Deno.mkdir(cacheDir);
-  } catch (e) {
-    console.warn(`[${yellow("phylum")}] Could not create cache dir: `, e);
-    return;
-  }
-
-  // Write cache entry.
-  const hash = await hashFile(lockfilePath);
-  try {
-    await Deno.create(cacheDir + "/" + hash);
-  } catch (e) {
-    console.warn(`[${yellow("phylum")}] Could not write cache file: `, e);
+    //
   }
 }
 
@@ -195,7 +167,7 @@ async function checkDryRun() {
   // Check if we have the analysis success cached.
   if (await hasSuccessCached("./Cargo.lock")) {
     console.log(
-      `[${green("phylum")}] Analysis success verified from cached.\n`,
+      `[${green("phylum")}] Analysis success verified from cache.\n`,
     );
     await restoreBackup();
     return;
