@@ -41,7 +41,7 @@ if (
     "    --allow-read         Always allow reading from the specified directory.",
   );
   console.log(
-    "    --allow-read         Always allow writing to the specified directory.",
+    "    --allow-write        Always allow writing to the specified directory.",
   );
   console.log("    --strict             Use strict sandboxing mode");
   Deno.exit(0);
