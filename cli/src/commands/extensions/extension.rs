@@ -157,11 +157,7 @@ impl Extension {
 
     /// A directory where installed extensions can store state.
     pub fn state_path(&self) -> Option<PathBuf> {
-        if self.installed() {
-            extension_state_path(self.name()).ok()
-        } else {
-            None
-        }
+        self.installed().then(|| extension_state_path(self.name()).ok()).flatten()
     }
 
     /// Return the path to this extension's entry point.

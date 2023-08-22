@@ -42,15 +42,6 @@ fn purge() -> Result<()> {
     Ok(())
 }
 
-/// Return Ok for file not found errors. Pass everything else through.
-fn ignore_not_found(err: io::Error) -> io::Result<()> {
-    if err.kind() == ErrorKind::NotFound {
-        Ok(())
-    } else {
-        Err(err)
-    }
-}
-
 /// Remove files created by `install.sh`.
 fn remove_installed_files() -> Result<()> {
     let data_dir = dirs::data_dir()?.join("phylum");
@@ -58,7 +49,7 @@ fn remove_installed_files() -> Result<()> {
     let bin_path = dirs::bin_dir()?.join("phylum");
 
     let data_result = fs::remove_dir_all(data_dir);
-    let state_result = fs::remove_dir_all(state_dir).or_else(ignore_not_found);
+    let state_result = fs::remove_dir_all(state_dir);
     let bin_result = fs::remove_file(bin_path);
 
     if let Err(err) = &data_result {
@@ -66,7 +57,10 @@ fn remove_installed_files() -> Result<()> {
     }
 
     if let Err(err) = &state_result {
-        print_user_warning!("Could not remove state directory: {}", err);
+        // Avoid warning for file not found errors
+        if err.kind() != ErrorKind::NotFound {
+            print_user_warning!("Could not remove state directory: {}", err);
+        }
     }
 
     if let Err(err) = &bin_result {
