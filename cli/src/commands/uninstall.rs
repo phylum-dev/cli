@@ -1,8 +1,8 @@
 //! Phylum CLI removal.
 
+use std::fs;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
-use std::{fs, io};
 
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
