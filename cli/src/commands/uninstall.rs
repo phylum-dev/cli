@@ -1,7 +1,7 @@
 //! Phylum CLI removal.
 
 use std::fs;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -45,20 +45,29 @@ fn purge() -> Result<()> {
 /// Remove files created by `install.sh`.
 fn remove_installed_files() -> Result<()> {
     let data_dir = dirs::data_dir()?.join("phylum");
+    let state_dir = dirs::state_dir()?.join("phylum");
     let bin_path = dirs::bin_dir()?.join("phylum");
 
     let data_result = fs::remove_dir_all(data_dir);
+    let state_result = fs::remove_dir_all(state_dir);
     let bin_result = fs::remove_file(bin_path);
 
     if let Err(err) = &data_result {
         print_user_warning!("Could not remove data directory: {}", err);
     }
 
+    if let Err(err) = &state_result {
+        // Avoid warning for file not found errors
+        if err.kind() != ErrorKind::NotFound {
+            print_user_warning!("Could not remove state directory: {}", err);
+        }
+    }
+
     if let Err(err) = &bin_result {
         print_user_warning!("Could not remove phylum executable: {}", err);
     }
 
-    if data_result.is_ok() && bin_result.is_ok() {
+    if data_result.is_ok() && state_result.is_ok() && bin_result.is_ok() {
         print_user_success!("Successfully removed installer files");
     }
 
