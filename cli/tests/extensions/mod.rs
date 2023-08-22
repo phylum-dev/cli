@@ -397,7 +397,7 @@ fn local_storage() {
     test_cli.run(["run-count"]).success().stdout(predicate::str::contains("Run Count: 1"));
 
     // Uninstall should clear run count
-    test_cli.run(["extension", "uninstall", "run-count"]);
+    test_cli.run(["extension", "uninstall", "run-count"]).success();
     test_cli.install_extension(&fixtures_path().join("run-count")).success();
     test_cli.run(["run-count"]).success().stdout(predicate::str::contains("Run Count: 0"));
 }

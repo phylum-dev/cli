@@ -124,12 +124,12 @@ impl Extension {
             return Err(anyhow!("extension {} is not installed, skipping", self.name()));
         }
 
-        fs::remove_dir_all(&self.path)?;
-
         if let Some(state_path) = self.state_path() {
             // Ignore errors since this may not exist
             let _ = fs::remove_dir_all(state_path);
         }
+
+        fs::remove_dir_all(&self.path)?;
 
         println!("Extension {} uninstalled successfully", self.name());
 
