@@ -49,6 +49,7 @@ impl ExtensionManifest {
 
 #[derive(Clone, Debug)]
 pub struct Extension {
+    /// Absolute path to the extension.
     path: PathBuf,
     manifest: ExtensionManifest,
 }
@@ -101,11 +102,11 @@ impl Extension {
 
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
-        let target_prefix = extension_path(self.name())?;
-
-        if target_prefix == self.path {
+        if self.installed() {
             return Err(anyhow!("extension path and installation path are identical, skipping"));
         }
+
+        let target_prefix = extension_path(self.name())?;
 
         if target_prefix.exists() {
             fs::remove_dir_all(&target_prefix)?;
@@ -118,9 +119,8 @@ impl Extension {
 
     pub fn uninstall(self) -> Result<()> {
         println!("Uninstalling extension {}...", self.name());
-        let target_prefix = extension_path(self.name())?;
 
-        if target_prefix != self.path {
+        if !self.installed() {
             return Err(anyhow!("extension {} is not installed, skipping", self.name()));
         }
 
@@ -129,6 +129,15 @@ impl Extension {
         println!("Extension {} uninstalled successfully", self.name());
 
         Ok(())
+    }
+
+    /// Return true if this is an installed extension.
+    fn installed(&self) -> bool {
+        let installed_path = extension_path(self.name())
+            .ok()
+            .and_then(|installed_path| installed_path.canonicalize().ok());
+
+        Some(&self.path) == installed_path.as_ref()
     }
 
     /// Load an extension from the default path.
@@ -173,6 +182,9 @@ impl TryFrom<PathBuf> for Extension {
     type Error = anyhow::Error;
 
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
+        // Ensure that the path is an absolute path.
+        let path = path.canonicalize()?;
+
         if !path.is_dir() {
             return Err(anyhow!("{}: not a directory", path.display()));
         }
