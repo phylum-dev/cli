@@ -13,6 +13,11 @@ pub fn config_dir() -> Result<PathBuf> {
     xdg_dir("XDG_CONFIG_HOME", ".config")
 }
 
+/// Resolve XDG state directory.
+pub fn state_dir() -> Result<PathBuf> {
+    xdg_dir("XDG_STATE_HOME", ".local/state")
+}
+
 /// XDG binary directory.
 pub fn bin_dir() -> Result<PathBuf> {
     Ok(home_dir()?.join(".local/bin"))

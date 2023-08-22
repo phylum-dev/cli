@@ -126,13 +126,18 @@ impl Extension {
 
         fs::remove_dir_all(&self.path)?;
 
+        if let Ok(state_path) = self.state_path() {
+            // Ignore errors since this may not exist
+            let _ = fs::remove_dir_all(state_path);
+        }
+
         println!("Extension {} uninstalled successfully", self.name());
 
         Ok(())
     }
 
     /// Return true if this is an installed extension.
-    fn installed(&self) -> bool {
+    pub fn installed(&self) -> bool {
         let installed_path = extension_path(self.name())
             .ok()
             .and_then(|installed_path| installed_path.canonicalize().ok());
@@ -148,6 +153,11 @@ impl Extension {
     /// Return the path to this extension.
     pub fn path(&self) -> PathBuf {
         self.path.clone()
+    }
+
+    /// A directory where installed extensions can store state.
+    pub fn state_path(&self) -> Result<PathBuf> {
+        extension_state_path(self.name())
     }
 
     /// Return the path to this extension's entry point.
@@ -230,10 +240,14 @@ pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
 }
 
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
-pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
+pub fn extensions_path() -> Result<PathBuf> {
     Ok(dirs::data_dir()?.join("phylum").join("extensions"))
 }
 
-fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
+fn extension_path(name: &str) -> Result<PathBuf> {
     Ok(extensions_path()?.join(name))
+}
+
+fn extension_state_path(name: &str) -> Result<PathBuf> {
+    Ok(dirs::state_dir()?.join("phylum/extensions").join(name))
 }

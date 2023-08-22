@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Enable the Web Storage API (i.e., `localStorage`)
+
 ## 5.6.0 - 2023-08-08
 
 ### Added
