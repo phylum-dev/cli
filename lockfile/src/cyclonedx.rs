@@ -185,8 +185,10 @@ impl Parse for CycloneDX {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        matches!(path.file_name().and_then(OsStr::to_str), Some(name) if name.ends_with("bom.json")
-            || name.ends_with("bom.xml"))
+        path.file_name()
+            .and_then(OsStr::to_str)
+            .map(|name| name.ends_with("bom.json") || name.ends_with("bom.xml"))
+            .unwrap_or(false)
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {
