@@ -185,8 +185,9 @@ impl Parse for CycloneDX {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("bom.json"))
-            || path.file_name() == Some(OsStr::new("bom.xml"))
+        path.file_name()
+            .and_then(OsStr::to_str)
+            .map_or(false, |name| name.ends_with("bom.json") || name.ends_with("bom.xml"))
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {
@@ -196,6 +197,8 @@ impl Parse for CycloneDX {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::PackageVersion;
 
@@ -250,5 +253,21 @@ mod tests {
         let xml_pkgs = CycloneDX.parse(include_str!("../../tests/fixtures/bom.1.3.xml")).unwrap();
         assert_eq!(json_pkgs.len(), xml_pkgs.len());
         assert_eq!(json_pkgs, xml_pkgs);
+    }
+
+    #[test]
+    fn test_if_lockfile() {
+        let test_paths = vec![
+            "/foo/bar/test.bom.json",
+            "/foo/bar/test.bom.xml",
+            "/foo/bar/bom.json",
+            "/foo/bar/bom.xml",
+        ];
+
+        for path_str in test_paths {
+            let path_buf = PathBuf::from(path_str);
+            let is_lockfile = CycloneDX.is_path_lockfile(&path_buf);
+            assert!(is_lockfile, "Failed for path: {}", path_str);
+        }
     }
 }
