@@ -171,15 +171,12 @@ impl Parse for Spdx {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name()
-            .and_then(OsStr::to_str)
-            .map(|name| {
-                name.ends_with(".spdx.json")
-                    || name.ends_with(".spdx.yaml")
-                    || name.ends_with(".spdx.yml")
-                    || name.ends_with(".spdx")
-            })
-            .unwrap_or(false)
+        path.file_name().and_then(OsStr::to_str).map_or(false, |name| {
+            name.ends_with(".spdx.json")
+                || name.ends_with(".spdx.yaml")
+                || name.ends_with(".spdx.yml")
+                || name.ends_with(".spdx")
+        })
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {
