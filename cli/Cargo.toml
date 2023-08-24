@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "5.6.0"
+version = "5.7.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"

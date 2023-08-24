@@ -125,7 +125,7 @@ const status = await cmd.spawn().status;
 
 // Ensure install worked. Failure is still "safe" for the user.
 if (!status.success) {
-  console.error(`[${red("phylum")}] Installing packges failed.\n`);
+  console.error(`[${red("phylum")}] Installing packages failed.\n`);
   await abort(status.code);
 } else {
   console.log(`[${green("phylum")}] Packages installed successfully.\n`);

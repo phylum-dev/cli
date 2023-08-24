@@ -135,7 +135,7 @@ fn filter_components<T: Component>(components: &[T]) -> impl Iterator<Item = &'_
                 Some(nested) => filter_components(nested).collect::<Vec<_>>(),
                 None => Vec::new(),
             };
-            std::iter::once(comp).chain(nested_iter.into_iter())
+            std::iter::once(comp).chain(nested_iter)
         })
 }
 
