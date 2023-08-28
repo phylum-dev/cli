@@ -258,6 +258,6 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Update v2-latest using rdme
-        uses: readmeio/rdme@01ed07d63eeeda9be92b4907c59bdf1283a0b4ce # v8.6.4
+        uses: readmeio/rdme@51a80867c45de15e2b41af0c4bd5bbc61b932804 # v8.6.6
         with:
           rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
