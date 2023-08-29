@@ -22,7 +22,7 @@ The Phylum CLI supports processing many different lockfiles:
 | `go`          | `go.sum`                                                               |
 | `cargo`       | `Cargo.lock`                                                           |
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
-| `cyclonedx`   | `bom.json` <br /> `bom.xml`                                            |
+| `cyclonedx`   | `*bom.json` <br /> `*bom.xml`                                          |
 
 The lockfile type will be automatically detected based on the filename. If needed, this can be overridden with the
 `--lockfile-type` (`-t`) option.
