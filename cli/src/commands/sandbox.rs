@@ -8,7 +8,9 @@ use anyhow::{anyhow, Result};
 use anyhow::{Context, Error};
 #[cfg(target_os = "linux")]
 use birdcage::error::Error as SandboxError;
-use birdcage::{Birdcage, Exception, Sandbox};
+#[cfg(not(target_os = "linux"))]
+use birdcage::Birdcage;
+use birdcage::{Exception, Sandbox};
 use clap::ArgMatches;
 
 use crate::commands::extensions::permissions;
@@ -48,12 +50,20 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
 /// Lock down the current process.
 #[cfg(unix)]
 fn lock_process(matches: &ArgMatches) -> Result<()> {
-    let birdcage =
-        if matches.get_flag("strict") { Birdcage::new() } else { permissions::default_sandbox() };
+    let min_landlock_abi = matches.get_one("min-landlock-abi").map_or(1, |abi| *abi);
+    let best_effort = matches.get_flag("best-effort");
+    let strict = matches.get_flag("strict");
+
+    let birdcage = permissions::default_sandbox(strict, min_landlock_abi);
 
     // Provide additional error context.
     let mut birdcage = match birdcage {
         Ok(birdcage) => birdcage,
+        #[cfg(target_os = "linux")]
+        Err(_) if best_effort => {
+            log::debug!("Landlock v{min_landlock_abi} is not supported, skipping sandbox");
+            return Ok(());
+        },
         #[cfg(target_os = "linux")]
         Err(err @ SandboxError::Ruleset(_)) => {
             return Err(Error::from(err)).context("sandbox requires Linux kernel 5.13+");

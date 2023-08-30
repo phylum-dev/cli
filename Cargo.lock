@@ -415,9 +415,8 @@ dependencies = [
 [[package]]
 name = "birdcage"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d92dd4267938d2d01b141f1af28e31c78c764a2550f66fb4f28611fed20c97b3"
 dependencies = [
+ "bitflags 2.4.0",
  "landlock",
  "libc",
  "seccompiler",
@@ -2792,8 +2791,7 @@ dependencies = [
 [[package]]
 name = "landlock"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "520baa32708c4e957d2fc3a186bc5bd8d26637c33137f399ddfc202adb240068"
+source = "git+https://github.com/landlock-lsm/rust-landlock#83da4b590c87494456884e2956e739209eae3198"
 dependencies = [
  "enumflags2",
  "libc",

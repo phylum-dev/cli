@@ -7,6 +7,8 @@ use std::{env, fs};
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
 use birdcage::error::{Error as SandboxError, Result as SandboxResult};
+#[cfg(target_os = "linux")]
+use birdcage::linux::LANDLOCK_ABI;
 #[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::permissions::PermissionsOptions;
@@ -188,40 +190,6 @@ impl Permissions {
             && self.unsandboxed_run.get().is_none()
     }
 
-    /// Build a sandbox matching the requested permissions.
-    #[cfg(unix)]
-    pub fn build_sandbox(&self) -> Result<Birdcage> {
-        let mut birdcage = default_sandbox()?;
-
-        for path in self.read.sandbox_paths().iter().map(PathBuf::from) {
-            add_exception(&mut birdcage, Exception::Read(path))?;
-        }
-        for path in self.write.sandbox_paths().iter().map(PathBuf::from) {
-            add_exception(&mut birdcage, Exception::Write(path))?;
-        }
-        for path in self.run.sandbox_paths().iter() {
-            let absolute_path = resolve_bin_path(path);
-            add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
-        }
-
-        if self.net.get().is_some() {
-            birdcage.add_exception(Exception::Networking)?;
-        }
-
-        let env_exceptions = match &self.env {
-            Permission::Boolean(true) => vec![Exception::FullEnvironment],
-            Permission::Boolean(false) => Vec::new(),
-            Permission::List(keys) => {
-                keys.iter().map(|key| Exception::Environment(key.clone())).collect()
-            },
-        };
-        for exception in env_exceptions {
-            add_exception(&mut birdcage, exception)?;
-        }
-
-        Ok(birdcage)
-    }
-
     pub fn subset_of(&self, other: &Permissions) -> Result<Permissions> {
         let err_ctx = |name: &'static str| move |e| anyhow!("Invalid {name} permissions: {}", e);
 
@@ -276,8 +244,23 @@ impl From<&Permissions> for PermissionsOptions {
 
 /// Construct sandbox with a set of pre-defined acceptable exceptions.
 #[cfg(unix)]
-pub fn default_sandbox() -> SandboxResult<Birdcage> {
+pub fn default_sandbox(strict: bool, min_landlock_abi: u8) -> SandboxResult<Birdcage> {
+    #[cfg(not(target_os = "linux"))]
     let mut birdcage = Birdcage::new()?;
+
+    #[cfg(target_os = "linux")]
+    let abi = match min_landlock_abi {
+        3 => LANDLOCK_ABI::V3,
+        2 => LANDLOCK_ABI::V2,
+        _ => LANDLOCK_ABI::V1,
+    };
+    #[cfg(target_os = "linux")]
+    let mut birdcage = Birdcage::new_with_version(abi)?;
+
+    // Do not add any default exceptions for strict sandboxes.
+    if strict {
+        return Ok(birdcage);
+    }
 
     // Permit read access to lib for dynamic linking.
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/lib".into()))?;

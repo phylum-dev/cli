@@ -539,6 +539,14 @@ pub fn add_subcommands(command: Command) -> Command {
                     .help("Do not add any default sandbox exceptions")
                     .long("strict")
                     .action(ArgAction::SetTrue),
+                Arg::new("best-effort")
+                    .help("Skip sandboxing if it is not supported")
+                    .long("best-effort")
+                    .action(ArgAction::SetTrue),
+                Arg::new("min-landlock-abi")
+                    .help("Minimum required landlock ABI")
+                    .long("min-landlock-abi")
+                    .value_name("ABI"),
                 Arg::new("cmd").help("Command to be executed").value_name("CMD").required(true),
                 Arg::new("args")
                     .help("Command arguments")

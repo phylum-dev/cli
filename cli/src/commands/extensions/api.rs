@@ -78,6 +78,10 @@ struct ProcessException {
     net: bool,
     #[serde(default)]
     strict: bool,
+    #[serde(default)]
+    ignore_sandboxing_errors: bool,
+    #[serde(default)]
+    minimum_landlock_version: u8,
 }
 
 #[cfg(unix)]
@@ -393,6 +397,30 @@ async fn parse_lockfile(
     Ok(PackageLock { packages: parsed.packages, format: parsed.format })
 }
 
+/// Return error when trying to sandbox on Windows.
+#[op]
+#[cfg(not(unix))]
+fn run_sandboxed(process: Process) -> Result<ProcessOutput> {
+    if !process.exceptions.best_effort {
+        Err(anyhow!("Extension sandboxing is not supported on this platform"))
+    }
+
+    let output = Command::new(process.cmd)
+        .args(process.args)
+        .stdin(process.stdin)
+        .stdout(process.stdout)
+        .stderr(process.stderr)
+        .output()?;
+
+    Ok(ProcessOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        success: output.status.success(),
+        signal: output.status.signal(),
+        code: output.status.code(),
+    })
+}
+
 /// Run a command inside a sandbox.
 ///
 /// This runs the supplied command in a sandbox, without restricting the
@@ -403,6 +431,8 @@ async fn parse_lockfile(
 fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
     let Process { cmd, args, stdin, stdout, stderr, exceptions } = process;
 
+    let min_landlock_abi = exceptions.minimum_landlock_version;
+    let best_effort = exceptions.ignore_sandboxing_errors;
     let strict = exceptions.strict;
     let state = ExtensionState::from(op_state);
     let resolved_permissions =
@@ -413,7 +443,13 @@ fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<Pro
     sandbox_args.push("sandbox".into());
 
     // Create CLI arguments for `phylum sandbox` permission exceptions.
-    add_permission_args(&mut sandbox_args, &resolved_permissions, strict)?;
+    add_permission_args(
+        &mut sandbox_args,
+        &resolved_permissions,
+        strict,
+        best_effort,
+        min_landlock_abi,
+    )?;
 
     // Add sandboxed command arguments.
     sandbox_args.push("--".into());
@@ -450,9 +486,19 @@ fn add_permission_args<'a>(
     sandbox_args: &mut Vec<Cow<'a, str>>,
     permissions: &'a permissions::Permissions,
     strict: bool,
+    best_effort: bool,
+    min_landlock_abi: u8,
 ) -> Result<()> {
     if strict {
         sandbox_args.push("--strict".into());
+    }
+
+    if best_effort {
+        sandbox_args.push("--best-effort".into());
+    }
+
+    if min_landlock_abi > 1 {
+        sandbox_args.push(format!("--min-landlock-abi={min_landlock_abi}").into())
     }
 
     // Add filesystem exception arguments.
@@ -492,13 +538,6 @@ fn add_permission_args<'a>(
     }
 
     Ok(())
-}
-
-/// Return error when trying to sandbox on Windows.
-#[op]
-#[cfg(not(unix))]
-fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
-    Err(anyhow!("Extension sandboxing is not supported on this platform"))
 }
 
 #[op]
