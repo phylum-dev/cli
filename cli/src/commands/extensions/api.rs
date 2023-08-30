@@ -43,7 +43,7 @@ use crate::types::{PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
 /// Parsed lockfile content.
 #[derive(Serialize, Deserialize, Debug)]
 struct PackageLock {
-    packages: Vec<PackageDescriptor>,
+    packages: Vec<PackageDescriptorAndLockfile>,
     format: LockfileFormat,
 }
 
