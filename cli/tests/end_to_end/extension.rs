@@ -139,10 +139,10 @@ pub async fn parse_lockfile() {
         .build()
         .run()
         .success()
-        .stdout(
-            "{\"packages\":[{\"name\":\"accepts\",\"version\":\"1.3.8\",\"type\":\"npm\"}],\"\
-             format\":\"yarn\"}\n",
-        );
+        .stdout(predicates::str::contains(
+            "{\"packages\":[{\"name\":\"accepts\",\"version\":\"1.3.8\",\"type\":\"npm\",\"\
+             lockfile\":\"",
+        ));
 }
 
 #[tokio::test]
