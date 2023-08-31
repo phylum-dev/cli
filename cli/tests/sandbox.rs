@@ -93,7 +93,8 @@ fn default_deny_net() {
 
     test_cli
         .run(["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://phylum.io"])
-        .failure();
+        .failure()
+        .stderr(predicate::str::contains("Could not resolve host: phylum.io"));
 }
 
 #[test]
