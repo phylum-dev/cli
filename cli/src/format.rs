@@ -124,7 +124,11 @@ impl Format for PolicyEvaluationResponseRaw {
         }
 
         // Write summary for each issue.
-        for package in self.dependencies.iter().filter(|package| !package.rejections.is_empty()) {
+        for package in self
+            .dependencies
+            .iter()
+            .filter(|package| package.rejections.iter().any(|rejection| !rejection.suppressed))
+        {
             let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
 
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
