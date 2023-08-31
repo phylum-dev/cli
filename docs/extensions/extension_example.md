@@ -108,9 +108,9 @@ The lockfile object will look something like this:
 
 ```text
   packages: [
-    { lockfile: "package-lock.json", name: "accepts", version: "1.3.8" },
-    { lockfile: "package-lock.json", name: "array-flatten", version: "1.1.1" },
-    { lockfile: "package-lock.json", name: "accepts", version: "1.0.0" }
+    { lockfile: "package-lock.json", type: "npm", name: "accepts", version: "1.3.8" },
+    { lockfile: "package-lock.json", type: "npm", name: "array-flatten", version: "1.1.1" },
+    { lockfile: "package-lock.json", type: "npm", name: "accepts", version: "1.0.0" }
   ],
   package_type: "npm"
 }
