@@ -414,9 +414,9 @@ dependencies = [
 
 [[package]]
 name = "birdcage"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e5ccc96ccfd575fe9c1b3e9cdfe76a4dc22515363da0d84831ff0db9c561212"
+checksum = "3770335bb41dbfd57e869318d341a2eb946b6578d3232e70047a2ee26a5d7bc3"
 dependencies = [
  "landlock",
  "libc",
