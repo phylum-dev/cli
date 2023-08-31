@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Changed
+
+- `PhylumApi.parseLockfile` now adds a relative path to each package,
+    allowing for Phylum's UI to display the correct lockfile path for the job
+
 ## 5.7.0 - 2023-08-24
 
 ### Added

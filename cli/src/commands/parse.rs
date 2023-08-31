@@ -2,7 +2,6 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use std::vec::IntoIter;
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
@@ -13,33 +12,22 @@ use crate::commands::{CommandResult, ExitCode};
 use crate::{config, print_user_warning};
 
 pub struct ParsedLockfile {
-    pub path: PathBuf,
+    pub packages: Vec<PackageDescriptorAndLockfile>,
     pub format: LockfileFormat,
-    pub packages: Vec<PackageDescriptor>,
+    pub path: PathBuf,
 }
 
-pub struct ParsedLockfileIterator {
-    path: PathBuf,
-    packages: IntoIter<PackageDescriptor>,
-}
+impl ParsedLockfile {
+    fn new(path: PathBuf, format: LockfileFormat, packages: Vec<PackageDescriptor>) -> Self {
+        let packages = packages
+            .into_iter()
+            .map(|package_descriptor| PackageDescriptorAndLockfile {
+                package_descriptor,
+                lockfile: Some(path.to_string_lossy().into_owned()),
+            })
+            .collect();
 
-impl Iterator for ParsedLockfileIterator {
-    type Item = PackageDescriptorAndLockfile;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.packages.next().map(|package_descriptor| PackageDescriptorAndLockfile {
-            package_descriptor,
-            lockfile: Some(self.path.to_string_lossy().into_owned()),
-        })
-    }
-}
-
-impl IntoIterator for ParsedLockfile {
-    type IntoIter = ParsedLockfileIterator;
-    type Item = PackageDescriptorAndLockfile;
-
-    fn into_iter(self) -> Self::IntoIter {
-        ParsedLockfileIterator { path: self.path, packages: self.packages.into_iter() }
+        Self { packages, format, path }
     }
 }
 
@@ -60,14 +48,13 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let lockfiles = config::lockfiles(matches, project.as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
-
     for lockfile in lockfiles {
-        let parsed_lockfile =
+        let mut parsed_lockfile =
             parse_lockfile(&lockfile.path, project_root, Some(&lockfile.lockfile_type))
                 .with_context(|| {
                     format!("could not parse lockfile: {}", lockfile.path.display())
                 })?;
-        pkgs.extend(parsed_lockfile);
+        pkgs.append(&mut parsed_lockfile.packages);
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
@@ -105,7 +92,7 @@ pub fn parse_lockfile(
         let lockfile = strip_root_path(lockfile, project_root)?;
 
         match packages {
-            Ok(packages) => return Ok(ParsedLockfile { path: lockfile, format, packages }),
+            Ok(packages) => return Ok(ParsedLockfile::new(lockfile, format, packages)),
             // Store error on failure.
             Err(err) => lockfile_error = Some(err),
         }
@@ -139,7 +126,7 @@ pub fn parse_lockfile(
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
 
-    Ok(ParsedLockfile { path: display_path, format, packages })
+    Ok(ParsedLockfile::new(display_path, format, packages))
 }
 
 /// Attempt to parse a lockfile.
@@ -220,7 +207,7 @@ fn try_get_packages(path: PathBuf, project_root: Option<&PathBuf>) -> Result<Par
 
             let packages = filter_packages(packages);
 
-            return Ok(ParsedLockfile { path: lockfile, packages, format });
+            return Ok(ParsedLockfile::new(lockfile, format, packages));
         }
     }
 

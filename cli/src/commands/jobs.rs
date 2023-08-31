@@ -107,7 +107,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
         let project_root = current_project.as_ref().map(|p| p.root());
 
         for lockfile in jobs_project.lockfiles {
-            let res =
+            let mut parsed_lockfile =
                 parse::parse_lockfile(&lockfile.path, project_root, Some(&lockfile.lockfile_type))
                     .with_context(|| {
                         format!(
@@ -119,12 +119,12 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
             if pretty_print {
                 print_user_success!(
                     "Successfully parsed lockfile {:?} as type: {}",
-                    res.path,
-                    res.format.name()
+                    parsed_lockfile.path,
+                    parsed_lockfile.format.name()
                 );
             }
 
-            packages.extend(res);
+            packages.append(&mut parsed_lockfile.packages);
         }
 
         if let Some(base) = matches.get_one::<String>("base") {

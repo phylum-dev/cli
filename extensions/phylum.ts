@@ -430,10 +430,10 @@ export class PhylumApi {
    * {
    *   format: "npm",
    *   packages: [
-   *     { name: "accepts", version: "1.3.8", type: "npm" },
-   *     { name: "ms", version: "2.0.0", type: "npm" },
-   *     { name: "negotiator", version: "0.6.3", type: "npm" },
-   *     { name: "ms", version: "2.1.3", type: "npm" }
+   *     { lockfile: "package-lock.json", name: "accepts", version: "1.3.8", type: "npm" },
+   *     { lockfile: "package-lock.json", name: "ms", version: "2.0.0", type: "npm" },
+   *     { lockfile: "package-lock.json", name: "negotiator", version: "0.6.3", type: "npm" },
+   *     { lockfile: "package-lock.json", name: "ms", version: "2.1.3", type: "npm" }
    *   ]
    * }
    * ```
