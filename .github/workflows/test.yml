@@ -114,10 +114,12 @@ jobs:
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 
-  # This job reports the results of the matrixes above
+  # This job reports the results of the test jobs above and is used to enforce status checks in
+  # the repo settings without needing to update those settings every time the test jobs are updated.
   test:
+    name: Test rollup
     if: always()
-    needs: [clippy, test-matrix, all-features, oldstable]
+    needs: [rustfmt, clippy, test-matrix, oldstable, all-features, deno-checks, shellcheck]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
