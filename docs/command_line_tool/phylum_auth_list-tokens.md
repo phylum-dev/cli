@@ -12,14 +12,14 @@ Usage: phylum auth list-tokens [OPTIONS]
 
 ### Options
 
--j, --json
+`-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help

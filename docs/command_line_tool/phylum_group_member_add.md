@@ -13,18 +13,18 @@ Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 
 ### Arguments
 
-<USER>
+`<USER>`
 &emsp; User(s) to be added
 
 ### Options
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

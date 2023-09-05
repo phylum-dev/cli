@@ -12,31 +12,31 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 
 ### Arguments
 
-[PROJECT_NAME]
+`[PROJECT_NAME]`
 &emsp; Phylum project name
 
 ### Options
 
--g, --group <GROUP_NAME>
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group which will be the owner of the project
 
--l, --lockfile <LOCKFILE>
+`-l`, `--lockfile` `<LOCKFILE>`
 &emsp; Project-relative lock file path
 
--t, --lockfile-type <type>
+`-t`, `--lockfile-type` `<type>`
 &emsp; Lock file type used for all lock files (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
--f, --force
+`-f`, `--force`
 &emsp; Overwrite existing configurations without confirmation
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

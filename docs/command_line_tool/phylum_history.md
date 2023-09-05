@@ -12,27 +12,27 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 
 ### Arguments
 
-[JOB_ID]
+`[JOB_ID]`
 &emsp; The job id to query
 
 ### Options
 
--j, --json
+`-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
--p, --project <project_name>
+`-p`, `--project` `<project_name>`
 &emsp; Project to be queried
 
--g, --group <group_name>
+`-g`, `--group` `<group_name>`
 &emsp; Group to be queried
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

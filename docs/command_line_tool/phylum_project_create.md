@@ -13,21 +13,21 @@ Usage: phylum project create [OPTIONS] <name>
 
 ### Arguments
 
-<name>
+`<name>`
 &emsp; Name of the project
 
 ### Options
 
--g, --group <group_name>
+`-g`, `--group` `<group_name>`
 &emsp; Group which will be the owner of the project
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

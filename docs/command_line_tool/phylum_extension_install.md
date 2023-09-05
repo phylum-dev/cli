@@ -13,26 +13,26 @@ Usage: phylum extension install [OPTIONS] <PATH>
 
 ### Arguments
 
-<PATH>
+`<PATH>`
 
 ### Options
 
--y, --yes
+`-y`, `--yes`
 &emsp; Accept permissions and overwrite existing extensions (same as \`--overwrite --accept-permissions\`)
 
---accept-permissions
+`--accept-permissions`
 &emsp; Automatically accept requested permissions
 
---overwrite
+`--overwrite`
 &emsp; Overwrite existing extension
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Details

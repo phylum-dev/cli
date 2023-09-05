@@ -12,19 +12,19 @@ Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
 
 ### Arguments
 
-<TOKEN_NAME>
+`<TOKEN_NAME>`
 &emsp; Unique name to identify the new token
 
 ### Options
 
--e, --expiry <DAYS>
+`-e`, `--expiry` `<DAYS>`
 &emsp; Number of days the token will be valid
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help

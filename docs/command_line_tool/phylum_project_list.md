@@ -13,19 +13,19 @@ Usage: phylum project list [OPTIONS]
 
 ### Options
 
--j, --json
+`-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
--g, --group <group_name>
+`-g`, `--group` `<group_name>`
 &emsp; Group to list projects for
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

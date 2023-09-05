@@ -12,22 +12,22 @@ Usage: phylum package [OPTIONS] <type> <name> <version>
 
 ### Arguments
 
-<type>
+`<type>`
 &emsp; Package ecosystem type
 &emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
-<name>
+`<name>`
 &emsp; The name of the package.
 
-<version>
+`<version>`
 &emsp; The version of the package.
 
 ### Options
 
--j, --json
+`-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
--f, --filter <filter>
+`-f`, `--filter` `<filter>`
 &emsp; Provide a filter used to limit the issues displayed
 
 &nbsp;&nbsp;&nbsp;&nbsp;EXAMPLES:
@@ -38,13 +38,13 @@ Usage: phylum package [OPTIONS] <type> <name> <version>
 &nbsp;&nbsp;&nbsp;&nbsp;and 'engineering' domains
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--filter=crit,aut,eng
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Details

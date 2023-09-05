@@ -13,16 +13,16 @@ Usage: phylum auth token [OPTIONS]
 
 ### Options
 
--b, --bearer
+`-b`, `--bearer`
 &emsp; Output the short-lived bearer token for the Phylum API
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

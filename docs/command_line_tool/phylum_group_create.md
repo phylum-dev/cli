@@ -13,18 +13,18 @@ Usage: phylum group create [OPTIONS] <group_name>
 
 ### Arguments
 
-<group_name>
+`<group_name>`
 &emsp; Name for the new group
 
 ### Options
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

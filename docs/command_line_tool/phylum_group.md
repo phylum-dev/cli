@@ -12,19 +12,19 @@ Usage: phylum group [OPTIONS] <COMMAND>
 
 ### Options
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Commands
 
-* [phylum group list](./phylum_group_list)
-* [phylum group create](./phylum_group_create)
-* [phylum group delete](./phylum_group_delete)
-* [phylum group member](./phylum_group_member)
-* [phylum group transfer](./phylum_group_transfer)
+* [phylum group create](./phylum_group_create.md)
+* [phylum group delete](./phylum_group_delete.md)
+* [phylum group list](./phylum_group_list.md)
+* [phylum group member](./phylum_group_member.md)
+* [phylum group transfer](./phylum_group_transfer.md)

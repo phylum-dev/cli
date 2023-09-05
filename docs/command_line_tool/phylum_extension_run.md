@@ -13,20 +13,20 @@ Usage: phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 
 ### Arguments
 
-<PATH>
+`<PATH>`
 
-[OPTIONS]
+`[OPTIONS]`
 &emsp; Extension parameters
 
 ### Options
 
--y, --yes
+`-y`, `--yes`
 &emsp; Automatically accept requested permissions
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
 ### Details

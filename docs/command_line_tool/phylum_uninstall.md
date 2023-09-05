@@ -12,16 +12,16 @@ Usage: phylum uninstall [OPTIONS]
 
 ### Options
 
--p, --purge
+`-p`, `--purge`
 &emsp; Remove all files, including configuration files (default: false)
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples

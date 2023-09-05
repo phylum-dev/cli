@@ -12,34 +12,34 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 
 ### Arguments
 
-[LOCKFILE]
+`[LOCKFILE]`
 &emsp; The package lock files to submit
 
 ### Options
 
--l, --label <label>
+`-l`, `--label` `<label>`
 &emsp; Specify a label to use for analysis
 
--j, --json
+`-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
--p, --project <project_name>
+`-p`, `--project` `<project_name>`
 &emsp; Specify a project to use for analysis
 
--g, --group <group_name>
+`-g`, `--group` `<group_name>`
 &emsp; Specify a group to use for analysis
 
--t, --lockfile-type <type>
+`-t`, `--lockfile-type` `<type>`
 &emsp; Lock file type used for all lock files (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Details

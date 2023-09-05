@@ -13,18 +13,18 @@ Usage: phylum auth set-token [OPTIONS] [TOKEN]
 
 ### Arguments
 
-[TOKEN]
+`[TOKEN]`
 &emsp; Authentication token to store (read from stdin if omitted)
 
 ### Options
 
--v, --verbose...
+`-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
--q, --quiet...
+`-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
--h, --help
+`-h`, `--help`
 &emsp; Print help
 
 ### Examples
