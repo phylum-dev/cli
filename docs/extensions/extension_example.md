@@ -107,6 +107,7 @@ this function is asynchronous, we need to `await` it.
 The lockfile object will look something like this:
 
 ```text
+{
   packages: [
     { lockfile: "package-lock.json", type: "npm", name: "accepts", version: "1.3.8" },
     { lockfile: "package-lock.json", type: "npm", name: "array-flatten", version: "1.1.1" },
