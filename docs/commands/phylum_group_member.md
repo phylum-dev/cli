@@ -27,6 +27,6 @@ Usage: phylum group member [OPTIONS] --group <GROUP> <COMMAND>
 
 ### Commands
 
-* [phylum group member add](./phylum_group_member_add.md)
-* [phylum group member list](./phylum_group_member_list.md)
-* [phylum group member remove](./phylum_group_member_remove.md)
+* [phylum group member add](./phylum_group_member_add)
+* [phylum group member list](./phylum_group_member_list)
+* [phylum group member remove](./phylum_group_member_remove)

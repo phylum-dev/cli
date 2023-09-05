@@ -23,8 +23,8 @@ Usage: phylum extension [OPTIONS] [COMMAND]
 
 ### Commands
 
-* [phylum extension install](./phylum_extension_install.md)
-* [phylum extension list](./phylum_extension_list.md)
-* [phylum extension new](./phylum_extension_new.md)
-* [phylum extension run](./phylum_extension_run.md)
-* [phylum extension uninstall](./phylum_extension_uninstall.md)
+* [phylum extension install](./phylum_extension_install)
+* [phylum extension list](./phylum_extension_list)
+* [phylum extension new](./phylum_extension_new)
+* [phylum extension run](./phylum_extension_run)
+* [phylum extension uninstall](./phylum_extension_uninstall)
