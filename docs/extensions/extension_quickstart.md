@@ -43,7 +43,7 @@ phylum extension install ./my-extension
 Once successfully installed, our extension can be executed by using its name as
 a subcommand for the phylum CLI:
 
-```console
+```shellsession
 $ phylum my-extension
 Hello, World!
 ```

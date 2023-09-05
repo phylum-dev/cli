@@ -39,7 +39,7 @@ phylum analyze
 
 The default response will provide you with a high-level overview of your packages, including the total project score, score distributions across all packages, whether or not this analysis was a pass or fail and the total number of packages still processing.
 
-```console
+```shellsession
 ❯ phylum analyze
 ✅ Successfully parsed lockfile "./requirements.txt" as type: pip
 ✅ Successfully parsed lockfile "./package-lock.json" as type: npm
