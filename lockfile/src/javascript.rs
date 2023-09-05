@@ -161,7 +161,7 @@ impl Parse for YarnLock {
                 let (_, entries) = yarn::parse(data)
                     .finish()
                     .map_err(|e| anyhow!(convert_error(data, e)))
-                    .context("Failed to parse yarn lock file")?;
+                    .context("Failed to parse yarn lockfile")?;
                 return Ok(entries);
             },
         };
@@ -464,11 +464,14 @@ mod tests {
         let pkgs =
             YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
-        assert_eq!(pkgs, vec![Package {
-            name: "@yarnpkg/lockfile".to_string(),
-            version: PackageVersion::FirstParty("1.1.0".into()),
-            package_type: PackageType::Npm,
-        }]);
+        assert_eq!(
+            pkgs,
+            vec![Package {
+                name: "@yarnpkg/lockfile".to_string(),
+                version: PackageVersion::FirstParty("1.1.0".into()),
+                package_type: PackageType::Npm,
+            }]
+        );
     }
 
     #[test]

@@ -60,7 +60,7 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
    phylum init
    ```
 
-1. [Submit your package lock file](https://docs.phylum.io/docs/phylum_analyze)
+1. [Submit your package lockfile](https://docs.phylum.io/docs/phylum_analyze)
 
    ```
    phylum analyze

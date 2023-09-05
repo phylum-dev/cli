@@ -79,7 +79,7 @@ impl LockfileFormat {
     /// Get the canonical Phylum name for this format.
     ///
     /// This is the string used in documentation and examples where the user
-    /// specifies a lock file format by name.
+    /// specifies a lockfile format by name.
     ///
     /// This method returns the same value as `.to_string()`, but is const and
     /// returns a `&'static str`.
@@ -124,13 +124,13 @@ impl LockfileFormat {
         }
     }
 
-    /// Iterate over all supported lock file formats.
+    /// Iterate over all supported lockfile formats.
     pub fn iter() -> LockfileFormatIter {
         LockfileFormatIter(0)
     }
 }
 
-/// An iterator of all supported lock file formats.
+/// An iterator of all supported lockfile formats.
 pub struct LockfileFormatIter(u8);
 
 impl Iterator for LockfileFormatIter {
@@ -169,7 +169,7 @@ pub trait Parse {
     /// Parse from a string.
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>>;
 
-    /// Test if a file name could be a lock file supported by this parser.
+    /// Test if a file name could be a lockfile supported by this parser.
     ///
     /// The file does not need to exist.
     fn is_path_lockfile(&self, path: &Path) -> bool;

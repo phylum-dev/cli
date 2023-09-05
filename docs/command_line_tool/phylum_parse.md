@@ -4,7 +4,7 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Parse lock files and output their packages as JSON
+Parse lockfiles and output their packages as JSON
 
 ```sh
 Usage: phylum parse [OPTIONS] [LOCKFILE]...
@@ -13,12 +13,12 @@ Usage: phylum parse [OPTIONS] [LOCKFILE]...
 ### Arguments
 
 `[LOCKFILE]`
-&emsp; The package lock files to submit
+&emsp; The package lockfiles to submit
 
 ### Options
 
 `-t`, `--lockfile-type` `<type>`
-&emsp; Lock file type used for all lock files (default: auto)
+&emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `-v`, `--verbose`...
