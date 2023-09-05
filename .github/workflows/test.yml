@@ -117,7 +117,6 @@ jobs:
   # This job reports the results of the test jobs above and is used to enforce status checks in
   # the repo settings without needing to update those settings every time the test jobs are updated.
   test:
-    name: Test rollup
     if: always()
     needs: [rustfmt, clippy, test-matrix, oldstable, all-features, deno-checks, shellcheck]
     runs-on: ubuntu-latest
