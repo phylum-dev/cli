@@ -12,12 +12,13 @@ The Phylum CLI supports processing many different lockfiles:
 | `poetry`      | `poetry.lock` (Version 1 + 2)                                          |
 | `gem`         | `Gemfile.lock`                                                         |
 | `msbuild`     | `*.csproj`                                                             |
-| `nugetlock`   | `packages.lock.json`                                                   |
+| `nugetlock`   | `packages.lock.json` <br /> `packages.*.lock.json`                     |
 | `mvn`         | `effective-pom.xml`                                                    |
 | `gradle`      | `gradle.lockfile`                                                      |
 | `go`          | `go.sum`                                                               |
 | `cargo`       | `Cargo.lock`                                                           |
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
+| `cyclonedx`   | `*bom.json` <br /> `*bom.xml`                                          |
 
 :::note
 

@@ -49,6 +49,7 @@ impl ExtensionManifest {
 
 #[derive(Clone, Debug)]
 pub struct Extension {
+    /// Absolute path to the extension.
     path: PathBuf,
     manifest: ExtensionManifest,
 }
@@ -101,11 +102,11 @@ impl Extension {
 
     /// Install the extension in the default path.
     pub fn install(&self) -> Result<()> {
-        let target_prefix = extension_path(self.name())?;
-
-        if target_prefix == self.path {
+        if self.installed() {
             return Err(anyhow!("extension path and installation path are identical, skipping"));
         }
+
+        let target_prefix = extension_path(self.name())?;
 
         if target_prefix.exists() {
             fs::remove_dir_all(&target_prefix)?;
@@ -118,10 +119,14 @@ impl Extension {
 
     pub fn uninstall(self) -> Result<()> {
         println!("Uninstalling extension {}...", self.name());
-        let target_prefix = extension_path(self.name())?;
 
-        if target_prefix != self.path {
+        if !self.installed() {
             return Err(anyhow!("extension {} is not installed, skipping", self.name()));
+        }
+
+        if let Some(state_path) = self.state_path() {
+            // Ignore errors since this may not exist
+            let _ = fs::remove_dir_all(state_path);
         }
 
         fs::remove_dir_all(&self.path)?;
@@ -129,6 +134,15 @@ impl Extension {
         println!("Extension {} uninstalled successfully", self.name());
 
         Ok(())
+    }
+
+    /// Return true if this is an installed extension.
+    fn installed(&self) -> bool {
+        let installed_path = extension_path(self.name())
+            .ok()
+            .and_then(|installed_path| installed_path.canonicalize().ok());
+
+        Some(&self.path) == installed_path.as_ref()
     }
 
     /// Load an extension from the default path.
@@ -139,6 +153,11 @@ impl Extension {
     /// Return the path to this extension.
     pub fn path(&self) -> PathBuf {
         self.path.clone()
+    }
+
+    /// A directory where installed extensions can store state.
+    pub fn state_path(&self) -> Option<PathBuf> {
+        self.installed().then(|| extension_state_path(self.name()).ok()).flatten()
     }
 
     /// Return the path to this extension's entry point.
@@ -173,6 +192,9 @@ impl TryFrom<PathBuf> for Extension {
     type Error = anyhow::Error;
 
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
+        // Ensure that the path is an absolute path.
+        let path = path.canonicalize()?;
+
         if !path.is_dir() {
             return Err(anyhow!("{}: not a directory", path.display()));
         }
@@ -218,10 +240,14 @@ pub fn validate_name(name: &str) -> Result<(), anyhow::Error> {
 }
 
 // Construct and return the extension path: $XDG_DATA_HOME/phylum/extensions
-pub fn extensions_path() -> Result<PathBuf, anyhow::Error> {
+pub fn extensions_path() -> Result<PathBuf> {
     Ok(dirs::data_dir()?.join("phylum").join("extensions"))
 }
 
-fn extension_path(name: &str) -> Result<PathBuf, anyhow::Error> {
+fn extension_path(name: &str) -> Result<PathBuf> {
     Ok(extensions_path()?.join(name))
+}
+
+fn extension_state_path(name: &str) -> Result<PathBuf> {
+    Ok(dirs::state_dir()?.join("phylum/extensions").join(name))
 }

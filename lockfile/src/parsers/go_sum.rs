@@ -10,8 +10,7 @@ use super::IResult;
 use crate::{Package, PackageVersion};
 
 pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
-    let (input, mut pkg_options) = many1(package)(input)?;
-    let mut pkgs = pkg_options.drain(..).collect::<Vec<_>>();
+    let (input, mut pkgs) = many1(package)(input)?;
 
     // Filter duplicate packages.
     pkgs.sort_unstable();

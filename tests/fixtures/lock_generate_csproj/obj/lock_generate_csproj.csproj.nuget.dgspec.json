@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/chris/programming/phylum/cli/tests/fixtures/lock_generate_csproj/lock_generate_csproj.csproj": {}
+  },
+  "projects": {
+    "/home/chris/programming/phylum/cli/tests/fixtures/lock_generate_csproj/lock_generate_csproj.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/chris/programming/phylum/cli/tests/fixtures/lock_generate_csproj/lock_generate_csproj.csproj",
+        "projectName": "lock_generate_csproj",
+        "projectPath": "/home/chris/programming/phylum/cli/tests/fixtures/lock_generate_csproj/lock_generate_csproj.csproj",
+        "packagesPath": "/home/chris/.nuget/packages/",
+        "outputPath": "/home/chris/programming/phylum/cli/tests/fixtures/lock_generate_csproj/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/chris/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreLockProperties": {
+          "restorePackagesWithLockFile": "true"
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "dependencies": {
+            "Azure.Core": {
+              "target": "Package",
+              "version": "[1.34.0, )"
+            },
+            "Castle.Core": {
+              "target": "Package",
+              "version": "[5.1.1, )"
+            },
+            "Microsoft.Identity.Client": {
+              "target": "Package",
+              "version": "[4.54.1, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
+            "Serilog": {
+              "target": "Package",
+              "version": "[3.0.2-dev-02044, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[7.0.9, 7.0.9]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/7.0.109/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

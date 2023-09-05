@@ -1,0 +1,10 @@
+name = "cargo"
+description = "Cargo package manager hooks"
+entry_point = "main.ts"
+
+[permissions]
+write = ["./", "~/.cargo"]
+read = true
+run = true
+net = true
+unsandboxed_run = ["cargo"]

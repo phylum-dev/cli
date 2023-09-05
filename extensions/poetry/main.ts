@@ -43,7 +43,7 @@ if (firstSubcommand > 0) {
 // Ignore all commands that shouldn't be intercepted.
 if (
   Deno.args.length == 0 ||
-  !["add", "update", "install"].includes(Deno.args[0])
+  !["add", "update", "install", "remove"].includes(Deno.args[0])
 ) {
   const cmd = new Deno.Command("poetry", { args: Deno.args });
   const status = await cmd.spawn().status;
@@ -64,7 +64,7 @@ if (!root) {
   Deno.exit(126);
 }
 
-// Analyze new dependencies with phylum before install/update.
+// Analyze new dependencies with phylum.
 await poetryCheckDryRun(Deno.args[0], Deno.args.slice(1));
 
 // Execute install without sandboxing after successful analysis.

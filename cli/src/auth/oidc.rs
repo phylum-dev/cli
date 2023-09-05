@@ -8,6 +8,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use base64::engine::general_purpose;
 use base64::Engine as _;
+use chrono::{DateTime, Utc};
 use maplit::hashmap;
 use phylum_types::types::auth::{AccessToken, AuthorizationCode, RefreshToken, TokenResponse};
 use rand::distributions::Alphanumeric;
@@ -213,9 +214,10 @@ fn build_grant_type_auth_code_post_body(
     authorization_code: &AuthorizationCode,
     code_verfier: &CodeVerifier,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
 ) -> Result<HashMap<String, String>> {
-    let body = hashmap! {
-        "client_id".to_owned() => LOCKSMITH_CLIENT_ID.to_owned(),
+    let mut body = hashmap! {
+        "client_id".to_owned() => Default::default(),
         "code".to_owned() => authorization_code.into(),
         "code_verifier".to_owned() => code_verfier.into(),
         "grant_type".to_owned() => "authorization_code".to_owned(),
@@ -223,6 +225,11 @@ fn build_grant_type_auth_code_post_body(
         "redirect_uri".to_owned() => redirect_url.to_string(),
         "name".to_owned() => token_name.unwrap_or_else(|| format!("phylum-cli-{}", Uuid::new_v4().as_hyphenated())),
     };
+
+    if let Some(expiry) = expiry {
+        body.insert("expiry".to_owned(), expiry.to_string());
+    }
+
     Ok(body)
 }
 
@@ -244,6 +251,7 @@ pub async fn acquire_tokens(
     authorization_code: &AuthorizationCode,
     code_verifier: &CodeVerifier,
     token_name: Option<String>,
+    expiry: Option<DateTime<Utc>>,
     ignore_certs: bool,
 ) -> Result<LocksmithTokenResponse> {
     let token_url = locksmith_settings.token_endpoint.clone();
@@ -253,6 +261,7 @@ pub async fn acquire_tokens(
         authorization_code,
         code_verifier,
         token_name,
+        expiry,
     )?;
 
     let client = reqwest::Client::builder()
@@ -317,7 +326,8 @@ pub async fn refresh_tokens(
     }
 }
 
-pub async fn handle_refresh_tokens(
+/// Get a new access token using the refresh token.
+pub async fn renew_access_token(
     refresh_token: &RefreshToken,
     ignore_certs: bool,
     api_uri: &str,
@@ -342,16 +352,34 @@ pub struct LocksmithTokenResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UserInfo {
     pub email: String,
-    pub sub: Option<String>,
     pub name: Option<String>,
-    pub given_name: Option<String>,
-    pub family_name: Option<String>,
-    pub preferred_username: Option<String>,
-    pub email_verified: Option<bool>,
+}
+
+impl UserInfo {
+    pub fn identity(&self) -> String {
+        match &self.name {
+            Some(name) => format!("{} <{}>", name, self.email),
+            None => format!("<{}>", self.email),
+        }
+    }
 }
 
 /// Keycloak error response.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseError {
     error: String,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn user_info_identity() {
+        let named = UserInfo { email: "john@example.com".into(), name: Some("John Doe".into()) };
+        assert_eq!(named.identity(), "John Doe <john@example.com>");
+
+        let nameless = UserInfo { email: "prince@example.com".into(), name: None };
+        assert_eq!(nameless.identity(), "<prince@example.com>");
+    }
 }

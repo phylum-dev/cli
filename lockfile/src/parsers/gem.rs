@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
-use nom::combinator::recognize;
+use nom::combinator::{opt, recognize};
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
@@ -193,9 +193,10 @@ fn revision(input: &str) -> IResult<&str, &str> {
 }
 
 fn specs(input: &str) -> IResult<&str, &str> {
-    recognize(many_till(take_till_line_end, recognize(tuple((space0, tag("specs:"), line_ending)))))(
-        input,
-    )
+    recognize(many_till(
+        take_till_line_end,
+        recognize(tuple((space0, tag("specs:"), opt(line_ending)))),
+    ))(input)
 }
 
 fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Install Rust nightly toolchain
         run: rustup toolchain install --no-self-update nightly --profile minimal -c rustfmt
@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal -c clippy
@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
@@ -66,7 +66,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Oldstable
         run: |
@@ -83,7 +83,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     container: denoland/deno
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
       - name: deno fmt
         run: deno fmt --check
       - name: deno lint
@@ -109,7 +109,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
       - name: Script Style Check
         if: github.event_name != 'schedule'
         run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")

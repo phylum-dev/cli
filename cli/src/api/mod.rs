@@ -27,13 +27,13 @@ use crate::api::endpoints::BaseUriError;
 use crate::app::USER_AGENT;
 use crate::auth::jwt::RealmRole;
 use crate::auth::{
-    fetch_locksmith_server_settings, handle_auth_flow, handle_refresh_tokens, jwt, AuthAction,
+    fetch_locksmith_server_settings, handle_auth_flow, jwt, renew_access_token, AuthAction,
     UserInfo,
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
     HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw,
+    PolicyEvaluationResponseRaw, RevokeTokenRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -94,8 +94,56 @@ struct ApiJsonError {
 }
 
 impl PhylumApi {
-    pub fn roles(&self) -> &HashSet<RealmRole> {
-        &self.roles
+    /// Create a phylum API client using the given Auth configuration, api url
+    /// and request timeout. If in the process of creating the client,
+    /// credentials must be obtained, the auth_info struct will be updated
+    /// with the new information. It is the duty of the calling code to save
+    /// any changes
+    pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
+        // Do we have a refresh token?
+        let ignore_certs = config.ignore_certs();
+        let refresh_token = match config.auth_info.offline_access() {
+            Some(refresh_token) => refresh_token.clone(),
+            None => {
+                let refresh_token = handle_auth_flow(
+                    AuthAction::Login,
+                    None,
+                    None,
+                    ignore_certs,
+                    &config.connection.uri,
+                )
+                .await
+                .context("User login failed")?;
+                config.auth_info.set_offline_access(refresh_token.clone());
+                refresh_token
+            },
+        };
+
+        let access_token = renew_access_token(&refresh_token, ignore_certs, &config.connection.uri)
+            .await
+            .context("Token refresh failed")?;
+
+        let mut headers = HeaderMap::new();
+        // the cli runs a command or a few short commands then exits, so we do
+        // not need to worry about refreshing the access token. We just set it
+        // here and be done.
+        headers.insert(
+            "Authorization",
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
+        );
+        headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
+
+        let client = Client::builder()
+            .user_agent(USER_AGENT.as_str())
+            .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
+            .danger_accept_invalid_certs(ignore_certs)
+            .default_headers(headers)
+            .build()?;
+
+        // Try to parse token's roles.
+        let roles = jwt::user_roles(access_token.as_str()).unwrap_or_default();
+
+        Ok(Self { config, client, roles })
     }
 
     async fn get<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
@@ -153,56 +201,6 @@ impl PhylumApi {
 
         Ok(body)
     }
-}
-
-impl PhylumApi {
-    /// Create a phylum API client using the given Auth configuration, api url
-    /// and request timeout. If in the process of creating the client,
-    /// credentials must be obtained, the auth_info struct will be updated
-    /// with the new information. It is the duty of the calling code to save
-    /// any changes
-    pub async fn new(mut config: Config, request_timeout: Option<u64>) -> Result<Self> {
-        // Do we have a refresh token?
-        let ignore_certs = config.ignore_certs();
-        let refresh_token = match config.auth_info.offline_access() {
-            Some(refresh_token) => refresh_token.clone(),
-            None => {
-                let refresh_token =
-                    handle_auth_flow(AuthAction::Login, None, ignore_certs, &config.connection.uri)
-                        .await
-                        .context("User login failed")?;
-                config.auth_info.set_offline_access(refresh_token.clone());
-                refresh_token
-            },
-        };
-
-        let access_token =
-            handle_refresh_tokens(&refresh_token, ignore_certs, &config.connection.uri)
-                .await
-                .context("Token refresh failed")?;
-
-        let mut headers = HeaderMap::new();
-        // the cli runs a command or a few short commands then exits, so we do
-        // not need to worry about refreshing the access token. We just set it
-        // here and be done.
-        headers.insert(
-            "Authorization",
-            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
-        );
-        headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
-
-        let client = Client::builder()
-            .user_agent(USER_AGENT.as_str())
-            .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
-            .danger_accept_invalid_certs(ignore_certs)
-            .default_headers(headers)
-            .build()?;
-
-        // Try to parse token's roles.
-        let roles = jwt::user_roles(access_token.as_str()).unwrap_or_default();
-
-        Ok(Self { config, client, roles })
-    }
 
     /// update auth info by forcing the login flow, using the given Auth
     /// configuration. The auth_info struct will be updated with the new
@@ -215,7 +213,8 @@ impl PhylumApi {
         reauth: bool,
     ) -> Result<AuthInfo> {
         let action = if reauth { AuthAction::Reauth } else { AuthAction::Login };
-        let refresh_token = handle_auth_flow(action, token_name, ignore_certs, api_uri).await?;
+        let refresh_token =
+            handle_auth_flow(action, token_name, None, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
@@ -230,7 +229,7 @@ impl PhylumApi {
         api_uri: &str,
     ) -> Result<AuthInfo> {
         let refresh_token =
-            handle_auth_flow(AuthAction::Register, token_name, ignore_certs, api_uri).await?;
+            handle_auth_flow(AuthAction::Register, token_name, None, ignore_certs, api_uri).await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
@@ -433,11 +432,29 @@ impl PhylumApi {
         Ok(())
     }
 
+    /// List a user's locksmith tokens.
+    pub async fn list_tokens(&self) -> Result<Vec<UserToken>> {
+        let url = endpoints::list_tokens(&self.config.connection.uri)?;
+        self.get(url).await
+    }
+
+    /// Revoke a locksmith token.
+    pub async fn revoke_token(&self, name: &str) -> Result<()> {
+        let url = endpoints::revoke_token(&self.config.connection.uri)?;
+        let body = RevokeTokenRequest { name };
+        self.send_request_raw(Method::POST, url, Some(body)).await?;
+        Ok(())
+    }
+
     /// Get reachable vulnerabilities.
     #[cfg(feature = "vulnreach")]
     pub async fn vulnerabilities(&self, job: Job) -> Result<Vec<Vulnerability>> {
         let url = endpoints::vulnreach(&self.config.connection.uri)?;
         self.post(url, job).await
+    }
+
+    pub fn roles(&self) -> &HashSet<RealmRole> {
+        &self.roles
     }
 
     pub fn config(&self) -> &Config {

@@ -35,7 +35,7 @@ pub mod mockito {
     pub const DUMMY_AUTH_CODE: &str = "DUMMY_AUTH_CODE";
 
     pub const OIDC_URI: &str = "api/v0/.well-known/openid-configuration";
-    pub const LOCKSMITH_URI: &str = "api/v0/.well-known/locksmith-configuration";
+    pub const LOCKSMITH_URI: &str = "locksmith/v1/.well-known/locksmith-configuration";
     pub const AUTH_URI: &str = "auth";
     pub const USER_URI: &str = "user";
     pub const TOKEN_URI: &str = "token";

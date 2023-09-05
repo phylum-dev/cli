@@ -29,7 +29,7 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 
 `-t`, `--lockfile-type` `<type>`
 &emsp; Lockfile type used for all lockfiles (default: auto)
-&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `auto`
+&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -68,7 +68,7 @@ $ phylum analyze --label test_branch requirements.txt
 $ phylum analyze -p sample poetry.lock
 
 # Analyze a NuGet lockfile using the 'sample' project and 'sGroup' group
-$ phylum analyze -p sample -g sGroup app.csproj
+$ phylum analyze -p sample -g sGroup packages.lock.json
 
 # Analyze a RubyGems lockfile and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock

@@ -194,7 +194,7 @@ pub fn add_subcommands(command: Command) -> Command {
                             .action(ArgAction::Set)
                             .short('n')
                             .long("token-name")
-                            .help("API token name"),
+                            .help("Unique name for the new token that will be created"),
                     ),
                 )
                 .subcommand(
@@ -212,7 +212,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .action(ArgAction::Set)
                                 .short('n')
                                 .long("token-name")
-                                .help("API token name"),
+                                .help("Unique name for the new token that will be created"),
                         ),
                 )
                 .subcommand(
@@ -221,6 +221,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("set-token").about("Set the current authentication token").arg(
                         Arg::new("token")
+                            .value_name("TOKEN")
                             .action(ArgAction::Set)
                             .required(false)
                             .help("Authentication token to store (read from stdin if omitted)"),
@@ -234,6 +235,40 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("bearer")
                             .help("Output the short-lived bearer token for the Phylum API"),
                     ),
+                )
+                .subcommand(
+                    Command::new("list-tokens")
+                        .about("List all tokens associated with the logged-in user")
+                        .arg(
+                            Arg::new("json")
+                                .action(ArgAction::SetTrue)
+                                .short('j')
+                                .long("json")
+                                .help("Produce output in json format (default: false)"),
+                        ),
+                )
+                .subcommand(
+                    Command::new("revoke-token").about("Revoke an API token").arg(
+                        Arg::new("token-name")
+                            .value_name("TOKEN_NAME")
+                            .action(ArgAction::Append)
+                            .help("Unique token names which identify the tokens"),
+                    ),
+                )
+                .subcommand(
+                    Command::new("create-token").about("Create a new API token").args(&[
+                        Arg::new("token-name")
+                            .value_name("TOKEN_NAME")
+                            .action(ArgAction::Set)
+                            .required(true)
+                            .help("Unique name to identify the new token"),
+                        Arg::new("expiry")
+                            .value_name("DAYS")
+                            .short('e')
+                            .long("expiry")
+                            .action(ArgAction::Set)
+                            .help("Number of days the token will be valid"),
+                    ]),
                 ),
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))

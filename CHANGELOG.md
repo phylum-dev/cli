@@ -8,8 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Package header printed even when all issues were suppressed
+
+## [5.7.0] - 2023-08-24
+
+### Added
+- Support for ingesting CycloneDX `bom.json` and `bom.xml` files
+- `phylum auth list-tokens` subcommand to list API tokens
+- `phylum auth revoke-token` subcommand to revoke API tokens
+- `phylum auth create-token` subcommand to create API tokens
+- Ruby ecosystem extension for `bundle`
+- Rust ecosystem extension for `cargo`
+
+### Fixed
+- `Gemfile.lock` parsing with zero dependencies
+- Incorrect line numbers when printing errors in TypeScript extensions
+- Absolute paths submitted when analyzing manifest files
+- Ecosystem extensions not pre-checking `remove`/`uninstall` operations
+- Disabled update and uninstall commands in completion for Homebrew users
+
+## [5.6.0] - 2023-08-08
+
+### Added
+- Generating lockfiles for `*.csproj` files
+
 ### Changed
 - Include lockfile paths when analyzing projects
+- Generate and use API Keys instead of OpenID Connect tokens
 
 ### Fixed
 - Search for manifests' lockfiles in parent, rather than child directories
@@ -536,7 +562,9 @@ before, the existing project ID will be re-linked.
 ## 0.0.1
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.5.0...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.7.0...HEAD
+[5.7.0]: https://github.com/phylum-dev/cli/compare/v5.6.0...v5.7.0
+[5.6.0]: https://github.com/phylum-dev/cli/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/phylum-dev/cli/compare/v5.3.0...v5.5.0
 [5.3.0]: https://github.com/phylum-dev/cli/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/phylum-dev/cli/compare/v5.1.0...v5.2.0

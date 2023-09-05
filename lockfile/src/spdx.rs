@@ -1,21 +1,20 @@
+use std::ffi::OsStr;
 use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
 use nom::error::convert_error;
 use nom::Finish;
-use packageurl::PackageUrl;
 use phylum_types::types::package::PackageType;
+use purl::GenericPurl;
 use serde::Deserialize;
-use thiserror::Error;
 use urlencoding::decode;
 
 use crate::parsers::spdx;
-use crate::{Package, PackageVersion, Parse, ThirdPartyVersion};
-
-#[derive(Error, Debug)]
-#[error("Could not determine ecosystem")]
-struct UnknownEcosystem;
+use crate::{
+    determine_package_version, formatted_package_name, Package, PackageVersion, Parse,
+    UnknownEcosystem,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -78,17 +77,14 @@ fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
 }
 
 fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Package> {
-    let purl = PackageUrl::from_str(pkg_url)?;
+    let purl = GenericPurl::<String>::from_str(pkg_url)?;
 
-    let package_type = PackageType::from_str(purl.ty())
+    let package_type = PackageType::from_str(purl.package_type())
         .or_else(|_| type_from_url(&pkg_info.download_location))
         .context(UnknownEcosystem)?;
 
-    let name = match (package_type, purl.namespace()) {
-        (PackageType::Maven, Some(ns)) => format!("{}:{}", ns, purl.name()),
-        (PackageType::Npm | PackageType::Golang, Some(ns)) => format!("{}/{}", ns, purl.name()),
-        _ => purl.name().into(),
-    };
+    // Determine the package name based on its type and namespace.
+    let name = formatted_package_name(&package_type, &purl);
 
     let pkg_version = pkg_info
         .version_info
@@ -96,25 +92,8 @@ fn from_purl(pkg_url: &str, pkg_info: &PackageInformation) -> anyhow::Result<Pac
         .ok_or(purl.version())
         .map_err(|_| anyhow!("No version found for `{}`", pkg_info.name))?;
 
-    let version = purl
-        .qualifiers()
-        .iter()
-        .find_map(|(key, value)| match key.as_ref() {
-            "repository_url" => Some(PackageVersion::ThirdParty(ThirdPartyVersion {
-                version: pkg_version.clone(),
-                registry: value.to_string(),
-            })),
-            "download_url" => Some(PackageVersion::DownloadUrl(value.to_string())),
-            "vcs_url" => {
-                if value.as_ref().starts_with("git+") {
-                    Some(PackageVersion::Git(value.to_string()))
-                } else {
-                    None
-                }
-            },
-            _ => None,
-        })
-        .unwrap_or(PackageVersion::FirstParty(pkg_version.into()));
+    // Use the qualifiers from the PURL to determine the version details.
+    let version = determine_package_version(pkg_version, &purl);
 
     Ok(Package { name, version, package_type })
 }
@@ -192,10 +171,12 @@ impl Parse for Spdx {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.ends_with(".spdx.json")
-            || path.ends_with(".spdx.yaml")
-            || path.ends_with(".spdx.yml")
-            || path.ends_with(".spdx")
+        path.file_name().and_then(OsStr::to_str).map_or(false, |name| {
+            name.ends_with(".spdx.json")
+                || name.ends_with(".spdx.yaml")
+                || name.ends_with(".spdx.yml")
+                || name.ends_with(".spdx")
+        })
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {
@@ -205,9 +186,12 @@ impl Parse for Spdx {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use serde_json::json;
 
     use super::*;
+    use crate::PackageVersion;
 
     #[test]
     fn parse_spdx_2_2_json() {
@@ -612,5 +596,21 @@ mod tests {
         let actual = parse_results.err().unwrap().to_string();
 
         assert_eq!(actual, expected)
+    }
+
+    #[test]
+    fn test_if_lockfile() {
+        let test_paths = vec![
+            "/foo/bar/test.spdx.json",
+            "/foo/bar/test.spdx.yaml",
+            "/foo/bar/test.spdx.yml",
+            "/foo/bar/test.spdx",
+        ];
+
+        for path_str in test_paths {
+            let path_buf = PathBuf::from(path_str);
+            let is_lockfile = Spdx.is_path_lockfile(&path_buf);
+            assert!(is_lockfile, "Failed for path: {}", path_str);
+        }
     }
 }

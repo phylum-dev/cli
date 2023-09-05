@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::io::{self, Write};
 use std::{cmp, str};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use console::style;
 use phylum_types::types::group::{
     GroupMember, ListGroupMembersResponse, ListUserGroupsResponse, UserGroup,
@@ -22,7 +22,7 @@ use vulnreach_types::Vulnerability;
 
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
-use crate::types::{HistoryJob, PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
+use crate::types::{HistoryJob, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, UserToken};
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -124,7 +124,11 @@ impl Format for PolicyEvaluationResponseRaw {
         }
 
         // Write summary for each issue.
-        for package in self.dependencies.iter().filter(|package| !package.rejections.is_empty()) {
+        for package in self
+            .dependencies
+            .iter()
+            .filter(|package| package.rejections.iter().any(|rejection| !rejection.suppressed))
+        {
             let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
 
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
@@ -177,7 +181,7 @@ impl Format for ListUserGroupsResponse {
         let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
             ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
             ("Owner", |group| print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()),
-            ("Creation Time", |group| group.created_at.format("%FT%RZ").to_string()),
+            ("Creation Time", |group| format_datetime(group.created_at)),
         ]);
         let _ = writeln!(writer, "{table}");
     }
@@ -230,7 +234,7 @@ impl Format for Vec<JobDescriptor> {
             let date = job
                 .date
                 .parse::<DateTime<Utc>>()
-                .map(|date| date.format("%FT%RZ").to_string())
+                .map(format_datetime)
                 .unwrap_or_else(|_| "UNKNOWN".into());
 
             let _ = writeln!(writer, "Job ID: {}", style(job.job_id).cyan());
@@ -313,7 +317,24 @@ impl Format for Vec<HistoryJob> {
         let table = format_table::<fn(&HistoryJob) -> String, _>(self, &[
             ("Job ID", |job| job.id.clone()),
             ("Label", |job| job.label.clone().unwrap_or_default()),
-            ("Creation Time", |job| job.created.format("%FT%RZ").to_string()),
+            ("Creation Time", |job| format_datetime(job.created)),
+        ]);
+        let _ = writeln!(writer, "{table}");
+    }
+}
+
+impl Format for Vec<UserToken> {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        // Maximum length of the token name column.
+        //
+        // We use `47` here since it is the default CLI token length.
+        const MAX_TOKEN_WIDTH: usize = 47;
+
+        let table = format_table::<fn(&UserToken) -> String, _>(self, &[
+            ("Name", |token| print::truncate(&token.name, MAX_TOKEN_WIDTH).into_owned()),
+            ("Creation Time", |token| format_datetime(token.creation_time)),
+            ("Access Time", |token| token.access_time.map_or(String::new(), format_datetime)),
+            ("Expiry", |token| token.expiry.map_or(String::new(), format_datetime)),
         ]);
         let _ = writeln!(writer, "{table}");
     }
@@ -455,4 +476,11 @@ fn risk_level_to_color(level: &RiskLevel) -> table_color::Color {
         RiskLevel::Low => table_color::BLUE,
         RiskLevel::Info => table_color::WHITE,
     }
+}
+
+/// Convert a UTC timestamp in the local timezone.
+fn format_datetime(timestamp: DateTime<Utc>) -> String {
+    let local: DateTime<Local> = timestamp.into();
+
+    local.format("%F %R").to_string()
 }

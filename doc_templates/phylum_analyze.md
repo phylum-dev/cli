@@ -30,7 +30,7 @@ $ phylum analyze --label test_branch requirements.txt
 $ phylum analyze -p sample poetry.lock
 
 # Analyze a NuGet lockfile using the 'sample' project and 'sGroup' group
-$ phylum analyze -p sample -g sGroup app.csproj
+$ phylum analyze -p sample -g sGroup packages.lock.json
 
 # Analyze a RubyGems lockfile and return a verbose response with only critical malware
 $ phylum analyze --verbose --filter=crit,mal Gemfile.lock

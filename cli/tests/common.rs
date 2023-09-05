@@ -90,6 +90,14 @@ impl TestCli {
         self.tempdir.path()
     }
 
+    pub fn data_home(&self) -> PathBuf {
+        self.temp_path().join("data")
+    }
+
+    pub fn state_home(&self) -> PathBuf {
+        self.temp_path().join("state")
+    }
+
     pub fn install_extension(&self, path: &Path) -> Assert {
         self.run(["extension", "install", "-y", &path.to_string_lossy()])
     }
@@ -101,7 +109,8 @@ impl TestCli {
     pub fn cmd(&self) -> Command {
         let mut cmd = Command::cargo_bin("phylum").unwrap();
 
-        cmd.env("XDG_DATA_HOME", self.tempdir.path());
+        cmd.env("XDG_DATA_HOME", self.data_home());
+        cmd.env("XDG_STATE_HOME", self.state_home());
 
         if let Some(cwd) = self.cwd.as_ref() {
             cmd.current_dir(cwd);
@@ -147,7 +156,7 @@ pub struct TestExtension<'a> {
 
 impl<'a> TestExtension<'a> {
     fn new(test_cli: &'a TestCli, code: &str, permissions: &Permissions) -> Self {
-        let extension_path = test_cli.temp_path().to_owned().join("test-ext");
+        let extension_path = test_cli.temp_path().join("test-ext");
 
         // Create skeleton extension.
         test_cli.run(["extension", "new", &extension_path.to_string_lossy()]).success();
