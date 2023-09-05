@@ -1,23 +1,12 @@
 ---
 title: Quickstart
-excerpt: This page will help you get started with Phylum CLI tool. You'll be up and running in a jiffy!
 category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-<p align="center">
-  <img height="100" src="https://raw.githubusercontent.com/phylum-dev/cli/main/assets/dark-bckg.svg">
-</p>
+The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](https://docs.phylum.io/docs/alternate_install) for more options.
 
----
-
-# Introduction
-
-The command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). For more options, see [Alternate Installation Methods](https://docs.phylum.io/docs/alternate_install).
-
-[![asciicast](https://asciinema.org/a/431262.svg)](https://asciinema.org/a/431262)
-
-## Install phylum
+## Install `phylum` CLI
 
 ### Install on Linux
 
@@ -36,7 +25,7 @@ brew tap phylum-dev/cli
 brew install phylum
 ```
 
-_Note: When using Homebrew, [official extensions][] must be installed separately._
+> **Note:** When using Homebrew, [official extensions][] must be installed separately.
 
 [official extensions]: https://github.com/phylum-dev/cli/tree/main/extensions
 
@@ -44,25 +33,25 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
 
 1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
 
-   ```
+   ```sh
    phylum auth register
    ```
 
 1. [Authenticate](https://docs.phylum.io/docs/phylum_auth_login) with Phylum
 
-   ```
+   ```sh
    phylum auth login
    ```
 
 1. [Setup your Phylum project](https://docs.phylum.io/docs/phylum_init) in your project directory
 
-   ```
+   ```sh
    phylum init
    ```
 
-1. [Submit your package lockfile](https://docs.phylum.io/docs/phylum_analyze)
+1. [Submit your lockfiles and manifests](https://docs.phylum.io/docs/phylum_analyze) to [analyze dependencies](https://docs.phylum.io/docs/analyzing_dependencies)
 
-   ```
+   ```sh
    phylum analyze
    ```
 

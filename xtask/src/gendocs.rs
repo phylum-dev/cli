@@ -9,7 +9,7 @@ use clap_markdown::Generator;
 use crate::cli_app;
 
 /// Output directory.
-const OUTPUT_DIR: &str = "./docs/command_line_tool";
+const OUTPUT_DIR: &str = "./docs/commands";
 
 /// Template directory.
 const TEMPLATE_DIR: &str = "./doc_templates";

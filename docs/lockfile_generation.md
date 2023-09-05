@@ -6,9 +6,9 @@ hidden: false
 
 The Phylum CLI can generate a lockfile when it is given a manifest file.
 
-### Lockfile generators
+## Lockfile generators
 
-| Lockfile type | Filenames        | Required tool               |
+| Lockfile type | Manifests        | Required tool               |
 | ------------- | ---------        | -------------               |
 | `npm`         | `package.json`   | [`npm`][npm]                |
 | `yarn`        | `package.json`   | [`yarn`][yarn]              |
@@ -36,18 +36,20 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 [cargo]: https://www.rust-lang.org
 [dotnet]: https://dotnet.microsoft.com
 
-For files that can be handled by multiple generators, a fallback is used:
+> **TIP:**
+>
+> For files that can be handled by multiple generators, a fallback is used:
+>
+> * `package.json` will use `npm`
+> * `pyproject.toml` will use `pip`
+>
+> This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
+>
+> ```sh
+> phylum analyze -t yarn package.json
+> ```
 
-* `package.json` will use `npm`
-* `pyproject.toml` will use `pip`
-
-This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
-
-```
-phylum analyze -t yarn package.json
-```
-
-### Lockfile detection
+## Lockfile detection
 
 The Phylum CLI prefers to work directly with lockfiles if they are available. So in a few cases, the CLI will
 automatically switch and use the corresponding lockfile.
@@ -62,7 +64,7 @@ the same directory or any parent directory. For example, a single `Cargo.lock` f
 be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run `phylum init` and
 specify all files that you want analyzed.
 
-### Lockifests
+## Lockifests
 
 Special handling is given to manifests that, for historical reasons, can also be used as lockfiles. Specifically,
 Python's `requirements.txt` is a manifest file. But in some scenarios it may be fully specified and effectively becomes
@@ -71,7 +73,7 @@ a lockfile (e.g., `pip freeze > requirements.txt`).
 Phylum handles these files by first attempting to analyze them as a lockfile. If anything in the file is not fully
 specified, this will fail, and Phylum will silence the error and proceed to lockfile generation.
 
-### Example scenario
+## Example scenario
 
 1. A user runs `phylum analyze package.json`
 2. The CLI checks for the existence of a matching lockfile
@@ -80,9 +82,11 @@ specified, this will fail, and Phylum will silence the error and proceed to lock
 4. If no matching lockfile is found, proceed to manifest file generation
 5. Since no `--lockfile-type` was specified, the fallback will be used (in this case, `npm`)
 6. The lockfile generator runs this command to generate a lockfile:
-   ```
+
+   ```sh
    npm install --package-lock-only --ignore-scripts
    ```
-7. The output lockfile (`package-lock.json`) is [analyzed][analyzing-dependencies]
 
-[analyzing-dependencies]: https://docs.phylum.io/docs/analyzing-dependencies
+7. The output lockfile (`package-lock.json`) is [analyzed][analyzing_dependencies]
+
+[analyzing_dependencies]: https://docs.phylum.io/docs/analyzing_dependencies
