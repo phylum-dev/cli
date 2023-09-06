@@ -102,8 +102,9 @@ impl Markdown {
         let mut subcommands: Vec<_> = subcommands.collect();
         subcommands.sort_by_key(|cmd| cmd.get_name());
         for cmd in subcommands {
-            let human_path = format!("{} {cmd}", parents.join(" "));
-            let link_path = format!("{}_{cmd}", parents.join("_"));
+            let name = cmd.get_name();
+            let human_path = format!("{} {name}", parents.join(" "));
+            let link_path = format!("{}_{name}", parents.join("_"));
             let _ = writeln!(markdown, "* [{human_path}](./{link_path})");
         }
 
