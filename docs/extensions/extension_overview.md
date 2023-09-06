@@ -29,7 +29,13 @@ look at the [CLI's extension documentation].
 * [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
 * [Extension API](https://docs.phylum.io/docs/extension_api)
 * [Example](https://docs.phylum.io/docs/extension_example)
+* [Extension Sandboxing](https://docs.phylum.io/docs/extension_sandboxing)
 * [Direct Phylum API Requests](https://docs.phylum.io/docs/extension_rest_api)
+
+> **TIP:** More info
+>
+> Additional how-to articles for the extension framework can be found
+> [here](https://dev.to/phylum).
 
 ## Official Extensions
 

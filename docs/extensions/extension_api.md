@@ -27,14 +27,14 @@ standard library docs].
 [Deno's standard library docs]: https://deno.land/std
 
 The following API methods are not supported:
- - https://doc.deno.land/deno/stable/~/Deno.Permissions#request
+
+- <https://doc.deno.land/deno/stable/~/Deno.Permissions#request>
 
 ## Phylum API
 
 The Phylum extension API is documented in the [TypeScript module file].
 
-[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/extensions/phylum.ts
-
 You can keep track of the latest changes by following the [API's changelog].
 
+[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/extensions/phylum.ts
 [API's changelog]: https://github.com/phylum-dev/cli/blob/main/extensions/CHANGELOG.md

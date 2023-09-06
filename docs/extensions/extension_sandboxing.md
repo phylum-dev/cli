@@ -36,7 +36,7 @@ const output = PhylumApi.runSandboxed({
     },
 });
 
-// Propagate `cat`'s exit code.
+// Propagate the exit code for `cat`.
 Deno.exit(output.code);
 ```
 

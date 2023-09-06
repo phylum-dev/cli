@@ -161,7 +161,7 @@ impl Parse for YarnLock {
                 let (_, entries) = yarn::parse(data)
                     .finish()
                     .map_err(|e| anyhow!(convert_error(data, e)))
-                    .context("Failed to parse yarn lock file")?;
+                    .context("Failed to parse yarn lockfile")?;
                 return Ok(entries);
             },
         };

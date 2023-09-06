@@ -20,7 +20,7 @@ impl Parse for GemLock {
         let (_, entries) = gem::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
-            .context("Failed to parse gem lock file")?;
+            .context("Failed to parse gem lockfile")?;
         Ok(entries)
     }
 
