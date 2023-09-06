@@ -22,4 +22,4 @@ To find out more about the usage of `find-permissions`, check its `--help` or
 visit the [extension sandboxing documentation].
 
 [phylum-cli]: https://github.com/phylum-dev/cli
-[extension sandboxing documentation]: https://cli.phylum.io/extensions/extension_sandboxing#finding-required-exceptions
+[extension sandboxing documentation]: https://docs.phylum.io/docs/extension_sandboxing#finding-required-exceptions

@@ -11,7 +11,7 @@
 [![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/phylum-dev/cli/actions/workflows/test.yml)
 [![README](https://img.shields.io/badge/docs-README-blue)](https://cli.phylum.io)
 
-The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). For more options, see [Alternate Installation Methods](https://cli.phylum.io/alternate_install).
+The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](https://docs.phylum.io/docs/alternate_install) for more options.
 
 ## Install `phylum` CLI
 
@@ -32,7 +32,7 @@ brew tap phylum-dev/cli
 brew install phylum
 ```
 
-_Note: When using Homebrew, [official extensions][] must be installed separately._
+> **Note:** When using Homebrew, [official extensions][] must be installed separately.
 
 [official extensions]: https://github.com/phylum-dev/cli/tree/main/extensions
 
@@ -56,7 +56,7 @@ _Note: When using Homebrew, [official extensions][] must be installed separately
    phylum init
    ```
 
-1. [Submit your lockfiles and manifests](https://cli.phylum.io/commands/phylum_analyze) to [analyze dependencies](https://cli.phylum.io/analyzing_dependencies)
+1. [Submit your lockfiles and manifests](https://docs.phylum.io/docs/phylum_analyze) to [analyze dependencies](https://docs.phylum.io/docs/analyzing_dependencies)
 
    ```sh
    phylum analyze

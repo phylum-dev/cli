@@ -1,5 +1,7 @@
 ---
 title: phylum
+category: 6255e67693d5200013b1fa3e
+hidden: false
 ---
 
 Client interface to the Phylum system
@@ -33,17 +35,17 @@ Usage: phylum [OPTIONS] [COMMAND]
 
 ### Commands
 
-* [phylum analyze](./phylum_analyze.md)
-* [phylum auth](./phylum_auth.md)
-* [phylum extension](./phylum_extension.md)
-* [phylum group](./phylum_group.md)
-* [phylum history](./phylum_history.md)
-* [phylum init](./phylum_init.md)
-* [phylum package](./phylum_package.md)
-* [phylum parse](./phylum_parse.md)
-* [phylum ping](./phylum_ping.md)
-* [phylum project](./phylum_project.md)
-* [phylum status](./phylum_status.md)
-* [phylum uninstall](./phylum_uninstall.md)
-* [phylum update](./phylum_update.md)
-* [phylum version](./phylum_version.md)
+* [phylum analyze](./phylum_analyze)
+* [phylum auth](./phylum_auth)
+* [phylum extension](./phylum_extension)
+* [phylum group](./phylum_group)
+* [phylum history](./phylum_history)
+* [phylum init](./phylum_init)
+* [phylum package](./phylum_package)
+* [phylum parse](./phylum_parse)
+* [phylum ping](./phylum_ping)
+* [phylum project](./phylum_project)
+* [phylum status](./phylum_status)
+* [phylum uninstall](./phylum_uninstall)
+* [phylum update](./phylum_update)
+* [phylum version](./phylum_version)

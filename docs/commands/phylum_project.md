@@ -1,5 +1,7 @@
 ---
 title: phylum project
+category: 6255e67693d5200013b1fa3e
+hidden: false
 ---
 
 Manage Phylum projects
@@ -21,7 +23,7 @@ Usage: phylum project [OPTIONS] <COMMAND>
 
 ### Commands
 
-* [phylum project create](./phylum_project_create.md)
-* [phylum project delete](./phylum_project_delete.md)
-* [phylum project link](./phylum_project_link.md)
-* [phylum project list](./phylum_project_list.md)
+* [phylum project create](./phylum_project_create)
+* [phylum project delete](./phylum_project_delete)
+* [phylum project link](./phylum_project_link)
+* [phylum project list](./phylum_project_list)

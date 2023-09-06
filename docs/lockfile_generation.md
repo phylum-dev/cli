@@ -32,20 +32,18 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 [cargo]: https://www.rust-lang.org
 [dotnet]: https://dotnet.microsoft.com
 
-:::tip
-
-For files that can be handled by multiple generators, a fallback is used:
-
-* `package.json` will use `npm`
-* `pyproject.toml` will use `pip`
-
-This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
-
-```sh
-phylum analyze -t yarn package.json
-```
-
-:::
+> **TIP:**
+>
+> For files that can be handled by multiple generators, a fallback is used:
+>
+> * `package.json` will use `npm`
+> * `pyproject.toml` will use `pip`
+>
+> This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
+>
+> ```sh
+> phylum analyze -t yarn package.json
+> ```
 
 ## Lockfile detection
 
@@ -85,4 +83,6 @@ specified, this will fail, and Phylum will silence the error and proceed to lock
    npm install --package-lock-only --ignore-scripts
    ```
 
-7. The output lockfile (`package-lock.json`) is [analyzed](./analyzing_dependencies.md)
+7. The output lockfile (`package-lock.json`) is [analyzed][analyzing_dependencies]
+
+[analyzing_dependencies]: https://docs.phylum.io/docs/analyzing_dependencies

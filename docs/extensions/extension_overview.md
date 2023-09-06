@@ -17,19 +17,17 @@ look at the [CLI's extension documentation](../commands/phylum_extension.md).
 
 ## Writing Extensions
 
-* [Quickstart](./extension_quickstart.md)
-* [Manifest Format](./extension_manifest.md)
-* [Extension API](./extension_api.md)
-* [Example](./extension_example.md)
-* [Extension Sandboxing](./extension_sandboxing.md)
-* [Direct Phylum API Requests](./extension_rest_api.md)
+* [Quickstart](https://docs.phylum.io/docs/extension_quickstart)
+* [Manifest Format](https://docs.phylum.io/docs/extension_manifest)
+* [Extension API](https://docs.phylum.io/docs/extension_api)
+* [Example](https://docs.phylum.io/docs/extension_example)
+* [Extension Sandboxing](https://docs.phylum.io/docs/extension_sandboxing)
+* [Direct Phylum API Requests](https://docs.phylum.io/docs/extension_rest_api)
 
-:::tip More info
-
-Additional how-to articles for the extension framework can be found
-[here](https://dev.to/phylum).
-
-:::
+> **TIP:** More info
+>
+> Additional how-to articles for the extension framework can be found
+> [here](https://dev.to/phylum).
 
 ## Official Extensions
 

@@ -1,6 +1,10 @@
-# Analyzing Dependencies
+---
+title: Analyzing Dependencies
+category: 6255e67693d5200013b1fa41
+hidden: false
+---
 
-After setting up a Phylum [project](commands/phylum_init.md), you can begin analysis by running:
+After setting up a Phylum [project](https://docs.phylum.io/docs/create_project), you can begin analysis by running:
 
 ```sh
 phylum analyze
@@ -10,8 +14,8 @@ The default response will provide an overall summary result to indicate whether 
 
 ```shellsession
 ❯ phylum analyze
-✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./requirements.txt" as type: pip
-✅ Successfully parsed lockfile "/Users/maxrake/dev/phylum/example-project/./package-lock.json" as type: npm
+✅ Successfully parsed lockfile "requirements.txt" as type: pip
+✅ Successfully parsed lockfile "package-lock.json" as type: npm
 ✅ Job ID: 3accba15-b0dc-43d2-b8ce-f5700360e3bd
 
 Phylum Supply Chain Risk Analysis — FAILURE
@@ -42,4 +46,4 @@ If you prefer JSON formatted output, you can leverage the `--json` flag.
 phylum analyze --json > output.json
 ```
 
-If the analysis failed to meet the project's thresholds, the command's exit code will be set to `100`.
+If the analysis fails the project's policy, the command's exit code will be set to `100`.

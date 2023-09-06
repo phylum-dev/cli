@@ -1,4 +1,8 @@
-# Supported Lockfiles
+---
+title: Supported Lockfiles
+category: 6255e67693d5200013b1fa41
+hidden: false
+---
 
 The Phylum CLI supports processing many different lockfiles:
 
@@ -20,17 +24,18 @@ The Phylum CLI supports processing many different lockfiles:
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
 | `cyclonedx`   | `*bom.json` <br /> `*bom.xml`                                          |
 
-:::note
+---
 
-The lockfile type will be automatically detected based on the filename.
+> **NOTE:**
+>
+> The lockfile type will be automatically detected based on the filename.
+>
+> If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
 
-If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
+---
 
-:::
-
-:::tip Manifest Support
-
-Lockfiles can also automatically be generated for certain manifest files.
-See [lockfile_generation](./lockfile_generation.md) for details.
-
-:::
+> **TIP:** Manifest Support
+>
+> Lockfiles can also automatically be generated for certain manifest files.
+> See [lockfile generation](https://docs.phylum.io/docs/lockfile_generation) for
+> details.
