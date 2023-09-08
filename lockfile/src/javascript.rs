@@ -71,6 +71,11 @@ impl Parse for PackageLock {
                     continue;
                 }
 
+                // Ignore extraneous dependencies.
+                if keys.get("extraneous").is_some() {
+                    continue;
+                }
+
                 // Get dependency type.
                 let resolved = get_field(keys, "resolved")
                     .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
