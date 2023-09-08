@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.7.1 - 2023-09-08
+
 ### Changed
 
 - `PhylumApi.parseLockfile` now adds a relative path to each package,

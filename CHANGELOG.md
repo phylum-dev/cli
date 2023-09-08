@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.7.1] - 2023-09-08
+
 ### Fixed
 - Package header printed even when all issues were suppressed
 - Parsing fails for extraneous npm packages in package-lock.json
@@ -563,7 +565,8 @@ before, the existing project ID will be re-linked.
 ## 0.0.1
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.7.0...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.7.1...HEAD
+[5.7.1]: https://github.com/phylum-dev/cli/compare/v5.7.0...v5.7.1
 [5.7.0]: https://github.com/phylum-dev/cli/compare/v5.6.0...v5.7.0
 [5.6.0]: https://github.com/phylum-dev/cli/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/phylum-dev/cli/compare/v5.3.0...v5.5.0
