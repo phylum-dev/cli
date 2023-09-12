@@ -13,8 +13,9 @@ pub struct Cargo;
 impl Generator for Cargo {
     fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf> {
         let cargo_config = Config::default()?;
+        let workspace_manifest = core::find_workspace_root(manifest_path, &cargo_config)?;
         let root_manifest =
-            core::find_workspace_root(manifest_path, &cargo_config)?.unwrap_or_default();
+            workspace_manifest.as_ref().map(PathBuf::as_path).unwrap_or(manifest_path);
         let workspace_root = root_manifest
             .parent()
             .ok_or_else(|| Error::InvalidManifest(root_manifest.to_path_buf()))?;
