@@ -23,8 +23,8 @@ pub mod yarn;
 
 /// Lockfile generation.
 pub trait Generator {
-    /// Lockfile file name.
-    fn lockfile_name(&self) -> &'static str;
+    /// Lockfile path.
+    fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf>;
 
     /// Command for generating the lockfile.
     fn command(&self, manifest_path: &Path) -> Command;
@@ -36,8 +36,8 @@ pub trait Generator {
     ///
     /// These files are temporarily renamed during lockfile generation to ensure
     /// the correct lockfile is updated.
-    fn conflicting_files(&self) -> Vec<&'static str> {
-        vec![self.lockfile_name()]
+    fn conflicting_files(&self, manifest_path: &Path) -> Result<Vec<PathBuf>> {
+        Ok(vec![self.lockfile_path(manifest_path)?])
     }
 
     /// Verify that all the prerequisites for lockfile generation are met.
@@ -59,9 +59,9 @@ pub trait Generator {
 
         // Move files which interfere with lockfile generation.
         let _relocators = self
-            .conflicting_files()
+            .conflicting_files(&canonicalized)?
             .drain(..)
-            .map(|file| FileRelocator::new(project_path.join(file)))
+            .map(FileRelocator::new)
             .collect::<Result<Vec<_>>>()?;
 
         // Generate lockfile at the target location.
@@ -84,7 +84,7 @@ pub trait Generator {
         }
 
         // Ensure lockfile was created.
-        let lockfile_path = project_path.join(self.lockfile_name());
+        let lockfile_path = self.lockfile_path(&canonicalized)?;
         if !lockfile_path.exists() {
             return Err(Error::NoLockfileGenerated);
         }
@@ -145,6 +145,7 @@ pub enum Error {
     InvalidManifest(PathBuf),
     PipReportVersionMismatch(&'static str, String),
     UnsupportedCommandVersion(&'static str, &'static str, String),
+    Anyhow(anyhow::Error),
     NoLockfileGenerated,
 }
 
@@ -155,6 +156,7 @@ impl StdError for Error {
             Self::Json(err) => Some(err),
             Self::Io(err) => Some(err),
             Self::ProcessCreation(_, _, err) => Some(err),
+            Self::Anyhow(err) => err.source(),
             _ => None,
         }
     }
@@ -183,6 +185,7 @@ impl Display for Error {
                 write!(f, "unsupported {command:?} version {received:?}, expected {expected:?}")
             },
             Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
+            Self::Anyhow(err) => write!(f, "{err}"),
         }
     }
 }
@@ -202,5 +205,11 @@ impl From<FromUtf8Error> for Error {
 impl From<JsonError> for Error {
     fn from(err: JsonError) -> Self {
         Self::Json(err)
+    }
+}
+
+impl From<anyhow::Error> for Error {
+    fn from(err: anyhow::Error) -> Self {
+        Self::Anyhow(err)
     }
 }
