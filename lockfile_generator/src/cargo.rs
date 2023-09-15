@@ -13,7 +13,7 @@ impl Generator for Cargo {
     fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf> {
         let manifest_arg = format!("--manifest-path={}", manifest_path.display());
         let output = Command::new("cargo")
-            .args(["metadata", &manifest_arg, "--format-version=1"])
+            .args(["locate-project", &manifest_arg, "--workspace"])
             .output()?;
 
         // Ensure command was successful.
@@ -24,9 +24,15 @@ impl Generator for Cargo {
 
         // Parse metadata output.
         let stdout = String::from_utf8(output.stdout).map_err(Error::InvalidUtf8)?;
-        let metadata: Metadata = serde_json::from_str(&stdout)?;
+        let project_location: ProjectLocation = serde_json::from_str(&stdout)?;
 
-        Ok(PathBuf::from(metadata.workspace_root).join("Cargo.lock"))
+        // Go from root manifest to root project.
+        let workspace_root = match project_location.root.parent() {
+            Some(workspace_root) => workspace_root,
+            None => return Err(Error::InvalidManifest(project_location.root.clone())),
+        };
+
+        Ok(workspace_root.join("Cargo.lock"))
     }
 
     fn command(&self, _manifest_path: &Path) -> Command {
@@ -40,8 +46,8 @@ impl Generator for Cargo {
     }
 }
 
-/// Output of `cargo metadata`.
+/// Output of `cargo locate-project`.
 #[derive(Deserialize)]
-struct Metadata {
-    workspace_root: String,
+struct ProjectLocation {
+    root: PathBuf,
 }
