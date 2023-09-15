@@ -1,19 +1,26 @@
 //! JavaScript npm ecosystem.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::Generator;
+use crate::{Error, Generator, Result};
 
 pub struct Npm;
 
 impl Generator for Npm {
-    fn lockfile_name(&self) -> &'static str {
-        "package-lock.json"
+    fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf> {
+        let project_path = manifest_path
+            .parent()
+            .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
+        Ok(project_path.join("package-lock.json"))
     }
 
-    fn conflicting_files(&self) -> Vec<&'static str> {
-        vec![self.lockfile_name(), "npm-shrinkwrap.json", "yarn.lock"]
+    fn conflicting_files(&self, manifest_path: &Path) -> Result<Vec<PathBuf>> {
+        Ok(vec![
+            self.lockfile_path(manifest_path)?,
+            PathBuf::from("npm-shrinkwrap.json"),
+            PathBuf::from("yarn.lock"),
+        ])
     }
 
     fn command(&self, _manifest_path: &Path) -> Command {

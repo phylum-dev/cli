@@ -1,7 +1,7 @@
 //! JavaScript yarn ecosystem.
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::{Error, Generator, Result};
@@ -9,8 +9,11 @@ use crate::{Error, Generator, Result};
 pub struct Yarn;
 
 impl Generator for Yarn {
-    fn lockfile_name(&self) -> &'static str {
-        "yarn.lock"
+    fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf> {
+        let project_path = manifest_path
+            .parent()
+            .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
+        Ok(project_path.join("yarn.lock"))
     }
 
     fn command(&self, _manifest_path: &Path) -> Command {

@@ -2,7 +2,7 @@
 
 use std::fmt::Write;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use serde::Deserialize;
@@ -12,7 +12,7 @@ use crate::{Error, Generator, Result};
 pub struct Pip;
 
 impl Generator for Pip {
-    fn lockfile_name(&self) -> &'static str {
+    fn lockfile_path(&self, _manifest_path: &Path) -> Result<PathBuf> {
         // NOTE: Pip's `generate_lockfile` will never write to disk.
         unreachable!()
     }
