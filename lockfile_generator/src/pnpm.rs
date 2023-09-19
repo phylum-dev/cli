@@ -22,13 +22,13 @@ impl Generator for Pnpm {
         // Get project root from env variable.
         let workspace_dir_env = env::var_os(WORKSPACE_DIR_ENV_VAR)
             .or_else(|| env::var_os(WORKSPACE_DIR_ENV_VAR.to_lowercase()))
-            .map(|workspace_dir| PathBuf::from(workspace_dir));
+            .map(PathBuf::from);
 
         // Fallback to recursive search for `WORKSPACE_MANIFEST_FILENAME`.
         let workspace_root = workspace_dir_env.or_else(|| find_workspace_root(project_path));
 
         // Fallback to non-workspace location.
-        let root = workspace_root.unwrap_or_else(|| PathBuf::new());
+        let root = workspace_root.unwrap_or_default();
 
         Ok(root.join("pnpm-lock.yaml"))
     }

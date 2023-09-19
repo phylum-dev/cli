@@ -186,7 +186,9 @@ impl Display for Error {
                 write!(f, "unsupported {command:?} version {received:?}, expected {expected:?}")
             },
             Self::Anyhow(err) => write!(f, "{err}"),
-            Self::UnexpectedOutput(cmd, output) => write!(f, "unexpected output for {cmd:?}: {output}"),
+            Self::UnexpectedOutput(cmd, output) => {
+                write!(f, "unexpected output for {cmd:?}: {output}")
+            },
             Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
         }
     }
