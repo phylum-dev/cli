@@ -145,6 +145,7 @@ pub enum Error {
     InvalidManifest(PathBuf),
     PipReportVersionMismatch(&'static str, String),
     UnsupportedCommandVersion(&'static str, &'static str, String),
+    UnexpectedOutput(&'static str, String),
     Anyhow(anyhow::Error),
     NoLockfileGenerated,
 }
@@ -184,8 +185,9 @@ impl Display for Error {
             Self::UnsupportedCommandVersion(command, expected, received) => {
                 write!(f, "unsupported {command:?} version {received:?}, expected {expected:?}")
             },
-            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
             Self::Anyhow(err) => write!(f, "{err}"),
+            Self::UnexpectedOutput(cmd, output) => write!(f, "unexpected output for {cmd:?}: {output}"),
+            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
         }
     }
 }
