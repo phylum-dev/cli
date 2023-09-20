@@ -45,8 +45,8 @@ impl Generator for Pnpm {
 }
 
 /// Find PNPM workspace root.
-fn find_workspace_root(mut path: &Path) -> Option<PathBuf> {
-    loop {
+fn find_workspace_root(path: &Path) -> Option<PathBuf> {
+    for path in path.ancestors() {
         let dir = fs::read_dir(path).ok()?;
 
         for dir_entry in dir.into_iter().flatten().map(|entry| entry.path()) {
@@ -54,7 +54,7 @@ fn find_workspace_root(mut path: &Path) -> Option<PathBuf> {
                 return Some(path.into());
             }
         }
-
-        path = path.parent()?;
     }
+
+    None
 }

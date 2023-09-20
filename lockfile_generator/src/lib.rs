@@ -145,8 +145,8 @@ pub enum Error {
     InvalidManifest(PathBuf),
     PipReportVersionMismatch(&'static str, String),
     UnsupportedCommandVersion(&'static str, &'static str, String),
-    UnexpectedOutput(&'static str, String),
     Anyhow(anyhow::Error),
+    UnexpectedOutput(&'static str, String),
     NoLockfileGenerated,
 }
 
