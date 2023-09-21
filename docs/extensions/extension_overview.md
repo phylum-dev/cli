@@ -51,3 +51,5 @@ CLI and should already be available for use. The pre-installed extensions are:
 * [`pip`](https://github.com/phylum-dev/cli/tree/main/extensions/pip)
 * [`poetry`](https://github.com/phylum-dev/cli/tree/main/extensions/poetry)
 * [`yarn`](https://github.com/phylum-dev/cli/tree/main/extensions/yarn)
+* [`bundle`](https://github.com/phylum-dev/cli/tree/main/extensions/bundle)
+* [`cargo`](https://github.com/phylum-dev/cli/tree/main/extensions/cargo)
