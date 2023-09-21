@@ -44,6 +44,17 @@ impl Permission {
         }
     }
 
+    /// Add resource to allow list
+    pub fn allow_resource(&mut self, resource: String) {
+        match self {
+            Self::Boolean(true) => {},
+            Self::Boolean(false) => {
+                *self = Self::List(vec![resource]);
+            },
+            Self::List(list) => list.push(resource),
+        }
+    }
+
     /// Get Birdcage sandbox exception resource paths.
     #[cfg(unix)]
     pub fn sandbox_paths(&self) -> Cow<'_, Vec<String>> {
@@ -244,20 +255,23 @@ impl From<&Permissions> for PermissionsOptions {
         let allow_write =
             value.write.get().map(|write| write.iter().map(PathBuf::from).collect::<Vec<_>>());
 
-        let mut allow_net = value.net.get().cloned().unwrap_or_default();
         let allow_run = value.unsandboxed_run.get().cloned();
         let allow_env = value.env.get().cloned();
 
+        let mut allow_net = value.net.clone();
+
         // Add net exceptions to phylum.io's domains by default.
-        allow_net.push("api.staging.phylum.io".into());
-        allow_net.push("api.phylum.io".into());
+        allow_net.allow_resource("api.staging.phylum.io".into());
+        allow_net.allow_resource("api.phylum.io".into());
+
+        let allow_net = allow_net.get().cloned();
 
         PermissionsOptions {
             allow_read,
             allow_write,
             allow_run,
             allow_env,
-            allow_net: Some(allow_net),
+            allow_net,
             allow_sys: None,
             allow_ffi: None,
             allow_hrtime: false,
@@ -390,6 +404,26 @@ mod tests {
             permissions_options.allow_net,
             Some(vec!["api.staging.phylum.io".into(), "api.phylum.io".into()])
         );
+    }
+
+    #[test]
+    fn allow_all_becomes_empty_vec() {
+        let permissions = Permissions {
+            read: Permission::Boolean(true),
+            write: Permission::Boolean(true),
+            env: Permission::Boolean(true),
+            run: Permission::Boolean(true),
+            net: Permission::Boolean(true),
+            unsandboxed_run: Permission::Boolean(true),
+        };
+
+        let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
+
+        assert!(permissions_options.allow_read.unwrap().is_empty());
+        assert!(permissions_options.allow_write.unwrap().is_empty());
+        assert!(permissions_options.allow_env.unwrap().is_empty());
+        assert!(permissions_options.allow_run.unwrap().is_empty());
+        assert!(permissions_options.allow_net.unwrap().is_empty());
     }
 
     #[test]
