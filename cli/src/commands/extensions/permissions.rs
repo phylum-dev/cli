@@ -47,7 +47,7 @@ impl Permission {
     /// Add resource to allow list
     pub fn allow_resource(&mut self, resource: String) {
         match self {
-            Self::Boolean(true) => {},
+            Self::Boolean(true) => (),
             Self::Boolean(false) => {
                 *self = Self::List(vec![resource]);
             },
