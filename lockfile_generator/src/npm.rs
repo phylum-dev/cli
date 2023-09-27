@@ -111,7 +111,7 @@ mod tests {
         // Write root workspace manifest.
         let tempdir = tempfile::tempdir().unwrap();
         let workspace_manifest = tempdir.path().join("package.json");
-        fs::write(&workspace_manifest, WORKSPACE_MANIFEST).unwrap();
+        fs::write(workspace_manifest, WORKSPACE_MANIFEST).unwrap();
 
         // Create irrelevant non-manifest directory.
         let nothing_dir = tempdir.path().join("packages");
@@ -121,7 +121,7 @@ mod tests {
         let sub_dir = nothing_dir.join("sub");
         fs::create_dir_all(&sub_dir).unwrap();
         let sub_manifest = sub_dir.join("package.json");
-        fs::write(&sub_manifest, NON_WORKSPACE_MANIFEST).unwrap();
+        fs::write(sub_manifest, NON_WORKSPACE_MANIFEST).unwrap();
 
         // Write target project manifest.
         let project_dir = sub_dir.join("project");
