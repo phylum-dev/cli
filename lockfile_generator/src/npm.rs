@@ -130,7 +130,7 @@ mod tests {
         fs::write(&project_manifest, NON_WORKSPACE_MANIFEST).unwrap();
 
         let root = find_workspace_root(&project_manifest).unwrap();
-        assert_eq!(root, tempdir.path().to_path_buf());
+        assert_eq!(root, tempdir.path().to_path_buf().canonicalize().unwrap());
     }
 
     #[test]
@@ -140,6 +140,6 @@ mod tests {
         fs::write(&manifest_path, NON_WORKSPACE_MANIFEST).unwrap();
 
         let root = find_workspace_root(&manifest_path).unwrap();
-        assert_eq!(root, tempdir.path().to_path_buf());
+        assert_eq!(root, tempdir.path().to_path_buf().canonicalize().unwrap());
     }
 }
