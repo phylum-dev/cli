@@ -22,8 +22,8 @@ jobs:
         continue-on-error: true
         run: |
           git config user.name 'Phylum Bot'
-          git config user.email 'phylum-bot@users.noreply.github.com'
-          git commit -a -m "build: Bump `Cargo.lock` dependencies"
+          git config user.email '69485888+phylum-bot@users.noreply.github.com'
+          git commit -a -m "Bump dependencies"
           git push --force origin HEAD:auto-cargo-update
 
       - name: Create Pull Request
@@ -37,6 +37,6 @@ jobs:
               repo: context.repo.repo,
               head: "auto-cargo-update",
               base: context.ref,
-              title: "build: Bump `Cargo.lock` dependencies",
-              body: "Bump dependencies in `Cargo.lock` for all SemVer-compatible updates.",
+              title: "Bump dependencies",
+              body: "Bump dependencies for all SemVer-compatible updates.",
             });
