@@ -1,7 +1,5 @@
-use std::error::Error as StdError;
 use std::ffi::OsString;
-use std::fmt::{self, Display, Formatter};
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, StripPrefixError};
 use std::process::{Command, Stdio};
 use std::string::FromUtf8Error;
 use std::{fs, io};
@@ -135,81 +133,30 @@ impl FileRelocator {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Lockfile generation error.
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
-    InvalidUtf8(FromUtf8Error),
-    Json(JsonError),
-    Io(io::Error),
-    ProcessCreation(String, String, io::Error),
-    NonZeroExit(Option<i32>, String),
+    #[error("{0}")]
+    Anyhow(#[from] anyhow::Error),
+    #[error("invalid manifest path: {0:?}")]
     InvalidManifest(PathBuf),
+    #[error("utf8 parsing error")]
+    InvalidUtf8(#[from] FromUtf8Error),
+    #[error("I/O error")]
+    Io(#[from] io::Error),
+    #[error("json parsing error")]
+    Json(#[from] JsonError),
+    #[error("package manager quit unexpectedly (code: {0:?}):\n\n{1}")]
+    NonZeroExit(Option<i32>, String),
+    #[error("unsupported pip report version {1:?}, expected {0:?}")]
     PipReportVersionMismatch(&'static str, String),
+    #[error("failed to spawn command {0}: Is {1} installed?")]
+    ProcessCreation(String, String, io::Error),
+    #[error("could not strip path prefix")]
+    StripPrefix(#[from] StripPrefixError),
+    #[error("unexpected output for {0:?}: {1}")]
+    UnexpectedOutput(&'static str, String),
+    #[error("unsupported {0:?} version {2:?}, expected {1:?}")]
     UnsupportedCommandVersion(&'static str, &'static str, String),
-    Anyhow(anyhow::Error),
+    #[error("no lockfile was generated")]
     NoLockfileGenerated,
-}
-
-impl StdError for Error {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        match self {
-            Self::InvalidUtf8(err) => Some(err),
-            Self::Json(err) => Some(err),
-            Self::Io(err) => Some(err),
-            Self::ProcessCreation(_, _, err) => Some(err),
-            Self::Anyhow(err) => err.source(),
-            _ => None,
-        }
-    }
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidUtf8(_) => write!(f, "utf8 parsing error"),
-            Self::Json(_) => write!(f, "json parsing error"),
-            Self::Io(_) => write!(f, "I/O error"),
-            Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
-            Self::ProcessCreation(program, tool, _) => {
-                write!(f, "failed to spawn command {program}: Is {tool} installed?")
-            },
-            Self::NonZeroExit(Some(code), stderr) => {
-                write!(f, "package manager exited with error code {code}:\n\n{stderr}")
-            },
-            Self::NonZeroExit(None, stderr) => {
-                write!(f, "package manager quit unexpectedly:\n\n{stderr}")
-            },
-            Self::PipReportVersionMismatch(expected, received) => {
-                write!(f, "unsupported pip report version {received:?}, expected {expected:?}")
-            },
-            Self::UnsupportedCommandVersion(command, expected, received) => {
-                write!(f, "unsupported {command:?} version {received:?}, expected {expected:?}")
-            },
-            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
-            Self::Anyhow(err) => write!(f, "{err}"),
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
-        Self::Io(err)
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(err: FromUtf8Error) -> Self {
-        Self::InvalidUtf8(err)
-    }
-}
-
-impl From<JsonError> for Error {
-    fn from(err: JsonError) -> Self {
-        Self::Json(err)
-    }
-}
-
-impl From<anyhow::Error> for Error {
-    fn from(err: anyhow::Error) -> Self {
-        Self::Anyhow(err)
-    }
 }

@@ -4,16 +4,14 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::{Error, Generator, Result};
+use crate::{npm, Error, Generator, Result};
 
 pub struct Yarn;
 
 impl Generator for Yarn {
     fn lockfile_path(&self, manifest_path: &Path) -> Result<PathBuf> {
-        let project_path = manifest_path
-            .parent()
-            .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
-        Ok(project_path.join("yarn.lock"))
+        let workspace_root = npm::find_workspace_root(manifest_path)?;
+        Ok(workspace_root.join("yarn.lock"))
     }
 
     fn command(&self, _manifest_path: &Path) -> Command {
