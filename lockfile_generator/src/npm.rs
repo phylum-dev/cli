@@ -49,13 +49,7 @@ pub(crate) fn find_workspace_root(manifest_path: impl AsRef<Path>) -> Result<Pat
         .canonicalize()?;
 
     // Search parent directories for workspace manifests.
-    let mut path = original_root.as_path();
-    for _ in 0..WORKSPACE_ROOT_RECURSION_LIMIT {
-        path = match path.parent() {
-            Some(root_dir) => root_dir,
-            None => break,
-        };
-
+    for path in original_root.ancestors().skip(1).take(WORKSPACE_ROOT_RECURSION_LIMIT) {
         // Check if directory has an NPM manifest.
         let manifest_path = path.join("package.json");
         if !manifest_path.exists() {
