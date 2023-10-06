@@ -309,14 +309,14 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
     for i in (0..manifests.len()).rev() {
         let mut remove = false;
 
-        let (manifest_path, manifest_format) = &manifests[i];
+        let (manifest_path, _) = &manifests[i];
 
         // Filter out manifests with a lockfile with matching format in a directory
         // above them.
         let mut lockfile_dirs =
             lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(lockfile_dir, lockfile_format)| {
-            lockfile_format.is_path_manifest(manifest_path)
+            lockfile_format.parser().is_path_manifest(manifest_path)
                 && manifest_path.starts_with(lockfile_dir)
         });
 
