@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Workspace lockfile generation for cargo, npm, yarn, and pnpm
 - Go lockfile generation
+- Ignored manifests with a different ecosystem's lockfile in a parent directory
 
 ## [5.7.1] - 2023-09-08
 
