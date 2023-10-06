@@ -316,7 +316,8 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
         let mut lockfile_dirs =
             lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(lockfile_dir, lockfile_format)| {
-            manifest_format == lockfile_format && manifest_path.starts_with(lockfile_dir)
+            lockfile_format.is_path_manifest(manifest_path)
+                && manifest_path.starts_with(lockfile_dir)
         });
 
         // Filter out `setup.py` files with `pyproject.toml` present.
