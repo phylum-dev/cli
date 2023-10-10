@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.7.2 - 2023-10-10
+
 ### Fixed
 
 - Incorrect handling of `net = true` permission
