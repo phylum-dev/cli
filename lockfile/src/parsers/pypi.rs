@@ -60,9 +60,6 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
     if let Some(mut index_url) =
         line.strip_prefix("--index-url").or_else(|| line.strip_prefix("-i"))
     {
-        // Strip optional `=` from `--index-url=https://...`
-        index_url = index_url.trim().strip_prefix('=').unwrap_or(index_url).trim();
-
         *registry = Some(index_url.trim());
         line = "";
     }
