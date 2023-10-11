@@ -62,7 +62,7 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
         *registry = Some(index_url.trim());
         line = "";
     }
-    if line.starts_with("--extra-index-url") {
+    if line.starts_with("--extra-index-url ") {
         line = "";
     }
 
