@@ -238,7 +238,7 @@ mod tests {
         let pkgs = PyRequirements
             .parse(include_str!("../../tests/fixtures/requirements-locked.txt"))
             .unwrap();
-        assert_eq!(pkgs.len(), 13);
+        assert_eq!(pkgs.len(), 14);
 
         let expected_pkgs = [
             Package {
@@ -299,6 +299,14 @@ mod tests {
             Package {
                 name: "editable".into(),
                 version: PackageVersion::Path(Some("/tmp/editable".into())),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "other-registry-a".into(),
+                version: PackageVersion::ThirdParty(ThirdPartyVersion {
+                    registry: "https://mirror1.phylum.io/simple/".into(),
+                    version: "3.2.1".into(),
+                }),
                 package_type: PackageType::PyPi,
             },
             Package {
