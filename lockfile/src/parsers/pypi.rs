@@ -52,6 +52,11 @@ fn line(input: &str) -> IResult<&str, &str> {
         line = "";
     }
 
+    // Ignore index config options.
+    if line.starts_with("--index-url") || line.starts_with("--extra-index-url") {
+        line = "";
+    }
+
     Ok((input, line))
 }
 

@@ -18,6 +18,9 @@ attrs==20.2.0   # This is an inline comment
 
 requests[security,tests]==2.28.1
 
+--index-url https://mirror1.phylum.io/simple/
+--extra-index-url https://mirror2.phylum.io/simple/
+
 werkzeug==2.9.2 ; python_version >= "3.7" and python_version < "3.12"
 
 attr @ file:///tmp/attr
