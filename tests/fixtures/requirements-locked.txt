@@ -18,9 +18,6 @@ attrs==20.2.0   # This is an inline comment
 
 requests[security,tests]==2.28.1
 
---index-url https://mirror1.phylum.io/simple/
---extra-index-url https://mirror2.phylum.io/simple/
-
 werkzeug==2.9.2 ; python_version >= "3.7" and python_version < "3.12"
 
 attr @ file:///tmp/attr
@@ -35,3 +32,7 @@ tomli @ https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a25
 -e git+ssh://git@github.com/phylum-dev/phylum-ci.git@7d6d859ad368d1ab0a933f24679e3d3c08a40eac#egg=phylum
 
 -e /tmp/editable ; python_version >= "3.7" and python_version < "3.12"
+
+--index-url https://mirror1.phylum.io/simple/
+--extra-index-url https://mirror2.phylum.io/simple/
+other-registry==1.2.3
