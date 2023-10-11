@@ -57,7 +57,11 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
     //
     // Since `ThirdPartyVersion` only allows a single registry, we only record the
     // primary one.
-    if let Some(index_url) = line.strip_prefix("--index-url").or_else(|| line.strip_prefix("-i")) {
+    if let Some(index_url) = line
+        .strip_prefix("--index-url")
+        .and_then(|line| line.strip_prefix(['=', ' ']))
+        .or_else(|| line.strip_prefix("-i"))
+    {
         *registry = Some(index_url.trim());
         line = "";
     }
