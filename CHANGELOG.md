@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Pip requirements.txt parser failing with third-party registries
+
 ## [5.7.2] - 2023-10-10
 
 ### Fixed

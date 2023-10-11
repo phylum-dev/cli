@@ -11,14 +11,15 @@ use nom::Err as NomErr;
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::{self, IResult};
-use crate::{Package, PackageVersion};
+use crate::{Package, PackageVersion, ThirdPartyVersion};
 
 pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
     let mut pkgs = Vec::new();
 
+    let mut registry = None;
     while !input.is_empty() {
         // Get the next line.
-        let (new_input, line) = line(input)?;
+        let (new_input, line) = line(input, &mut registry)?;
         input = new_input;
 
         // Ignore empty lines.
@@ -30,7 +31,7 @@ pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
         let (_, line) = alt((take_until(" #"), rest))(line)?;
 
         // Parse dependency.
-        let (_, pkg) = package(line)?;
+        let (_, pkg) = package(line, registry)?;
         pkgs.push(pkg);
     }
 
@@ -38,7 +39,7 @@ pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
 }
 
 /// Parse one line in the lockfile.
-fn line(input: &str) -> IResult<&str, &str> {
+fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, &'a str> {
     // Take everything until the next newline.
     //
     // This takes line continuation characters into account.
@@ -52,10 +53,26 @@ fn line(input: &str) -> IResult<&str, &str> {
         line = "";
     }
 
+    // Ignore index config options.
+    //
+    // Since `ThirdPartyVersion` only allows a single registry, we only record the
+    // primary one.
+    if let Some(index_url) = line
+        .strip_prefix("--index-url")
+        .and_then(|line| line.strip_prefix(['=', ' ']))
+        .or_else(|| line.strip_prefix("-i"))
+    {
+        *registry = Some(index_url.trim());
+        line = "";
+    }
+    if line.starts_with("--extra-index-url") {
+        line = "";
+    }
+
     Ok((input, line))
 }
 
-fn package(input: &str) -> IResult<&str, Package> {
+fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Package> {
     // Ignore everything after `;`.
     let (_, input) = alt((take_until(";"), rest))(input)?;
 
@@ -85,7 +102,13 @@ fn package(input: &str) -> IResult<&str, Package> {
 
     // Parse first-party dependencies.
     let (input, version) = package_version(input)?;
-    let version = PackageVersion::FirstParty(version.trim().into());
+    let version = match registry {
+        Some(registry) => PackageVersion::ThirdParty(ThirdPartyVersion {
+            version: version.trim().into(),
+            registry: registry.into(),
+        }),
+        None => PackageVersion::FirstParty(version.trim().into()),
+    };
 
     // Ensure line is empty after the dependency.
     line_done(input)?;
