@@ -304,7 +304,7 @@ mod tests {
             Package {
                 name: "other-registry".into(),
                 version: PackageVersion::ThirdParty(ThirdPartyVersion {
-                    registry: "https://mirror1.phylum.io/simple/".into(),
+                    registry: "https://mirror2.phylum.io/simple/".into(),
                     version: "1.2.3".into(),
                 }),
                 package_type: PackageType::PyPi,

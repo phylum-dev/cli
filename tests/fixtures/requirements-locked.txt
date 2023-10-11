@@ -34,5 +34,6 @@ tomli @ https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a25
 -e /tmp/editable ; python_version >= "3.7" and python_version < "3.12"
 
 --index-url https://mirror1.phylum.io/simple/
---extra-index-url https://mirror2.phylum.io/simple/
+-i https://mirror2.phylum.io/simple/
+--extra-index-url https://mirror3.phylum.io/simple/
 other-registry==1.2.3
