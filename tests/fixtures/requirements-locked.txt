@@ -35,6 +35,6 @@ tomli @ https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a25
 
 --index-url https://mirror1.phylum.io/simple/
 other-registry-a==3.2.1
--i https://mirror2.phylum.io/simple/
+-ihttps://mirror2.phylum.io/simple/
 --extra-index-url https://mirror3.phylum.io/simple/
 other-registry==1.2.3
