@@ -55,17 +55,13 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
 
     // Ignore index config options.
     //
-    // Since `ThirdPartyVersion` only allows a single registry, we prefer recording
-    // only the primary one.
+    // Since `ThirdPartyVersion` only allows a single registry, we only record the
+    // primary one.
     if let Some(index_url) = line.strip_prefix("--index-url") {
         *registry = Some(index_url.trim());
         line = "";
     }
-    if let Some(extra_index_url) = line.strip_prefix("--extra-index-url") {
-        // Only use extra index URL if no other URL has been specified.
-        if registry.is_none() {
-            *registry = Some(extra_index_url.trim());
-        }
+    if line.starts_with("--extra-index-url") {
         line = "";
     }
 
