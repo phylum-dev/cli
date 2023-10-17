@@ -6,7 +6,9 @@ use std::{env, fs};
 
 use anyhow::{anyhow, Result};
 #[cfg(unix)]
-use birdcage::error::{Error as SandboxError, Result as SandboxResult};
+use birdcage::error::Error as SandboxError;
+#[cfg(unix)]
+use birdcage::error::Result as SandboxResult;
 #[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 use deno_runtime::permissions::PermissionsOptions;
@@ -208,7 +210,7 @@ impl Permissions {
             add_exception(&mut birdcage, Exception::Read(path))?;
         }
         for path in self.write.sandbox_paths().iter().map(PathBuf::from) {
-            add_exception(&mut birdcage, Exception::Write(path))?;
+            add_exception(&mut birdcage, Exception::WriteAndRead(path))?;
         }
         for path in self.run.sandbox_paths().iter() {
             let absolute_path = resolve_bin_path(path);
@@ -291,7 +293,7 @@ impl From<&Permissions> for PermissionsOptions {
 /// Construct sandbox with a set of pre-defined acceptable exceptions.
 #[cfg(unix)]
 pub fn default_sandbox() -> SandboxResult<Birdcage> {
-    let mut birdcage = Birdcage::new()?;
+    let mut birdcage = Birdcage::new();
 
     // Permit read access to lib for dynamic linking.
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/lib".into()))?;
@@ -326,7 +328,7 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin/env".into()))?;
 
     // Allow write access to null-sink.
-    add_exception(&mut birdcage, Exception::Write("/dev/null".into()))?;
+    add_exception(&mut birdcage, Exception::WriteAndRead("/dev/null".into()))?;
 
     // Allow applications to read from `$PATH`.
     birdcage.add_exception(Exception::Environment("PATH".into()))?;

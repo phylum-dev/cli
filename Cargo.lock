@@ -414,11 +414,11 @@ dependencies = [
 
 [[package]]
 name = "birdcage"
-version = "0.3.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d92dd4267938d2d01b141f1af28e31c78c764a2550f66fb4f28611fed20c97b3"
+checksum = "4a00b46409c8a47c3d58d2adae897a5975bc13b363babb6f2bb1df3063e1b398"
 dependencies = [
- "landlock",
+ "bitflags 2.4.1",
  "libc",
  "seccompiler",
 ]
@@ -1808,26 +1808,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enumflags2"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5998b4f30320c9d93aed72f63af821bfdac50465b75428fce77b48ec482c3939"
-dependencies = [
- "enumflags2_derive",
-]
-
-[[package]]
-name = "enumflags2_derive"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f95e2801cd355d4a1a3e3953ce6ee5ae9603a5c833455343a8bfe3f44d418246"
-dependencies = [
- "proc-macro2 1.0.69",
- "quote 1.0.33",
- "syn 2.0.38",
-]
-
-[[package]]
 name = "env_logger"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2793,17 +2773,6 @@ checksum = "ed9625ffda8729b85e45cf04090035ac368927b8cebc34898e7c120f52e4838b"
 dependencies = [
  "bitflags 1.3.2",
  "libc",
-]
-
-[[package]]
-name = "landlock"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "520baa32708c4e957d2fc3a186bc5bd8d26637c33137f399ddfc202adb240068"
-dependencies = [
- "enumflags2",
- "libc",
- "thiserror",
 ]
 
 [[package]]
@@ -4556,9 +4525,9 @@ dependencies = [
 
 [[package]]
 name = "seccompiler"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e01d1292a1131b22ccea49f30bd106f1238b5ddeec1a98d39268dcc31d540e68"
+checksum = "6f6575e3c2b3a0fe2ef3e53855b6a8dead7c29f783da5e123d378c8c6a89017e"
 dependencies = [
  "libc",
 ]
