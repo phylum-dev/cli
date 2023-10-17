@@ -10,7 +10,7 @@ fn default_deny_fs() {
     let test_cli = TestCli::builder().build();
 
     #[cfg(target_os = "linux")]
-    let expected_error = "Permission denied";
+    let expected_error = "Read-only file system";
     #[cfg(not(target_os = "linux"))]
     let expected_error = "Operation not permitted";
 
@@ -19,6 +19,9 @@ fn default_deny_fs() {
         .run(["sandbox", "--allow-run", "/", "bash", "-c", &format!("echo x > {test_file_path}")])
         .failure()
         .stderr(predicate::str::contains(expected_error));
+
+    #[cfg(target_os = "linux")]
+    let expected_error = "No such file or directory";
 
     // Test read access.
     test_cli
