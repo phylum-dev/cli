@@ -166,6 +166,7 @@ impl Format for Vec<ProjectSummaryResponse> {
         let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(self, &[
             ("Project Name", |project| print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()),
             ("Project ID", |project| project.id.to_string()),
+            ("Repository URL", |project| project.repository_url.clone().unwrap_or_default()),
         ]);
         let _ = writeln!(writer, "{table}");
     }

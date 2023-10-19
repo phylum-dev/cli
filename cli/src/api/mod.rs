@@ -253,11 +253,16 @@ impl PhylumApi {
     }
 
     /// Create a new project
-    pub async fn create_project(&self, name: &str, group: Option<&str>) -> Result<ProjectId> {
+    pub async fn create_project(
+        &self,
+        name: &str,
+        group: Option<String>,
+        repository_url: Option<String>,
+    ) -> Result<ProjectId> {
         let response: CreateProjectResponse = self
             .post(
                 endpoints::post_create_project(&self.config.connection.uri)?,
-                CreateProjectRequest { name: name.to_owned(), group_name: group.map(String::from) },
+                CreateProjectRequest { repository_url, name: name.to_owned(), group_name: group },
             )
             .await?;
         Ok(response.id)

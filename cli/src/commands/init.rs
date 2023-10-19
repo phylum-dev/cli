@@ -33,6 +33,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
         println!();
     }
 
+    let cli_repository_url = matches.get_one::<String>("repository-url");
     let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
     let cli_lockfiles = matches.get_many::<String>("lockfile");
     let cli_project = matches.get_one::<String>("project");
@@ -42,13 +43,14 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let groups = api.get_groups_list().await?.groups;
 
     // Interactively prompt for missing project information.
-    let (project, group) = prompt_project(&groups, cli_project, cli_group).await?;
+    let (project, group, repository_url) =
+        prompt_project(&groups, cli_project, cli_group, cli_repository_url).await?;
 
     // Interactively prompt for missing lockfile information.
     let lockfiles = prompt_lockable_files(cli_lockfiles, cli_lockfile_type)?;
 
     // Attempt to create the project.
-    let result = project::create_project(api, &project, group.clone()).await;
+    let result = project::create_project(api, &project, group.clone(), repository_url).await;
 
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
@@ -78,9 +80,10 @@ async fn prompt_project(
     groups: &[UserGroup],
     cli_project: Option<&String>,
     cli_group: Option<&String>,
-) -> anyhow::Result<(String, Option<String>)> {
+    cli_repository_url: Option<&String>,
+) -> anyhow::Result<(String, Option<String>, Option<String>)> {
     if let Some(project) = cli_project {
-        return Ok((project.clone(), cli_group.cloned()));
+        return Ok((project.clone(), cli_group.cloned(), cli_repository_url.cloned()));
     }
 
     // Prompt for project name.
@@ -92,7 +95,13 @@ async fn prompt_project(
         None => prompt_group(groups).await?,
     };
 
-    Ok((project, group))
+    // Prompt for repository URL.
+    let repository_url = match cli_repository_url {
+        Some(repository_url) => Some(repository_url.clone()),
+        None => prompt_repository_url().await?,
+    };
+
+    Ok((project, group, repository_url))
 }
 
 /// Ask for the desired project name.
@@ -151,6 +160,19 @@ async fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
         0 => Ok(None),
         index => Ok(group_names.get(index).cloned().map(String::from)),
     }
+}
+
+/// Ask for the desired repository URL.
+async fn prompt_repository_url() -> anyhow::Result<Option<String>> {
+    println!();
+
+    // Prompt for selection of one group.
+    let prompt = "[ENTER] Confirm\nRepository URL [default: None]";
+    let input: String = Input::new().with_prompt(prompt).allow_empty(true).interact()?;
+
+    println!();
+
+    Ok((!input.is_empty()).then_some(input))
 }
 
 /// Interactively ask for missing lockfile or manifest information.

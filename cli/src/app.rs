@@ -110,6 +110,11 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("group")
                             .value_name("GROUP_NAME")
                             .help("Group which will be the owner of the project"),
+                        Arg::new("repository-url")
+                            .short('r')
+                            .long("repository-url")
+                            .value_name("repository_url")
+                            .help("Repository URL of the project"),
                     ]),
                 )
                 .subcommand(
@@ -491,6 +496,11 @@ pub fn add_subcommands(command: Command) -> Command {
                     .long("force")
                     .help("Overwrite existing configurations without confirmation")
                     .action(ArgAction::SetTrue),
+                Arg::new("repository-url")
+                    .short('r')
+                    .long("repository-url")
+                    .value_name("REPOSITORY_URL")
+                    .help("Repository URL of the project"),
             ]),
         )
         .subcommand(

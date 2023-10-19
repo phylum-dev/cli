@@ -30,6 +30,9 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 `-f`, `--force`
 &emsp; Overwrite existing configurations without confirmation
 
+`-r`, `--repository-url` `<REPOSITORY_URL>`
+&emsp; Repository URL of the project
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

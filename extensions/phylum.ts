@@ -342,8 +342,9 @@ export class PhylumApi {
   static createProject(
     name: string,
     group?: string,
+    repository_url?: string,
   ): Promise<{ id: string; status: "Created" | "Exists" }> {
-    return DenoCore.opAsync("create_project", name, group);
+    return DenoCore.opAsync("create_project", name, group, repository_url);
   }
 
   /**
