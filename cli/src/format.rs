@@ -172,6 +172,19 @@ impl Format for Vec<ProjectSummaryResponse> {
     }
 }
 
+impl Format for ProjectSummaryResponse {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let _ = writeln!(writer, "{}: {}", style("ID").blue(), self.id);
+        let _ = writeln!(writer, "{}: {}", style("Name").blue(), self.name);
+        if let Some(group_name) = &self.group_name {
+            let _ = writeln!(writer, "{}: {}", style("Group").blue(), group_name);
+        }
+        if let Some(repository_url) = &self.repository_url {
+            let _ = writeln!(writer, "{}: {}", style("Repository URL").blue(), repository_url);
+        }
+    }
+}
+
 impl Format for ListUserGroupsResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
         // Maximum length of group name column.

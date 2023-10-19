@@ -54,6 +54,8 @@ pub async fn handle_project(
         });
 
         print_user_success!("Successfully created new project, {}", name);
+    } else if let Some(matches) = matches.subcommand_matches("status") {
+        status(api, matches).await?;
     } else if let Some(matches) = matches.subcommand_matches("update") {
         update_project(app, api, matches).await?;
     } else if let Some(matches) = matches.subcommand_matches("delete") {
@@ -97,6 +99,31 @@ pub async fn handle_project(
     }
 
     Ok(ExitCode::Ok)
+}
+
+/// Print current project information.
+pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), PhylumApiError> {
+    let pretty_print = !matches.get_flag("json");
+
+    let project_config = match phylum_project::get_current_project() {
+        Some(project_config) => project_config,
+        None => {
+            if pretty_print {
+                print_user_success!("No project set");
+            } else {
+                println!("{{}}");
+            }
+
+            return Ok(());
+        },
+    };
+    let project = api
+        .get_project(&project_config.id.to_string(), project_config.group_name.as_deref())
+        .await?;
+
+    project.write_stdout(pretty_print);
+
+    Ok(())
 }
 
 /// Create a Phylum project.
