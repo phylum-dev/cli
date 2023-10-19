@@ -13,13 +13,14 @@ use phylum_types::types::package::{
     PackageDescriptor, PackageDescriptorAndLockfile, PackageSpecifier, PackageSubmitResponse,
 };
 use phylum_types::types::project::{
-    CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse,
+    CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse, UpdateProjectRequest,
 };
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::{DeserializeOwned, IgnoredAny};
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
+use uuid::Uuid;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, Vulnerability};
 
@@ -162,6 +163,14 @@ impl PhylumApi {
         self.send_request(Method::POST, path, Some(s)).await
     }
 
+    async fn put<T: serde::de::DeserializeOwned, S: serde::Serialize, U: IntoUrl>(
+        &self,
+        path: U,
+        s: S,
+    ) -> Result<T> {
+        self.send_request(Method::PUT, path, Some(s)).await
+    }
+
     async fn send_request<T: DeserializeOwned, B: Serialize, U: IntoUrl>(
         &self,
         method: Method,
@@ -255,16 +264,27 @@ impl PhylumApi {
     /// Create a new project
     pub async fn create_project(
         &self,
-        name: &str,
+        name: impl Into<String>,
         group: Option<String>,
         repository_url: Option<String>,
     ) -> Result<ProjectId> {
-        let response: CreateProjectResponse = self
-            .post(
-                endpoints::post_create_project(&self.config.connection.uri)?,
-                CreateProjectRequest { repository_url, name: name.to_owned(), group_name: group },
-            )
-            .await?;
+        let url = endpoints::post_create_project(&self.config.connection.uri)?;
+        let body = CreateProjectRequest { repository_url, name: name.into(), group_name: group };
+        let response: CreateProjectResponse = self.post(url, body).await?;
+        Ok(response.id)
+    }
+
+    /// Update an existing new project.
+    pub async fn update_project(
+        &self,
+        project_id: &str,
+        group: Option<String>,
+        name: impl Into<String>,
+        repository_url: Option<String>,
+    ) -> Result<ProjectId> {
+        let url = endpoints::update_project(&self.config.connection.uri, project_id)?;
+        let body = UpdateProjectRequest { repository_url, name: name.into(), group_name: group };
+        let response: CreateProjectResponse = self.put(url, body).await?;
         Ok(response.id)
     }
 
@@ -385,6 +405,22 @@ impl PhylumApi {
             .find(|project| project.name == project_name)
             .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
             .map(|project| project.id)
+    }
+
+    /// Get a project using its ID and group name.
+    pub async fn get_project(
+        &self,
+        project_id: &str,
+        group_name: Option<&str>,
+    ) -> Result<ProjectSummaryResponse> {
+        let project_id = Uuid::parse_str(project_id).map_err(|err| anyhow!(err))?;
+
+        let projects = self.get_projects(group_name).await?;
+
+        projects
+            .into_iter()
+            .find(|project| project.id == project_id)
+            .ok_or_else(|| anyhow!("No project found with ID {:?}", project_id).into())
     }
 
     /// Submit a single package

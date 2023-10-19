@@ -131,6 +131,30 @@ pub fn add_subcommands(command: Command) -> Command {
                     ]),
                 )
                 .subcommand(
+                    Command::new("update").about("Update a project").args(&[
+                        Arg::new("project-id")
+                            .short('i')
+                            .long("project-id")
+                            .value_name("PROJECT_ID")
+                            .help("ID of the project to be updated"),
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("GROUP_NAME")
+                            .help("Group that owns the project"),
+                        Arg::new("name")
+                            .short('n')
+                            .long("name")
+                            .value_name("NAME")
+                            .help("New project name"),
+                        Arg::new("repository-url")
+                            .short('r')
+                            .long("repository-url")
+                            .value_name("REPOSITORY_URL")
+                            .help("New repository URL"),
+                    ]),
+                )
+                .subcommand(
                     Command::new("list").about("List all existing projects").args(&[
                         Arg::new("json")
                             .action(ArgAction::SetTrue)
