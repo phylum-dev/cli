@@ -100,6 +100,15 @@ pub fn add_subcommands(command: Command) -> Command {
                 .arg_required_else_help(true)
                 .subcommand_required(true)
                 .subcommand(
+                    Command::new("status").about("Get current project information").args(&[
+                        Arg::new("json")
+                            .action(ArgAction::SetTrue)
+                            .short('j')
+                            .long("json")
+                            .help("Produce output in json format (default: false)"),
+                    ]),
+                )
+                .subcommand(
                     Command::new("create").about("Create a new project").args(&[
                         Arg::new("name")
                             .value_name("name")

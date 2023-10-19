@@ -27,4 +27,5 @@ Usage: phylum project [OPTIONS] <COMMAND>
 * [phylum project delete](./phylum_project_delete)
 * [phylum project link](./phylum_project_link)
 * [phylum project list](./phylum_project_list)
+* [phylum project status](./phylum_project_status)
 * [phylum project update](./phylum_project_update)
