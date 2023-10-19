@@ -142,7 +142,9 @@ async fn handle_commands() -> CommandResult {
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
-        "project" => project::handle_project(&Spinner::wrap(api).await?, sub_matches).await,
+        "project" => {
+            project::handle_project(&Spinner::wrap(api).await?, app_helper, sub_matches).await
+        },
         "package" => packages::handle_get_package(&Spinner::wrap(api).await?, sub_matches).await,
         "history" => jobs::handle_history(&Spinner::wrap(api).await?, sub_matches).await,
         "group" => group::handle_group(&Spinner::wrap(api).await?, sub_matches).await,

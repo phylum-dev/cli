@@ -92,7 +92,7 @@ async fn prompt_project(
     // Prompt for group name.
     let group = match cli_group {
         Some(group) => Some(group.clone()),
-        None => prompt_group(groups).await?,
+        None => prompt_group(groups)?,
     };
 
     // Prompt for repository URL.
@@ -137,7 +137,7 @@ fn prompt_project_name() -> io::Result<String> {
 }
 
 /// Ask for the desired group.
-async fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
+pub fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
     // Skip group selection if user has none.
     if groups.is_empty() {
         return Ok(None);

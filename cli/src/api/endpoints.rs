@@ -107,6 +107,13 @@ pub fn post_create_project(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/projects")?)
 }
 
+/// PUT /data/projects/<project_id>
+pub fn update_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", project_id]);
+    Ok(url)
+}
+
 /// DELETE /data/projects/<project_id>
 pub fn delete_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
