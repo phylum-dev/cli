@@ -20,10 +20,10 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`-p`, `--project` `<project_name>`
+`-p`, `--project` `<PROJECT_NAME>`
 &emsp; Project to be queried
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to be queried
 
 `-v`, `--verbose`...

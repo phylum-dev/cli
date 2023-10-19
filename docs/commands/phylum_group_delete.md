@@ -8,12 +8,12 @@ hidden: false
 Delete a group
 
 ```sh
-Usage: phylum group delete [OPTIONS] <group_name>
+Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 ```
 
 ### Arguments
 
-`<group_name>`
+`<GROUP_NAME>`
 &emsp; Name for the group to be deleted
 
 ### Options

@@ -17,7 +17,7 @@ Usage: phylum parse [OPTIONS] [LOCKFILE]...
 
 ### Options
 
-`-t`, `--lockfile-type` `<type>`
+`-t`, `--lockfile-type` `<TYPE>`
 &emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 

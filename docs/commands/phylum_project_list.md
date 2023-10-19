@@ -16,7 +16,7 @@ Usage: phylum project list [OPTIONS]
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to list projects for
 
 `-v`, `--verbose`...
