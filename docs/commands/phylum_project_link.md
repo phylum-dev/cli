@@ -8,17 +8,17 @@ hidden: false
 Link a repository to a project
 
 ```sh
-Usage: phylum project link [OPTIONS] <name>
+Usage: phylum project link [OPTIONS] <NAME>
 ```
 
 ### Arguments
 
-`<name>`
+`<NAME>`
 &emsp; Name of the project
 
 ### Options
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group owning the project
 
 `-v`, `--verbose`...

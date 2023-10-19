@@ -8,17 +8,17 @@ hidden: false
 Delete a project
 
 ```sh
-Usage: phylum project delete [OPTIONS] <name>
+Usage: phylum project delete [OPTIONS] <NAME>
 ```
 
 ### Arguments
 
-`<name>`
+`<NAME>`
 &emsp; Name of the project
 
 ### Options
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group that owns the project
 
 `-v`, `--verbose`...

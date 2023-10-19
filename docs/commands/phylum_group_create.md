@@ -8,12 +8,12 @@ hidden: false
 Create a new group
 
 ```sh
-Usage: phylum group create [OPTIONS] <group_name>
+Usage: phylum group create [OPTIONS] <GROUP_NAME>
 ```
 
 ### Arguments
 
-`<group_name>`
+`<GROUP_NAME>`
 &emsp; Name for the new group
 
 ### Options

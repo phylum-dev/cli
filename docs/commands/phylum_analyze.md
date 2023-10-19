@@ -17,19 +17,19 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 
 ### Options
 
-`-l`, `--label` `<label>`
+`-l`, `--label` `<LABEL>`
 &emsp; Specify a label to use for analysis
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`-p`, `--project` `<project_name>`
+`-p`, `--project` `<PROJECT_NAME>`
 &emsp; Specify a project to use for analysis
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Specify a group to use for analysis
 
-`-t`, `--lockfile-type` `<type>`
+`-t`, `--lockfile-type` `<TYPE>`
 &emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 

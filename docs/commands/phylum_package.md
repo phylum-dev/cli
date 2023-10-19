@@ -7,19 +7,19 @@ hidden: false
 Retrieve the details of a specific package
 
 ```sh
-Usage: phylum package [OPTIONS] <type> <name> <version>
+Usage: phylum package [OPTIONS] <TYPE> <NAME> <VERSION>
 ```
 
 ### Arguments
 
-`<type>`
+`<TYPE>`
 &emsp; Package ecosystem type
 &emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
-`<name>`
+`<NAME>`
 &emsp; The name of the package.
 
-`<version>`
+`<VERSION>`
 &emsp; The version of the package.
 
 ### Options
@@ -27,7 +27,7 @@ Usage: phylum package [OPTIONS] <type> <name> <version>
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`-f`, `--filter` `<filter>`
+`-f`, `--filter` `<FILTER>`
 &emsp; Provide a filter used to limit the issues displayed
 
 &nbsp;&nbsp;&nbsp;&nbsp;EXAMPLES:

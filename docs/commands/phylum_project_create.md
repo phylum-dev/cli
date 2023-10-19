@@ -8,17 +8,17 @@ hidden: false
 Create a new project
 
 ```sh
-Usage: phylum project create [OPTIONS] <name>
+Usage: phylum project create [OPTIONS] <NAME>
 ```
 
 ### Arguments
 
-`<name>`
+`<NAME>`
 &emsp; Name of the project
 
 ### Options
 
-`-g`, `--group` `<group_name>`
+`-g`, `--group` `<GROUP_NAME>`
 &emsp; Group which will be the owner of the project
 
 `-v`, `--verbose`...
