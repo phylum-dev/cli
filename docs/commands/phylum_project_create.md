@@ -21,6 +21,9 @@ Usage: phylum project create [OPTIONS] <name>
 `-g`, `--group` `<group_name>`
 &emsp; Group which will be the owner of the project
 
+`-r`, `--repository-url` `<repository_url>`
+&emsp; Repository URL of the project
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

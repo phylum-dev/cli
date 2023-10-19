@@ -31,10 +31,11 @@ pub async fn handle_project(api: &PhylumApi, matches: &clap::ArgMatches) -> Comm
     if let Some(matches) = matches.subcommand_matches("create") {
         let name = matches.get_one::<String>("name").unwrap();
         let group = matches.get_one::<String>("group").cloned();
+        let repository_url = matches.get_one::<String>("repository-url").cloned();
 
         log::info!("Initializing new project: `{}`", name);
 
-        let project_config = match create_project(api, name, group).await {
+        let project_config = match create_project(api, name, group, repository_url).await {
             Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
                 print_user_failure!("Project '{}' already exists", name);
                 return Ok(ExitCode::AlreadyExists);
@@ -95,8 +96,9 @@ pub async fn create_project(
     api: &PhylumApi,
     project: &str,
     group: Option<String>,
+    repository_url: Option<String>,
 ) -> StdResult<ProjectConfig, PhylumApiError> {
-    let project_id = api.create_project(project, group.as_deref()).await?;
+    let project_id = api.create_project(project, group.clone(), repository_url).await?;
 
     Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
 }

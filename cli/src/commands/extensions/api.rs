@@ -312,13 +312,14 @@ async fn create_project(
     op_state: Rc<RefCell<OpState>>,
     name: String,
     group: Option<String>,
+    repository_url: Option<String>,
 ) -> Result<CreatedProject> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     // Retrieve the id if the project already exists, otherwise return the id or the
     // error.
-    match api.create_project(&name, group.as_deref()).await {
+    match api.create_project(&name, group.clone(), repository_url).await {
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
             .get_project_id(&name, group.as_deref())
             .await
