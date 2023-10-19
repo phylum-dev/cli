@@ -84,12 +84,12 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("project")
                     .short('p')
                     .long("project")
-                    .value_name("project_name")
+                    .value_name("PROJECT_NAME")
                     .help("Project to be queried"),
                 Arg::new("group")
                     .short('g')
                     .long("group")
-                    .value_name("group_name")
+                    .value_name("GROUP_NAME")
                     .help("Group to be queried"),
             ]),
         )
@@ -102,26 +102,26 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("create").about("Create a new project").args(&[
                         Arg::new("name")
-                            .value_name("name")
+                            .value_name("NAME")
                             .help("Name of the project")
                             .required(true),
                         Arg::new("group")
                             .short('g')
                             .long("group")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Group which will be the owner of the project"),
                     ]),
                 )
                 .subcommand(
                     Command::new("delete").about("Delete a project").aliases(["rm"]).args(&[
                         Arg::new("name")
-                            .value_name("name")
+                            .value_name("NAME")
                             .help("Name of the project")
                             .required(true),
                         Arg::new("group")
                             .short('g')
                             .long("group")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Group that owns the project"),
                     ]),
                 )
@@ -135,20 +135,20 @@ pub fn add_subcommands(command: Command) -> Command {
                         Arg::new("group")
                             .short('g')
                             .long("group")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Group to list projects for"),
                     ]),
                 )
                 .subcommand(
                     Command::new("link").about("Link a repository to a project").args(&[
                         Arg::new("name")
-                            .value_name("name")
+                            .value_name("NAME")
                             .help("Name of the project")
                             .required(true),
                         Arg::new("group")
                             .short('g')
                             .long("group")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Group owning the project"),
                     ]),
                 ),
@@ -157,18 +157,18 @@ pub fn add_subcommands(command: Command) -> Command {
             Command::new("package").about("Retrieve the details of a specific package").args(&[
                 Arg::new("package-type")
                     .index(1)
-                    .value_name("type")
+                    .value_name("TYPE")
                     .help("Package ecosystem type")
                     .value_parser(["npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo"])
                     .required(true),
                 Arg::new("name")
                     .index(2)
-                    .value_name("name")
+                    .value_name("NAME")
                     .help("The name of the package.")
                     .required(true),
                 Arg::new("version")
                     .index(3)
-                    .value_name("version")
+                    .value_name("VERSION")
                     .help("The version of the package.")
                     .required(true),
                 Arg::new("json")
@@ -179,7 +179,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("filter")
                     .short('f')
                     .long("filter")
-                    .value_name("filter")
+                    .value_name("FILTER")
                     .help(FILTER_ABOUT),
             ]),
         )
@@ -283,7 +283,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
-                        .value_name("type")
+                        .value_name("TYPE")
                         .requires("lockfile")
                         .help("Lockfile type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
@@ -297,7 +297,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("label")
                         .short('l')
                         .long("label")
-                        .value_name("label")
+                        .value_name("LABEL")
                         .help("Specify a label to use for analysis"),
                     Arg::new("json")
                         .action(ArgAction::SetTrue)
@@ -307,12 +307,12 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("project")
                         .short('p')
                         .long("project")
-                        .value_name("project_name")
+                        .value_name("PROJECT_NAME")
                         .help("Specify a project to use for analysis"),
                     Arg::new("group")
                         .short('g')
                         .long("group")
-                        .value_name("group_name")
+                        .value_name("GROUP_NAME")
                         .help("Specify a group to use for analysis")
                         .requires("project"),
                     Arg::new("lockfile")
@@ -323,7 +323,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("lockfile-type")
                         .short('t')
                         .long("lockfile-type")
-                        .value_name("type")
+                        .value_name("TYPE")
                         .requires("lockfile")
                         .help("Lockfile type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
@@ -344,7 +344,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("file")
                         .short('f')
                         .long("file")
-                        .value_name("file")
+                        .value_name("FILE")
                         .help(
                             "File (or piped stdin) containing the list of packages (format \
                              `<name>:<version>`)",
@@ -353,7 +353,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("type")
                         .short('t')
                         .long("type")
-                        .value_name("type")
+                        .value_name("TYPE")
                         .help("Package ecosystem type")
                         .value_parser([
                             "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
@@ -363,12 +363,12 @@ pub fn add_subcommands(command: Command) -> Command {
                     Arg::new("project")
                         .short('p')
                         .long("project")
-                        .value_name("project_name")
+                        .value_name("PROJECT_NAME")
                         .help("Project to use for analysis"),
                     Arg::new("group")
                         .short('g')
                         .long("group")
-                        .value_name("group_name")
+                        .value_name("GROUP_NAME")
                         .help("Group to use for analysis")
                         .requires("project"),
                 ]),
@@ -391,7 +391,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("create").about("Create a new group").arg(
                         Arg::new("group_name")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Name for the new group")
                             .required(true),
                     ),
@@ -399,7 +399,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 .subcommand(
                     Command::new("delete").about("Delete a group").arg(
                         Arg::new("group_name")
-                            .value_name("group_name")
+                            .value_name("GROUP_NAME")
                             .help("Name for the group to be deleted")
                             .required(true),
                     ),
@@ -482,7 +482,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 Arg::new("lockfile-type")
                     .short('t')
                     .long("lockfile-type")
-                    .value_name("type")
+                    .value_name("TYPE")
                     .requires("lockfile")
                     .help("Lockfile type used for all lockfiles (default: auto)")
                     .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
