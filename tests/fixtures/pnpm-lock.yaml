@@ -482,6 +482,4 @@ packages:
   file:projects/workspace_member:
     resolution: {directory: projects/workspace_member, type: directory}
     name: workspace_member
-    dependencies:
-      typescript: 5.2.2
     dev: false
