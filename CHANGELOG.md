@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [5.7.3] - 2023-10-17
 
+### Changed
+- Automatic manifest resolution with subcommands `init`/`parse`/`analyze` will
+    no longer return manifests in subdirectories of other manifests
+
 ### Fixed
 - Pip requirements.txt parser failing with third-party registries
 

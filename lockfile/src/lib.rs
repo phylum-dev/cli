@@ -277,52 +277,88 @@ pub fn find_lockfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat
         .collect()
 }
 
+/// Collection of lockfiles and manifests.
+#[derive(Serialize)]
+pub struct LockableFiles {
+    pub lockfiles: Vec<(PathBuf, LockfileFormat)>,
+    pub manifests: Vec<(PathBuf, LockfileFormat)>,
+}
+
+impl LockableFiles {
+    /// Find lockfiles and manifests at or below the specified root directory.
+    ///
+    /// Walks the directory tree and returns all recognized files.
+    ///
+    /// Paths excluded by gitignore are automatically ignored.
+    pub fn find_at(root: impl AsRef<Path>) -> Self {
+        let mut lockables = Self { lockfiles: Vec::new(), manifests: Vec::new() };
+
+        let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
+
+        // Find all lockfiles and manifests in the specified directory.
+        for entry in walker.into_iter().flatten() {
+            let path = entry.path();
+
+            for format in LockfileFormat::iter() {
+                let parser = format.parser();
+
+                if parser.is_path_lockfile(path) {
+                    lockables.lockfiles.push((path.to_path_buf(), format));
+                    break;
+                } else if parser.is_path_manifest(path) {
+                    // Select first matching format for manifests.
+                    lockables.manifests.push((path.to_path_buf(), format));
+                    break;
+                }
+            }
+        }
+
+        lockables
+    }
+}
+
 /// Find lockfiles and manifests at or below the specified root directory.
 ///
 /// Walks the directory tree and returns all recognized files.
 ///
+/// This will filter out manifests if there is a manifest or lockfile in a
+/// directory above them. To get all lockfiles and manifests, see
+/// [`LockableFiles::find_at`].
+///
 /// Paths excluded by gitignore are automatically ignored.
 pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
-    let mut manifests: Vec<(PathBuf, _)> = Vec::new();
-    let mut lockfiles = Vec::new();
+    let mut lockables = LockableFiles::find_at(root);
 
-    let walker = WalkBuilder::new(root).max_depth(Some(MAX_LOCKFILE_DEPTH)).build();
-
-    // Find all lockfiles and manifests in the specified directory.
-    for entry in walker.into_iter().flatten() {
-        let path = entry.path();
-
-        for format in LockfileFormat::iter() {
-            let parser = format.parser();
-
-            if parser.is_path_lockfile(path) {
-                lockfiles.push((path.to_path_buf(), format));
-                break;
-            } else if parser.is_path_manifest(path) {
-                // Select first matching format for manifests.
-                manifests.push((path.to_path_buf(), format));
-                break;
-            }
-        }
-    }
-
-    for i in (0..manifests.len()).rev() {
+    for i in (0..lockables.manifests.len()).rev() {
         let mut remove = false;
 
-        let (manifest_path, _) = &manifests[i];
+        let (manifest_path, _) = &lockables.manifests[i];
 
-        // Filter out manifests with a lockfile with matching format in a directory
-        // above them.
+        // Filter out manifest if there's a lockfile with a matching format at or above
+        // the manifest.
         let mut lockfile_dirs =
-            lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
+            lockables.lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(lockfile_dir, lockfile_format)| {
             lockfile_format.parser().is_path_manifest(manifest_path)
                 && manifest_path.starts_with(lockfile_dir)
         });
 
+        // Filter out manifest if there's a manifest with a matching format above the
+        // manifest.
+        let mut manifest_dirs = lockables.manifests.iter().filter_map(|(path, format)| {
+            let parent = path.parent()?;
+            (path != manifest_path).then_some((parent, format))
+        });
+        if let Some(manifest_parent) = manifest_path.parent().and_then(|path| path.parent()) {
+            remove |= manifest_dirs.any(|(manifest_dir, manifest_format)| {
+                manifest_format.parser().is_path_manifest(manifest_path)
+                    && manifest_parent.starts_with(manifest_dir)
+            });
+        }
+
         // Filter out `setup.py` files with `pyproject.toml` present.
         if manifest_path.ends_with("setup.py") {
-            remove |= manifests.iter().any(|(path, _)| {
+            remove |= lockables.manifests.iter().any(|(path, _)| {
                 let dir = path.parent().unwrap();
                 manifest_path.starts_with(dir) && path.ends_with("pyproject.toml")
             });
@@ -330,13 +366,13 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
 
         // Remove unwanted manifests.
         if remove {
-            manifests.swap_remove(i);
+            lockables.manifests.swap_remove(i);
         }
     }
 
     // Return all manifests and lockfiles.
-    lockfiles.append(&mut manifests);
-    lockfiles
+    lockables.lockfiles.append(&mut lockables.manifests);
+    lockables.lockfiles
 }
 
 /// Define a custom error for unknown ecosystems.
@@ -616,11 +652,7 @@ mod tests {
 
         // Compare results.
         lockable_files.sort_unstable();
-        let expected = vec![
-            (tempdir.path().join("a/pyproject.toml"), LockfileFormat::Pip),
-            (tempdir.path().join("b/setup.py"), LockfileFormat::Pip),
-            (tempdir.path().join("setup.py"), LockfileFormat::Pip),
-        ];
+        let expected = vec![(tempdir.path().join("setup.py"), LockfileFormat::Pip)];
         assert_eq!(lockable_files, expected);
     }
 }

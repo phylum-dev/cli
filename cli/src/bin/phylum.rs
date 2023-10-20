@@ -13,7 +13,8 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, extensions, group, init, jobs, packages, parse, project, status, CommandResult, ExitCode,
+    auth, extensions, find_lockable_files, group, init, jobs, packages, parse, project, status,
+    CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -160,6 +161,7 @@ async fn handle_commands() -> CommandResult {
         "extension" => extensions::handle_extensions(Box::pin(api), sub_matches, app_helper).await,
         #[cfg(unix)]
         "sandbox" => sandbox::handle_sandbox(sub_matches).await,
+        "find-lockable-files" => find_lockable_files::handle_command(),
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },

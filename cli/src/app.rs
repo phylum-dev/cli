@@ -543,6 +543,11 @@ pub fn add_subcommands(command: Command) -> Command {
                 .long("json")
                 .help("Produce output in json format (default: false)")]),
         )
+        .subcommand(
+            Command::new("find-lockable-files")
+                .about("Find all lockfile and manifest paths")
+                .hide(true),
+        )
         .subcommand(extensions::command());
 
     #[cfg(unix)]
