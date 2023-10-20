@@ -478,3 +478,8 @@ packages:
     name: testing
     version: 1.0.0
     dev: false
+
+  file:projects/workspace_member:
+    resolution: {directory: projects/workspace_member, type: directory}
+    name: workspace_member
+    dev: false
