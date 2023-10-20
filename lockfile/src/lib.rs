@@ -334,8 +334,8 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
 
         let (manifest_path, _) = &lockables.manifests[i];
 
-        // Filter out manifest if there's a lockfile with a matching format in a
-        // directory above.
+        // Filter out manifest if there's a lockfile with a matching format at or above
+        // the manifest.
         let mut lockfile_dirs =
             lockables.lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(lockfile_dir, lockfile_format)| {
@@ -343,16 +343,18 @@ pub fn find_lockable_files_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileF
                 && manifest_path.starts_with(lockfile_dir)
         });
 
-        // Filter out manifest if there's a manifest with a matching format in a
-        // directory above.
+        // Filter out manifest if there's a manifest with a matching format above the
+        // manifest.
         let mut manifest_dirs = lockables.manifests.iter().filter_map(|(path, format)| {
             let parent = path.parent()?;
             (path != manifest_path).then_some((parent, format))
         });
-        remove |= manifest_dirs.any(|(manifest_dir, manifest_format)| {
-            manifest_format.parser().is_path_manifest(manifest_path)
-                && manifest_path.starts_with(manifest_dir)
-        });
+        if let Some(manifest_parent) = manifest_path.parent().and_then(|path| path.parent()) {
+            remove |= manifest_dirs.any(|(manifest_dir, manifest_format)| {
+                manifest_format.parser().is_path_manifest(manifest_path)
+                    && manifest_parent.starts_with(manifest_dir)
+            });
+        }
 
         // Filter out `setup.py` files with `pyproject.toml` present.
         if manifest_path.ends_with("setup.py") {
@@ -650,11 +652,7 @@ mod tests {
 
         // Compare results.
         lockable_files.sort_unstable();
-        let expected = vec![
-            (tempdir.path().join("a/pyproject.toml"), LockfileFormat::Pip),
-            (tempdir.path().join("b/setup.py"), LockfileFormat::Pip),
-            (tempdir.path().join("setup.py"), LockfileFormat::Pip),
-        ];
+        let expected = vec![(tempdir.path().join("setup.py"), LockfileFormat::Pip)];
         assert_eq!(lockable_files, expected);
     }
 }
