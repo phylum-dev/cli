@@ -312,11 +312,14 @@ impl PnpmLock {
 
         for (name, package) in self.packages.into_iter() {
             // Parse package based on available fields.
+            let directory = package.resolution.directory;
             let tarball = package.resolution.tarball;
             let git = package.resolution.repo.zip(package.resolution.commit);
-            let package = match (tarball, git) {
-                (Some(tarball), _) => Self::tarball_package(tarball, package.name)?,
-                (_, Some((repo, commit))) => Self::git_package(repo, commit, package.name)?,
+
+            let package = match (tarball, git, directory) {
+                (Some(tarball), ..) => Self::tarball_package(tarball, package.name)?,
+                (_, Some((repo, commit)), _) => Self::git_package(repo, commit, package.name)?,
+                (_, _, Some(directory)) => Self::path_package(directory, package.name)?,
                 _ => Self::firstparty_package(&name)?,
             };
 
@@ -349,7 +352,7 @@ impl PnpmLock {
 
     /// Parse a tarball package.
     fn tarball_package(tarball: String, name: Option<String>) -> anyhow::Result<Package> {
-        let name = name.ok_or_else(|| anyhow!("Tarball '{tarball}' is missing a name"))?;
+        let name = name.ok_or_else(|| anyhow!("Tarball '{tarball}' is missing a package name"))?;
 
         Ok(Package {
             name,
@@ -360,10 +363,23 @@ impl PnpmLock {
 
     /// Parse a git package.
     fn git_package(repo: String, commit: String, name: Option<String>) -> anyhow::Result<Package> {
-        let name = name.ok_or_else(|| anyhow!("Tarball '{repo}#{commit}' is missing a name"))?;
+        let name =
+            name.ok_or_else(|| anyhow!("Repository '{repo}#{commit}' is missing a package name"))?;
         let git_uri = format!("{repo}#{commit}");
 
         Ok(Package { name, version: PackageVersion::Git(git_uri), package_type: PackageType::Npm })
+    }
+
+    /// Parse a path package.
+    fn path_package(directory: String, name: Option<String>) -> anyhow::Result<Package> {
+        let name =
+            name.ok_or_else(|| anyhow!("Directory '{directory}' is missing a package name"))?;
+
+        Ok(Package {
+            name,
+            version: PackageVersion::Path(Some(directory.into())),
+            package_type: PackageType::Npm,
+        })
     }
 }
 
@@ -379,6 +395,7 @@ struct PnpmPackage {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct PnpmResolution {
+    directory: Option<String>,
     tarball: Option<String>,
     commit: Option<String>,
     repo: Option<String>,
@@ -585,7 +602,7 @@ mod tests {
     fn pnpm() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
 
-        assert_eq!(pkgs.len(), 64);
+        assert_eq!(pkgs.len(), 65);
 
         let expected_pkgs = [
             Package {
@@ -621,6 +638,11 @@ mod tests {
             Package {
                 name: "testing".into(),
                 version: PackageVersion::Git("ssh://git@git.sr.ht/~undeadleech/pnpm-test#cf066e8d69df5ba2cf3d4275b9e775800148d7ff".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "workspace_member".into(),
+                version: PackageVersion::Path(Some("projects/workspace_member".into())),
                 package_type: PackageType::Npm,
             },
         ];

@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Path dependencies for pnpm lockfiles
+
 ## [5.7.3] - 2023-10-17
 
 ### Fixed
