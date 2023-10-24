@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.8.0 - 2023-10-24
+
 ### Added
 
 - Support for the upcoming repository URL feature for `PhylumApi.create_project`

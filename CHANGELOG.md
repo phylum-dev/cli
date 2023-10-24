@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.8.0] - 2023-10-24
+
 ### Added
 
 - Support for the upcoming repository URL feature for `init`/`project create`
@@ -689,7 +691,8 @@ before, the existing project ID will be re-linked.
 
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.7.3...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.8.0...HEAD
+[5.8.0]: https://github.com/phylum-dev/cli/compare/v5.7.3...v5.8.0
 [5.7.3]: https://github.com/phylum-dev/cli/compare/v5.7.2...v5.7.3
 [5.7.2]: https://github.com/phylum-dev/cli/compare/v5.7.1...v5.7.2
 [5.7.1]: https://github.com/phylum-dev/cli/compare/v5.7.0...v5.7.1
