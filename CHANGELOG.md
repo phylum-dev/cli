@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Support for the upcoming repository URL feature for `init`/`project create`
+- New `phylum project update` command to update project name and repository URL
+- New `phylum project status` command to print current project information
+
 ### Fixed
 - Path dependencies for pnpm lockfiles
 
