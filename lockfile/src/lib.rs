@@ -302,12 +302,20 @@ impl LockableFiles {
             for format in LockfileFormat::iter() {
                 let parser = format.parser();
 
+                let mut format_found = false;
                 if parser.is_path_lockfile(path) {
                     lockables.lockfiles.push((path.to_path_buf(), format));
-                    break;
-                } else if parser.is_path_manifest(path) {
+                    format_found = true;
+                }
+
+                if parser.is_path_manifest(path) {
                     // Select first matching format for manifests.
                     lockables.manifests.push((path.to_path_buf(), format));
+                    format_found = true;
+                }
+
+                // Avoid classifying lockable file as multiple formats.
+                if format_found {
                     break;
                 }
             }
@@ -653,6 +661,25 @@ mod tests {
         // Compare results.
         lockable_files.sort_unstable();
         let expected = vec![(tempdir.path().join("setup.py"), LockfileFormat::Pip)];
+        assert_eq!(lockable_files, expected);
+    }
+
+    #[test]
+    fn no_duplicate_requirements() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [tempdir.path().join("requirements.txt")];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find lockable files.
+        let lockable_files = find_lockable_files_at(tempdir.path());
+
+        // Ensure requirements.txt is only reported once.
+        let expected = vec![(files[0].clone(), LockfileFormat::Pip)];
         assert_eq!(lockable_files, expected);
     }
 }
