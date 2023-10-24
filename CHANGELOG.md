@@ -21,8 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Automatic manifest resolution with subcommands `init`/`parse`/`analyze` will
-    no longer return manifests in subdirectories of other manifests
+- Automatic manifest resolution with `init`, `parse`, `analyze`, and `status`
+    will no longer return manifests in subdirectories of other manifests
 
 ### Fixed
 
