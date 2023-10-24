@@ -631,48 +631,61 @@ before, the existing project ID will be re-linked.
 - Bump version v1.2.0 by @louislang (#168)
 
 ## 1.1.5 - 2021-12-06
+
 - Option to ignore cert check; various bugfixes
 
 ## 1.1.4 - 2021-11-02
 
 ## 1.1.3 - 2021-10-22
+
 - Add issues filtering; display / error codes cleanup
 
 ## 1.1.2 - 2021-09-15
+
 - Bugfix for deserialization issue
 - Tab completion support for zsh and fish
 - Support for tmpfs
 
 ## 1.1.1 - 2021-09-03
+
 - Updates to signature verification
 
 ## 1.1.0 - 2021-09-01
+
 - Add support for submitting Python packages; signature verification on upgrade
 
 ## 1.0.2 - 2021-08-23
 
 ## 1.0.1 - 2021-08-23
+
 - Add support for automatically building macOS release
 
 ## 1.0.0 - 2021-08-02
+
 - Add formatted output; refactor subcommands; many other changes for improved usability
 
 ## 0.0.7
+
 - Adding synch submit requests
 
 ## 0.0.5
+
 - Add support for projects and project labels / decrease verbosity of package status
 
 ## 0.0.4
+
 - Minor update to API response format; add `--threshold` argument to `status` command
 
 ## 0.0.3
+
 - Update response format of the `status` command to match API changes.
 
 ## 0.0.2
+
 - Add support for listing / submitting heuristics.
 
 ## 0.0.1
+
 - Initial release.
 
 [unreleased]: https://github.com/phylum-dev/cli/compare/v5.7.3...HEAD
