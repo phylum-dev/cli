@@ -139,6 +139,20 @@ async function checkPath(allowed: string[], path: string) {
       directories.push(path + entry.name);
     } else if (entry.isFile) {
       files.push(path + entry.name);
+    } else if (entry.isSymlink) {
+      let symlink_entry;
+      try {
+        symlink_entry = await Deno.stat(path + entry.name);
+      } catch (_e) {
+        // Ignore dead symlinks.
+        continue;
+      }
+
+      if (symlink_entry.isDirectory) {
+        directories.push(path + entry.name);
+      } else if (symlink_entry.isFile) {
+        files.push(path + entry.name);
+      }
     }
   }
 
