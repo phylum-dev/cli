@@ -28,7 +28,7 @@ impl Generator for Pnpm {
         let workspace_root = workspace_dir_env.or_else(|| find_workspace_root(project_path));
 
         // Fallback to non-workspace location.
-        let root = workspace_root.unwrap_or_default();
+        let root = workspace_root.unwrap_or_else(|| project_path.into());
 
         Ok(root.join("pnpm-lock.yaml"))
     }
