@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Path dependencies for pnpm lockfiles
+- Gradle lockfile generation with `build.gradle.kts` manifests
 
 ## [5.7.3] - 2023-10-17
 

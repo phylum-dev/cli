@@ -18,7 +18,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 | `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
 | `gem`         | `Gemfile`        | `bundle` (from [Bundler][]) |
 | `mvn`         | `pom.xml`        | `mvn` (from [Maven][])      |
-| `gradle`      | `build.gradle`   | [`gradle`][gradle]          |
+| `gradle`      | `build.gradle` <br/> `build.gradle.kts`   | [`gradle`][gradle]          |
 | `go`          | `go.mod`         | [`go`][go]                  |
 | `cargo`       | `Cargo.toml`     | [`cargo`][cargo]            |
 | `nugetlock`   | `*.csproj`       | [`dotnet`][dotnet]          |
