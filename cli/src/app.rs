@@ -325,6 +325,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .requires("lockfile")
                         .help("Lockfile type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                    Arg::new("skip-sandbox")
+                        .action(ArgAction::SetTrue)
+                        .long("skip-sandbox")
+                        .help("Run lockfile generation without sandbox protection"),
                 ],
             ),
         )
@@ -372,6 +376,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_hint(ValueHint::FilePath)
                         .help("Previous list of dependencies for analyzing the delta")
                         .hide(true),
+                    Arg::new("skip-sandbox")
+                        .action(ArgAction::SetTrue)
+                        .long("skip-sandbox")
+                        .help("Run lockfile generation without sandbox protection"),
                 ]),
         )
         .subcommand(

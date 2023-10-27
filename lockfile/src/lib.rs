@@ -22,6 +22,7 @@ pub use spdx::Spdx;
 use thiserror::Error;
 use walkdir::WalkDir;
 
+pub use lockfile_generator as generator;
 mod cargo;
 mod csharp;
 mod cyclonedx;

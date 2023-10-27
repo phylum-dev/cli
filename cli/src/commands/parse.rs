@@ -5,11 +5,14 @@ use std::path::{Path, PathBuf};
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
+use birdcage::{Birdcage, Exception, Sandbox};
+use phylum_lockfile::generator::Generator;
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 
+use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
-use crate::{config, print_user_warning};
+use crate::{config, dirs, print_user_warning};
 
 pub struct ParsedLockfile {
     pub packages: Vec<PackageDescriptorAndLockfile>,
@@ -43,17 +46,20 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 }
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
+    let sandbox_generation = !matches.get_flag("skip-sandbox");
     let project = phylum_project::get_current_project();
     let project_root = project.as_ref().map(|p| p.root());
     let lockfiles = config::lockfiles(matches, project.as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
     for lockfile in lockfiles {
-        let mut parsed_lockfile =
-            parse_lockfile(&lockfile.path, project_root, Some(&lockfile.lockfile_type))
-                .with_context(|| {
-                    format!("could not parse lockfile: {}", lockfile.path.display())
-                })?;
+        let mut parsed_lockfile = parse_lockfile(
+            &lockfile.path,
+            project_root,
+            Some(&lockfile.lockfile_type),
+            sandbox_generation,
+        )
+        .with_context(|| format!("could not parse lockfile: {}", lockfile.path.display()))?;
         pkgs.append(&mut parsed_lockfile.packages);
     }
 
@@ -67,6 +73,7 @@ pub fn parse_lockfile(
     path: impl Into<PathBuf>,
     project_root: Option<&PathBuf>,
     lockfile_type: Option<&str>,
+    sandbox_generation: bool,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
     let path = path.into();
@@ -121,12 +128,88 @@ pub fn parse_lockfile(
     eprintln!("Generating lockfile for manifest {display_path:?} using {format:?}…");
 
     // Generate a new lockfile.
-    let generated_lockfile = generator.generate_lockfile(&path).context("Lockfile generation failed! For details, see: https://docs.phylum.io/docs/lockfile_generation")?;
+    let generated_lockfile = generate_lockfile(generator, &path, sandbox_generation)?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
 
     Ok(ParsedLockfile::new(display_path, format, packages))
+}
+
+/// Generate a lockfile from a manifest inside a sandbox.
+fn generate_lockfile(generator: &dyn Generator, path: &Path, sandbox: bool) -> Result<String> {
+    let canonical_path = path.canonicalize()?;
+
+    // Enable the sandbox.
+    if sandbox {
+        let birdcage = lockfile_generation_sandbox(&canonical_path)?;
+        birdcage.lock()?;
+    }
+
+    let generated_lockfile = generator
+        .generate_lockfile(&canonical_path)
+        .context("Lockfile generation failed! For details, see: \
+            https://docs.phylum.io/docs/lockfile_generation")?;
+
+    Ok(generated_lockfile)
+}
+
+/// Create sandbox with exceptions allowing generation of any lockfile.
+fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
+    let mut birdcage = permissions::default_sandbox()?;
+
+    // Allow all networking.
+    birdcage.add_exception(Exception::Networking)?;
+
+    // Add exception for the manifest's parent directory.
+    let project_path = canonical_manifest_path.parent().expect("Invalid manifest path");
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(project_path.into()))?;
+
+    // Add exception for all the executables required for generation.
+    let ecosystem_bins = [
+        "cargo", "bundle", "mvn", "gradle", "npm", "pnpm", "yarn", "python3", "pipenv", "poetry",
+        "go", "dotnet",
+    ];
+    for bin in ecosystem_bins {
+        let absolute_path = permissions::resolve_bin_path(bin);
+        permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
+    }
+
+    // Allow any executable in common binary directories.
+    //
+    // Reading binaries shouldn't be an attack vector, but significantly simplifies
+    // complex ecosystems (like Python's symlinks).
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/bin".into()))?;
+
+    // Add paths required by specific ecosystems.
+    //
+    // This will automatically resolve `~` to the user's home directory.
+    let path_exceptions: &[(_, fn(PathBuf) -> Exception)] = &[
+        // Cargo.
+        ("~/.rustup", Exception::ExecuteAndRead),
+        ("~/.cargo", Exception::Read),
+        ("/etc/passwd", Exception::Read),
+        // Bundle.
+        ("/dev/urandom", Exception::Read),
+        // Maven
+        ("/opt/maven", Exception::ExecuteAndRead),
+        ("/etc/java-openjdk", Exception::Read),
+        // Gradle.
+        ("/usr/share/java/gradle/lib", Exception::Read),
+        // Pnpm.
+        ("/tmp", Exception::Read),
+        // Yarn.
+        ("~/.yarn", Exception::Read),
+    ];
+    let home = dirs::home_dir()?;
+    let home = home.to_string_lossy();
+    for (path, exfn) in path_exceptions {
+        let path = path.replace('~', &home);
+        permissions::add_exception(&mut birdcage, exfn(path.into()))?;
+    }
+
+    Ok(birdcage)
 }
 
 /// Attempt to parse a lockfile.
