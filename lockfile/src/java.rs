@@ -36,6 +36,7 @@ impl Parse for GradleLock {
 
     fn is_path_manifest(&self, path: &Path) -> bool {
         path.file_name() == Some(OsStr::new("build.gradle"))
+            || path.file_name() == Some(OsStr::new("build.gradle.kts"))
     }
 
     #[cfg(feature = "generator")]
