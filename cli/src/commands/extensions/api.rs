@@ -14,7 +14,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Error, Result};
-use deno_runtime::deno_core::{op, Op, OpDecl, OpState};
+use deno_runtime::deno_core::{op2, Op, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
 use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
@@ -135,13 +135,14 @@ struct ProcessOutput {
 /// Analyze a lockfile.
 ///
 /// Equivalent to `phylum analyze`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    packages: Vec<PackageDescriptorAndLockfile>,
-    project: Option<String>,
-    group: Option<String>,
-    label: Option<String>,
+    #[serde] packages: Vec<PackageDescriptorAndLockfile>,
+    #[string] project: Option<String>,
+    #[string] group: Option<String>,
+    #[string] label: Option<String>,
 ) -> Result<JobId> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -163,10 +164,11 @@ async fn analyze(
 }
 
 /// Check a set of packages against the default policy.
-#[op]
+#[op2(async)]
+#[serde]
 async fn check_packages(
     op_state: Rc<RefCell<OpState>>,
-    packages: Vec<PackageDescriptor>,
+    #[serde] packages: Vec<PackageDescriptor>,
 ) -> Result<PolicyEvaluationResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -175,10 +177,11 @@ async fn check_packages(
 }
 
 /// Check a set of packages against the default policy.
-#[op]
+#[op2(async)]
+#[serde]
 async fn check_packages_raw(
     op_state: Rc<RefCell<OpState>>,
-    packages: Vec<PackageDescriptor>,
+    #[serde] packages: Vec<PackageDescriptor>,
 ) -> Result<PolicyEvaluationResponseRaw> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -188,7 +191,8 @@ async fn check_packages_raw(
 
 /// Retrieve user info.
 /// Equivalent to `phylum auth status`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_user_info(op_state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -198,7 +202,8 @@ async fn get_user_info(op_state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
 
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_access_token(
     op_state: Rc<RefCell<OpState>>,
     ignore_certs: bool,
@@ -218,7 +223,8 @@ async fn get_access_token(
 /// Retrieve the refresh token.
 ///
 /// Equivalent to `phylum auth token`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToken> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -234,11 +240,12 @@ async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToke
 /// Retrieve a job's status.
 ///
 /// Equivalent to `phylum history job`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_job_status(
     op_state: Rc<RefCell<OpState>>,
-    job_id: String,
-    ignored_packages: Option<Vec<PackageDescriptor>>,
+    #[string] job_id: String,
+    #[serde] ignored_packages: Option<Vec<PackageDescriptor>>,
 ) -> Result<PolicyEvaluationResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -251,11 +258,12 @@ async fn get_job_status(
 }
 
 /// Retrieve a job's status.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_job_status_raw(
     op_state: Rc<RefCell<OpState>>,
-    job_id: String,
-    ignored_packages: Option<Vec<PackageDescriptor>>,
+    #[string] job_id: String,
+    #[serde] ignored_packages: Option<Vec<PackageDescriptor>>,
 ) -> Result<PolicyEvaluationResponseRaw> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -268,13 +276,15 @@ async fn get_job_status_raw(
 }
 
 /// Show the user's currently linked project.
-#[op]
+#[op2]
+#[serde]
 fn get_current_project() -> Option<ProjectConfig> {
     phylum_project::get_current_project()
 }
 
 /// List all of the user's/group's project.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_groups(op_state: Rc<RefCell<OpState>>) -> Result<ListUserGroupsResponse> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -283,10 +293,11 @@ async fn get_groups(op_state: Rc<RefCell<OpState>>) -> Result<ListUserGroupsResp
 }
 
 /// List all of the user's/group's project.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_projects(
     op_state: Rc<RefCell<OpState>>,
-    group: Option<String>,
+    #[string] group: Option<String>,
 ) -> Result<Vec<ProjectSummaryResponse>> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -307,12 +318,13 @@ enum CreatedProjectStatus {
 }
 
 /// Create a project.
-#[op]
+#[op2(async)]
+#[serde]
 async fn create_project(
     op_state: Rc<RefCell<OpState>>,
-    name: String,
-    group: Option<String>,
-    repository_url: Option<String>,
+    #[string] name: String,
+    #[string] group: Option<String>,
+    #[string] repository_url: Option<String>,
 ) -> Result<CreatedProject> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -331,11 +343,11 @@ async fn create_project(
 }
 
 /// Delete a project.
-#[op]
+#[op2(async)]
 async fn delete_project(
     op_state: Rc<RefCell<OpState>>,
-    name: String,
-    group: Option<String>,
+    #[string] name: String,
+    #[string] group: Option<String>,
 ) -> Result<()> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -346,12 +358,13 @@ async fn delete_project(
 
 /// Analyze a single package.
 /// Equivalent to `phylum package`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn get_package_details(
     op_state: Rc<RefCell<OpState>>,
-    name: String,
-    version: String,
-    package_type: String,
+    #[string] name: String,
+    #[string] version: String,
+    #[string] package_type: String,
 ) -> Result<Package> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
@@ -371,11 +384,12 @@ async fn get_package_details(
 
 /// Parse a lockfile and return the package descriptors contained therein.
 /// Equivalent to `phylum parse`.
-#[op]
+#[op2(async)]
+#[serde]
 async fn parse_lockfile(
     op_state: Rc<RefCell<OpState>>,
-    lockfile: String,
-    lockfile_type: Option<String>,
+    #[string] lockfile: String,
+    #[string] lockfile_type: Option<String>,
     generate_lockfiles: Option<bool>,
     sandbox_generation: Option<bool>,
 ) -> Result<PackageLock> {
@@ -409,9 +423,13 @@ async fn parse_lockfile(
 /// This runs the supplied command in a sandbox, without restricting the
 /// permissions of the sandbox itself. As a result more privileged access is
 /// possible even after the command has been spawned.
-#[op]
 #[cfg(unix)]
-fn run_sandboxed(op_state: Rc<RefCell<OpState>>, process: Process) -> Result<ProcessOutput> {
+#[op2]
+#[serde]
+fn run_sandboxed(
+    op_state: Rc<RefCell<OpState>>,
+    #[serde] process: Process,
+) -> Result<ProcessOutput> {
     let Process { cmd, args, stdin, stdout, stderr, exceptions } = process;
 
     let strict = exceptions.strict;
@@ -506,19 +524,22 @@ fn add_permission_args<'a>(
 }
 
 /// Return error when trying to sandbox on Windows.
-#[op]
 #[cfg(not(unix))]
-fn run_sandboxed(_process: Process) -> Result<ProcessOutput> {
+#[op2]
+#[serde]
+fn run_sandboxed(#[serde] _process: Process) -> Result<ProcessOutput> {
     Err(anyhow!("Extension sandboxing is not supported on this platform"))
 }
 
-#[op]
+#[op2]
+#[serde]
 fn op_permissions(op_state: Rc<RefCell<OpState>>) -> permissions::Permissions {
     let state = ExtensionState::from(op_state);
     state.extension().permissions().into_owned()
 }
 
-#[op]
+#[op2(async)]
+#[string]
 async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
