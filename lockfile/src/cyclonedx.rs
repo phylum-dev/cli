@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
 use serde::Deserialize;
@@ -164,23 +164,37 @@ fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
 
 pub struct CycloneDX;
 
+impl CycloneDX {
+    fn process_components<T: Component>(components: Option<&[T]>) -> anyhow::Result<Vec<Package>> {
+        components.map_or(Ok(Vec::new()), |comp| {
+            let component_iter = filter_components(comp);
+            let mut packages = Vec::new();
+            for comp in component_iter {
+                match from_purl(comp) {
+                    Ok(pkg) => packages.push(pkg),
+                    Err(e) => {
+                        if e.is::<UnknownEcosystem>() {
+                            log::warn!("{:?}", e)
+                        } else {
+                            bail!(e)
+                        }
+                    },
+                }
+            }
+            Ok(packages)
+        })
+    }
+}
+
 impl Parse for CycloneDX {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        match serde_json::from_str::<serde_json::Value>(data) {
-            Ok(lock) => {
-                let parsed: Bom<Vec<JsonComponent>> = serde_json::from_value(lock)?;
-                parsed.components.map_or(Ok(Vec::new()), |comp| {
-                    let component_iter = filter_components(&comp);
-                    component_iter.map(from_purl).collect()
-                })
-            },
-            Err(_) => {
-                let parsed: Bom<Components<XmlComponent>> = serde_xml_rs::from_str(data)?;
-                parsed.components.map_or(Ok(Vec::new()), |comp| {
-                    let component_iter = filter_components(&comp.components);
-                    component_iter.map(from_purl).collect()
-                })
-            },
+        if let Ok(lock) = serde_json::from_str::<serde_json::Value>(data) {
+            let parsed: Bom<Vec<JsonComponent>> = serde_json::from_value(lock)?;
+            Self::process_components(parsed.components.as_deref())
+        } else {
+            let parsed: Bom<Components<XmlComponent>> = serde_xml_rs::from_str(data)?;
+            let components = parsed.components.map(|c| c.components);
+            Self::process_components(components.as_deref())
         }
     }
 
@@ -269,5 +283,40 @@ mod tests {
             let is_lockfile = CycloneDX.is_path_lockfile(&path_buf);
             assert!(is_lockfile, "Failed for path: {}", path_str);
         }
+    }
+
+    #[test]
+    fn test_ignore_unsupported_ecosystem() {
+        let ignored_component = JsonComponent {
+            component_type: "library".into(),
+            name: "adduser".into(),
+            version: "3.118ubuntu5".into(),
+            scope: None,
+            purl: Some("pkg:deb/ubuntu/adduser@3.118ubuntu5?arch=all&distro=ubuntu-22.04".into()),
+            components: vec![],
+        };
+
+        let component = JsonComponent {
+            component_type: "library".into(),
+            name: "abbrev".into(),
+            version: "1.1.1".into(),
+            scope: None,
+            purl: Some("pkg:npm/abbrev@1.1.1".into()),
+            components: vec![],
+        };
+
+        let expected_package = Package {
+            name: "abbrev".into(),
+            version: PackageVersion::FirstParty("1.1.1".into()),
+            package_type: PackageType::Npm,
+        };
+
+        let bom: Bom<Vec<JsonComponent>> =
+            Bom { components: Some(vec![component, ignored_component]) };
+
+        let packages = CycloneDX::process_components(bom.components.as_deref()).unwrap();
+
+        assert!(packages.len() == 1);
+        assert_eq!(packages[0], expected_package);
     }
 }
