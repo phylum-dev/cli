@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
 use serde::Deserialize;
@@ -166,23 +166,12 @@ pub struct CycloneDX;
 
 impl CycloneDX {
     fn process_components<T: Component>(components: Option<&[T]>) -> anyhow::Result<Vec<Package>> {
-        components.map_or(Ok(Vec::new()), |comp| {
-            let component_iter = filter_components(comp);
-            let mut packages = Vec::new();
-            for comp in component_iter {
-                match from_purl(comp) {
-                    Ok(pkg) => packages.push(pkg),
-                    Err(e) => {
-                        if e.is::<UnknownEcosystem>() {
-                            log::warn!("{:?}", e)
-                        } else {
-                            bail!(e)
-                        }
-                    },
-                }
-            }
-            Ok(packages)
-        })
+        let comp = components.unwrap_or_default();
+        let packages = filter_components(comp)
+            .map(from_purl)
+            .filter(|r| !r.as_ref().is_err_and(|e| e.is::<UnknownEcosystem>()))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        Ok(packages)
     }
 }
 
