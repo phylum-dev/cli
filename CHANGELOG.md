@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- Gradle lockfile generation with `build.gradle.kts` manifests
+- Lockfile generation for non-workspace pnpm projects
 - Fixed issue parsing BOM files containing unsupported ecosystems
 
 ## [5.8.0] - 2023-10-24
@@ -23,8 +25,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Path dependencies for pnpm lockfiles
-- Gradle lockfile generation with `build.gradle.kts` manifests
-- Lockfile generation for non-workspace pnpm projects
 
 ## [5.7.3] - 2023-10-17
 
