@@ -37,6 +37,14 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install cmake protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal -c clippy
 
@@ -53,6 +61,14 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install cmake protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
 
@@ -67,6 +83,14 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install cmake protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
 
       - name: Oldstable
         run: |
@@ -84,6 +108,14 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install cmake protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal

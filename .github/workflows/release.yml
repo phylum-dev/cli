@@ -57,6 +57,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install cmake protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+
       - name: Install Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf \
