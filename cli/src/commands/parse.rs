@@ -47,6 +47,8 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
 
 pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let sandbox_generation = !matches.get_flag("skip-sandbox");
+    let generate_lockfiles = !matches.get_flag("no-generation");
+
     let project = phylum_project::get_current_project();
     let project_root = project.as_ref().map(|p| p.root());
     let lockfiles = config::lockfiles(matches, project.as_ref())?;
@@ -58,6 +60,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
             project_root,
             Some(&lockfile.lockfile_type),
             sandbox_generation,
+            generate_lockfiles,
         )
         .with_context(|| format!("could not parse lockfile: {}", lockfile.path.display()))?;
         pkgs.append(&mut parsed_lockfile.packages);
@@ -74,6 +77,7 @@ pub fn parse_lockfile(
     project_root: Option<&PathBuf>,
     lockfile_type: Option<&str>,
     sandbox_generation: bool,
+    generate_lockfiles: bool,
 ) -> Result<ParsedLockfile> {
     // Try and determine lockfile format.
     let path = path.into();
@@ -105,8 +109,8 @@ pub fn parse_lockfile(
         }
     }
 
-    // If the path is neither a valid manifest nor lockfile, we abort.
-    if !parser.is_path_manifest(&path) {
+    // Abort if generation is disabled or path is neither lockfile nor manifest.
+    if !generate_lockfiles || !parser.is_path_manifest(&path) {
         // Return the original lockfile parsing error.
         match lockfile_error {
             Some(err) => return Err(err),

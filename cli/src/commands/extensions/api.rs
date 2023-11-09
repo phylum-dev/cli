@@ -377,6 +377,7 @@ async fn parse_lockfile(
     lockfile: String,
     lockfile_type: Option<String>,
     skip_sandbox: Option<bool>,
+    generate_lockfiles: Option<bool>,
 ) -> Result<PackageLock> {
     // Ensure extension has file read-access.
     {
@@ -391,7 +392,14 @@ async fn parse_lockfile(
 
     // Attempt to parse as requested lockfile type.
     let sandbox = !skip_sandbox.unwrap_or_default();
-    let parsed = parse::parse_lockfile(lockfile, project_root, lockfile_type.as_deref(), sandbox)?;
+    let generate_lockfiles = generate_lockfiles.unwrap_or(true);
+    let parsed = parse::parse_lockfile(
+        lockfile,
+        project_root,
+        lockfile_type.as_deref(),
+        sandbox,
+        generate_lockfiles,
+    )?;
 
     Ok(PackageLock { packages: parsed.packages, format: parsed.format })
 }

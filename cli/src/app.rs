@@ -329,6 +329,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .action(ArgAction::SetTrue)
                         .long("skip-sandbox")
                         .help("Run lockfile generation without sandbox protection"),
+                    Arg::new("no-generation")
+                        .action(ArgAction::SetTrue)
+                        .long("no-generation")
+                        .help("Disable generation of lockfiles from manifests"),
                 ],
             ),
         )
@@ -380,6 +384,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .action(ArgAction::SetTrue)
                         .long("skip-sandbox")
                         .help("Run lockfile generation without sandbox protection"),
+                    Arg::new("no-generation")
+                        .action(ArgAction::SetTrue)
+                        .long("no-generation")
+                        .help("Disable generation of lockfiles from manifests"),
                 ]),
         )
         .subcommand(
