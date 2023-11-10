@@ -185,6 +185,7 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     // Add paths required by specific ecosystems.
     //
     // This will automatically resolve `~` to the user's home directory.
+    #[allow(clippy::type_complexity)]
     let path_exceptions: &[(_, fn(PathBuf) -> Exception)] = &[
         // Cargo.
         ("~/.rustup", Exception::ExecuteAndRead),
