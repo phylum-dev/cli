@@ -33,6 +33,9 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 &emsp; Lockfile type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
+`--skip-sandbox`
+&emsp; Run lockfile generation without sandbox protection
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
