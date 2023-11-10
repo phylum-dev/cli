@@ -36,6 +36,9 @@ Usage: phylum analyze [OPTIONS] [LOCKFILE]...
 `--skip-sandbox`
 &emsp; Run lockfile generation without sandbox protection
 
+`--no-generation`
+&emsp; Disable generation of lockfiles from manifests
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

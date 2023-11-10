@@ -64,6 +64,9 @@ the same directory or any parent directory. For example, a single `Cargo.lock` f
 be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run `phylum init` and
 specify all files that you want analyzed.
 
+Additionally, no lockfile generation will take place if the `--no-generation`
+flag is passed to `parse` or `analyze`.
+
 ## Lockifests
 
 Special handling is given to manifests that, for historical reasons, can also be used as lockfiles. Specifically,
