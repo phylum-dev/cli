@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Show project ID after project creation
+
 ## [5.8.1] - 2023-11-07
 
 ### Fixed
