@@ -114,8 +114,12 @@ pub fn parse_lockfile(
         // Return the original lockfile parsing error.
         match lockfile_error {
             Some(err) => return Err(err),
-            // If it's neither manifest nor lockfile, `try_get_packages` is used instead.
-            None => unreachable!("neither lockfile nor manifest"),
+            None => {
+                return Err(anyhow!(
+                    "Parsing {path:?} requires lockfile generation, but it was disabled through \
+                     the CLI"
+                ))
+            },
         }
     }
 
