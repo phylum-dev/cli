@@ -183,32 +183,25 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/bin".into()))?;
 
     // Add paths required by specific ecosystems.
-    //
-    // This will automatically resolve `~` to the user's home directory.
-    #[allow(clippy::type_complexity)]
-    let path_exceptions: &[(_, fn(PathBuf) -> Exception)] = &[
-        // Cargo.
-        ("~/.rustup", Exception::ExecuteAndRead),
-        ("~/.cargo", Exception::Read),
-        ("/etc/passwd", Exception::Read),
-        // Bundle.
-        ("/dev/urandom", Exception::Read),
-        // Maven
-        ("/opt/maven", Exception::ExecuteAndRead),
-        ("/etc/java-openjdk", Exception::Read),
-        // Gradle.
-        ("/usr/share/java/gradle/lib", Exception::Read),
-        // Pnpm.
-        ("/tmp", Exception::Read),
-        // Yarn.
-        ("~/.yarn", Exception::Read),
-    ];
     let home = dirs::home_dir()?;
-    let home = home.to_string_lossy();
-    for (path, exfn) in path_exceptions {
-        let path = path.replace('~', &home);
-        permissions::add_exception(&mut birdcage, exfn(path.into()))?;
-    }
+    // Cargo.
+    permissions::add_exception(&mut birdcage, Exception::Read(home.join(".rustup")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read(home.join(".cargo")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/etc/passwd".into()))?;
+    // Bundle.
+    permissions::add_exception(&mut birdcage, Exception::Read("/dev/urandom".into()))?;
+    // Maven.
+    permissions::add_exception(&mut birdcage, Exception::Read("/opt/maven".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
+    // Gradle.
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::Read("/usr/share/java/gradle/lib".into()),
+    )?;
+    // Pnpm.
+    permissions::add_exception(&mut birdcage, Exception::Read("/tmp".into()))?;
+    // Yarn.
+    permissions::add_exception(&mut birdcage, Exception::Read(home.join("./yarn")))?;
 
     Ok(birdcage)
 }
