@@ -191,6 +191,8 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     // Bundle.
     permissions::add_exception(&mut birdcage, Exception::Read("/dev/urandom".into()))?;
     // Maven.
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".m2")))?;
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/var/folders".into()))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/opt/maven".into()))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/maven".into()))?;
@@ -204,6 +206,7 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
         Exception::Read("/opt/homebrew/Cellar/openjdk".into()),
     )?;
     // Gradle.
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
     permissions::add_exception(
         &mut birdcage,
         Exception::Read("/usr/share/java/gradle/lib".into()),
