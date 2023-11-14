@@ -393,7 +393,7 @@ mod tests {
             unsandboxed_run: Permission::List(vec![]),
         };
 
-        let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
+        let permissions_options = PermissionsOptions::from(&permissions);
 
         assert!(permissions.is_allow_none());
         assert!(permissions_options.allow_read.is_none());
@@ -419,7 +419,7 @@ mod tests {
             unsandboxed_run: Permission::Boolean(true),
         };
 
-        let permissions_options = PermissionsOptions::try_from(&permissions).unwrap();
+        let permissions_options = PermissionsOptions::from(&permissions);
 
         assert!(permissions_options.allow_read.unwrap().is_empty());
         assert!(permissions_options.allow_write.unwrap().is_empty());

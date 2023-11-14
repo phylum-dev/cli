@@ -442,11 +442,13 @@ export class PhylumApi {
   static parseLockfile(
     lockfile: string,
     lockfileType?: string,
+    skipSandbox?: boolean,
   ): Promise<Lockfile> {
     return DenoCore.opAsync(
       "parse_lockfile",
       lockfile,
       lockfileType,
+      skipSandbox,
     );
   }
 

@@ -10,6 +10,7 @@ pub use golang::GoSum;
 use ignore::WalkBuilder;
 pub use java::{GradleLock, Pom};
 pub use javascript::{PackageLock, Pnpm, YarnLock};
+pub use lockfile_generator as generator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
@@ -21,7 +22,6 @@ use serde::{Deserialize, Serialize};
 pub use spdx::Spdx;
 use thiserror::Error;
 use walkdir::WalkDir;
-
 mod cargo;
 mod csharp;
 mod cyclonedx;

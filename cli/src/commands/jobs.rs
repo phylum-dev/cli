@@ -96,6 +96,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
     let label;
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
+        let sandbox_generation = !matches.get_flag("skip-sandbox");
         label = matches.get_one::<String>("label");
         pretty_print = !matches.get_flag("json");
         synch = true;
@@ -107,14 +108,15 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
         let project_root = current_project.as_ref().map(|p| p.root());
 
         for lockfile in jobs_project.lockfiles {
-            let mut parsed_lockfile =
-                parse::parse_lockfile(&lockfile.path, project_root, Some(&lockfile.lockfile_type))
-                    .with_context(|| {
-                        format!(
-                            "Unable to locate any valid package in lockfile {:?}",
-                            lockfile.path
-                        )
-                    })?;
+            let mut parsed_lockfile = parse::parse_lockfile(
+                &lockfile.path,
+                project_root,
+                Some(&lockfile.lockfile_type),
+                sandbox_generation,
+            )
+            .with_context(|| {
+                format!("Unable to locate any valid package in lockfile {:?}", lockfile.path)
+            })?;
 
             if pretty_print {
                 print_user_success!(
