@@ -53,7 +53,7 @@ pub async fn handle_project(
             print_user_failure!("Failed to save project file: {}", err);
         });
 
-        print_user_success!("Successfully created new project, {}", name);
+        print_user_success!("Successfully created project {name:?} ({})", project_config.id);
     } else if let Some(matches) = matches.subcommand_matches("status") {
         status(api, matches).await?;
     } else if let Some(matches) = matches.subcommand_matches("update") {
