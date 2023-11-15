@@ -30,15 +30,15 @@ impl Parse for PackageLock {
         let parsed: JsonValue = serde_json::from_str(data)?;
 
         // Get a field as string from a JSON object.
-        let get_field = |value: &JsonValue, key| {
+        fn get_field(value: &JsonValue, key: &str) -> Option<String> {
             value.get(key).and_then(|value| value.as_str()).map(|value| value.to_string())
-        };
+        }
 
         // Get version field from JSON object.
-        let get_version = |value, name| {
+        fn get_version(value: &JsonValue, name: &str) -> anyhow::Result<String> {
             get_field(value, "version")
                 .ok_or_else(|| anyhow!("Failed to parse version for '{name}' dependency"))
-        };
+        }
 
         if let Some(deps) = parsed.get("packages").and_then(|v| v.as_object()) {
             // Parser for package-lock.json >= v7.
@@ -80,9 +80,12 @@ impl Parse for PackageLock {
                 let resolved = get_field(keys, "resolved")
                     .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
 
+                // Handle aliased dependencies.
+                let name = get_field(keys, "name").unwrap_or_else(|| name.into());
+
                 // Get dependency version.
                 let version = if resolved.starts_with("https://registry.npmjs.org/") {
-                    PackageVersion::FirstParty(get_version(keys, name)?)
+                    PackageVersion::FirstParty(get_version(keys, &name)?)
                 } else if resolved.starts_with("git+") {
                     PackageVersion::Git(resolved)
                 } else if resolved.starts_with("http") {
@@ -94,7 +97,7 @@ impl Parse for PackageLock {
                     // Find registry's domain name.
                     match split.next() {
                         Some(registry) => PackageVersion::ThirdParty(ThirdPartyVersion {
-                            version: get_version(keys, name)?,
+                            version: get_version(keys, &name)?,
                             registry: registry.into(),
                         }),
                         None => {
@@ -105,11 +108,7 @@ impl Parse for PackageLock {
                     PackageVersion::Path(Some(resolved.into()))
                 };
 
-                packages.push(Package {
-                    version,
-                    name: name.into(),
-                    package_type: PackageType::Npm,
-                });
+                packages.push(Package { version, name, package_type: PackageType::Npm });
             }
             Ok(packages)
         } else if let Some(deps) = parsed.get("dependencies").and_then(|v| v.as_object()) {
@@ -424,7 +423,7 @@ mod tests {
         let pkgs =
             PackageLock.parse(include_str!("../../tests/fixtures/package-lock.json")).unwrap();
 
-        assert_eq!(pkgs.len(), 55);
+        assert_eq!(pkgs.len(), 56);
 
         let expected_pkgs = [
             Package {
@@ -469,9 +468,14 @@ mod tests {
                 version: PackageVersion::Path(Some("../node_modules/parentlink".into())),
                 package_type: PackageType::Npm,
             },
+            Package {
+                name: "strip-ansi".into(),
+                version: PackageVersion::FirstParty("6.0.1".into()),
+                package_type: PackageType::Npm,
+            },
         ];
         for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
+            assert!(pkgs.contains(&expected_pkg), "Missing: {expected_pkg:?}");
         }
     }
 
