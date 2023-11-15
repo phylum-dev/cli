@@ -185,8 +185,8 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     // Add paths required by specific ecosystems.
     let home = dirs::home_dir()?;
     // Cargo.
-    permissions::add_exception(&mut birdcage, Exception::Read(home.join(".rustup")))?;
-    permissions::add_exception(&mut birdcage, Exception::Read(home.join(".cargo")))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".rustup")))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".cargo")))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/etc/passwd".into()))?;
     // Bundle.
     permissions::add_exception(&mut birdcage, Exception::Read("/dev/urandom".into()))?;
