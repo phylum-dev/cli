@@ -97,6 +97,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
 
     if let Some(matches) = matches.subcommand_matches("analyze") {
         let sandbox_generation = !matches.get_flag("skip-sandbox");
+        let generate_lockfiles = !matches.get_flag("no-generation");
         label = matches.get_one::<String>("label");
         pretty_print = !matches.get_flag("json");
         synch = true;
@@ -113,6 +114,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                 project_root,
                 Some(&lockfile.lockfile_type),
                 sandbox_generation,
+                generate_lockfiles,
             )
             .with_context(|| {
                 format!("Unable to locate any valid package in lockfile {:?}", lockfile.path)

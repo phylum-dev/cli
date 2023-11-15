@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Show project ID after project creation
+- `no-generation` option for `parse`/`analyze` to disable lockfile generation
 
 ### Fixed
 

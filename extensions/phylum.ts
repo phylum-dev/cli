@@ -443,12 +443,14 @@ export class PhylumApi {
     lockfile: string,
     lockfileType?: string,
     skipSandbox?: boolean,
+    generateLockfiles?: boolean,
   ): Promise<Lockfile> {
     return DenoCore.opAsync(
       "parse_lockfile",
       lockfile,
       lockfileType,
       skipSandbox,
+      generateLockfiles,
     );
   }
 
