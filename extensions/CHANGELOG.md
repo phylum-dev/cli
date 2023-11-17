@@ -10,7 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- `skipSandbox` parameter for `parseLockfile` to generate lockfiles without sandbox protection
 - `generateLockfiles` parameter for `parseLockfile` to inhibit lockfile generation
 
 ### Fixed
