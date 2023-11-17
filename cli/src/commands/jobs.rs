@@ -14,13 +14,12 @@ use vulnreach_types::{Job, JobPackage};
 use crate::api::PhylumApi;
 #[cfg(feature = "vulnreach")]
 use crate::auth::jwt::RealmRole;
-use crate::commands::{parse, CommandResult, ExitCode};
+use crate::commands::parse::{self, ParseError};
+use crate::commands::{CommandResult, ExitCode};
 use crate::format::Format;
 #[cfg(feature = "vulnreach")]
-use crate::print_user_failure;
-#[cfg(feature = "vulnreach")]
 use crate::vulnreach;
-use crate::{config, print_user_success, print_user_warning};
+use crate::{config, print_user_failure, print_user_success, print_user_warning};
 
 /// Output analysis job results.
 pub async fn print_job_status(
@@ -109,16 +108,30 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
         let project_root = current_project.as_ref().map(|p| p.root());
 
         for lockfile in jobs_project.lockfiles {
-            let mut parsed_lockfile = parse::parse_lockfile(
+            let parse_result = parse::parse_lockfile(
                 &lockfile.path,
                 project_root,
                 Some(&lockfile.lockfile_type),
                 sandbox_generation,
                 generate_lockfiles,
-            )
-            .with_context(|| {
-                format!("Unable to locate any valid package in lockfile {:?}", lockfile.path)
-            })?;
+            );
+
+            // Map dedicated exit code for failure due to disabled generation.
+            let mut parsed_lockfile = match parse_result {
+                Ok(parsed_lockfile) => parsed_lockfile,
+                Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
+                    print_user_failure!("Could not parse lockfile: {}", err);
+                    return Ok(ExitCode::ManifestWithoutGeneration);
+                },
+                Err(ParseError::Other(err)) => {
+                    return Err(err).with_context(|| {
+                        format!(
+                            "Unable to locate any valid package in lockfile {:?}",
+                            lockfile.path
+                        )
+                    });
+                },
+            };
 
             if pretty_print {
                 print_user_success!(
