@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `skipSandbox` parameter for `parseLockfile` to generate lockfiles without sandbox protection
 - `generateLockfiles` parameter for `parseLockfile` to inhibit lockfile generation
 
+### Fixed
+
+- Exceptions for symlinks in `runSandboxed` on Linux
+- Removing exceptions for child directories on macOS
+
 ## 5.8.0 - 2023-10-24
 
 ### Added
