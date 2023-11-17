@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::result::Result as StdResult;
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
@@ -12,7 +13,17 @@ use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfi
 
 use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
-use crate::{config, dirs, print_user_warning};
+use crate::{config, dirs, print_user_failure, print_user_warning};
+
+/// Lockfile parsing error.
+#[derive(thiserror::Error, Debug)]
+pub enum ParseError {
+    /// Dependency file is a manifest, but lockfile generation is disabled.
+    #[error("Parsing {0:?} requires lockfile generation, but it was disabled through the CLI")]
+    ManifestWithoutGeneration(PathBuf),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
 
 pub struct ParsedLockfile {
     pub packages: Vec<PackageDescriptorAndLockfile>,
@@ -55,14 +66,28 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
     for lockfile in lockfiles {
-        let mut parsed_lockfile = parse_lockfile(
+        let parse_result = parse_lockfile(
             &lockfile.path,
             project_root,
             Some(&lockfile.lockfile_type),
             sandbox_generation,
             generate_lockfiles,
-        )
-        .with_context(|| format!("could not parse lockfile: {}", lockfile.path.display()))?;
+        );
+
+        // Map dedicated exit code for failure due to disabled generation.
+        let mut parsed_lockfile = match parse_result {
+            Ok(parsed_lockfile) => parsed_lockfile,
+            Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
+                print_user_failure!("Could not parse lockfile: {}", err);
+                return Ok(ExitCode::ManifestWithoutGeneration);
+            },
+            Err(ParseError::Other(err)) => {
+                return Err(err).with_context(|| {
+                    format!("could not parse lockfile: {}", lockfile.path.display())
+                });
+            },
+        };
+
         pkgs.append(&mut parsed_lockfile.packages);
     }
 
@@ -78,7 +103,7 @@ pub fn parse_lockfile(
     lockfile_type: Option<&str>,
     sandbox_generation: bool,
     generate_lockfiles: bool,
-) -> Result<ParsedLockfile> {
+) -> StdResult<ParsedLockfile, ParseError> {
     // Try and determine lockfile format.
     let path = path.into();
     let format = find_lockfile_format(&path, lockfile_type);
@@ -86,7 +111,7 @@ pub fn parse_lockfile(
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
         Some(format) => format,
-        None => return try_get_packages(path, project_root),
+        None => return Ok(try_get_packages(path, project_root)?),
     };
 
     // Parse with the identified parser.
@@ -113,13 +138,8 @@ pub fn parse_lockfile(
     if !generate_lockfiles || !parser.is_path_manifest(&path) {
         // Return the original lockfile parsing error.
         match lockfile_error {
-            Some(err) => return Err(err),
-            None => {
-                return Err(anyhow!(
-                    "Parsing {path:?} requires lockfile generation, but it was disabled through \
-                     the CLI"
-                ))
-            },
+            Some(err) => return Err(err.into()),
+            None => return Err(ParseError::ManifestWithoutGeneration(path)),
         }
     }
 
@@ -128,7 +148,7 @@ pub fn parse_lockfile(
     // Find the generator for this lockfile format.
     let generator = match parser.generator() {
         Some(generator) => generator,
-        None => return Err(anyhow!("unsupported manifest file {path:?}")),
+        None => return Err(anyhow!("unsupported manifest file {path:?}").into()),
     };
 
     let display_path = strip_root_path(path.to_path_buf(), project_root)?;
