@@ -115,7 +115,7 @@ jobs:
           retention-days: 7
 
       - name: Create release notes
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const fs = require("node:fs");
@@ -176,7 +176,7 @@ jobs:
 
       - name: Create GitHub release
         id: create_release
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           # The response is explicitly returned here so it will be available for other steps
           script: |
@@ -219,7 +219,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
@@ -235,7 +235,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
