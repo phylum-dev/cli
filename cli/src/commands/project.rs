@@ -101,25 +101,35 @@ pub async fn handle_project(
     Ok(ExitCode::Ok)
 }
 
-/// Print current project information.
+/// Print project information.
 pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), PhylumApiError> {
     let pretty_print = !matches.get_flag("json");
+    let project = matches.get_one::<String>("project");
+    let group = matches.get_one::<String>("group");
 
-    let project_config = match phylum_project::get_current_project() {
-        Some(project_config) => project_config,
-        None => {
-            if pretty_print {
-                print_user_success!("No project set");
-            } else {
-                println!("{{}}");
-            }
+    let (project_id, group_name) = match project {
+        // If project is passed on CLI, lookup its ID.
+        Some(project) => {
+            let group = group.cloned();
+            let project_id = lookup_project(api, project, group.as_deref()).await?;
+            (project_id, group)
+        },
+        // If no project is passed, use `.phylum_project`.
+        None => match phylum_project::get_current_project() {
+            Some(project_config) => (project_config.id, project_config.group_name),
+            None => {
+                if pretty_print {
+                    print_user_success!("No project set");
+                } else {
+                    println!("{{}}");
+                }
 
-            return Ok(());
+                return Ok(());
+            },
         },
     };
-    let project = api
-        .get_project(&project_config.id.to_string(), project_config.group_name.as_deref())
-        .await?;
+
+    let project = api.get_project(&project_id.to_string(), group_name.as_deref()).await?;
 
     project.write_stdout(pretty_print);
 
