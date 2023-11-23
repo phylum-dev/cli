@@ -499,23 +499,59 @@ mod tests {
 
     #[test]
     fn lock_parse_yarn_v1() {
-        for p in [
-            include_str!("../../tests/fixtures/yarn-v1.lock"),
-            include_str!("../../tests/fixtures/yarn-v1.trailing_newlines.lock"),
-        ] {
+        let with_trailing_newlines = include_str!("../../tests/fixtures/yarn-v1.lock");
+        let without_trailing_newlines = format!("{}\n", with_trailing_newlines.trim_end());
+
+        for p in [with_trailing_newlines, &without_trailing_newlines] {
             let pkgs = YarnLock.parse(p).unwrap();
 
-            assert_eq!(pkgs.len(), 17);
+            assert_eq!(pkgs.len(), 20);
 
-            assert_eq!(pkgs[0].name, "@yarnpkg/lockfile");
-            assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.1.0".into()));
+            let expected_pkgs = [
+                Package {
+                    name: "@yarnpkg/lockfile".into(),
+                    version: PackageVersion::FirstParty("1.1.0".into()),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "cliui".into(),
+                    version: PackageVersion::FirstParty("7.0.4".into()),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "yargs".into(),
+                    version: PackageVersion::FirstParty("16.2.0".into()),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "strip-ansi".into(),
+                    version: PackageVersion::FirstParty("6.0.1".into()),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "test".into(),
+                    version: PackageVersion::Path(Some("../test".into())),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "quoted_path".into(),
+                    version: PackageVersion::Path(Some("../quoted_path".into())),
+                    package_type: PackageType::Npm,
+                },
+                Package {
+                    name: "imaginary".into(),
+                    version: PackageVersion::Git(
+                        "git://github.com/phylum-dev/imaginary#\
+                         2a00da2067b7017f769c9100205a2a5f267a884b"
+                            .into(),
+                    ),
+                    package_type: PackageType::Npm,
+                },
+            ];
 
-            assert_eq!(pkgs[3].name, "cliui");
-            assert_eq!(pkgs[3].version, PackageVersion::FirstParty("7.0.4".into()));
-
-            let last = pkgs.last().unwrap();
-            assert_eq!(last.name, "yargs");
-            assert_eq!(last.version, PackageVersion::FirstParty("16.2.0".into()));
+            for expected_pkg in expected_pkgs {
+                assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+            }
         }
     }
 
