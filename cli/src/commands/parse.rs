@@ -136,7 +136,7 @@ pub fn parse_lockfile(
 
     // Abort if generation is disabled or path is neither lockfile nor manifest.
     let maybe_manifest = parser.is_path_manifest(&path);
-    if !generate_lockfiles || !maybe_manifest {
+    if !(generate_lockfiles && maybe_manifest) {
         // Return the original lockfile parsing error.
         match lockfile_error {
             // Report parsing errors only for lockfiles.
