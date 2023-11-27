@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Show project ID after project creation
 - `skip-sandbox` option for `parse`/`analyze` to generate lockfiles without sandbox protection
 - `no-generation` option for `parse`/`analyze` to disable lockfile generation
+- Optional `--project` and `--group` arguments for `phylum project status`
 
 ### Fixed
 

@@ -106,6 +106,17 @@ pub fn add_subcommands(command: Command) -> Command {
                             .short('j')
                             .long("json")
                             .help("Produce output in json format (default: false)"),
+                        Arg::new("project")
+                            .short('p')
+                            .long("project")
+                            .value_name("PROJECT_NAME")
+                            .help("Specify a project to use for analysis"),
+                        Arg::new("group")
+                            .short('g')
+                            .long("group")
+                            .value_name("GROUP_NAME")
+                            .help("Specify a group to use for analysis")
+                            .requires("project"),
                     ]),
                 )
                 .subcommand(

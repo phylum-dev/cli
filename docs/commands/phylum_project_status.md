@@ -15,6 +15,12 @@ Usage: phylum project status [OPTIONS]
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
+`-p`, `--project` `<PROJECT_NAME>`
+&emsp; Specify a project to use for analysis
+
+`-g`, `--group` `<GROUP_NAME>`
+&emsp; Specify a group to use for analysis
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
