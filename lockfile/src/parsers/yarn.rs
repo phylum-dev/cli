@@ -1,4 +1,4 @@
-//! Yaml v1 lockfile parser.
+//! Yarn v1 lockfile parser.
 
 use nom::bytes::complete::take_till;
 use nom::InputTakeAtPosition;
@@ -26,13 +26,13 @@ fn yarn_lock_header(input: &str) -> IResult<&str, &str> {
 }
 
 fn entry(input: &str) -> IResult<&str, Option<Package>> {
-    let (i, capture) = recognize(many_till(
+    let (input, capture) = recognize(many_till(
         take_till_line_end,
         recognize(tuple((space0, alt((line_ending, eof))))),
     ))(input)?;
 
     let (_, my_entry) = parse_entry(capture)?;
-    Ok((i, my_entry))
+    Ok((input, my_entry))
 }
 
 fn parse_entry(input: &str) -> IResult<&str, Option<Package>> {
@@ -50,17 +50,17 @@ fn parse_entry(input: &str) -> IResult<&str, Option<Package>> {
 
 fn entry_name(input: &str) -> IResult<&str, &str> {
     // Strip optional quotes.
-    let (i, _) = opt(tag(r#"""#))(input)?;
+    let (input, _) = opt(tag(r#"""#))(input)?;
 
     // Strip optional aliased package name.
-    let (i, _) = recognize(opt(tuple((take_until("@npm:"), tag("@npm:")))))(i)?;
+    let (input, _) = recognize(opt(tuple((take_until("@npm:"), tag("@npm:")))))(input)?;
 
     // Allow for up to one leading `@` in package name (like `@angular/cli`).
     let opt_at = opt(tag("@"));
 
     // Consume everything until version separator as name.
     let name_parser = tuple((opt_at, take_until("@")));
-    context("name", recognize(name_parser))(i)
+    context("name", recognize(name_parser))(input)
 }
 
 fn entry_version(input: &str) -> IResult<&str, Option<PackageVersion>> {
@@ -83,14 +83,14 @@ fn entry_version(input: &str) -> IResult<&str, Option<PackageVersion>> {
     }
 
     // Parse version field.
-    let (i, _) = take_until(r#"version"#)(input)?;
+    let (input, _) = take_until(r#"version"#)(input)?;
     let version_key = tuple((tag(r#"version"#), opt(tag(r#"""#)), tag(r#" ""#)));
     let version_parser = delimited(version_key, is_version, tag(r#"""#));
-    let (i, version) = context("version", version_parser)(i)?;
+    let (input, version) = context("version", version_parser)(input)?;
 
     let package_version = PackageVersion::FirstParty(version.to_string());
 
-    Ok((i, Some(package_version)))
+    Ok((input, Some(package_version)))
 }
 
 fn path_dep(input: &str) -> IResult<&str, Option<PackageVersion>> {
