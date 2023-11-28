@@ -3,6 +3,7 @@ use std::process;
 pub mod auth;
 pub mod extensions;
 pub mod find_lockable_files;
+pub mod generate_lockfile;
 pub mod group;
 pub mod init;
 pub mod jobs;

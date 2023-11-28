@@ -2,18 +2,17 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::result::Result as StdResult;
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
-use birdcage::{Birdcage, Exception, Sandbox};
 use phylum_lockfile::generator::Generator;
 use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 
-use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
-use crate::{config, dirs, print_user_failure, print_user_warning};
+use crate::{config, print_user_failure, print_user_warning};
 
 /// Lockfile parsing error.
 #[derive(thiserror::Error, Debug)]
@@ -156,7 +155,8 @@ pub fn parse_lockfile(
     eprintln!("Generating lockfile for manifest {display_path:?} using {format:?}…");
 
     // Generate a new lockfile.
-    let generated_lockfile = generate_lockfile(generator, &path, sandbox_generation)?;
+    let generated_lockfile =
+        generate_lockfile(generator, format.name(), &path, sandbox_generation)?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
@@ -165,91 +165,37 @@ pub fn parse_lockfile(
 }
 
 /// Generate a lockfile from a manifest inside a sandbox.
-fn generate_lockfile(generator: &dyn Generator, path: &Path, sandbox: bool) -> Result<String> {
+fn generate_lockfile(
+    generator: &dyn Generator,
+    lockfile_type: &str,
+    path: &Path,
+    sandbox: bool,
+) -> Result<String> {
     let canonical_path = path.canonicalize()?;
 
-    // Enable the sandbox.
     if sandbox {
-        let birdcage = lockfile_generation_sandbox(&canonical_path)?;
-        birdcage.lock()?;
+        // Spawn separate sandboxed process to generate the lockfile.
+        let current_exe = env::current_exe()?;
+        let output = Command::new(current_exe)
+            .arg("generate-lockfile")
+            .arg(lockfile_type)
+            .arg(canonical_path)
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Err(anyhow!("subprocess failed:\n{stderr}"))
+                .context("Lockfile generation failed! For details, see: \
+                    https://docs.phylum.io/docs/lockfile_generation")
+        } else {
+            Ok(String::from_utf8_lossy(&output.stdout).into())
+        }
+    } else {
+        generator
+            .generate_lockfile(&canonical_path)
+            .context("Lockfile generation failed! For details, see: \
+                https://docs.phylum.io/docs/lockfile_generation")
     }
-
-    let generated_lockfile = generator
-        .generate_lockfile(&canonical_path)
-        .context("Lockfile generation failed! For details, see: \
-            https://docs.phylum.io/docs/lockfile_generation")?;
-
-    Ok(generated_lockfile)
-}
-
-/// Create sandbox with exceptions allowing generation of any lockfile.
-fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
-    let mut birdcage = permissions::default_sandbox()?;
-
-    // Allow all networking.
-    birdcage.add_exception(Exception::Networking)?;
-
-    // Add exception for the manifest's parent directory.
-    let project_path = canonical_manifest_path.parent().expect("Invalid manifest path");
-    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(project_path.into()))?;
-
-    // Add exception for all the executables required for generation.
-    let ecosystem_bins = [
-        "cargo", "bundle", "mvn", "gradle", "npm", "pnpm", "yarn", "python3", "pipenv", "poetry",
-        "go", "dotnet",
-    ];
-    for bin in ecosystem_bins {
-        let absolute_path = permissions::resolve_bin_path(bin);
-        permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
-    }
-
-    // Allow any executable in common binary directories.
-    //
-    // Reading binaries shouldn't be an attack vector, but significantly simplifies
-    // complex ecosystems (like Python's symlinks).
-    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/bin".into()))?;
-
-    // Add paths required by specific ecosystems.
-    let home = dirs::home_dir()?;
-    // Cargo.
-    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".rustup")))?;
-    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".cargo")))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/etc/passwd".into()))?;
-    // Bundle.
-    permissions::add_exception(&mut birdcage, Exception::Read("/dev/urandom".into()))?;
-    // Maven.
-    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".m2")))?;
-    permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/var/folders".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/opt/maven".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/maven".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/openjdk".into()))?;
-    permissions::add_exception(
-        &mut birdcage,
-        Exception::Read("/opt/homebrew/Cellar/maven".into()),
-    )?;
-    permissions::add_exception(
-        &mut birdcage,
-        Exception::Read("/opt/homebrew/Cellar/openjdk".into()),
-    )?;
-    // Gradle.
-    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
-    permissions::add_exception(
-        &mut birdcage,
-        Exception::Read("/usr/share/java/gradle/lib".into()),
-    )?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/gradle".into()))?;
-    permissions::add_exception(
-        &mut birdcage,
-        Exception::Read("/opt/homebrew/Cellar/gradle".into()),
-    )?;
-    // Pnpm.
-    permissions::add_exception(&mut birdcage, Exception::Read("/tmp".into()))?;
-    // Yarn.
-    permissions::add_exception(&mut birdcage, Exception::Read(home.join("./yarn")))?;
-
-    Ok(birdcage)
 }
 
 /// Attempt to parse a lockfile.
