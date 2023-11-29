@@ -575,6 +575,22 @@ pub fn add_subcommands(command: Command) -> Command {
                 .about("Find all lockfile and manifest paths")
                 .hide(true),
         )
+        .subcommand(
+            Command::new("generate-lockfile")
+                .args(&[
+                    Arg::new("lockfile-type")
+                        .value_name("TYPE")
+                        .required(true)
+                        .help("Lockfile type whose generator will be used")
+                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                    Arg::new("manifest")
+                        .value_name("MANIFEST")
+                        .required(true)
+                        .help("Canonicalized manifest path"),
+                ])
+                .about("Run lockfile generation inside sandbox and write it to STDOUT")
+                .hide(true),
+        )
         .subcommand(extensions::command());
 
     #[cfg(unix)]
