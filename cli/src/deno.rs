@@ -49,12 +49,8 @@ pub async fn run(
     let main_module =
         deno_core::resolve_path(&extension.entry_point().to_string_lossy(), &PathBuf::from("."))?;
 
-    let bootstrap = BootstrapOptions {
-        args,
-        runtime_version: env!("CARGO_PKG_VERSION").into(),
-        user_agent: "phylum-cli/extension".into(),
-        ..Default::default()
-    };
+    let bootstrap =
+        BootstrapOptions { args, user_agent: "phylum-cli/extension".into(), ..Default::default() };
 
     let module_loader = Rc::new(ExtensionsModuleLoader::new(extension.path()));
     let source_map_getter: Box<dyn SourceMapGetter> = Box::new(module_loader.clone());
