@@ -47,12 +47,16 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
+            protobuf_install: sudo apt install -y protobuf-compiler
           - target: aarch64-unknown-linux-gnu
             os: [self-hosted, linux, arm64]
+            protobuf_install: sudo apt install -y protobuf-compiler/focal-backports
           - target: x86_64-apple-darwin
             os: macos-latest
+            protobuf_install: brew install cmake protobuf
           - target: aarch64-apple-darwin
             os: [self-hosted, macos, arm64]
+            protobuf_install: brew install cmake protobuf
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -60,16 +64,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Show Ubuntu version
-        run: lsb_release -a
-
-      - if: ${{ runner.os == 'macOS' }}
-        name: Install protoc
-        run: brew install cmake protobuf
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: Install protoc
-        run: sudo apt install -y protobuf-compiler
+      - name: Install protoc
+        run: ${{ matrix.protobuf_install }}
 
       - name: Install Rust toolchain
         run: |
