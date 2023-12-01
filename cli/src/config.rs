@@ -14,7 +14,7 @@ use phylum_project::{LockfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{dirs, print_user_warning, print_user_failure};
+use crate::{dirs, print_user_failure, print_user_warning};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ConnectionInfo {
