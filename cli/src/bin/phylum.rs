@@ -162,7 +162,7 @@ async fn handle_commands() -> CommandResult {
         #[cfg(unix)]
         "sandbox" => sandbox::handle_sandbox(sub_matches).await,
         "find-lockable-files" => find_lockable_files::handle_command(),
-        "generate-lockfile" => generate_lockfile::handle_command(sub_matches, config_path),
+        "generate-lockfile" => generate_lockfile::handle_command(sub_matches),
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },
