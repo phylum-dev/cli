@@ -20,6 +20,9 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+
       - name: Install Rust toolchain
         run: |
           rustup toolchain install stable --profile minimal
@@ -56,6 +59,9 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Show Ubuntu version
+        run: lsb_release -a
 
       - if: ${{ runner.os == 'macOS' }}
         name: Install protoc
