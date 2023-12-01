@@ -1,6 +1,9 @@
 //! `phylum generate-lockfile` subcommand.
 
+use std::env;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use anyhow::{Context, Result};
 use birdcage::{Birdcage, Exception, Sandbox};
@@ -15,15 +18,47 @@ use crate::dirs;
 pub fn handle_command(matches: &ArgMatches) -> CommandResult {
     let lockfile_type = matches.get_one::<String>("lockfile-type").unwrap();
     let manifest = matches.get_raw("manifest").unwrap().next().unwrap();
+    let skip_sandbox = matches.get_flag("skip-sandbox");
+
+    if skip_sandbox {
+        generate_lockfile(lockfile_type, manifest)
+    } else {
+        spawn_sandbox(lockfile_type, manifest)
+    }
+}
+
+/// Reexecute command inside the sandbox.
+fn spawn_sandbox(lockfile_type: &String, manifest: &OsStr) -> CommandResult {
+    let manifest_path = PathBuf::from(manifest);
+
+    // Setup sandbox for lockfile generation.
+    let birdcage = lockfile_generation_sandbox(&manifest_path)?;
+
+    // Reexecute command inside sandbox.
+    let current_exe = env::current_exe()?;
+    let mut command = Command::new(current_exe);
+    command.arg("generate-lockfile");
+    command.arg("--skip-sandbox");
+    command.arg(lockfile_type);
+    command.arg(manifest);
+    let mut child = birdcage.spawn(command)?;
+
+    // Check for process failure.
+    let status = child.wait()?;
+    match status.code() {
+        Some(code) => Ok(ExitCode::Custom(code)),
+        None if !status.success() => Ok(ExitCode::Generic),
+        None => Ok(ExitCode::Ok),
+    }
+}
+
+/// Generate lockfile and write it to STDOUT.
+fn generate_lockfile(lockfile_type: &String, manifest: &OsStr) -> CommandResult {
     let manifest_path = PathBuf::from(manifest);
 
     // Get generator for the lockfile type.
     let lockfile_format = lockfile_type.parse::<LockfileFormat>().unwrap();
     let generator = lockfile_format.parser().generator().unwrap();
-
-    // Setup sandbox for lockfile generation.
-    let birdcage = lockfile_generation_sandbox(&manifest_path)?;
-    birdcage.lock()?;
 
     // Generate the lockfile.
     let generated_lockfile = generator
@@ -42,6 +77,10 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
 
     // Allow all networking.
     birdcage.add_exception(Exception::Networking)?;
+
+    // Allow reexecuting phylum.
+    let current_exe = env::current_exe()?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(current_exe))?;
 
     // Add exception for the manifest's parent directory.
     let project_path = canonical_manifest_path.parent().expect("Invalid manifest path");

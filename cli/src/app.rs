@@ -587,6 +587,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("MANIFEST")
                         .required(true)
                         .help("Canonicalized manifest path"),
+                    Arg::new("skip-sandbox")
+                        .long("skip-sandbox")
+                        .help("Generate lockfile, without creating a new sandbox")
+                        .action(ArgAction::SetTrue),
                 ])
                 .about("Run lockfile generation inside sandbox and write it to STDOUT")
                 .hide(true),
