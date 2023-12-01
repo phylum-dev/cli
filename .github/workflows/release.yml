@@ -47,10 +47,10 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
-            protobuf_install: sudo apt install -y protobuf-compiler
+            protobuf_install: sudo apt update && sudo apt install -y protobuf-compiler
           - target: aarch64-unknown-linux-gnu
             os: [self-hosted, linux, arm64]
-            protobuf_install: cat /etc/apt/sources.list && sudo apt install -y protobuf-compiler/focal-backports
+            protobuf_install: sudo apt update && sudo apt install -y protobuf-compiler/focal-backports
           - target: x86_64-apple-darwin
             os: macos-latest
             protobuf_install: brew install cmake protobuf
