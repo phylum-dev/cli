@@ -28,7 +28,7 @@ pub fn handle_command(matches: &ArgMatches) -> CommandResult {
 }
 
 /// Reexecute command inside the sandbox.
-fn spawn_sandbox(lockfile_type: &String, manifest: &OsStr) -> CommandResult {
+fn spawn_sandbox(lockfile_type: &str, manifest: &OsStr) -> CommandResult {
     let manifest_path = PathBuf::from(manifest);
 
     // Setup sandbox for lockfile generation.
@@ -53,7 +53,7 @@ fn spawn_sandbox(lockfile_type: &String, manifest: &OsStr) -> CommandResult {
 }
 
 /// Generate lockfile and write it to STDOUT.
-fn generate_lockfile(lockfile_type: &String, manifest: &OsStr) -> CommandResult {
+fn generate_lockfile(lockfile_type: &str, manifest: &OsStr) -> CommandResult {
     let manifest_path = PathBuf::from(manifest);
 
     // Get generator for the lockfile type.
