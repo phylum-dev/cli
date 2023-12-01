@@ -15,7 +15,7 @@ use crate::commands::{CommandResult, ExitCode};
 use crate::dirs;
 
 /// Handle `phylum generate-lockfile` subcommand.
-pub fn handle_command(matches: &ArgMatches) -> CommandResult {
+pub fn handle_command(matches: &ArgMatches, config_path: PathBuf) -> CommandResult {
     let lockfile_type = matches.get_one::<String>("lockfile-type").unwrap();
     let manifest = matches.get_raw("manifest").unwrap().next().unwrap();
     let skip_sandbox = matches.get_flag("skip-sandbox");
@@ -23,16 +23,16 @@ pub fn handle_command(matches: &ArgMatches) -> CommandResult {
     if skip_sandbox {
         generate_lockfile(lockfile_type, manifest)
     } else {
-        spawn_sandbox(lockfile_type, manifest)
+        spawn_sandbox(config_path, lockfile_type, manifest)
     }
 }
 
 /// Reexecute command inside the sandbox.
-fn spawn_sandbox(lockfile_type: &str, manifest: &OsStr) -> CommandResult {
+fn spawn_sandbox(config_path: PathBuf, lockfile_type: &str, manifest: &OsStr) -> CommandResult {
     let manifest_path = PathBuf::from(manifest);
 
     // Setup sandbox for lockfile generation.
-    let birdcage = lockfile_generation_sandbox(&manifest_path)?;
+    let birdcage = lockfile_generation_sandbox(config_path, &manifest_path)?;
 
     // Reexecute command inside sandbox.
     let current_exe = env::current_exe()?;
@@ -72,7 +72,10 @@ fn generate_lockfile(lockfile_type: &str, manifest: &OsStr) -> CommandResult {
 }
 
 /// Create sandbox with exceptions allowing generation of any lockfile.
-fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
+fn lockfile_generation_sandbox(
+    config_path: PathBuf,
+    canonical_manifest_path: &Path,
+) -> Result<Birdcage> {
     let mut birdcage = permissions::default_sandbox()?;
 
     // Allow all networking.
@@ -81,6 +84,7 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     // Allow reexecuting phylum.
     let current_exe = env::current_exe()?;
     permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(current_exe))?;
+    permissions::add_exception(&mut birdcage, Exception::Read(config_path))?;
 
     // Add exception for the manifest's parent directory.
     let project_path = canonical_manifest_path.parent().expect("Invalid manifest path");
