@@ -13,12 +13,17 @@ use crate::commands::{CommandResult, ExitCode};
 /// Entry point for the `sandbox` subcommand.
 pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
     // Setup sandbox.
-    lock_process(matches)?;
+    let sandbox = sandbox_config(matches)?;
 
-    // Start subprocess.
+    // Start sandboxed subprocess.
     let cmd = matches.get_one::<String>("cmd").unwrap();
     let args: Vec<&String> = matches.get_many("args").unwrap_or_default().collect();
-    let status = match Command::new(cmd).args(args).status() {
+    let mut command = Command::new(cmd);
+    command.args(args);
+    let mut child = sandbox.spawn(command)?;
+
+    // Wait for subprocess to complete.
+    let status = match child.wait() {
         Ok(status) => status,
         Err(err) => {
             eprintln!("Process {cmd:?} failed to start: {err}");
@@ -41,9 +46,9 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
     }
 }
 
-/// Lock down the current process.
+/// Create the sandbox configuration.
 #[cfg(unix)]
-fn lock_process(matches: &ArgMatches) -> Result<()> {
+fn sandbox_config(matches: &ArgMatches) -> Result<Birdcage> {
     let mut birdcage =
         if matches.get_flag("strict") { Birdcage::new() } else { permissions::default_sandbox()? };
 
@@ -73,8 +78,5 @@ fn lock_process(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    // Lock down the process.
-    birdcage.lock()?;
-
-    Ok(())
+    Ok(birdcage)
 }

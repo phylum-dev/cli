@@ -14,7 +14,7 @@ use phylum_project::{LockfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{dirs, print_user_warning};
+use crate::{dirs, print_user_failure, print_user_warning};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ConnectionInfo {
@@ -156,6 +156,11 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
         Ok(c) => c,
         Err(orig_err) => match orig_err.downcast_ref::<io::Error>() {
             Some(e) if e.kind() == io::ErrorKind::NotFound => Config::default(),
+            // We don't fail on permission errors to allow running inside our sandbox.
+            Some(e) if e.kind() == io::ErrorKind::PermissionDenied => {
+                print_user_failure!("Config access denied: {e}");
+                Config::default()
+            },
             _ => return Err(orig_err),
         },
     };
