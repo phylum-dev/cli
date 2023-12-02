@@ -50,7 +50,11 @@ jobs:
             protobuf_install: sudo apt update && sudo apt install -y protobuf-compiler
           - target: aarch64-unknown-linux-gnu
             os: [self-hosted, linux, arm64]
-            protobuf_install: sudo apt update && sudo apt install -y protobuf-compiler/focal-backports
+            protobuf_install: |
+              echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse" \
+              >> /etc/apt/sources.list \
+              && sudo apt update \
+              && sudo apt install -y protobuf-compiler/focal-backports
           - target: x86_64-apple-darwin
             os: macos-latest
             protobuf_install: brew install cmake protobuf
