@@ -51,7 +51,7 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             os: [self-hosted, linux, arm64]
             protobuf_install: |
-              echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse" \
+              sudo echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse" \
               >> /etc/apt/sources.list \
               && sudo apt update \
               && sudo apt install -y protobuf-compiler/focal-backports
