@@ -61,14 +61,14 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
 
     let project = phylum_project::get_current_project();
     let project_root = project.as_ref().map(|p| p.root());
-    let lockfiles = config::lockfiles(matches, project.as_ref())?;
+    let depfiles = config::depfiles(matches, project.as_ref())?;
 
     let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
-    for lockfile in lockfiles {
-        let parse_result = parse_lockfile(
-            &lockfile.path,
+    for depfile in depfiles {
+        let parse_result = parse_depfile(
+            &depfile.path,
             project_root,
-            Some(&lockfile.lockfile_type),
+            Some(&depfile.depfile_type),
             sandbox_generation,
             generate_lockfiles,
         );
@@ -82,7 +82,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
             },
             Err(ParseError::Other(err)) => {
                 return Err(err).with_context(|| {
-                    format!("could not parse lockfile: {}", lockfile.path.display())
+                    format!("could not parse lockfile: {}", depfile.path.display())
                 });
             },
         };
@@ -95,17 +95,17 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     Ok(ExitCode::Ok)
 }
 
-/// Parse a package lockfile.
-pub fn parse_lockfile(
+/// Parse a dependency file.
+pub fn parse_depfile(
     path: impl Into<PathBuf>,
     project_root: Option<&PathBuf>,
-    lockfile_type: Option<&str>,
+    depfile_type: Option<&str>,
     sandbox_generation: bool,
     generate_lockfiles: bool,
 ) -> StdResult<ParsedLockfile, ParseError> {
-    // Try and determine lockfile format.
+    // Try and determine dependency file format.
     let path = path.into();
-    let format = find_lockfile_format(&path, lockfile_type);
+    let format = find_depfile_format(&path, depfile_type);
 
     // Attempt to parse with all known parsers as fallback.
     let (format, lockfile) = match format {
@@ -146,7 +146,7 @@ pub fn parse_lockfile(
 
     // If the lockfile couldn't be parsed, or there is none, we generate a new one.
 
-    // Find the generator for this lockfile format.
+    // Find the generator for this format.
     let generator = match parser.generator() {
         Some(generator) => generator,
         None => return Err(anyhow!("unsupported manifest file {path:?}").into()),
@@ -209,14 +209,14 @@ fn parse_lockfile_content(
     Ok(filter_packages(packages))
 }
 
-/// Find a lockfile's format.
-fn find_lockfile_format(
+/// Find a dependency file's format.
+fn find_depfile_format(
     path: &Path,
-    lockfile_type: Option<&str>,
+    depfile_type: Option<&str>,
 ) -> Option<(LockfileFormat, Option<PathBuf>)> {
-    // Determine format from lockfile type.
-    if let Some(lockfile_type) = lockfile_type.filter(|lockfile_type| lockfile_type != &"auto") {
-        let format = lockfile_type.parse::<LockfileFormat>().unwrap();
+    // Determine format from dependency file type.
+    if let Some(depfile_type) = depfile_type.filter(|depfile_type| depfile_type != &"auto") {
+        let format = depfile_type.parse::<LockfileFormat>().unwrap();
 
         // Skip lockfile analysis when path is only valid manifest.
         let parser = format.parser();
@@ -226,7 +226,7 @@ fn find_lockfile_format(
         return Some((format, lockfile));
     }
 
-    // Determine format based on lockfile path.
+    // Determine format based on dependency file path.
     if let Some(format) = phylum_lockfile::get_path_format(path) {
         return Some((format, Some(path.into())));
     }

@@ -382,14 +382,16 @@ async fn get_package_details(
     })
 }
 
-/// Parse a lockfile and return the package descriptors contained therein.
+/// Parse a dependency file and return the package descriptors contained
+/// therein.
+///
 /// Equivalent to `phylum parse`.
 #[op2(async)]
 #[serde]
-async fn parse_lockfile(
+async fn parse_depfile(
     op_state: Rc<RefCell<OpState>>,
-    #[string] lockfile: String,
-    #[string] lockfile_type: Option<String>,
+    #[string] depfile: String,
+    #[string] depfile_type: Option<String>,
     generate_lockfiles: Option<bool>,
     sandbox_generation: Option<bool>,
 ) -> Result<PackageLock> {
@@ -397,20 +399,20 @@ async fn parse_lockfile(
     {
         let mut state = op_state.borrow_mut();
         let permissions = state.borrow_mut::<PermissionsContainer>();
-        permissions.check_read(Path::new(&lockfile), "phylum")?;
+        permissions.check_read(Path::new(&depfile), "phylum")?;
     }
 
     // Get .phylum_project path
     let current_project = phylum_project::get_current_project();
     let project_root = current_project.as_ref().map(|p| p.root());
 
-    // Attempt to parse as requested lockfile type.
+    // Attempt to parse as requested dependency file type.
     let sandbox = sandbox_generation.unwrap_or(true);
     let generate_lockfiles = generate_lockfiles.unwrap_or(true);
-    let parsed = parse::parse_lockfile(
-        lockfile,
+    let parsed = parse::parse_depfile(
+        depfile,
         project_root,
-        lockfile_type.as_deref(),
+        depfile_type.as_deref(),
         sandbox,
         generate_lockfiles,
     )?;
@@ -550,22 +552,22 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::DECL,
+        api_base_url::DECL,
         check_packages::DECL,
         check_packages_raw::DECL,
-        get_user_info::DECL,
-        get_access_token::DECL,
-        get_refresh_token::DECL,
-        get_job_status::DECL,
-        get_job_status_raw::DECL,
-        get_current_project::DECL,
-        get_groups::DECL,
-        get_projects::DECL,
         create_project::DECL,
         delete_project::DECL,
+        get_access_token::DECL,
+        get_current_project::DECL,
+        get_groups::DECL,
+        get_job_status::DECL,
+        get_job_status_raw::DECL,
         get_package_details::DECL,
-        parse_lockfile::DECL,
-        run_sandboxed::DECL,
+        get_projects::DECL,
+        get_refresh_token::DECL,
+        get_user_info::DECL,
         op_permissions::DECL,
-        api_base_url::DECL,
+        parse_depfile::DECL,
+        run_sandboxed::DECL,
     ]
 }

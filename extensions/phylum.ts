@@ -8,7 +8,7 @@ export type Package = {
   lockfile?: string;
 };
 
-export type Lockfile = {
+export type DependencyFile = {
   packages: Package[];
   format: string;
 };
@@ -105,7 +105,7 @@ export class PhylumApi {
   }
 
   /**
-   * Analyze dependencies in a lockfile.
+   * Run Phylum analysis on a list of packages.
    *
    * Packages are expected in the following format:
    *
@@ -422,11 +422,11 @@ export class PhylumApi {
   }
 
   /**
-   * Get dependencies inside a lockfile.
+   * Get packages inside a dependency file.
    *
-   * @returns Lockfile dependencies
+   * @returns Dependency file packages
    *
-   * Lockfile dependencies example:
+   * Dependency file packages example:
    * ```
    * {
    *   format: "npm",
@@ -439,16 +439,16 @@ export class PhylumApi {
    * }
    * ```
    */
-  static parseLockfile(
-    lockfile: string,
-    lockfileType?: string,
+  static parseDependencyFile(
+    depfile: string,
+    depfileType?: string,
     generateLockfiles?: boolean,
     sandboxGeneration?: boolean,
-  ): Promise<Lockfile> {
+  ): Promise<DependencyFile> {
     return DenoCore.opAsync(
-      "parse_lockfile",
-      lockfile,
-      lockfileType,
+      "parse_depfile",
+      depfile,
+      depfileType,
       generateLockfiles,
       sandboxGeneration,
     );

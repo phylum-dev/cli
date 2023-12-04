@@ -11,7 +11,7 @@ if (Deno.args.length != 1) {
 }
 
 // Parse lockfile using Phylum's API.
-const lockfile = await PhylumApi.parseLockfile(Deno.args[0]);
+const lockfile = await PhylumApi.parseDependencyFile(Deno.args[0]);
 
 // Group all versions for the same dependency together.
 const groupedDeps = groupBy(lockfile.packages, (dep) => dep.name);

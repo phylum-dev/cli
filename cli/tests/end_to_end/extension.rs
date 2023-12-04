@@ -130,7 +130,7 @@ pub async fn parse_lockfile() {
         Permissions { read: Permission::List(vec![lockfile_str]), ..Permissions::default() };
 
     let parse_lockfile = format!(
-        "const lockfile = await PhylumApi.parseLockfile({lockfile:?}, 'yarn');
+        "const lockfile = await PhylumApi.parseDependencyFile({lockfile:?}, 'yarn');
          console.log(JSON.stringify(lockfile));",
     );
     test_cli

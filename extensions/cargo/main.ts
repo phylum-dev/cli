@@ -176,7 +176,7 @@ async function checkDryRun() {
   console.log(`[${green("phylum")}] Parsing lockfile…`);
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseLockfile("./Cargo.lock", "cargo");
+    lockfile = await PhylumApi.parseDependencyFile("./Cargo.lock", "cargo");
   } catch (e) {
     console.error(`[${red("phylum")}] Lockfile parsing failed: ${e}.\n`);
     await abort(125);

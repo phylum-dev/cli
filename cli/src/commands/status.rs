@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use chrono::{DateTime, Local};
 use clap::ArgMatches;
-use phylum_project::LockfileConfig;
+use phylum_project::DepfileConfig;
 use phylum_types::types::common::ProjectId;
 use serde::Serialize;
 
@@ -21,7 +21,7 @@ pub async fn handle_status(matches: &ArgMatches) -> CommandResult {
 
 #[derive(Serialize, Default)]
 pub struct PhylumStatus {
-    pub lockfiles: Vec<LockfileConfig>,
+    pub dependency_files: Vec<DepfileConfig>,
     pub project: Option<String>,
     pub group: Option<String>,
     pub root: Option<PathBuf>,
@@ -36,8 +36,8 @@ impl PhylumStatus {
         let mut status = PhylumStatus::default();
         let project = phylum_project::get_current_project();
 
-        // Add lockfiles.
-        status.lockfiles = config::lockfiles(matches, project.as_ref()).unwrap_or_default();
+        // Add dependency files.
+        status.dependency_files = config::depfiles(matches, project.as_ref()).unwrap_or_default();
 
         // Populate project details.
         if let Some(project) = project {

@@ -4,8 +4,8 @@ use crate::commands::{CommandResult, ExitCode};
 
 /// Handle `phylum find-lockable-files` subcommand.
 pub fn handle_command() -> CommandResult {
-    let lockables = phylum_lockfile::LockableFiles::find_at(".");
-    let json = serde_json::to_string(&lockables)?;
+    let depfiles = phylum_lockfile::DepFiles::find_at(".");
+    let json = serde_json::to_string(&depfiles)?;
     println!("{}", json);
     Ok(ExitCode::Ok)
 }

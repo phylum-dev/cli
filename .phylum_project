@@ -1,7 +1,7 @@
-id: d84b0bb3-fb64-43cb-a473-dc96b54db662
+id: f0ea0603-6916-47bc-ad73-8156d7dc40fc
 name: cli
-created_at: 2023-01-26T20:02:11.276987834+01:00
-group_name: integrations
+created_at: 2023-12-04T20:51:24.124463210+01:00
+group_name: null
 lockfiles:
-- path: Cargo.lock
+- path: ./Cargo.lock
   type: cargo

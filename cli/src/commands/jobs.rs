@@ -4,7 +4,7 @@ use std::{fs, io};
 use anyhow::{anyhow, Context, Result};
 use console::style;
 use log::debug;
-use phylum_project::LockfileConfig;
+use phylum_project::DepfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
 use reqwest::StatusCode;
@@ -108,10 +108,10 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
         let project_root = current_project.as_ref().map(|p| p.root());
 
         for lockfile in jobs_project.lockfiles {
-            let parse_result = parse::parse_lockfile(
+            let parse_result = parse::parse_depfile(
                 &lockfile.path,
                 project_root,
-                Some(&lockfile.lockfile_type),
+                Some(&lockfile.depfile_type),
                 sandbox_generation,
                 generate_lockfiles,
             );
@@ -290,7 +290,7 @@ async fn vulnreach(
 struct JobsProject {
     project_id: ProjectId,
     group: Option<String>,
-    lockfiles: Vec<LockfileConfig>,
+    lockfiles: Vec<DepfileConfig>,
 }
 
 impl JobsProject {
@@ -300,7 +300,7 @@ impl JobsProject {
     /// option.
     async fn new(api: &PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
         let current_project = phylum_project::get_current_project();
-        let lockfiles = config::lockfiles(matches, current_project.as_ref())?;
+        let lockfiles = config::depfiles(matches, current_project.as_ref())?;
 
         match matches.get_one::<String>("project") {
             // Prefer `--project` and `--group` if they were specified.
