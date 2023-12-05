@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 5.9.0 - 2023-12-05
+
 ### Added
 
 - `generateLockfiles` parameter for `parseLockfile` to inhibit lockfile generation

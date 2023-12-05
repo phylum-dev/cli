@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [5.9.0] - 2023-12-05
+
 ### Added
 
 - Show project ID after project creation
@@ -711,7 +713,8 @@ before, the existing project ID will be re-linked.
 
 - Initial release.
 
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.8.1...HEAD
+[unreleased]: https://github.com/phylum-dev/cli/compare/v5.9.0...HEAD
+[5.9.0]: https://github.com/phylum-dev/cli/compare/v5.8.1...v5.9.0
 [5.8.1]: https://github.com/phylum-dev/cli/compare/v5.8.0...v5.8.1
 [5.8.0]: https://github.com/phylum-dev/cli/compare/v5.7.3...v5.8.0
 [5.7.3]: https://github.com/phylum-dev/cli/compare/v5.7.2...v5.7.3
