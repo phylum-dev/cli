@@ -16,7 +16,6 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op2, Op, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
-use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -34,17 +33,30 @@ use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
+use crate::commands::parse::ParsedLockfile;
 #[cfg(unix)]
 use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
 use crate::types::{PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
 
-/// Parsed lockfile content.
-#[derive(Serialize, Deserialize, Debug)]
-struct PackageLock {
-    packages: Vec<PackageDescriptorAndLockfile>,
-    format: LockfileFormat,
+/// Package with its source attached.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+struct PackageWithOrigin {
+    #[serde(flatten)]
+    package: PackageDescriptor,
+    #[serde(alias = "lockfile")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin: Option<String>,
+}
+
+impl From<PackageWithOrigin> for PackageDescriptorAndLockfile {
+    fn from(package: PackageWithOrigin) -> Self {
+        PackageDescriptorAndLockfile {
+            package_descriptor: package.package,
+            lockfile: package.origin,
+        }
+    }
 }
 
 /// New process to be launched.
@@ -139,7 +151,7 @@ struct ProcessOutput {
 #[serde]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    #[serde] packages: Vec<PackageDescriptorAndLockfile>,
+    #[serde] packages: Vec<PackageWithOrigin>,
     #[string] project: Option<String>,
     #[string] group: Option<String>,
     #[string] label: Option<String>,
@@ -158,7 +170,8 @@ async fn analyze(
         },
     };
 
-    let job_id = api.submit_request(&packages, project, label, group.map(String::from)).await?;
+    let api_packages: Vec<_> = packages.into_iter().map(From::from).collect();
+    let job_id = api.submit_request(&api_packages, project, label, group.map(String::from)).await?;
 
     Ok(job_id)
 }
@@ -394,7 +407,7 @@ async fn parse_depfile(
     #[string] depfile_type: Option<String>,
     generate_lockfiles: Option<bool>,
     sandbox_generation: Option<bool>,
-) -> Result<PackageLock> {
+) -> Result<ParsedLockfile> {
     // Ensure extension has file read-access.
     {
         let mut state = op_state.borrow_mut();
@@ -417,7 +430,7 @@ async fn parse_depfile(
         generate_lockfiles,
     )?;
 
-    Ok(PackageLock { packages: parsed.packages, format: parsed.format })
+    Ok(parsed)
 }
 
 /// Run a command inside a sandbox.

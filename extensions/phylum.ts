@@ -1,16 +1,23 @@
 // @ts-ignore Deno[Deno.internal].core is not defined in types
 const DenoCore = Deno[Deno.internal].core;
 
+export type PackageWithOrigin = {
+  name: string;
+  version: string;
+  type: string;
+  origin: string;
+};
+
 export type Package = {
   name: string;
   version: string;
   type: string;
-  lockfile?: string;
 };
 
 export type DependencyFile = {
   packages: Package[];
   format: string;
+  path: string;
 };
 
 export type ProcessOutput = {
@@ -111,7 +118,7 @@ export class PhylumApi {
    *
    * ```
    * [
-   *   { name: "accepts", version: "1.3.8", type: "npm", lockfile: "/path/to/lockfile" },
+   *   { name: "accepts", version: "1.3.8", type: "npm", origin: "/path/to/lockfile" },
    *   { name: "ms", version: "2.0.0", type: "npm" },
    *   { name: "negotiator", version: "0.6.3", type: "npm" },
    *   { name: "ms", version: "2.1.3", type: "npm" }
@@ -119,7 +126,7 @@ export class PhylumApi {
    * ```
    *
    * Accepted package types are "npm", "pypi", "maven", "rubygems", "nuget", "cargo", and "golang"
-   * The `lockfile` is an optional string used to represent the path to the lockfile.
+   * The `origin` is an optional string used to represent the source of the dependency.
    *
    * @param packages - List of packages to analyze
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
@@ -129,7 +136,7 @@ export class PhylumApi {
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
-    packages: Package[],
+    packages: PackageWithOrigin[],
     project?: string,
     group?: string,
     label?: string,
@@ -430,11 +437,12 @@ export class PhylumApi {
    * ```
    * {
    *   format: "npm",
+   *   path: "package-lock.json",
    *   packages: [
-   *     { lockfile: "package-lock.json", name: "accepts", version: "1.3.8", type: "npm" },
-   *     { lockfile: "package-lock.json", name: "ms", version: "2.0.0", type: "npm" },
-   *     { lockfile: "package-lock.json", name: "negotiator", version: "0.6.3", type: "npm" },
-   *     { lockfile: "package-lock.json", name: "ms", version: "2.1.3", type: "npm" }
+   *     { name: "accepts", version: "1.3.8", type: "npm" },
+   *     { name: "ms", version: "2.0.0", type: "npm" },
+   *     { name: "negotiator", version: "0.6.3", type: "npm" },
+   *     { name: "ms", version: "2.1.3", type: "npm" }
    *   ]
    * }
    * ```

@@ -8,8 +8,11 @@ use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use phylum_lockfile::generator::Generator;
-use phylum_lockfile::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
+use phylum_lockfile::{
+    LockfileFormat, Package as LockfilePackage, PackageVersion, Parse, ThirdPartyVersion,
+};
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
+use serde::{Deserialize, Serialize};
 
 use crate::commands::{CommandResult, ExitCode};
 use crate::{config, print_user_failure, print_user_warning};
@@ -24,23 +27,28 @@ pub enum ParseError {
     Other(#[from] anyhow::Error),
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ParsedLockfile {
-    pub packages: Vec<PackageDescriptorAndLockfile>,
+    pub packages: Vec<PackageDescriptor>,
     pub format: LockfileFormat,
     pub path: PathBuf,
 }
 
 impl ParsedLockfile {
     fn new(path: PathBuf, format: LockfileFormat, packages: Vec<PackageDescriptor>) -> Self {
-        let packages = packages
-            .into_iter()
-            .map(|package_descriptor| PackageDescriptorAndLockfile {
-                package_descriptor,
-                lockfile: Some(path.to_string_lossy().into_owned()),
-            })
-            .collect();
-
         Self { packages, format, path }
+    }
+
+    /// Convert packages to API's expected format.
+    pub fn api_packages(&self) -> Vec<PackageDescriptorAndLockfile> {
+        let lockfile = Some(self.path.to_string_lossy().into_owned());
+        self.packages
+            .iter()
+            .map(|package_descriptor| PackageDescriptorAndLockfile {
+                package_descriptor: package_descriptor.clone(),
+                lockfile: lockfile.clone(),
+            })
+            .collect()
     }
 }
 
@@ -63,7 +71,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     let project_root = project.as_ref().map(|p| p.root());
     let depfiles = config::depfiles(matches, project.as_ref())?;
 
-    let mut pkgs: Vec<PackageDescriptorAndLockfile> = Vec::new();
+    let mut pkgs = Vec::new();
     for depfile in depfiles {
         let parse_result = parse_depfile(
             &depfile.path,
@@ -77,12 +85,12 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
         let mut parsed_lockfile = match parse_result {
             Ok(parsed_lockfile) => parsed_lockfile,
             Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
-                print_user_failure!("Could not parse lockfile: {}", err);
+                print_user_failure!("Could not parse manifest: {}", err);
                 return Ok(ExitCode::ManifestWithoutGeneration);
             },
             Err(ParseError::Other(err)) => {
                 return Err(err).with_context(|| {
-                    format!("could not parse lockfile: {}", depfile.path.display())
+                    format!("could not parse dependency file \"{}\"", depfile.path.display())
                 });
             },
         };
@@ -286,7 +294,7 @@ fn try_get_packages(path: PathBuf, project_root: Option<&PathBuf>) -> Result<Par
 }
 
 /// Filter packages for submission.
-fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
+fn filter_packages(mut packages: Vec<LockfilePackage>) -> Vec<PackageDescriptor> {
     packages
         .drain(..)
         .filter_map(|package| {
