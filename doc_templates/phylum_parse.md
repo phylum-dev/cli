@@ -5,9 +5,9 @@
 ### Examples
 
 ```sh
-# Parse a lockfile
+# Parse a dependency file
 $ phylum parse package-lock.json
 
-# Parse the `Cargo.lock` and `lockfile` files as cargo lockfiles
-$ phylum parse --lockfile-type cargo Cargo.lock lockfile
+# Parse the `Cargo.lock` and `lockfile` files as cargo dependency files
+$ phylum parse --type cargo Cargo.lock lockfile
 ```

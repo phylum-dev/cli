@@ -43,7 +43,7 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 > * `package.json` will use `npm`
 > * `pyproject.toml` will use `pip`
 >
-> This can be overridden on the command line with the `--lockfile-type` (`-t`) option. For example:
+> This can be overridden on the command line with the `--type` (`-t`) option. For example:
 >
 > ```sh
 > phylum analyze -t yarn package.json
@@ -83,7 +83,7 @@ specified, this will fail, and Phylum will silence the error and proceed to lock
    (i.e., `package-lock.json`, `npm-shrinkwrap.json`, or `yarn.lock`)
 3. If a matching lockfile is found, that file will be used instead
 4. If no matching lockfile is found, proceed to manifest file generation
-5. Since no `--lockfile-type` was specified, the fallback will be used (in this case, `npm`)
+5. Since no `--type` was specified, the fallback will be used (in this case, `npm`)
 6. The lockfile generator runs this command to generate a lockfile:
 
    ```sh

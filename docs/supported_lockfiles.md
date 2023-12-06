@@ -30,7 +30,7 @@ The Phylum CLI supports processing many different lockfiles:
 >
 > The lockfile type will be automatically detected based on the filename.
 >
-> If needed, this can be overridden with the `--lockfile-type` (`-t`) option.
+> If needed, this can be overridden with the `--type` (`-t`) option.
 
 ---
 
