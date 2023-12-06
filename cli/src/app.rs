@@ -539,7 +539,7 @@ pub fn add_subcommands(command: Command) -> Command {
                     .value_name("GROUP_NAME")
                     .help("Group which will be the owner of the project"),
                 Arg::new("depfile")
-                    .short('l') // TODO
+                    .short('d')
                     .long("dependency-file")
                     .value_name("DEPENDENCY_FILE")
                     .help("Project-relative dependency file path")
