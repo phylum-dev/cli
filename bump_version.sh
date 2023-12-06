@@ -20,8 +20,7 @@ TAG=v${version}
 
 today=$(date '+%Y-%m-%d')
 printf "\nUpdating CHANGELOG, bumping version, running 'cargo check', and adding files for commit ...\n\n"
-sed -i'.bak' "s/\(## \[Unreleased\]\)/\1\n\n## \[${version}\] - ${today}/" CHANGELOG.md
-sed -i'.bak' "s/^\[unreleased\]: \(.*\/compare\/\)\(.*\)...HEAD/[unreleased]: \1${TAG}...HEAD\n\[${version}\]: \1\2...${TAG}/" CHANGELOG.md
+sed -i'.bak' "s/\(## Unreleased\)/\1\n\n## ${version} - ${today}/" CHANGELOG.md
 rm -f CHANGELOG.md.bak
 
 sed -E -i'.bak' "s/^version = \"([^\"]*)\"/version = \"${version}\"/" cli/Cargo.toml

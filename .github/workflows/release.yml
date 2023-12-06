@@ -139,8 +139,8 @@ jobs:
               .readFileSync("cli/CHANGELOG.md", { encoding: "utf-8" })
               .split("\n");
 
-            const header = changelog.findIndex((line) => line.startsWith(`## [${ver}]`));
-            const nextHeader = changelog.findIndex((line, idx) => idx > header && line.startsWith("## ["));
+            const header = changelog.findIndex((line) => line.startsWith(`## ${ver}`));
+            const nextHeader = changelog.findIndex((line, idx) => idx > header && line.startsWith("## "));
 
             if (header == -1 || nextHeader == -1) throw "Could not find headers";
 
