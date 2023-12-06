@@ -80,10 +80,10 @@ impl Format for PhylumStatus {
             let _ = writeln!(writer, "{depfiles_label}: {}", style("null").italic().green());
         } else {
             let _ = writeln!(writer, "{depfiles_label}:");
-            for lockfile in &self.dependency_files {
-                let path = lockfile.path.display();
+            for depfile in &self.dependency_files {
+                let path = depfile.path.display();
                 let _ = writeln!(writer, " - {}: {}", style("path").blue(), path);
-                let _ = writeln!(writer, "   {}: {}", style("type").blue(), lockfile.depfile_type);
+                let _ = writeln!(writer, "   {}: {}", style("type").blue(), depfile.depfile_type);
             }
         }
     }
