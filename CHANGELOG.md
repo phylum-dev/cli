@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `no-generation` option for `parse`/`analyze` to disable lockfile generation
 - Optional `--project` and `--group` arguments for `phylum project status`
 
+### Changed
+
+- Renamed multiple CLI arguments to avoid the term `lockfile` in places where
+    manifests are also accepted
+
 ### Fixed
 
 - Aliased dependency names in `package-lock.json`
