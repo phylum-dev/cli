@@ -6,7 +6,7 @@
 
 The following order is used to determine which lockfile will be analyzed:
 
-- CLI `--lockfile` parameters
+- CLI `DEPENDENCY_FILE` argument
 - Lockfiles in the `.phylum_project` file specified during `phylum init`
 - Recursive filesystem search
 
