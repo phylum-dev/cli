@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Changed
+
+- Renamed `parseLockfile` to `PhylumApi::parseDependencyFile`
+- Removed `lockfile` field from `PhylumApi::Package` type
+- Removed `PhylumApi::Lockfile` type in favor of `PhylumApi::DependencyFile`
+- Changed `PhylumApi::analyze` packages type to `PhylumApi::PackageWithOrigin`
+
 ## 5.9.0 - 2023-12-05
 
 ### Added
@@ -15,13 +22,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `generateLockfiles` parameter for `parseLockfile` to inhibit lockfile generation
 - `sandboxGeneration` parameter for `parseLockfile` to disable the lockfile
     generation sandbox
-
-### Changed
-
-- Renamed `parseLockfile` to `PhylumApi::parseDependencyFile`
-- Removed `lockfile` field from `PhylumApi::Package` type
-- Removed `PhylumApi::Lockfile` type in favor of `PhylumApi::DependencyFile`
-- Changed `PhylumApi::analyze` packages type to `PhylumApi::PackageWithOrigin`
 
 ### Fixed
 
