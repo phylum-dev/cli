@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use clap::ArgMatches;
-use phylum_types::types::package::{PackageSpecifier, PackageSubmitResponse};
 use reqwest::StatusCode;
 
 use crate::api::PhylumApi;
@@ -10,6 +9,7 @@ use crate::commands::{CommandResult, ExitCode};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
 use crate::print_user_warning;
+use crate::types::{PackageSpecifier, PackageSubmitResponse};
 
 fn parse_package(matches: &ArgMatches) -> Result<PackageSpecifier> {
     // Read required options.

@@ -21,10 +21,7 @@ use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::ListUserGroupsResponse;
-use phylum_types::types::package::{
-    Package, PackageDescriptor, PackageDescriptorAndLockfile,
-    PackageSpecifier as PTPackageSpecifier, PackageSubmitResponse,
-};
+use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -38,7 +35,10 @@ use crate::commands::parse;
 use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
-use crate::types::{PolicyEvaluationResponse, PolicyEvaluationResponseRaw};
+use crate::types::{
+    Package, PackageSpecifier, PackageSubmitResponse, PolicyEvaluationResponse,
+    PolicyEvaluationResponseRaw,
+};
 
 /// Parsed lockfile content.
 #[derive(Serialize, Deserialize, Debug)]
@@ -369,7 +369,7 @@ async fn get_package_details(
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    api.submit_package(&PTPackageSpecifier {
+    api.submit_package(&PackageSpecifier {
         name: name.to_string(),
         version: version.to_string(),
         registry: package_type,

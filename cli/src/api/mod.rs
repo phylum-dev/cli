@@ -9,9 +9,7 @@ use phylum_types::types::group::{
 use phylum_types::types::job::{
     AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
 };
-use phylum_types::types::package::{
-    PackageDescriptor, PackageDescriptorAndLockfile, PackageSpecifier, PackageSubmitResponse,
-};
+use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse, UpdateProjectRequest,
 };
@@ -33,8 +31,8 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    HistoryJob, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, RevokeTokenRequest, UserToken,
+    HistoryJob, PackageSpecifier, PackageSubmitResponse, PingResponse, PolicyEvaluationRequest,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RevokeTokenRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -509,7 +507,7 @@ mod tests {
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
-    use phylum_types::types::package::{PackageType, RiskDomain, RiskLevel};
+    use phylum_types::types::package::PackageType;
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -517,7 +515,9 @@ mod tests {
     use super::*;
     use crate::config::ConnectionInfo;
     use crate::test::mockito::*;
-    use crate::types::{EvaluatedDependency, PolicyRejection, RejectionSource};
+    use crate::types::{
+        EvaluatedDependency, PolicyRejection, RejectionSource, RiskDomain, RiskLevel,
+    };
 
     #[tokio::test]
     async fn create_client() -> Result<()> {

@@ -9,9 +9,7 @@ use phylum_types::types::group::{
     GroupMember, ListGroupMembersResponse, ListUserGroupsResponse, UserGroup,
 };
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
-use phylum_types::types::package::{
-    IssuesListItem, Package, PackageStatus, PackageStatusExtended, RiskLevel, RiskType,
-};
+use phylum_types::types::package::{PackageStatus, PackageStatusExtended};
 use phylum_types::types::project::ProjectSummaryResponse;
 use prettytable::format::Alignment;
 use prettytable::{color as table_color, row, table, Attr, Cell, Row, Table};
@@ -22,7 +20,10 @@ use vulnreach_types::Vulnerability;
 
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
-use crate::types::{HistoryJob, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, UserToken};
+use crate::types::{
+    HistoryJob, IssuesListItem, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
+    RiskLevel, RiskType, UserToken,
+};
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
