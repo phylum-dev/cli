@@ -21,8 +21,8 @@ pub struct ProjectConfig {
     lockfile_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     lockfile_path: Option<String>,
-    #[serde(default)]
-    lockfiles: Vec<LockfileConfig>,
+    #[serde(default, alias = "lockfiles")]
+    depfiles: Vec<DepfileConfig>,
     #[serde(skip)]
     root: PathBuf,
 }
@@ -37,21 +37,21 @@ impl ProjectConfig {
             created_at: Local::now(),
             lockfile_type: None,
             lockfile_path: None,
-            lockfiles: Default::default(),
+            depfiles: Default::default(),
             root: Default::default(),
         }
     }
 
-    /// Get all lockfiles of this project.
-    pub fn lockfiles(&self) -> Vec<LockfileConfig> {
-        // Return new lockfile format if present.
-        if !self.lockfiles.is_empty() {
+    /// Get all dependency files of this project.
+    pub fn depfiles(&self) -> Vec<DepfileConfig> {
+        // Return new config format if present.
+        if !self.depfiles.is_empty() {
             return self
-                .lockfiles
+                .depfiles
                 .iter()
-                .map(|lockfile| {
-                    let path = self.root.join(&lockfile.path);
-                    LockfileConfig::new(path, lockfile.lockfile_type.clone())
+                .map(|depfile| {
+                    let path = self.root.join(&depfile.path);
+                    DepfileConfig::new(path, depfile.depfile_type.clone())
                 })
                 .collect();
         }
@@ -60,10 +60,10 @@ impl ProjectConfig {
         if let Some((path, lockfile_type)) =
             self.lockfile_path.as_ref().zip(self.lockfile_type.as_ref())
         {
-            return vec![LockfileConfig::new(self.root.join(path), lockfile_type.clone())];
+            return vec![DepfileConfig::new(self.root.join(path), lockfile_type.clone())];
         }
 
-        // Default to no lockfiles.
+        // Default to no dependency files.
         Vec::new()
     }
 
@@ -74,9 +74,9 @@ impl ProjectConfig {
         self.group_name = group;
     }
 
-    /// Update the project's lockfiles.
-    pub fn set_lockfiles(&mut self, lockfiles: Vec<LockfileConfig>) {
-        self.lockfiles = lockfiles;
+    /// Update the project's dependency files.
+    pub fn set_depfiles(&mut self, depfiles: Vec<DepfileConfig>) {
+        self.depfiles = depfiles;
     }
 
     /// Get project's root directory.
@@ -85,17 +85,17 @@ impl ProjectConfig {
     }
 }
 
-/// Lockfile metadata.
+/// Dependency file metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LockfileConfig {
+pub struct DepfileConfig {
     pub path: PathBuf,
     #[serde(rename = "type")]
-    pub lockfile_type: String,
+    pub depfile_type: String,
 }
 
-impl LockfileConfig {
-    pub fn new(path: impl Into<PathBuf>, lockfile_type: String) -> LockfileConfig {
-        LockfileConfig { path: path.into(), lockfile_type }
+impl DepfileConfig {
+    pub fn new(path: impl Into<PathBuf>, depfile_type: String) -> DepfileConfig {
+        DepfileConfig { path: path.into(), depfile_type }
     }
 }
 
@@ -154,58 +154,58 @@ mod tests {
     const GROUP_NAME: &str = "my group";
 
     #[test]
-    fn new_config_has_correct_lockfile_paths() {
+    fn new_config_has_correct_depfile_paths() {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
-        config.set_lockfiles(vec![LockfileConfig {
+        config.set_depfiles(vec![DepfileConfig {
             path: PathBuf::from("Cargo.lock"),
-            lockfile_type: "cargo".to_owned(),
+            depfile_type: "cargo".to_owned(),
         }]);
 
-        let lockfiles = config.lockfiles();
-        let [lockfile] = &lockfiles[..] else {
-            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        let depfiles = config.depfiles();
+        let [depfile] = &depfiles[..] else {
+            panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
-        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+        assert_eq!(&PathBuf::from("Cargo.lock"), &depfile.path);
     }
 
     #[test]
-    fn deserialized_config_has_correct_lockfile_paths() {
+    fn deserialized_config_has_correct_depfile_paths() {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
-        config.set_lockfiles(vec![LockfileConfig {
+        config.set_depfiles(vec![DepfileConfig {
             path: PathBuf::from("Cargo.lock"),
-            lockfile_type: "cargo".to_owned(),
+            depfile_type: "cargo".to_owned(),
         }]);
 
         let config: ProjectConfig =
             serde_yaml::from_str(&serde_yaml::to_string(&config).unwrap()).unwrap();
 
-        let lockfiles = config.lockfiles();
-        let [lockfile] = &lockfiles[..] else {
-            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        let depfiles = config.depfiles();
+        let [depfile] = &depfiles[..] else {
+            panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
-        assert_eq!(&PathBuf::from("Cargo.lock"), &lockfile.path);
+        assert_eq!(&PathBuf::from("Cargo.lock"), &depfile.path);
     }
 
     #[test]
-    fn when_root_set_has_correct_lockfile_paths() {
+    fn when_root_set_has_correct_depfile_paths() {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
-        config.set_lockfiles(vec![LockfileConfig {
+        config.set_depfiles(vec![DepfileConfig {
             path: PathBuf::from("Cargo.lock"),
-            lockfile_type: "cargo".to_owned(),
+            depfile_type: "cargo".to_owned(),
         }]);
         config.root = PathBuf::from("/home/user/project");
 
-        let lockfiles = config.lockfiles();
-        let [lockfile] = &lockfiles[..] else {
-            panic!("Expected to get exactly one lockfile but got {lockfiles:?}");
+        let depfiles = config.depfiles();
+        let [depfile] = &depfiles[..] else {
+            panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
-        assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &lockfile.path);
+        assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &depfile.path);
     }
 
     #[cfg(any(unix, windows))]

@@ -196,7 +196,7 @@ async function checkDryRun() {
     await abort(status.code ?? 255);
   }
 
-  const lockfile = await PhylumApi.parseLockfile("./yarn.lock", "yarn");
+  const lockfile = await PhylumApi.parseDependencyFile("./yarn.lock", "yarn");
 
   // Ensure `checkDryRun` never modifies package manager files,
   // regardless of success.

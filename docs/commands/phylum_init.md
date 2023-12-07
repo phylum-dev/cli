@@ -20,11 +20,11 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group which will be the owner of the project
 
-`-l`, `--lockfile` `<LOCKFILE>`
-&emsp; Project-relative lockfile path
+`-d`, `--dependency-file` `<DEPENDENCY_FILE>`
+&emsp; Project-relative dependency file path
 
-`-t`, `--lockfile-type` `<TYPE>`
-&emsp; Lockfile type used for all lockfiles (default: auto)
+`-t`, `--type` `<TYPE>`
+&emsp; Dependency file type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `-f`, `--force`
@@ -49,5 +49,5 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 $ phylum init
 
 # Create the `demo` project with a yarn lockfile and no associated group.
-$ phylum init --lockfile yarn.lock --lockfile-type yarn demo
+$ phylum init --dependency-file yarn.lock --type yarn demo
 ```

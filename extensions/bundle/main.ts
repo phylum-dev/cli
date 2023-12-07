@@ -163,7 +163,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseLockfile("./Gemfile.lock", "gem");
+    lockfile = await PhylumApi.parseDependencyFile("./Gemfile.lock", "gem");
   } catch (_e) {
     console.warn(`[${yellow("phylum")}] No lockfile present.\n`);
     await abort(125);

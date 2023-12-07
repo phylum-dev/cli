@@ -1,15 +1,11 @@
 {
   "importMap": "import_map.json",
   "lint": {
-    "files": {
-      "include": ["extensions/"]
-    }
+    "include": ["extensions/"]
   },
   "fmt": {
-    "files": {
-      "include": ["extensions/"],
-      "exclude": ["extensions/CHANGELOG.md"]
-    }
+    "include": ["extensions/"],
+    "exclude": ["extensions/CHANGELOG.md"]
   },
   "lock": false
 }

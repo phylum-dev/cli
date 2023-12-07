@@ -4,21 +4,21 @@ category: 6255e67693d5200013b1fa3e
 hidden: false
 ---
 
-Parse lockfiles and output their packages as JSON
+Parse dependency files and output their packages as JSON
 
 ```sh
-Usage: phylum parse [OPTIONS] [LOCKFILE]...
+Usage: phylum parse [OPTIONS] [DEPENDENCY_FILE]...
 ```
 
 ### Arguments
 
-`[LOCKFILE]`
-&emsp; The package lockfiles to submit
+`[DEPENDENCY_FILE]`
+&emsp; Path to the dependency file to parse
 
 ### Options
 
-`-t`, `--lockfile-type` `<TYPE>`
-&emsp; Lockfile type used for all lockfiles (default: auto)
+`-t`, `--type` `<TYPE>`
+&emsp; Dependency file type used for all lockfiles (default: auto)
 &emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `--skip-sandbox`
@@ -36,12 +36,24 @@ Usage: phylum parse [OPTIONS] [LOCKFILE]...
 `-h`, `--help`
 &emsp; Print help
 
+### Details
+
+The following order is used to determine which dependency file will be parsed:
+
+- CLI `DEPENDENCY_FILE` argument
+- Dependency files in the `.phylum_project` file specified during `phylum init`
+- Recursive filesystem search
+
+If any of these locations provides a dependency file, no further search will be
+done. Recursive filesystem search takes common ignore files like `.gitignore`
+and `.ignore` into account.
+
 ### Examples
 
 ```sh
-# Parse a lockfile
+# Parse a dependency file
 $ phylum parse package-lock.json
 
-# Parse the `Cargo.lock` and `lockfile` files as cargo lockfiles
-$ phylum parse --lockfile-type cargo Cargo.lock lockfile
+# Parse the `Cargo.lock` and `lockfile` files as cargo dependency files
+$ phylum parse --type cargo Cargo.lock lockfile
 ```

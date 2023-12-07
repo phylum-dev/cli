@@ -8,7 +8,7 @@ use clap::parser::ValuesRef;
 use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
-use phylum_project::{LockfileConfig, ProjectConfig, PROJ_CONF_FILE};
+use phylum_project::{DepfileConfig, ProjectConfig, PROJ_CONF_FILE};
 use phylum_types::types::group::UserGroup;
 use reqwest::StatusCode;
 
@@ -34,8 +34,8 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     }
 
     let cli_repository_url = matches.get_one::<String>("repository-url");
-    let cli_lockfile_type = matches.get_one::<String>("lockfile-type");
-    let cli_lockfiles = matches.get_many::<String>("lockfile");
+    let cli_depfile_type = matches.get_one::<String>("type");
+    let cli_depfiles = matches.get_many::<String>("depfile");
     let cli_project = matches.get_one::<String>("project");
     let cli_group = matches.get_one::<String>("group");
 
@@ -46,8 +46,8 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let (project, group, repository_url) =
         prompt_project(&groups, cli_project, cli_group, cli_repository_url).await?;
 
-    // Interactively prompt for missing lockfile information.
-    let lockfiles = prompt_lockable_files(cli_lockfiles, cli_lockfile_type)?;
+    // Interactively prompt for missing dependency file information.
+    let depfiles = prompt_depfiles(cli_depfiles, cli_depfile_type)?;
 
     // Attempt to create the project.
     let result = project::create_project(api, &project, group.clone(), repository_url).await;
@@ -63,8 +63,8 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
         project_config => project_config.context("Unable to create project")?,
     };
 
-    // Override project lockfile info.
-    project_config.set_lockfiles(lockfiles);
+    // Override project dependency file info.
+    project_config.set_depfiles(depfiles);
 
     // Save project config.
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
@@ -175,54 +175,52 @@ async fn prompt_repository_url() -> anyhow::Result<Option<String>> {
     Ok((!input.is_empty()).then_some(input))
 }
 
-/// Interactively ask for missing lockfile or manifest information.
-fn prompt_lockable_files(
-    cli_lockfiles: Option<ValuesRef<'_, String>>,
-    cli_lockfile_type: Option<&String>,
-) -> io::Result<Vec<LockfileConfig>> {
-    // Prompt for lockfiles or manifests if they weren't specified.
-    let lockfiles = match cli_lockfiles {
-        Some(lockfiles) => lockfiles.cloned().collect(),
-        None => prompt_lockable_file_names()?,
+/// Interactively ask for missing dependency file information.
+fn prompt_depfiles(
+    cli_depfiles: Option<ValuesRef<'_, String>>,
+    cli_depfile_type: Option<&String>,
+) -> io::Result<Vec<DepfileConfig>> {
+    // Prompt for dependency files if they weren't specified.
+    let depfiles = match cli_depfiles {
+        Some(depfiles) => depfiles.cloned().collect(),
+        None => prompt_depfile_names()?,
     };
 
-    // Find lockfile type for each file.
-    let mut lockfile_configs = Vec::new();
-    for lockfile in &lockfiles {
-        let lockfile_type = find_lockfile_type(lockfile, cli_lockfile_type)?;
-        let config = LockfileConfig::new(lockfile, lockfile_type);
-        lockfile_configs.push(config);
+    // Find dependency file type for each file.
+    let mut depfile_configs = Vec::new();
+    for depfile in &depfiles {
+        let depfile_type = find_depfile_type(depfile, cli_depfile_type)?;
+        let config = DepfileConfig::new(depfile, depfile_type);
+        depfile_configs.push(config);
     }
 
-    Ok(lockfile_configs)
+    Ok(depfile_configs)
 }
 
-/// Ask for the lockfile and manifest names.
-fn prompt_lockable_file_names() -> io::Result<Vec<String>> {
-    // Find all known lockfiles and manifests below the currenty directory.
-    let mut lockable_files = phylum_lockfile::find_lockable_files_at(".")
+/// Ask for the dependency file names.
+fn prompt_depfile_names() -> io::Result<Vec<String>> {
+    // Find all known dependency files below the currenty directory.
+    let mut depfiles = phylum_lockfile::find_depfiles_at(".")
         .iter()
         .flat_map(|(path, _)| Some(path.to_str()?.to_owned()))
         .collect::<Vec<_>>();
 
-    // Prompt for selection if any lockfile was found.
-    let prompt = !lockable_files.is_empty();
+    // Prompt for selection if any dependency file was found.
+    let prompt = !depfiles.is_empty();
     if prompt {
         // Add choice to specify additional unidentified files.
-        lockable_files.push(String::from("others"));
+        depfiles.push(String::from("others"));
 
         // Ask user for files.
         let indices = MultiSelect::new()
-            .with_prompt(
-                "[SPACE] Select  [ENTER] Confirm\nSelect your project's lockfiles and manifests",
-            )
-            .items(&lockable_files)
+            .with_prompt("[SPACE] Select  [ENTER] Confirm\nSelect your project's dependency files")
+            .items(&depfiles)
             .interact()?;
 
-        // Remove unselected lockfiles.
+        // Remove unselected dependency files.
         let mut indices = indices.iter().peekable();
         let mut files_index = 0;
-        lockable_files.retain(|_| {
+        depfiles.retain(|_| {
             // Check if index is in the selected indices.
             let retain = indices.peek().map_or(false, |index| **index <= files_index);
 
@@ -239,51 +237,51 @@ fn prompt_lockable_file_names() -> io::Result<Vec<String>> {
         println!();
 
         // Return files if we found at least one and no others were requested.
-        match lockable_files.last().map_or("others", |lockfile| lockfile.as_str()) {
-            "others" => lockable_files.pop(),
-            _ => return Ok(lockable_files),
+        match depfiles.last().map_or("others", |depfile| depfile.as_str()) {
+            "others" => depfiles.pop(),
+            _ => return Ok(depfiles),
         };
     }
 
     // Construct dialoguer freetext prompt.
     let mut input = Input::new();
     if prompt {
-        input.with_prompt("Other lockfiles or manifests (comma separated paths)");
+        input.with_prompt("Other dependency files (comma separated paths)");
     } else {
         input.with_prompt(
-            "No known lockfiles or manifests found in the current directory.\nLockfiles or \
-             manifests (comma separated paths)",
+            "No known dependency files found in the current directory.\nDependency files (comma \
+             separated paths)",
         );
     };
 
-    // Allow empty as escape hatch if people already selected a valid lockfile.
-    input.allow_empty(!lockable_files.is_empty());
+    // Allow empty as escape hatch if people already selected a valid dependency
+    // file.
+    input.allow_empty(!depfiles.is_empty());
 
     // Prompt for additional files.
-    let other_lockable_files: String = input.interact_text()?;
+    let other_depfiles: String = input.interact_text()?;
 
     println!();
 
     // Remove whitespace around files and add them to our list.
-    for lockfile in
-        other_lockable_files.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
+    for depfile in other_depfiles.split(',').map(|path| path.trim()).filter(|path| !path.is_empty())
     {
-        lockable_files.push(lockfile.into());
+        depfiles.push(depfile.into());
     }
 
-    Ok(lockable_files)
+    Ok(depfiles)
 }
 
-/// Find lockfile type for a lockable file path.
-fn find_lockfile_type(lockfile: &str, cli_lockfile_type: Option<&String>) -> io::Result<String> {
-    if let Some(cli_lockfile_type) = cli_lockfile_type {
-        // Use CLI lockfile type if specified.
-        return Ok(cli_lockfile_type.into());
+/// Find the type for a dependency file path.
+fn find_depfile_type(depfile: &str, cli_depfile_type: Option<&String>) -> io::Result<String> {
+    if let Some(cli_depfile_type) = cli_depfile_type {
+        // Use CLI dependency file type if specified.
+        return Ok(cli_depfile_type.into());
     }
 
     // Find all matching lockfile types.
     let formats = LockfileFormat::iter().filter(|format| {
-        let path = Path::new(&lockfile);
+        let path = Path::new(&depfile);
         let parser = format.parser();
         parser.is_path_lockfile(path) || parser.is_path_manifest(path)
     });
@@ -296,17 +294,17 @@ fn find_lockfile_type(lockfile: &str, cli_lockfile_type: Option<&String>) -> io:
     }
 
     // Prompt if multiple or no formats were detected.
-    prompt_lockfile_type(lockfile, formats)
+    prompt_depfile_type(depfile, formats)
 }
 
-/// Ask for the lockfile type.
-fn prompt_lockfile_type(lockfile: &str, mut formats: Vec<&str>) -> io::Result<String> {
+/// Ask for the dependency file type.
+fn prompt_depfile_type(depfile: &str, mut formats: Vec<&str>) -> io::Result<String> {
     // Allow all formats if no matching formats were found.
     if formats.is_empty() {
         formats = LockfileFormat::iter().map(|format| format.name()).collect();
     }
 
-    let prompt = format!("[ENTER] Select and Confirm\nSelect lockfile type for {lockfile:?}");
+    let prompt = format!("[ENTER] Select and Confirm\nSelect dependency file type for {depfile:?}");
     let index = FuzzySelect::new().with_prompt(prompt).items(&formats).interact()?;
 
     println!();
