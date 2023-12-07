@@ -16,6 +16,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `sandboxGeneration` parameter for `parseLockfile` to disable the lockfile
     generation sandbox
 
+### Changed
+
+- Renamed `parseLockfile` to `PhylumApi::parseDependencyFile`
+- Removed `lockfile` field from `PhylumApi::Package` type
+- Removed `PhylumApi::Lockfile` type in favor of `PhylumApi::DependencyFile`
+- Changed `PhylumApi::analyze` packages type `PhylumApi::PackageWithOrigin`
+
 ### Fixed
 
 - Exceptions for symlinks in `runSandboxed` on Linux
