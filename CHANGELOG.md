@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Changed
+
+- Renamed multiple CLI arguments to avoid the term `lockfile` in places where
+    manifests are also accepted
+- Renamed `lockfiles` key in `phylum status --json` output to `dependency_files`
+
 ## 5.9.0 - 2023-12-05
 
 ### Added
@@ -16,12 +22,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `skip-sandbox` option for `parse`/`analyze` to generate lockfiles without sandbox protection
 - `no-generation` option for `parse`/`analyze` to disable lockfile generation
 - Optional `--project` and `--group` arguments for `phylum project status`
-
-### Changed
-
-- Renamed multiple CLI arguments to avoid the term `lockfile` in places where
-    manifests are also accepted
-- Renamed `lockfiles` key in `phylum status --json` output to `dependency_files`
 
 ### Fixed
 
