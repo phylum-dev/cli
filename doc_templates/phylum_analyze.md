@@ -4,15 +4,15 @@
 
 ### Details
 
-The following order is used to determine which lockfile will be analyzed:
+The following order is used to determine which dependency file will be analyzed:
 
 - CLI `DEPENDENCY_FILE` argument
-- Lockfiles in the `.phylum_project` file specified during `phylum init`
+- Dependency files in the `.phylum_project` file specified during `phylum init`
 - Recursive filesystem search
 
-If any of these locations provides a lockfile, no further search will be done.
-Recursive filesystem search takes common ignore files like `.gitignore` and
-`.ignore` into account.
+If any of these locations provides a dependency file, no further search will be
+done. Recursive filesystem search takes common ignore files like `.gitignore`
+and `.ignore` into account.
 
 ### Examples
 
