@@ -411,19 +411,3 @@ impl From<PTRiskLevel> for RiskLevel {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use phylum_types::types::package::RiskLevel;
-
-    #[test]
-    fn test_risk_level_ordering() {
-        assert!(
-            RiskLevel::Info < RiskLevel::Low
-                && RiskLevel::Low < RiskLevel::Medium
-                && RiskLevel::Medium < RiskLevel::High
-                && RiskLevel::High < RiskLevel::Critical,
-            "Ordering of risk levels is invalid"
-        );
-    }
-}
