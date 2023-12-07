@@ -6,11 +6,13 @@ The sections should follow the order `Packaging`, `Added`, `Changed`, `Fixed` an
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## Unreleased
+
+### Added
 
 - Add CVE data to `issueDetails` entries when `--json` flag is used for `phylum package`
 
-## [5.9.0] - 2023-12-05
+## 5.9.0 - 2023-12-05
 
 ### Added
 
@@ -24,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Aliased dependency names in `package-lock.json`
 - Aliased dependency names in `yarn.lock`
 
-## [5.8.1] - 2023-11-07
+## 5.8.1 - 2023-11-07
 
 ### Fixed
 
@@ -32,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Lockfile generation for non-workspace pnpm projects
 - Fixed issue parsing BOM files containing unsupported ecosystems
 
-## [5.8.0] - 2023-10-24
+## 5.8.0 - 2023-10-24
 
 ### Added
 
@@ -44,7 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Path dependencies for pnpm lockfiles
 
-## [5.7.3] - 2023-10-17
+## 5.7.3 - 2023-10-17
 
 ### Changed
 
@@ -55,7 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Pip requirements.txt parser failing with third-party registries
 
-## [5.7.2] - 2023-10-10
+## 5.7.2 - 2023-10-10
 
 ### Fixed
 
@@ -63,14 +65,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Go lockfile generation
 - Ignored manifests with a different ecosystem's lockfile in a parent directory
 
-## [5.7.1] - 2023-09-08
+## 5.7.1 - 2023-09-08
 
 ### Fixed
 
 - Package header printed even when all issues were suppressed
 - Parsing fails for extraneous npm packages in package-lock.json
 
-## [5.7.0] - 2023-08-24
+## 5.7.0 - 2023-08-24
 
 ### Added
 
@@ -89,7 +91,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Ecosystem extensions not pre-checking `remove`/`uninstall` operations
 - Disabled update and uninstall commands in completion for Homebrew users
 
-## [5.6.0] - 2023-08-08
+## 5.6.0 - 2023-08-08
 
 ### Added
 
@@ -104,7 +106,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Search for manifests' lockfiles in parent, rather than child directories
 
-## [5.5.0] - 2023-07-18
+## 5.5.0 - 2023-07-18
 
 ### Added
 
@@ -125,7 +127,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Lockfile generation for yarn v1
 
-## [5.3.0] - 2023-06-15
+## 5.3.0 - 2023-06-15
 
 ### Added
 
@@ -140,7 +142,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Show correct error messages when parsing SPDX SBOMs
 
-## [5.2.0] - 2023-05-11
+## 5.2.0 - 2023-05-11
 
 ### Added
 
@@ -151,7 +153,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Allow external `node_modules` dependencies in `package-lock.json`
 
-## [5.1.0] - 2023-05-04
+## 5.1.0 - 2023-05-04
 
 ### Added
 
@@ -165,13 +167,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `pip` parser fails for some lines containing comments
 - `yarn` parser fails with empty lockfiles
 
-## [5.0.1] - 2023-04-20
+## 5.0.1 - 2023-04-20
 
 ### Fixed
 
 - Handle null job labels in `phylum history --project`
 
-## [5.0.0] - 2023-04-13
+## 5.0.0 - 2023-04-13
 
 ### Added
 
@@ -193,7 +195,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Remove `phylum project set-thresholds` subcommand by @cd-work (#1004)
 - Remove request type from global config by @kylewillmon (#1001)
 
-## [4.8.0] - 2023-04-04
+## 4.8.0 - 2023-04-04
 
 ### Added
 
@@ -215,7 +217,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add SPDX tag:value parser by @ejortega (#978)
 - Make `phylum package` type argument mandatory by @cd-work (#997)
 
-## [4.7.0] - 2023-02-27
+## 4.7.0 - 2023-02-27
 
 ### Added
 
@@ -225,19 +227,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fix project history endpoint by @cd-work (#947)
 
-## [4.6.1] - 2023-02-14
+## 4.6.1 - 2023-02-14
 
 ### Fixed
 
 - Fix Go parser ignoring dependencies by @cd-work (#944)
 
-## [4.6.0] - 2023-02-03
+## 4.6.0 - 2023-02-03
 
 ### Added
 
 - Improve `phylum init` UX by @cd-work (#936)
 
-## [4.5.0] - 2023-02-01
+## 4.5.0 - 2023-02-01
 
 ### Added
 
@@ -257,7 +259,7 @@ lockfiles. To do so, simply run the `phylum init` command from the root of the
 project directory. As long as the project and group names used are the same as
 before, the existing project ID will be re-linked.
 
-## [4.4.0] - 2023-01-20
+## 4.4.0 - 2023-01-20
 
 ### Added
 
@@ -269,7 +271,7 @@ before, the existing project ID will be re-linked.
 - Abort on unknown extension subcommands by @cd-work (#915)
 - Fix gem parser for dependencies without version by @cd-work (#919)
 
-## [4.3.0] - 2023-01-17
+## 4.3.0 - 2023-01-17
 
 ### Added
 
@@ -280,7 +282,7 @@ before, the existing project ID will be re-linked.
 
 - Fix sandbox executable path resolution by @cd-work (#905)
 
-## [4.2.0] - 2023-01-05
+## 4.2.0 - 2023-01-05
 
 ### Added
 
@@ -291,7 +293,7 @@ before, the existing project ID will be re-linked.
 - Fix parser lockfile consistency by @cd-work (#882)
 - Add deno.window lib reference to extension\_api.ts by @kylewillmon (#890)
 
-## [4.1.0] - 2022-12-20
+## 4.1.0 - 2022-12-20
 
 ### Added
 
@@ -311,13 +313,13 @@ before, the existing project ID will be re-linked.
 - Fix group prompt during `phylum init` by @cd-work (#869)
 - Don't warn about config search if we didn't recurse by @kylewillmon (#870)
 
-## [4.0.1] - 2022-11-30
+## 4.0.1 - 2022-11-30
 
 ### Fixed
 
 - Downgrade linux builder to 20.04 by @kylewillmon (#835)
 
-## [4.0.0] - 2022-11-30
+## 4.0.0 - 2022-11-30
 
 ### Added
 
@@ -340,13 +342,13 @@ before, the existing project ID will be re-linked.
 - Fix regressions in #816 by @kylewillmon (#817)
 - Fix package-lock parsing with 3rd-party registries by @cd-work (#828)
 
-## [3.12.1] - 2022-10-28
+## 3.12.1 - 2022-10-28
 
 ### Fixed
 
 - Avoid stdout when run with `--json` by @maxrake (#787)
 
-## [3.12.0] - 2022-10-27
+## 3.12.0 - 2022-10-27
 
 ### Added
 
@@ -363,7 +365,7 @@ before, the existing project ID will be re-linked.
 - Added ignore certs flag by @andreaphylum (#779)
 - Clean up options by @maxrake (#768)
 
-## [3.11.0] - 2022-10-19
+## 3.11.0 - 2022-10-19
 
 ### Added
 
@@ -387,13 +389,13 @@ before, the existing project ID will be re-linked.
 - Improve `phylum history` UUID error message by @cd-work (#753)
 - Fix CLI certificate override modifying config by @cd-work (#747)
 
-## [3.10.1] - 2022-10-13
+## 3.10.1 - 2022-10-13
 
 ### Fixed
 
 - Fix NPM dependency bundling by @cd-work (#752)
 
-## [3.10.0] - 2022-09-16
+## 3.10.0 - 2022-09-16
 
 ### Fixed
 
@@ -408,14 +410,14 @@ before, the existing project ID will be re-linked.
 
 - Remove XDG migration code by @kylewillmon (#677)
 
-## [3.9.1] - 2022-08-31
+## 3.9.1 - 2022-08-31
 
 ### Fixed
 
 - NPM and Yarn extensions do not properly exit on threshold violation by @cd-work (#660)
 - Duplicate dependencies in `package-lock.json` aren't handled properly by @cd-work (#661)
 
-## [3.9.0] - 2022-08-29
+## 3.9.0 - 2022-08-29
 
 ### Added
 
@@ -426,7 +428,7 @@ before, the existing project ID will be re-linked.
 
 - Update shim for musl to gnu is broken by @maxrake (#650)
 
-## [3.8.0] - 2022-08-22
+## 3.8.0 - 2022-08-22
 
 ### Added
 
@@ -438,7 +440,7 @@ before, the existing project ID will be re-linked.
 - Use POST for job submission instead of PUT by @kylewillmon (#533)
 - Switch to new project thresholds endpoint by @cd-work (#626)
 
-## [3.7.4] - 2022-08-17
+## 3.7.4 - 2022-08-17
 
 ### Fixed
 
@@ -450,13 +452,13 @@ before, the existing project ID will be re-linked.
 
 - Add git dependency support to package-lock.json by @cd-work in #623
 
-## [3.7.3] - 2022-08-09
+## 3.7.3 - 2022-08-09
 
 ### Fixed
 
 - Fix `phylum update` zip decompression errors by @cd-work (#613)
 
-## [3.7.2] - 2022-08-03
+## 3.7.2 - 2022-08-03
 
 ### Fixed
 
@@ -466,14 +468,14 @@ before, the existing project ID will be re-linked.
 - Ignore empty refresh token from environment by @matt-phylum (#584)
 - Better error messages by @kylewillmon (#588)
 
-## [3.7.1] - 2022-07-14
+## 3.7.1 - 2022-07-14
 
 ### Fixed
 
 - Support effective-pom files with site information by @ejortega (#550)
 - Fix CI release readme release process by @cd-work (#553)
 
-## [3.7.0] - 2022-07-13
+## 3.7.0 - 2022-07-13
 
 ### Added
 
@@ -488,7 +490,7 @@ before, the existing project ID will be re-linked.
 - Don't require Job ID for `phylum history` command by @kylewillmon (#525)
 - Remove user ID from analysis output by @cd-work (#545)
 
-## [3.6.0] - 2022-06-20
+## 3.6.0 - 2022-06-20
 
 ### Added
 
@@ -503,7 +505,7 @@ before, the existing project ID will be re-linked.
 - Fix messed up spinner output by @samtay (#464)
 - Fix SHELL env var assumed to exist during install by @maxrake (#471)
 
-## [3.5.0] - 2022-05-23
+## 3.5.0 - 2022-05-23
 
 ### Added
 
@@ -517,7 +519,7 @@ before, the existing project ID will be re-linked.
 - Don't use streaming parsers by @kylewillmon (#401)
 - Bump phylum\_types version by @kylewillmon (#409)
 
-## [3.4.0] - 2022-05-19
+## 3.4.0 - 2022-05-19
 
 ### Added
 
@@ -528,7 +530,7 @@ before, the existing project ID will be re-linked.
 - Fix yarn v1 parser with quoted version key by @cd-work (#383)
 - Use new format for package analysis endpoint by @cd-work (#384)
 
-## [3.3.0] - 2022-05-16
+## 3.3.0 - 2022-05-16
 
 ### Added
 
@@ -541,7 +543,7 @@ before, the existing project ID will be re-linked.
 - Fix non-frozen Pipfile suffix by @cd-work (#366)
 - Use new endpoint for ping  by @kylewillmon (#369)
 
-## [3.2.0] - 2022-05-06
+## 3.2.0 - 2022-05-06
 
 ### Added
 
@@ -554,7 +556,7 @@ before, the existing project ID will be re-linked.
 - Don't panic in the javascript lockfile parser by @kylewillmon (#340)
 - Use better error for missing lockfiles by @cd-work (#352)
 
-## [3.1.0] - 2022-04-29
+## 3.1.0 - 2022-04-29
 
 ### Added
 
@@ -564,7 +566,7 @@ before, the existing project ID will be re-linked.
 
 - Resolve project create errors by @kylewillmon (#332)
 
-## [3.0.0] - 2022-04-28
+## 3.0.0 - 2022-04-28
 
 ### BREAKING CHANGES
 
@@ -591,7 +593,7 @@ before, the existing project ID will be re-linked.
 - Deprecate `phylum history project` by @cd-work (#290)
 - Remove PyO3 bindings by @eeclfrei (#295)
 
-## [2.2.0] - 2022-04-21
+## 2.2.0 - 2022-04-21
 
 ### Added
 
@@ -609,7 +611,7 @@ before, the existing project ID will be re-linked.
 - Remove table header from projects list json by @cd-work (#264)
 - Document the name argument for projects subcommand by @kylewillmon (#283)
 
-## [2.1.0] - 2022-04-13
+## 2.1.0 - 2022-04-13
 
 ### What's Changed
 
@@ -619,14 +621,14 @@ before, the existing project ID will be re-linked.
 - Use Ecosystem in `phylum package` output by @cd-work (#255)
 - Add support for new npm package-lock format by @cd-work (#242)
 
-## [2.0.1] - 2022-04-12
+## 2.0.1 - 2022-04-12
 
 ### What's Changed
 
 - Create phylum auth token command by @mdx97 (#217)
 - Add Python poetry.lock support by @cd-work (#238)
 
-## [2.0.0] - 2022-04-11
+## 2.0.0 - 2022-04-11
 
 ### What's Changed
 
@@ -640,7 +642,7 @@ before, the existing project ID will be re-linked.
 - Fix cryptic errors with invalid auth token by @cd-work (#233)
 - Migrate install script to POSIX sh by @cd-work (#235)
 
-## [1.2.0] - 2022-01-22
+## 1.2.0 - 2022-01-22
 
 ### What's Changed
 
@@ -714,55 +716,3 @@ before, the existing project ID will be re-linked.
 ## 0.0.1
 
 - Initial release.
-
-[unreleased]: https://github.com/phylum-dev/cli/compare/v5.9.0...HEAD
-[5.9.0]: https://github.com/phylum-dev/cli/compare/v5.8.1...v5.9.0
-[5.8.1]: https://github.com/phylum-dev/cli/compare/v5.8.0...v5.8.1
-[5.8.0]: https://github.com/phylum-dev/cli/compare/v5.7.3...v5.8.0
-[5.7.3]: https://github.com/phylum-dev/cli/compare/v5.7.2...v5.7.3
-[5.7.2]: https://github.com/phylum-dev/cli/compare/v5.7.1...v5.7.2
-[5.7.1]: https://github.com/phylum-dev/cli/compare/v5.7.0...v5.7.1
-[5.7.0]: https://github.com/phylum-dev/cli/compare/v5.6.0...v5.7.0
-[5.6.0]: https://github.com/phylum-dev/cli/compare/v5.5.0...v5.6.0
-[5.5.0]: https://github.com/phylum-dev/cli/compare/v5.3.0...v5.5.0
-[5.3.0]: https://github.com/phylum-dev/cli/compare/v5.2.0...v5.3.0
-[5.2.0]: https://github.com/phylum-dev/cli/compare/v5.1.0...v5.2.0
-[5.1.0]: https://github.com/phylum-dev/cli/compare/v5.0.1...v5.1.0
-[5.0.1]: https://github.com/phylum-dev/cli/compare/v5.0.0...v5.0.1
-[5.0.0]: https://github.com/phylum-dev/cli/compare/v4.8.0...v5.0.0
-[4.8.0]: https://github.com/phylum-dev/cli/compare/v4.7.0...v4.8.0
-[4.7.0]: https://github.com/phylum-dev/cli/compare/v4.6.1...v4.7.0
-[4.6.1]: https://github.com/phylum-dev/cli/compare/v4.6.0...v4.6.1
-[4.6.0]: https://github.com/phylum-dev/cli/compare/v4.5.0...v4.6.0
-[4.5.0]: https://github.com/phylum-dev/cli/compare/v4.4.0...v4.5.0
-[4.4.0]: https://github.com/phylum-dev/cli/compare/v4.3.0...v4.4.0
-[4.3.0]: https://github.com/phylum-dev/cli/compare/v4.2.0...v4.3.0
-[4.2.0]: https://github.com/phylum-dev/cli/compare/v4.1.0...v4.2.0
-[4.1.0]: https://github.com/phylum-dev/cli/compare/v4.0.1...v4.1.0
-[4.0.1]: https://github.com/phylum-dev/cli/compare/v4.0.0...v4.0.1
-[4.0.0]: https://github.com/phylum-dev/cli/compare/v3.12.1...v4.0.0
-[3.12.1]: https://github.com/phylum-dev/cli/compare/v3.12.0...v3.12.1
-[3.12.0]: https://github.com/phylum-dev/cli/compare/v3.11.0...v3.12.0
-[3.11.0]: https://github.com/phylum-dev/cli/compare/v3.10.0...v3.11.0
-[3.10.1]: https://github.com/phylum-dev/cli/compare/v3.10.0...v3.10.1
-[3.10.0]: https://github.com/phylum-dev/cli/compare/v3.9.1...v3.10.0
-[3.9.1]: https://github.com/phylum-dev/cli/compare/v3.9.0...v3.9.1
-[3.9.0]: https://github.com/phylum-dev/cli/compare/v3.8.0...v3.9.0
-[3.8.0]: https://github.com/phylum-dev/cli/compare/v3.7.2...v3.8.0
-[3.7.4]: https://github.com/phylum-dev/cli/compare/v3.7.3...v3.7.4
-[3.7.3]: https://github.com/phylum-dev/cli/compare/v3.7.2...v3.7.3
-[3.7.2]: https://github.com/phylum-dev/cli/compare/v3.7.1...v3.7.2
-[3.7.1]: https://github.com/phylum-dev/cli/compare/v3.7.0...v3.7.1
-[3.7.0]: https://github.com/phylum-dev/cli/compare/v3.6.0...v3.7.0
-[3.6.0]: https://github.com/phylum-dev/cli/compare/v3.5.0...v3.6.0
-[3.5.0]: https://github.com/phylum-dev/cli/compare/v3.4.0...v3.5.0
-[3.4.0]: https://github.com/phylum-dev/cli/compare/v3.3.0...v3.4.0
-[3.3.0]: https://github.com/phylum-dev/cli/compare/v3.2.0...v3.3.0
-[3.2.0]: https://github.com/phylum-dev/cli/compare/v3.1.0...v3.2.0
-[3.1.0]: https://github.com/phylum-dev/cli/compare/v3.0.0...v3.1.0
-[3.0.0]: https://github.com/phylum-dev/cli/compare/v2.2.0...v3.0.0
-[2.2.0]: https://github.com/phylum-dev/cli/compare/v2.1.0...v2.2.0
-[2.1.0]: https://github.com/phylum-dev/cli/compare/v2.0.1...v2.1.0
-[2.0.1]: https://github.com/phylum-dev/cli/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/phylum-dev/cli/compare/v1.2.0...v2.0.0
-[1.2.0]: https://github.com/phylum-dev/cli/compare/v1.1.4...v1.2.0
