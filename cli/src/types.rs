@@ -290,17 +290,14 @@ impl From<RiskDomain> for RiskType {
     }
 }
 
-/// The reason for an issue to be ignored.
+/// The user-specified reason for an issue to be ignored.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum IgnoredReason {
     /// It is not ignored.
     False,
-    /// It is ignored because the user thinks it is a false positive.
     FalsePositive,
-    /// It is ignored because the user thinks it is not relevant to them.
     NotRelevant,
-    /// It is ignored for an unspecified reason.
     Other,
 }
 
