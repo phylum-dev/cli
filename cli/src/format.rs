@@ -75,16 +75,16 @@ impl Format for PhylumStatus {
         write_option(writer, "Group", self.group.as_ref());
         write_option(writer, "Project Root", root);
 
-        // Write known lockfiles.
-        let lockfiles_label = style("Lockfiles").blue();
-        if self.lockfiles.is_empty() {
-            let _ = writeln!(writer, "{lockfiles_label}: {}", style("null").italic().green());
+        // Write known dependency files.
+        let depfiles_label = style("Dependency Files").blue();
+        if self.dependency_files.is_empty() {
+            let _ = writeln!(writer, "{depfiles_label}: {}", style("null").italic().green());
         } else {
-            let _ = writeln!(writer, "{lockfiles_label}:");
-            for lockfile in &self.lockfiles {
-                let path = lockfile.path.display();
+            let _ = writeln!(writer, "{depfiles_label}:");
+            for depfile in &self.dependency_files {
+                let path = depfile.path.display();
                 let _ = writeln!(writer, " - {}: {}", style("path").blue(), path);
-                let _ = writeln!(writer, "   {}: {}", style("type").blue(), lockfile.lockfile_type);
+                let _ = writeln!(writer, "   {}: {}", style("type").blue(), depfile.depfile_type);
             }
         }
     }

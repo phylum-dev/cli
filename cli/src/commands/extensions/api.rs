@@ -16,7 +16,6 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op2, Op, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
-use phylum_lockfile::LockfileFormat;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -31,6 +30,7 @@ use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
+use crate::commands::parse::ParsedLockfile;
 #[cfg(unix)]
 use crate::commands::ExitCode;
 #[cfg(unix)]
@@ -40,11 +40,23 @@ use crate::types::{
     PolicyEvaluationResponseRaw,
 };
 
-/// Parsed lockfile content.
-#[derive(Serialize, Deserialize, Debug)]
-struct PackageLock {
-    packages: Vec<PackageDescriptorAndLockfile>,
-    format: LockfileFormat,
+/// Package with its source attached.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+struct PackageWithOrigin {
+    #[serde(flatten)]
+    package: PackageDescriptor,
+    #[serde(alias = "lockfile")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin: Option<String>,
+}
+
+impl From<PackageWithOrigin> for PackageDescriptorAndLockfile {
+    fn from(package: PackageWithOrigin) -> Self {
+        PackageDescriptorAndLockfile {
+            package_descriptor: package.package,
+            lockfile: package.origin,
+        }
+    }
 }
 
 /// New process to be launched.
@@ -139,7 +151,7 @@ struct ProcessOutput {
 #[serde]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    #[serde] packages: Vec<PackageDescriptorAndLockfile>,
+    #[serde] packages: Vec<PackageWithOrigin>,
     #[string] project: Option<String>,
     #[string] group: Option<String>,
     #[string] label: Option<String>,
@@ -158,7 +170,8 @@ async fn analyze(
         },
     };
 
-    let job_id = api.submit_request(&packages, project, label, group.map(String::from)).await?;
+    let api_packages: Vec<_> = packages.into_iter().map(From::from).collect();
+    let job_id = api.submit_request(&api_packages, project, label, group.map(String::from)).await?;
 
     Ok(job_id)
 }
@@ -382,40 +395,42 @@ async fn get_package_details(
     })
 }
 
-/// Parse a lockfile and return the package descriptors contained therein.
+/// Parse a dependency file and return the package descriptors contained
+/// therein.
+///
 /// Equivalent to `phylum parse`.
 #[op2(async)]
 #[serde]
-async fn parse_lockfile(
+async fn parse_depfile(
     op_state: Rc<RefCell<OpState>>,
-    #[string] lockfile: String,
-    #[string] lockfile_type: Option<String>,
+    #[string] depfile: String,
+    #[string] depfile_type: Option<String>,
     generate_lockfiles: Option<bool>,
     sandbox_generation: Option<bool>,
-) -> Result<PackageLock> {
+) -> Result<ParsedLockfile> {
     // Ensure extension has file read-access.
     {
         let mut state = op_state.borrow_mut();
         let permissions = state.borrow_mut::<PermissionsContainer>();
-        permissions.check_read(Path::new(&lockfile), "phylum")?;
+        permissions.check_read(Path::new(&depfile), "phylum")?;
     }
 
     // Get .phylum_project path
     let current_project = phylum_project::get_current_project();
     let project_root = current_project.as_ref().map(|p| p.root());
 
-    // Attempt to parse as requested lockfile type.
+    // Attempt to parse as requested dependency file type.
     let sandbox = sandbox_generation.unwrap_or(true);
     let generate_lockfiles = generate_lockfiles.unwrap_or(true);
-    let parsed = parse::parse_lockfile(
-        lockfile,
+    let parsed = parse::parse_depfile(
+        depfile,
         project_root,
-        lockfile_type.as_deref(),
+        depfile_type.as_deref(),
         sandbox,
         generate_lockfiles,
     )?;
 
-    Ok(PackageLock { packages: parsed.packages, format: parsed.format })
+    Ok(parsed)
 }
 
 /// Run a command inside a sandbox.
@@ -550,22 +565,22 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
         analyze::DECL,
+        api_base_url::DECL,
         check_packages::DECL,
         check_packages_raw::DECL,
-        get_user_info::DECL,
-        get_access_token::DECL,
-        get_refresh_token::DECL,
-        get_job_status::DECL,
-        get_job_status_raw::DECL,
-        get_current_project::DECL,
-        get_groups::DECL,
-        get_projects::DECL,
         create_project::DECL,
         delete_project::DECL,
+        get_access_token::DECL,
+        get_current_project::DECL,
+        get_groups::DECL,
+        get_job_status::DECL,
+        get_job_status_raw::DECL,
         get_package_details::DECL,
-        parse_lockfile::DECL,
-        run_sandboxed::DECL,
+        get_projects::DECL,
+        get_refresh_token::DECL,
+        get_user_info::DECL,
         op_permissions::DECL,
-        api_base_url::DECL,
+        parse_depfile::DECL,
+        run_sandboxed::DECL,
     ]
 }

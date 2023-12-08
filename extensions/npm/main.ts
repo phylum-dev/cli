@@ -235,7 +235,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseLockfile(lockfilePath, "npm");
+    lockfile = await PhylumApi.parseDependencyFile(lockfilePath, "npm");
   } catch (_e) {
     console.warn(`[${yellow("phylum")}] No lockfile created.\n`);
     return;

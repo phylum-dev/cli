@@ -14,8 +14,8 @@ The default response will provide an overall summary result to indicate whether 
 
 ```shellsession
 ❯ phylum analyze
-✅ Successfully parsed lockfile "requirements.txt" as type: pip
-✅ Successfully parsed lockfile "package-lock.json" as type: npm
+✅ Successfully parsed dependency file "requirements.txt" as type "pip"
+✅ Successfully parsed dependency file "package-lock.json" as type "npm"
 ✅ Job ID: 3accba15-b0dc-43d2-b8ce-f5700360e3bd
 
 Phylum Supply Chain Risk Analysis — FAILURE

@@ -322,19 +322,20 @@ pub fn add_subcommands(command: Command) -> Command {
         )
         .subcommand(Command::new("ping").about("Ping the remote system to verify it is available"))
         .subcommand(
-            Command::new("parse").about("Parse lockfiles and output their packages as JSON").args(
-                &[
-                    Arg::new("lockfile")
-                        .value_name("LOCKFILE")
+            Command::new("parse")
+                .about("Parse dependency files and output their packages as JSON")
+                .args(&[
+                    Arg::new("depfile")
+                        .value_name("DEPENDENCY_FILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lockfiles to submit")
+                        .help("Path to the dependency file to parse")
                         .action(ArgAction::Append),
-                    Arg::new("lockfile-type")
+                    Arg::new("type")
                         .short('t')
-                        .long("lockfile-type")
+                        .long("type")
                         .value_name("TYPE")
-                        .requires("lockfile")
-                        .help("Lockfile type used for all lockfiles (default: auto)")
+                        .requires("depfile")
+                        .help("Dependency file type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                     Arg::new("skip-sandbox")
                         .action(ArgAction::SetTrue)
@@ -344,8 +345,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .action(ArgAction::SetTrue)
                         .long("no-generation")
                         .help("Disable generation of lockfiles from manifests"),
-                ],
-            ),
+                ]),
         )
         .subcommand(
             Command::new("analyze")
@@ -372,17 +372,17 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("GROUP_NAME")
                         .help("Specify a group to use for analysis")
                         .requires("project"),
-                    Arg::new("lockfile")
-                        .value_name("LOCKFILE")
+                    Arg::new("depfile")
+                        .value_name("DEPENDENCY_FILE")
                         .value_hint(ValueHint::FilePath)
-                        .help("The package lockfiles to submit")
+                        .help("Path to the dependency file to submit")
                         .action(ArgAction::Append),
-                    Arg::new("lockfile-type")
+                    Arg::new("type")
                         .short('t')
-                        .long("lockfile-type")
+                        .long("type")
                         .value_name("TYPE")
-                        .requires("lockfile")
-                        .help("Lockfile type used for all lockfiles (default: auto)")
+                        .requires("depfile")
+                        .help("Dependency file type used for all lockfiles (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                     Arg::new("base")
                         .short('b')
@@ -538,18 +538,18 @@ pub fn add_subcommands(command: Command) -> Command {
                     .long("group")
                     .value_name("GROUP_NAME")
                     .help("Group which will be the owner of the project"),
-                Arg::new("lockfile")
-                    .short('l')
-                    .long("lockfile")
-                    .value_name("LOCKFILE")
-                    .help("Project-relative lockfile path")
+                Arg::new("depfile")
+                    .short('d')
+                    .long("dependency-file")
+                    .value_name("DEPENDENCY_FILE")
+                    .help("Project-relative dependency file path")
                     .action(ArgAction::Append),
-                Arg::new("lockfile-type")
+                Arg::new("type")
                     .short('t')
-                    .long("lockfile-type")
+                    .long("type")
                     .value_name("TYPE")
-                    .requires("lockfile")
-                    .help("Lockfile type used for all lockfiles (default: auto)")
+                    .requires("depfile")
+                    .help("Dependency file type used for all lockfiles (default: auto)")
                     .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
                 Arg::new("force")
                     .short('f')
@@ -571,7 +571,7 @@ pub fn add_subcommands(command: Command) -> Command {
                 .help("Produce output in json format (default: false)")]),
         )
         .subcommand(
-            Command::new("find-lockable-files")
+            Command::new("find-dependency-files")
                 .about("Find all lockfile and manifest paths")
                 .hide(true),
         )

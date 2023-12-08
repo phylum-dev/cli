@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use anyhow::{anyhow, Result};
-use phylum_project::{LockfileConfig, ProjectConfig};
+use phylum_project::{DepfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -178,43 +178,44 @@ pub fn read_configuration(path: &Path) -> Result<Config> {
     Ok(config)
 }
 
-/// Get lockfiles from CLI, falling back to the current project when missing.
-pub fn lockfiles(
+/// Get dependency files from CLI, falling back to the current project when
+/// missing.
+pub fn depfiles(
     matches: &clap::ArgMatches,
     project: Option<&ProjectConfig>,
-) -> Result<Vec<LockfileConfig>> {
-    let cli_lockfile_type = matches.try_get_one::<String>("lockfile-type").unwrap_or(None);
-    let cli_lockfiles = matches.try_get_many::<String>("lockfile");
+) -> Result<Vec<DepfileConfig>> {
+    let cli_depfile_type = matches.try_get_one::<String>("type").unwrap_or(None);
+    let cli_depfiles = matches.try_get_many::<String>("depfile");
 
-    match cli_lockfiles {
-        Ok(Some(cli_lockfiles)) => {
-            let lockfile_type = cli_lockfile_type.cloned().unwrap_or_else(|| "auto".into());
-            Ok(cli_lockfiles
-                .map(|lockfile| LockfileConfig::new(lockfile, lockfile_type.clone()))
+    match cli_depfiles {
+        Ok(Some(cli_depfiles)) => {
+            let depfile_type = cli_depfile_type.cloned().unwrap_or_else(|| "auto".into());
+            Ok(cli_depfiles
+                .map(|depfile| DepfileConfig::new(depfile, depfile_type.clone()))
                 .collect())
         },
         _ => {
             // Try the project file first.
-            let project_lockfiles = project.map(|project| project.lockfiles());
+            let project_depfiles = project.map(|project| project.depfiles());
 
             // Fallback to walking the directory.
-            let lockfiles = project_lockfiles.unwrap_or_else(|| find_lockable_files("."));
+            let depfiles = project_depfiles.unwrap_or_else(|| find_depfiles("."));
 
-            // Ask for explicit lockfile if none were found.
-            if lockfiles.is_empty() {
-                return Err(anyhow!("Missing lockfile parameter"));
+            // Ask for explicit dependency file if none were found.
+            if depfiles.is_empty() {
+                return Err(anyhow!("Missing dependency file parameter"));
             }
 
-            Ok(lockfiles)
+            Ok(depfiles)
         },
     }
 }
 
-/// Find lockfiles and manifests at or below the specified directory.
-fn find_lockable_files(directory: impl AsRef<Path>) -> Vec<LockfileConfig> {
-    phylum_lockfile::find_lockable_files_at(directory)
+/// Find dependency files at or below the specified directory.
+fn find_depfiles(directory: impl AsRef<Path>) -> Vec<DepfileConfig> {
+    phylum_lockfile::find_depfiles_at(directory)
         .drain(..)
-        .map(|(path, format)| LockfileConfig::new(path, format.to_string()))
+        .map(|(path, format)| DepfileConfig::new(path, format.to_string()))
         .collect()
 }
 
