@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Add CVE data to `issueDetails` entries when `--json` flag is used for `phylum package`
+
 ### Changed
 
 - Renamed multiple CLI arguments to avoid the term `lockfile` in places where

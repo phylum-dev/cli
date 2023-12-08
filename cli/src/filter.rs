@@ -3,7 +3,9 @@ use std::iter::FromIterator;
 use std::str::FromStr;
 
 use phylum_types::types::job::JobStatusResponse;
-use phylum_types::types::package::{Package, PackageStatusExtended, RiskLevel, RiskType};
+use phylum_types::types::package::PackageStatusExtended;
+
+use crate::types::{Package, RiskDomain, RiskLevel, RiskType};
 
 /// Remove issues based on a filter.
 pub trait FilterIssues {
@@ -26,8 +28,13 @@ impl<T: FilterIssues> FilterIssues for JobStatusResponse<T> {
 
 impl FilterIssues for PackageStatusExtended {
     fn filter(&mut self, filter: &Filter) {
-        self.issues
-            .retain(|issue| !should_filter_issue(filter, issue.issue.severity, issue.issue.domain));
+        self.issues.retain(|issue| {
+            !should_filter_issue(
+                filter,
+                issue.issue.severity.into(),
+                RiskDomain::from(issue.issue.domain),
+            )
+        });
     }
 }
 
@@ -116,9 +123,8 @@ impl FromStr for Filter {
 
 #[cfg(test)]
 mod tests {
-    use phylum_types::types::package::Issue;
-
     use super::*;
+    use crate::types::Issue;
 
     #[test]
     fn it_can_parse_filter_levels() {
