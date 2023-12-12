@@ -95,7 +95,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
             },
         };
 
-        pkgs.append(&mut parsed_lockfile.packages);
+        pkgs.append(&mut parsed_lockfile.api_packages());
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
