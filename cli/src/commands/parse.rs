@@ -82,7 +82,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
         );
 
         // Map dedicated exit code for failure due to disabled generation.
-        let mut parsed_lockfile = match parse_result {
+        let parsed_lockfile = match parse_result {
             Ok(parsed_lockfile) => parsed_lockfile,
             Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
                 print_user_failure!("Could not parse manifest: {}", err);
@@ -95,7 +95,7 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
             },
         };
 
-        pkgs.append(&mut parsed_lockfile.packages);
+        pkgs.append(&mut parsed_lockfile.api_packages());
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;
