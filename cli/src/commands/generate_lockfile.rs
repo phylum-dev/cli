@@ -128,6 +128,7 @@ fn lockfile_generation_sandbox(canonical_manifest_path: &Path) -> Result<Birdcag
     )?;
     // Gradle.
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/opt/gradle".into()))?;
     permissions::add_exception(
         &mut birdcage,
         Exception::Read("/usr/share/java/gradle/lib".into()),
