@@ -67,7 +67,7 @@ pub fn parse_depfile(
     _generation_path: Option<PathBuf>,
 ) -> Result<ParsedLockfile, ParseError> {
     // Crate a fake relative path.
-    let pseudopath = file_name.map(|name| PathBuf::from(name));
+    let pseudopath = file_name.map(PathBuf::from);
 
     // Try to determine the dependency file format.
     let format = format.or_else(|| pseudopath.as_ref().and_then(crate::get_path_format));
@@ -110,8 +110,8 @@ pub fn parse_depfile(
     // Return the original lockfile parsing error.
     match lockfile_error {
         // Report parsing errors only for lockfiles.
-        Some(err) if !maybe_manifest => return Err(err.into()),
-        _ => return Err(ParseError::ManifestWithoutGeneration(id.into())),
+        Some(err) if !maybe_manifest => Err(err),
+        _ => Err(ParseError::ManifestWithoutGeneration(id.into())),
     }
 }
 
@@ -142,7 +142,7 @@ fn generate_lockfile(
     // Find the generator for this format.
     let generator = match parser.generator() {
         Some(generator) => generator,
-        None => return Err(anyhow!("unsupported manifest file {id:?}").into()),
+        None => return Err(anyhow!("unsupported manifest file {id:?}")),
     };
 
     eprintln!("Generating lockfile for manifest {id:?} using {format:?}…");
