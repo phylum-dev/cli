@@ -30,8 +30,12 @@ pub struct ParsedLockfile {
 }
 
 impl ParsedLockfile {
-    fn new(id: String, format: LockfileFormat, packages: Vec<PackageDescriptor>) -> Self {
-        Self { id, packages, format }
+    fn new(
+        id: impl Into<String>,
+        format: LockfileFormat,
+        packages: Vec<PackageDescriptor>,
+    ) -> Self {
+        Self { id: id.into(), packages, format }
     }
 
     /// Convert packages to API's expected format.
@@ -48,15 +52,19 @@ impl ParsedLockfile {
 
 /// Parse a dependency file.
 ///
+/// The `_generation_path` must point to the manifest on the filesystem if
+/// lockfile generation should be performed. Use `None` to disable lockfile
+/// generation.
+///
 /// # Features
 ///
 /// Parsing manifests requires the `generator` feature.
 pub fn parse_depfile(
-    contents: String,
+    contents: &str,
     file_name: Option<&OsStr>,
     format: Option<LockfileFormat>,
-    id: String,
-    _generate_lockfiles: bool,
+    id: &str,
+    _generation_path: Option<PathBuf>,
 ) -> Result<ParsedLockfile, ParseError> {
     // Crate a fake relative path.
     let pseudopath = file_name.map(|name| PathBuf::from(name));
@@ -67,7 +75,7 @@ pub fn parse_depfile(
     // Attempt to parse with all known parsers as fallback.
     let format = match format {
         Some(format) => format,
-        None => return Ok(try_get_packages(id, &contents)?),
+        None => return Ok(try_get_packages(id, contents)?),
     };
 
     // Parse with the identified parser.
@@ -80,7 +88,7 @@ pub fn parse_depfile(
     let mut lockfile_error = None;
     if maybe_lockfile {
         // Parse lockfile content.
-        let packages = parse_lockfile_content(&contents, parser);
+        let packages = parse_lockfile_content(contents, parser);
 
         match packages {
             Ok(packages) => return Ok(ParsedLockfile::new(id, format, packages)),
@@ -95,20 +103,20 @@ pub fn parse_depfile(
     // Generate lockfile if path might be a manifest and feature and option are
     // enabled.
     #[cfg(feature = "generator")]
-    if _generate_lockfile && maybe_manifest {
-        return generate_lockfile();
+    if let Some(generation_path) = _generation_path.filter(|_| maybe_manifest) {
+        return Ok(generate_lockfile(&generation_path, id, format, parser)?);
     }
 
     // Return the original lockfile parsing error.
     match lockfile_error {
         // Report parsing errors only for lockfiles.
         Some(err) if !maybe_manifest => return Err(err.into()),
-        _ => return Err(ParseError::ManifestWithoutGeneration(id)),
+        _ => return Err(ParseError::ManifestWithoutGeneration(id.into())),
     }
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(id: String, contents: &str) -> Result<ParsedLockfile, anyhow::Error> {
+fn try_get_packages(id: &str, contents: &str) -> Result<ParsedLockfile, anyhow::Error> {
     for format in LockfileFormat::iter() {
         let parser = format.parser();
         if let Some(packages) = parser.parse(contents).ok().filter(|pkgs| !pkgs.is_empty()) {
@@ -127,7 +135,7 @@ fn try_get_packages(id: String, contents: &str) -> Result<ParsedLockfile, anyhow
 #[cfg(feature = "generator")]
 fn generate_lockfile(
     path: &Path,
-    id: String,
+    id: &str,
     format: LockfileFormat,
     parser: &dyn Parse,
 ) -> Result<ParsedLockfile, anyhow::Error> {
@@ -144,7 +152,7 @@ fn generate_lockfile(
     let generated_lockfile = generator
             .generate_lockfile(&canonical_path)
             .context("Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/docs/lockfile_generation");
+                https://docs.phylum.io/docs/lockfile_generation")?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;
