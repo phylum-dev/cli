@@ -83,7 +83,7 @@ pub fn handle_parse_sandboxed(matches: &ArgMatches) -> CommandResult {
 
 /// Reexecute `parse-sandboxed` inside the sandbox.
 fn spawn_sandbox(
-    path: &PathBuf,
+    path: &Path,
     id: &str,
     lockfile_type: Option<&String>,
     generate_lockfile: bool,
@@ -119,7 +119,7 @@ fn child_parse_depfile(
 
     // Parse dependency file.
     let parse_result =
-        phylum_lockfile::parse_depfile(&contents, file_name, lockfile_type, &id, generation_path);
+        phylum_lockfile::parse_depfile(&contents, file_name, lockfile_type, id, generation_path);
 
     // Map lockfile generation failure to specific exit code.
     let parsed = match parse_result {
