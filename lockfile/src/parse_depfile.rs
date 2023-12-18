@@ -24,13 +24,14 @@ pub enum ParseError {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ParsedLockfile {
     /// User-facing lockfile identifier (i.e. a file path or name).
+    #[serde(alias = "path")]
     pub id: String,
     pub packages: Vec<PackageDescriptor>,
     pub format: LockfileFormat,
 }
 
 impl ParsedLockfile {
-    fn new(
+    pub fn new(
         id: impl Into<String>,
         format: LockfileFormat,
         packages: Vec<PackageDescriptor>,
@@ -202,4 +203,48 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
             })
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::*;
+
+    #[test]
+    fn it_can_identify_lock_file_types() {
+        let test_cases = [
+            ("../tests/fixtures/Gemfile.lock", LockfileFormat::Gem),
+            ("../tests/fixtures/yarn-v1.lock", LockfileFormat::Yarn),
+            ("../tests/fixtures/yarn.lock", LockfileFormat::Yarn),
+            ("../tests/fixtures/package-lock.json", LockfileFormat::Npm),
+            ("../tests/fixtures/package-lock-v6.json", LockfileFormat::Npm),
+            ("../tests/fixtures/packages.lock.json", LockfileFormat::NugetLock),
+            ("../tests/fixtures/gradle.lockfile", LockfileFormat::Gradle),
+            ("../tests/fixtures/effective-pom.xml", LockfileFormat::Maven),
+            ("../tests/fixtures/workspace-effective-pom.xml", LockfileFormat::Maven),
+            ("../tests/fixtures/requirements-locked.txt", LockfileFormat::Pip),
+            ("../tests/fixtures/Pipfile.lock", LockfileFormat::Pipenv),
+            ("../tests/fixtures/poetry.lock", LockfileFormat::Poetry),
+            ("../tests/fixtures/poetry_v2.lock", LockfileFormat::Poetry),
+            ("../tests/fixtures/go.sum", LockfileFormat::Go),
+            ("../tests/fixtures/Cargo_v1.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/Cargo_v2.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/Cargo_v3.lock", LockfileFormat::Cargo),
+            ("../tests/fixtures/spdx-2.2.spdx", LockfileFormat::Spdx),
+            ("../tests/fixtures/spdx-2.2.spdx.json", LockfileFormat::Spdx),
+            ("../tests/fixtures/spdx-2.3.spdx.json", LockfileFormat::Spdx),
+            ("../tests/fixtures/spdx-2.3.spdx.yaml", LockfileFormat::Spdx),
+            ("../tests/fixtures/bom.1.3.json", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.1.3.xml", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.json", LockfileFormat::CycloneDX),
+            ("../tests/fixtures/bom.xml", LockfileFormat::CycloneDX),
+        ];
+
+        for (path, expected_format) in test_cases {
+            let contents = fs::read_to_string(path).unwrap();
+            let parsed = try_get_packages("id", &contents).unwrap();
+            assert_eq!(parsed.format, expected_format, "{}", path);
+        }
+    }
 }

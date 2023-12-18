@@ -576,20 +576,28 @@ pub fn add_subcommands(command: Command) -> Command {
                 .hide(true),
         )
         .subcommand(
-            Command::new("generate-lockfile")
+            Command::new("parse-sandboxed")
                 .args(&[
-                    Arg::new("lockfile-type")
+                    Arg::new("depfile")
+                        .value_name("DEPENDENCY_FILE")
+                        .required(true)
+                        .help("Canonical dependency file path"),
+                    Arg::new("id")
+                        .value_name("ID")
+                        .required(true)
+                        .help("Unique dependency file identifier"),
+                    Arg::new("type")
+                        .long("type")
                         .value_name("TYPE")
-                        .required(true)
-                        .help("Lockfile type whose generator will be used")
+                        .help("Dependency file type used (default: auto)")
                         .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-                    Arg::new("manifest")
-                        .value_name("MANIFEST")
-                        .required(true)
-                        .help("Canonicalized manifest path"),
+                    Arg::new("generate-lockfile")
+                        .long("generate-lockfile")
+                        .help("Whether lockfile generation should be performed")
+                        .action(ArgAction::SetTrue),
                     Arg::new("skip-sandbox")
                         .long("skip-sandbox")
-                        .help("Generate lockfile, without creating a new sandbox")
+                        .help("Skip sandbox initialization")
                         .action(ArgAction::SetTrue),
                 ])
                 .about("Run lockfile generation inside sandbox and write it to STDOUT")

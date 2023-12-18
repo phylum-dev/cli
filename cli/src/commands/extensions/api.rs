@@ -16,6 +16,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use deno_runtime::deno_core::{op2, Op, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
+use phylum_lockfile::ParsedLockfile;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
@@ -30,7 +31,6 @@ use crate::auth::UserInfo;
 use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
-use crate::commands::parse::ParsedLockfile;
 #[cfg(unix)]
 use crate::commands::ExitCode;
 #[cfg(unix)]

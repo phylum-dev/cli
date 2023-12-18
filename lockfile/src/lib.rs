@@ -22,7 +22,7 @@ pub use crate::cyclonedx::CycloneDX;
 pub use crate::golang::GoSum;
 pub use crate::java::{GradleLock, Pom};
 pub use crate::javascript::{PackageLock, Pnpm, YarnLock};
-pub use crate::parse_depfile::parse_depfile;
+pub use crate::parse_depfile::{parse_depfile, ParseError, ParsedLockfile};
 pub use crate::python::{PipFile, Poetry, PyRequirements};
 pub use crate::ruby::GemLock;
 pub use crate::spdx::Spdx;

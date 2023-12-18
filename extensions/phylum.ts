@@ -17,7 +17,7 @@ export type Package = {
 export type DependencyFile = {
   packages: Package[];
   format: string;
-  path: string;
+  id: string;
 };
 
 export type ProcessOutput = {
@@ -437,7 +437,7 @@ export class PhylumApi {
    * ```
    * {
    *   format: "npm",
-   *   path: "package-lock.json",
+   *   id: "package-lock.json",
    *   packages: [
    *     { name: "accepts", version: "1.3.8", type: "npm" },
    *     { name: "ms", version: "2.0.0", type: "npm" },
