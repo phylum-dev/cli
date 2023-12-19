@@ -1,7 +1,5 @@
 ---
 title: Lockfile Generation
-category: 6255e67693d5200013b1fa41
-hidden: false
 ---
 
 The Phylum CLI can generate a lockfile when it is given a manifest file.

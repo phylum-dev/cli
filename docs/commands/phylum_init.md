@@ -1,7 +1,5 @@
 ---
 title: phylum init
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Setup a new Phylum project

@@ -1,7 +1,5 @@
 ---
 title: Quickstart
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](https://docs.phylum.io/docs/alternate_install) for more options.

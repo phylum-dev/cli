@@ -1,7 +1,5 @@
 ---
 title: phylum update
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Update to the latest release of the Phylum CLI

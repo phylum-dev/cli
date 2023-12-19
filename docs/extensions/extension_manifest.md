@@ -1,7 +1,5 @@
 ---
 title: Extension Manifest Format
-category: 62c5cb137dbdad00536291a6
-hidden: false
 ---
 
 ## Overview
@@ -9,27 +7,19 @@ hidden: false
 Extension metadata is defined in the `PhylumExt.toml` file, using the [TOML]
 format. Manifest files consist of the following sections:
 
-- [`name`] — Extension name
-- [`description`] - Description of the extension
-- [`entry_point`] — Execution entry point
-- [`[permissions]`][perms] — Permissions required for execution
-  - [`read`][read] — Required read path permissions
-  - [`write`][write] — Required write path permissions
-  - [`env`][env] — Required environment variable permissions
-  - [`run`][run] — Required process execution permissions
-  - [`net`][net] — Required network domain permissions
+- [`name`](#name) — Extension name
+- [`description`](#description) - Description of the extension
+- [`entry_point`](#entry-point) — Execution entry point
+- [`[permissions]`](#permissions) — Permissions required for execution
+  - [`read`](#read) — Required read path permissions
+  - [`write`](#write) — Required write path permissions
+  - [`env`](#env) — Required environment variable permissions
+  - [`run`](#run) — Required process execution permissions
+  - [`unsandboxed_run`](#unsandboxed-run) - Required executables to run outside
+    the sandbox
+  - [`net`](#net) — Required network domain permissions
 
 [TOML]: https://toml.io
-[`name`]: https://docs.phylum.io/docs/extension_manifest#name
-[`description`]: https://docs.phylum.io/docs/extension_manifest#description
-[`entry_point`]: https://docs.phylum.io/docs/extension_manifest#entry-point
-[perms]: https://docs.phylum.io/docs/extension_manifest#permissions
-[read]: https://docs.phylum.io/docs/extension_manifest#read
-[write]: https://docs.phylum.io/docs/extension_manifest#write
-[env]: https://docs.phylum.io/docs/extension_manifest#env
-[run]: https://docs.phylum.io/docs/extension_manifest#run
-[unsandboxed_run]: https://docs.phylum.io/docs/extension_manifest#unsandboxed-run
-[net]: https://docs.phylum.io/docs/extension_manifest#net
 
 ## Name
 

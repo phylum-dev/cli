@@ -1,7 +1,5 @@
 ---
 title: phylum parse
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Parse dependency files and output their packages as JSON

@@ -1,7 +1,5 @@
 ---
 title: phylum auth
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Manage authentication, registration, and API keys

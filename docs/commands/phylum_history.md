@@ -1,7 +1,5 @@
 ---
 title: phylum history
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Return information about historical jobs

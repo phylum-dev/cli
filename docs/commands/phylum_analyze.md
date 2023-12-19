@@ -1,7 +1,5 @@
 ---
 title: phylum analyze
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Submit a request for analysis to the processing system

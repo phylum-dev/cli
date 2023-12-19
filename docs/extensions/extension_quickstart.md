@@ -1,7 +1,6 @@
 ---
 title: Extension Quickstart
-category: 62c5cb137dbdad00536291a6
-hidden: false
+custom_edit_url: https://github.com/phylum-dev/cli/tree/main/docs/extensions/extension_quickstart.md
 ---
 
 ## Creating an extension

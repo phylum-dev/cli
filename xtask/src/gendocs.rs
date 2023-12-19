@@ -17,8 +17,6 @@ const TEMPLATE_DIR: &str = "./doc_templates";
 /// File header inserted at the top of each page.
 const HEADER: &str = "---
 title: {PH-TITLE}
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---";
 
 /// Generate Phylum CLI documentation.

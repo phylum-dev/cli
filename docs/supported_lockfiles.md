@@ -1,7 +1,5 @@
 ---
 title: Supported Lockfiles
-category: 6255e67693d5200013b1fa41
-hidden: false
 ---
 
 The Phylum CLI supports processing many different lockfiles:

@@ -1,7 +1,5 @@
 ---
 title: Extension Example
-category: 62c5cb137dbdad00536291a6
-hidden: false
 ---
 
 In this chapter, we'll go over a simple real-world example of what a Phylum CLI

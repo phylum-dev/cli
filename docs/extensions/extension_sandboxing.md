@@ -1,7 +1,5 @@
 ---
 title: Extension Sandboxing
-category: 62c5cb137dbdad00536291a6
-hidden: false
 ---
 
 Phylum's CLI extensions allow developers to impose additional restrictions when

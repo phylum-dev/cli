@@ -1,7 +1,5 @@
 ---
 title: Direct Phylum API Requests
-category: 62c5cb137dbdad00536291a6
-hidden: false
 ---
 
 ## Phylum REST API

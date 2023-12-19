@@ -1,7 +1,5 @@
 ---
 title: phylum group
-category: 6255e67693d5200013b1fa3e
-hidden: false
 ---
 
 Interact with user groups

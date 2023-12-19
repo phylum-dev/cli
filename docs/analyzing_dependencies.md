@@ -1,7 +1,5 @@
 ---
 title: Analyzing Dependencies
-category: 6255e67693d5200013b1fa41
-hidden: false
 ---
 
 After setting up a Phylum [project](https://docs.phylum.io/docs/create_project), you can begin analysis by running:
