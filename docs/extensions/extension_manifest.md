@@ -1,6 +1,4 @@
----
-title: Extension Manifest Format
----
+# Extension Manifest Format
 
 ## Overview
 

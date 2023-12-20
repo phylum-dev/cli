@@ -1,6 +1,4 @@
----
-title: phylum project link
----
+# phylum project link
 
 Link a repository to a project
 
@@ -8,12 +6,12 @@ Link a repository to a project
 Usage: phylum project link [OPTIONS] <NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<NAME>`
 &emsp; Name of the project
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group owning the project
@@ -27,7 +25,7 @@ Usage: phylum project link [OPTIONS] <NAME>
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Link current folder to an existing project named 'sample'

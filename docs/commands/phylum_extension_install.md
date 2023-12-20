@@ -1,6 +1,4 @@
----
-title: phylum extension install
----
+# phylum extension install
 
 Install extension
 
@@ -8,11 +6,11 @@ Install extension
 Usage: phylum extension install [OPTIONS] <PATH>
 ```
 
-### Arguments
+## Arguments
 
 `<PATH>`
 
-### Options
+## Options
 
 `-y`, `--yes`
 &emsp; Accept permissions and overwrite existing extensions (same as \`--overwrite --accept-permissions\`)
@@ -32,7 +30,7 @@ Usage: phylum extension install [OPTIONS] <PATH>
 `-h`, `--help`
 &emsp; Print help
 
-### Details
+## Details
 
 The extension will be installed under `$XDG_DATA_HOME/phylum/extensions/<EXT_NAME>`.
 If `$XDG_DATA_HOME` is not set, it will default to `$HOME/.local/share/phylum/extensions/<EXT_NAME>`.

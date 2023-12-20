@@ -1,6 +1,4 @@
----
-title: Extension Example
----
+# Extension Example
 
 In this chapter, we'll go over a simple real-world example of what a Phylum CLI
 extension might look like.

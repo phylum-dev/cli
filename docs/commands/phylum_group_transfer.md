@@ -1,6 +1,4 @@
----
-title: phylum group transfer
----
+# phylum group transfer
 
 Transfer group ownership between users
 
@@ -8,12 +6,12 @@ Transfer group ownership between users
 Usage: phylum group transfer [OPTIONS] --group <GROUP> <USER>
 ```
 
-### Arguments
+## Arguments
 
 `<USER>`
 &emsp; User the group ownership will be transferred to
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP>`
 &emsp; Group to transfer

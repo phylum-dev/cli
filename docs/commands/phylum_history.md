@@ -1,6 +1,4 @@
----
-title: phylum history
----
+# phylum history
 
 Return information about historical jobs
 
@@ -8,12 +6,12 @@ Return information about historical jobs
 Usage: phylum history [OPTIONS] [JOB_ID]
 ```
 
-### Arguments
+## Arguments
 
 `[JOB_ID]`
 &emsp; The job id to query
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
@@ -33,7 +31,7 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # List the last 30 analysis runs

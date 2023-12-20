@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # Add user `demo@phylum.io` to the `sample` group

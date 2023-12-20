@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # Supply the token directly on the command line

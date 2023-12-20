@@ -1,6 +1,4 @@
----
-title: Extension API
----
+# Extension API
 
 ## Overview
 

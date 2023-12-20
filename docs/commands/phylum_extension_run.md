@@ -1,6 +1,4 @@
----
-title: phylum extension run
----
+# phylum extension run
 
 Run an extension from a directory
 
@@ -8,14 +6,14 @@ Run an extension from a directory
 Usage: phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 ```
 
-### Arguments
+## Arguments
 
 `<PATH>`
 
 `[OPTIONS]`
 &emsp; Extension parameters
 
-### Options
+## Options
 
 `-y`, `--yes`
 &emsp; Automatically accept requested permissions
@@ -26,14 +24,14 @@ Usage: phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 `-q`, `--quiet`...
 &emsp; Reduce the level of verbosity (the maximum is -qq)
 
-### Details
+## Details
 
 The extension will be run without prior installation.
 
 The first set of options are for the `run` command. The second set of options
 are for the extension.
 
-### Examples
+## Examples
 
 ```sh
 phylum extension run --yes ./my-extension --help

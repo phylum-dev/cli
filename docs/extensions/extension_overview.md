@@ -1,6 +1,4 @@
----
-title: Phylum CLI Extensions
----
+# Phylum CLI Extensions
 
 ## Overview
 

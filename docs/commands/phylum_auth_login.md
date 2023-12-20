@@ -1,6 +1,4 @@
----
-title: phylum auth login
----
+# phylum auth login
 
 Login to an existing account
 
@@ -8,7 +6,7 @@ Login to an existing account
 Usage: phylum auth login [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-r`, `--reauth`
 &emsp; Force a login prompt

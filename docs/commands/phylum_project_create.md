@@ -1,6 +1,4 @@
----
-title: phylum project create
----
+# phylum project create
 
 Create a new project
 
@@ -8,12 +6,12 @@ Create a new project
 Usage: phylum project create [OPTIONS] <NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<NAME>`
 &emsp; Name of the project
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group which will be the owner of the project
@@ -30,7 +28,7 @@ Usage: phylum project create [OPTIONS] <NAME>
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Create a new project named 'sample'

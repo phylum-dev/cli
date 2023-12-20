@@ -1,6 +1,4 @@
----
-title: phylum update
----
+# phylum update
 
 Update to the latest release of the Phylum CLI
 
@@ -8,7 +6,7 @@ Update to the latest release of the Phylum CLI
 Usage: phylum update [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

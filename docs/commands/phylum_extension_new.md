@@ -1,6 +1,4 @@
----
-title: phylum extension new
----
+# phylum extension new
 
 Create a new extension
 
@@ -8,11 +6,11 @@ Create a new extension
 Usage: phylum extension new [OPTIONS] <PATH>
 ```
 
-### Arguments
+## Arguments
 
 `<PATH>`
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -23,7 +21,7 @@ Usage: phylum extension new [OPTIONS] <PATH>
 `-h`, `--help`
 &emsp; Print help
 
-### Details
+## Details
 
 This command will create a "Hello, World!" extension skeleton that can be
 modified for a specific use. See the [Extension Quickstart] guide for more

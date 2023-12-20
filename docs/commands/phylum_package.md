@@ -1,6 +1,4 @@
----
-title: phylum package
----
+# phylum package
 
 Retrieve the details of a specific package
 
@@ -8,7 +6,7 @@ Retrieve the details of a specific package
 Usage: phylum package [OPTIONS] <TYPE> <NAME> <VERSION>
 ```
 
-### Arguments
+## Arguments
 
 `<TYPE>`
 &emsp; Package ecosystem type
@@ -20,7 +18,7 @@ Usage: phylum package [OPTIONS] <TYPE> <NAME> <VERSION>
 `<VERSION>`
 &emsp; The version of the package.
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
@@ -45,14 +43,14 @@ Usage: phylum package [OPTIONS] <TYPE> <NAME> <VERSION>
 `-h`, `--help`
 &emsp; Print help
 
-### Details
+## Details
 
 If the requested package has not yet been analyzed by Phylum, it will
 automatically be submitted for [processing].
 
 [processing]: ../../knowledge_base/faq.md
 
-### Examples
+## Examples
 
 ```sh
 # Query specific package details

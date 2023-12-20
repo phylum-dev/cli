@@ -1,6 +1,4 @@
----
-title: phylum auth status
----
+# phylum auth status
 
 Return the current authentication status
 
@@ -8,7 +6,7 @@ Return the current authentication status
 Usage: phylum auth status [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

@@ -1,6 +1,4 @@
----
-title: phylum group delete
----
+# phylum group delete
 
 Delete a group
 
@@ -8,12 +6,12 @@ Delete a group
 Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<GROUP_NAME>`
 &emsp; Name for the group to be deleted
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -24,7 +22,7 @@ Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Delete an existing group named 'sample'

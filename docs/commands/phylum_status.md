@@ -1,6 +1,4 @@
----
-title: phylum status
----
+# phylum status
 
 Get Phylum project details
 
@@ -8,7 +6,7 @@ Get Phylum project details
 Usage: phylum status [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)

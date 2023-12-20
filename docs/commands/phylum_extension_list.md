@@ -1,6 +1,4 @@
----
-title: phylum extension list
----
+# phylum extension list
 
 List installed extensions
 
@@ -8,7 +6,7 @@ List installed extensions
 Usage: phylum extension list [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

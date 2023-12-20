@@ -1,6 +1,4 @@
----
-title: phylum auth token
----
+# phylum auth token
 
 Return the current authentication token
 
@@ -8,7 +6,7 @@ Return the current authentication token
 Usage: phylum auth token [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-b`, `--bearer`
 &emsp; Output the short-lived bearer token for the Phylum API
@@ -22,7 +20,7 @@ Usage: phylum auth token [OPTIONS]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Output long-lived refresh token

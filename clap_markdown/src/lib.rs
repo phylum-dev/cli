@@ -72,7 +72,7 @@ impl Markdown {
         // Add positional arguments.
         let mut positionals = cmd.get_positionals().flat_map(generate_argument).peekable();
         if positionals.peek().is_some() {
-            let _ = writeln!(markdown, "\n### Arguments");
+            let _ = writeln!(markdown, "\n## Arguments");
         }
         for positional in positionals {
             let _ = writeln!(markdown, "\n{positional}");
@@ -85,7 +85,7 @@ impl Markdown {
             .flat_map(generate_argument)
             .peekable();
         if options.peek().is_some() {
-            let _ = writeln!(markdown, "\n### Options");
+            let _ = writeln!(markdown, "\n## Options");
         }
         for option in options {
             let _ = writeln!(markdown, "\n{option}");
@@ -97,7 +97,7 @@ impl Markdown {
             .filter(|cmd| !cmd.is_hide_set() && cmd.get_name() != "help")
             .peekable();
         if subcommands.peek().is_some() {
-            let _ = writeln!(markdown, "\n### Commands\n");
+            let _ = writeln!(markdown, "\n## Commands\n");
         }
         let mut subcommands: Vec<_> = subcommands.collect();
         subcommands.sort_by_key(|cmd| cmd.get_name());
@@ -105,7 +105,7 @@ impl Markdown {
             let name = cmd.get_name();
             let human_path = format!("{} {name}", parents.join(" "));
             let link_path = format!("{}_{name}", parents.join("_"));
-            let _ = writeln!(markdown, "* [{human_path}](./{link_path})");
+            let _ = writeln!(markdown, "* [{human_path}](./{link_path}.md)");
         }
 
         Self { command: parents, content: markdown }

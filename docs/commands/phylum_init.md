@@ -1,6 +1,4 @@
----
-title: phylum init
----
+# phylum init
 
 Setup a new Phylum project
 
@@ -8,12 +6,12 @@ Setup a new Phylum project
 Usage: phylum init [OPTIONS] [PROJECT_NAME]
 ```
 
-### Arguments
+## Arguments
 
 `[PROJECT_NAME]`
 &emsp; Phylum project name
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group which will be the owner of the project
@@ -40,7 +38,7 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Interactively initialize the Phylum project.

@@ -1,6 +1,4 @@
----
-title: phylum project delete
----
+# phylum project delete
 
 Delete a project
 
@@ -8,12 +6,12 @@ Delete a project
 Usage: phylum project delete [OPTIONS] <NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<NAME>`
 &emsp; Name of the project
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group that owns the project

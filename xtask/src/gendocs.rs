@@ -15,9 +15,11 @@ const OUTPUT_DIR: &str = "./docs/commands";
 const TEMPLATE_DIR: &str = "./doc_templates";
 
 /// File header inserted at the top of each page.
-const HEADER: &str = "---
-title: {PH-TITLE}
----";
+//
+// NOTE: This is just a H1 header right now, but additional Docusaurus metadata
+//       will likely be added in the future, as frontmatter, and it will be
+//       easier to do so with this structure left in place.
+const HEADER: &str = "# {PH-TITLE}";
 
 /// Generate Phylum CLI documentation.
 pub fn gendocs() -> Result<()> {

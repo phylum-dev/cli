@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Details
+## Details
 
 This command will create a "Hello, World!" extension skeleton that can be
 modified for a specific use. See the [Extension Quickstart] guide for more

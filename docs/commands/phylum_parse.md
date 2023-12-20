@@ -1,6 +1,4 @@
----
-title: phylum parse
----
+# phylum parse
 
 Parse dependency files and output their packages as JSON
 
@@ -8,12 +6,12 @@ Parse dependency files and output their packages as JSON
 Usage: phylum parse [OPTIONS] [DEPENDENCY_FILE]...
 ```
 
-### Arguments
+## Arguments
 
 `[DEPENDENCY_FILE]`
 &emsp; Path to the dependency file to parse
 
-### Options
+## Options
 
 `-t`, `--type` `<TYPE>`
 &emsp; Dependency file type used for all lockfiles (default: auto)
@@ -34,7 +32,7 @@ Usage: phylum parse [OPTIONS] [DEPENDENCY_FILE]...
 `-h`, `--help`
 &emsp; Print help
 
-### Details
+## Details
 
 The following order is used to determine which dependency file will be parsed:
 
@@ -46,7 +44,7 @@ If any of these locations provides a dependency file, no further search will be
 done. Recursive filesystem search takes common ignore files like `.gitignore`
 and `.ignore` into account.
 
-### Examples
+## Examples
 
 ```sh
 # Parse a dependency file

@@ -1,6 +1,4 @@
----
-title: Extension Sandboxing
----
+# Extension Sandboxing
 
 Phylum's CLI extensions allow developers to impose additional restrictions when
 running third party applications. This can protect the system from damage when

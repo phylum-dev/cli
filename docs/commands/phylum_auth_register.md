@@ -1,6 +1,4 @@
----
-title: phylum auth register
----
+# phylum auth register
 
 Register a new account
 
@@ -8,7 +6,7 @@ Register a new account
 Usage: phylum auth register [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-n`, `--token-name` `<token-name>`
 &emsp; Unique name for the new token that will be created

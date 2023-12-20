@@ -1,6 +1,4 @@
----
-title: phylum uninstall
----
+# phylum uninstall
 
 Uninstall the Phylum CLI
 
@@ -8,7 +6,7 @@ Uninstall the Phylum CLI
 Usage: phylum uninstall [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-p`, `--purge`
 &emsp; Remove all files, including configuration files (default: false)
@@ -22,7 +20,7 @@ Usage: phylum uninstall [OPTIONS]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Remove installed phylum binary and data files

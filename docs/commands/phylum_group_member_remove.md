@@ -1,6 +1,4 @@
----
-title: phylum group member remove
----
+# phylum group member remove
 
 Remove user from group
 
@@ -8,12 +6,12 @@ Remove user from group
 Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 ```
 
-### Arguments
+## Arguments
 
 `<USER>`
 &emsp; User(s) to be removed
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -24,7 +22,7 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Remove user `demo@phylum.io` from the `sample` group

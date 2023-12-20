@@ -1,6 +1,4 @@
----
-title: phylum auth set-token
----
+# phylum auth set-token
 
 Set the current authentication token
 
@@ -8,12 +6,12 @@ Set the current authentication token
 Usage: phylum auth set-token [OPTIONS] [TOKEN]
 ```
 
-### Arguments
+## Arguments
 
 `[TOKEN]`
 &emsp; Authentication token to store (read from stdin if omitted)
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -24,7 +22,7 @@ Usage: phylum auth set-token [OPTIONS] [TOKEN]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Supply the token directly on the command line

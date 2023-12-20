@@ -1,6 +1,4 @@
----
-title: phylum auth create-token
----
+# phylum auth create-token
 
 Create a new API token
 
@@ -8,12 +6,12 @@ Create a new API token
 Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<TOKEN_NAME>`
 &emsp; Unique name to identify the new token
 
-### Options
+## Options
 
 `-e`, `--expiry` `<DAYS>`
 &emsp; Number of days the token will be valid

@@ -1,6 +1,4 @@
----
-title: phylum auth list-tokens
----
+# phylum auth list-tokens
 
 List all tokens associated with the logged-in user
 
@@ -8,7 +6,7 @@ List all tokens associated with the logged-in user
 Usage: phylum auth list-tokens [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)

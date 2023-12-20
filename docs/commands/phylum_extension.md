@@ -1,6 +1,4 @@
----
-title: phylum extension
----
+# phylum extension
 
 Manage extensions
 
@@ -8,7 +6,7 @@ Manage extensions
 Usage: phylum extension [OPTIONS] [COMMAND]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -19,10 +17,10 @@ Usage: phylum extension [OPTIONS] [COMMAND]
 `-h`, `--help`
 &emsp; Print help
 
-### Commands
+## Commands
 
-* [phylum extension install](./phylum_extension_install)
-* [phylum extension list](./phylum_extension_list)
-* [phylum extension new](./phylum_extension_new)
-* [phylum extension run](./phylum_extension_run)
-* [phylum extension uninstall](./phylum_extension_uninstall)
+* [phylum extension install](./phylum_extension_install.md)
+* [phylum extension list](./phylum_extension_list.md)
+* [phylum extension new](./phylum_extension_new.md)
+* [phylum extension run](./phylum_extension_run.md)
+* [phylum extension uninstall](./phylum_extension_uninstall.md)

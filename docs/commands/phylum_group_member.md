@@ -1,6 +1,4 @@
----
-title: phylum group member
----
+# phylum group member
 
 Manage group members
 
@@ -8,7 +6,7 @@ Manage group members
 Usage: phylum group member [OPTIONS] --group <GROUP> <COMMAND>
 ```
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP>`
 &emsp; Group to list the members for
@@ -22,8 +20,8 @@ Usage: phylum group member [OPTIONS] --group <GROUP> <COMMAND>
 `-h`, `--help`
 &emsp; Print help
 
-### Commands
+## Commands
 
-* [phylum group member add](./phylum_group_member_add)
-* [phylum group member list](./phylum_group_member_list)
-* [phylum group member remove](./phylum_group_member_remove)
+* [phylum group member add](./phylum_group_member_add.md)
+* [phylum group member list](./phylum_group_member_list.md)
+* [phylum group member remove](./phylum_group_member_remove.md)

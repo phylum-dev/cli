@@ -1,6 +1,4 @@
----
-title: Direct Phylum API Requests
----
+# Direct Phylum API Requests
 
 ## Phylum REST API
 

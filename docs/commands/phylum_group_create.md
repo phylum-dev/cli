@@ -1,6 +1,4 @@
----
-title: phylum group create
----
+# phylum group create
 
 Create a new group
 
@@ -8,12 +6,12 @@ Create a new group
 Usage: phylum group create [OPTIONS] <GROUP_NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<GROUP_NAME>`
 &emsp; Name for the new group
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -24,7 +22,7 @@ Usage: phylum group create [OPTIONS] <GROUP_NAME>
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Create a new group named 'sample'
