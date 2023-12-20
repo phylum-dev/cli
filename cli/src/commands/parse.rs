@@ -69,22 +69,22 @@ pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
 
 pub fn handle_parse_sandboxed(matches: &ArgMatches) -> CommandResult {
     let path = PathBuf::from(matches.get_raw("depfile").unwrap().next().unwrap());
+    let display_path = matches.get_one::<String>("display-path").unwrap();
     let generate_lockfile = matches.get_flag("generate-lockfile");
     let lockfile_type = matches.get_one::<String>("type");
     let skip_sandbox = matches.get_flag("skip-sandbox");
-    let id = matches.get_one::<String>("id").unwrap();
 
     if skip_sandbox {
-        child_parse_depfile(&path, id, lockfile_type, generate_lockfile)
+        child_parse_depfile(&path, display_path, lockfile_type, generate_lockfile)
     } else {
-        spawn_sandbox(&path, id, lockfile_type, generate_lockfile)
+        spawn_sandbox(&path, display_path, lockfile_type, generate_lockfile)
     }
 }
 
 /// Reexecute `parse-sandboxed` inside the sandbox.
 fn spawn_sandbox(
     path: &Path,
-    id: &str,
+    display_path: &str,
     lockfile_type: Option<&String>,
     generate_lockfile: bool,
 ) -> CommandResult {
@@ -92,7 +92,8 @@ fn spawn_sandbox(
     let birdcage = depfile_parsing_sandbox(path)?;
 
     // Reexecute command inside sandbox.
-    let command = parse_sandboxed_command(path, id, lockfile_type, generate_lockfile, true)?;
+    let command =
+        parse_sandboxed_command(path, display_path, lockfile_type, generate_lockfile, true)?;
     let mut child = birdcage.spawn(command)?;
 
     // Check for process failure.
@@ -107,7 +108,7 @@ fn spawn_sandbox(
 /// Handle dependency file parsing inside of our sandbox.
 fn child_parse_depfile(
     path: &PathBuf,
-    id: &str,
+    display_path: &str,
     lockfile_type: Option<&String>,
     generate_lockfile: bool,
 ) -> CommandResult {
@@ -115,11 +116,10 @@ fn child_parse_depfile(
 
     let generation_path = generate_lockfile.then(|| path.clone());
     let contents = fs::read_to_string(path)?;
-    let file_name = path.file_name();
 
     // Parse dependency file.
     let parse_result =
-        phylum_lockfile::parse_depfile(&contents, file_name, lockfile_type, id, generation_path);
+        phylum_lockfile::parse_depfile(&contents, display_path, lockfile_type, generation_path);
 
     // Map lockfile generation failure to specific exit code.
     let parsed = match parse_result {
@@ -152,14 +152,19 @@ pub fn parse_depfile(
         None => (None, path),
     };
 
-    let id = strip_root_path(&path, project_root)?.display().to_string();
+    let display_path = strip_root_path(&path, project_root)?.display().to_string();
 
     if sandbox_generation && generate_lockfiles {
         // Spawn separate process to allow sandboxing lockfile generation.
         let path = path.canonicalize().map_err(anyhow::Error::from)?;
         let lockfile_type = format.map(|format| format.to_string());
-        let mut command =
-            parse_sandboxed_command(&path, &id, lockfile_type.as_ref(), generate_lockfiles, false)?;
+        let mut command = parse_sandboxed_command(
+            &path,
+            &display_path,
+            lockfile_type.as_ref(),
+            generate_lockfiles,
+            false,
+        )?;
         let output = command.output().map_err(anyhow::Error::from)?;
 
         if !output.status.success() {
@@ -181,9 +186,8 @@ pub fn parse_depfile(
     } else {
         let contents = fs::read_to_string(&path).map_err(anyhow::Error::from)?;
         let generation_path = generate_lockfiles.then(|| path.clone());
-        let file_name = path.file_name();
 
-        phylum_lockfile::parse_depfile(&contents, file_name, format, &id, generation_path)
+        phylum_lockfile::parse_depfile(&contents, display_path, format, generation_path)
     }
 }
 
@@ -315,7 +319,7 @@ fn relative_path(from: &Path, to: &Path) -> Result<PathBuf> {
 /// Construct command for sandboxed lockfile parsing.
 fn parse_sandboxed_command(
     path: &Path,
-    id: &str,
+    display_path: &str,
     lockfile_type: Option<&String>,
     generate_lockfile: bool,
     skip_sandbox: bool,
@@ -325,7 +329,7 @@ fn parse_sandboxed_command(
 
     command.arg("parse-sandboxed");
     command.arg(path);
-    command.arg(id);
+    command.arg(display_path);
 
     if let Some(lockfile_type) = lockfile_type {
         command.args(["--type", &lockfile_type.to_string()]);

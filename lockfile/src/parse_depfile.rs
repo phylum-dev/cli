@@ -1,5 +1,4 @@
 //! Parse generic dependency files.
-use std::ffi::OsStr;
 #[cfg(feature = "generator")]
 use std::path::Path;
 use std::path::PathBuf;
@@ -23,7 +22,6 @@ pub enum ParseError {
 /// Lockfile with all its dependencies.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ParsedLockfile {
-    /// User-facing lockfile identifier (i.e. a file path or name).
     pub path: String,
     pub packages: Vec<PackageDescriptor>,
     pub format: LockfileFormat,
@@ -52,7 +50,7 @@ impl ParsedLockfile {
 
 /// Parse a dependency file.
 ///
-/// The `path` argument is only used for display purposes.
+/// The `path` argument is used for format identification and display purposes.
 ///
 /// The `_generation_path` must point to the manifest on the filesystem if
 /// lockfile generation should be performed. Use `None` to disable lockfile
@@ -63,16 +61,13 @@ impl ParsedLockfile {
 /// Parsing manifests requires the `generator` feature.
 pub fn parse_depfile(
     contents: &str,
-    file_name: Option<&OsStr>,
+    path: impl Into<String>,
     format: Option<LockfileFormat>,
-    path: &str,
     _generation_path: Option<PathBuf>,
 ) -> Result<ParsedLockfile, ParseError> {
-    // Crate a fake relative path.
-    let pseudopath = file_name.map(PathBuf::from);
-
     // Try to determine the dependency file format.
-    let format = format.or_else(|| pseudopath.as_ref().and_then(crate::get_depfile_path_format));
+    let path = path.into();
+    let format = format.or_else(|| crate::get_depfile_path_format(&path));
 
     // Attempt to parse with all known parsers as fallback.
     let format = match format {
@@ -84,8 +79,9 @@ pub fn parse_depfile(
     let parser = format.parser();
 
     // Check if file could be a lockfile/manifest based on file name.
-    let maybe_lockfile = pseudopath.as_ref().map_or(false, |path| parser.is_path_lockfile(path));
-    let maybe_manifest = pseudopath.as_ref().map_or(false, |path| parser.is_path_manifest(path));
+    let pseudopath = PathBuf::from(&path);
+    let maybe_lockfile = parser.is_path_lockfile(&pseudopath);
+    let maybe_manifest = parser.is_path_manifest(&pseudopath);
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
@@ -103,20 +99,24 @@ pub fn parse_depfile(
     // Generate lockfile if path might be a manifest and feature and option are
     // enabled.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) = _generation_path.filter(|_| maybe_manifest) {
-        return Ok(generate_lockfile(&generation_path, path, format, parser)?);
+    if let Some(generation_path) = _generation_path {
+        return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
     }
 
     // Return the original lockfile parsing error.
     match lockfile_error {
         // Report parsing errors only for lockfiles.
         Some(err) if !maybe_manifest => Err(err),
-        _ => Err(ParseError::ManifestWithoutGeneration(path.into())),
+        _ => Err(ParseError::ManifestWithoutGeneration(path)),
     }
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: &str, contents: &str) -> Result<ParsedLockfile, anyhow::Error> {
+fn try_get_packages(
+    path: impl Into<String>,
+    contents: &str,
+) -> Result<ParsedLockfile, anyhow::Error> {
+    let path = path.into();
     for format in LockfileFormat::iter() {
         let parser = format.parser();
         if let Some(packages) = parser.parse(contents).ok().filter(|pkgs| !pkgs.is_empty()) {
@@ -134,7 +134,7 @@ fn try_get_packages(path: &str, contents: &str) -> Result<ParsedLockfile, anyhow
 /// Generate a lockfile from a manifest path.
 #[cfg(feature = "generator")]
 fn generate_lockfile(
-    fs_path: &Path,
+    generation_path: &Path,
     display_path: &str,
     format: LockfileFormat,
     parser: &dyn Parse,
@@ -148,7 +148,7 @@ fn generate_lockfile(
     eprintln!("Generating lockfile for manifest {display_path:?} using {format:?}…");
 
     // Generate a new lockfile.
-    let canonical_path = fs_path.canonicalize()?;
+    let canonical_path = generation_path.canonicalize()?;
     let generated_lockfile = generator
             .generate_lockfile(&canonical_path)
             .context("Lockfile generation failed! For details, see: \
@@ -242,7 +242,7 @@ mod tests {
 
         for (path, expected_format) in test_cases {
             let contents = fs::read_to_string(path).unwrap();
-            let parsed = try_get_packages("id", &contents).unwrap();
+            let parsed = try_get_packages(path, &contents).unwrap();
             assert_eq!(parsed.format, expected_format, "{}", path);
         }
     }

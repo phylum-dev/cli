@@ -582,10 +582,10 @@ pub fn add_subcommands(command: Command) -> Command {
                         .value_name("DEPENDENCY_FILE")
                         .required(true)
                         .help("Canonical dependency file path"),
-                    Arg::new("id")
-                        .value_name("ID")
+                    Arg::new("display-path")
+                        .value_name("DISPLAY_PATH")
                         .required(true)
-                        .help("Unique dependency file identifier"),
+                        .help("Dependency file display path"),
                     Arg::new("type")
                         .long("type")
                         .value_name("TYPE")
