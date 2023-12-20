@@ -32,3 +32,15 @@ Some additional metadata can be specified by overriding the Docusaurus header.
 Available fields can be found in the [Docusaurus docs].
 
 [Docusaurus docs]: https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter
+
+## Adding links
+
+Markdown links to other docs should be provided as relative file paths, with
+extensions. This is the [recommended approach from Docusaurus][docu_links].
+
+The relative structure is as found in the [documentation repository][doc_repo].
+All docs are stored or aggregated (via git submodules and symlinks) to the
+`docs` subdirectory there, which forms the root/anchor of relative paths.
+
+[docu_links]: https://docusaurus.io/docs/markdown-features/links
+[doc_repo]: https://github.com/phylum-dev/documentation

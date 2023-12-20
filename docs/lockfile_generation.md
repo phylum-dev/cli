@@ -1,6 +1,4 @@
----
-title: Lockfile Generation
----
+# Lockfile Generation
 
 The Phylum CLI can generate a lockfile when it is given a manifest file.
 
@@ -90,4 +88,4 @@ specified, this will fail, and Phylum will silence the error and proceed to lock
 
 7. The output lockfile (`package-lock.json`) is [analyzed][analyzing_dependencies]
 
-[analyzing_dependencies]: https://docs.phylum.io/docs/analyzing_dependencies
+[analyzing_dependencies]: ./analyzing_dependencies.md

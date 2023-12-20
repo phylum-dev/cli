@@ -211,7 +211,7 @@ operating system APIs. Since we want to read the lockfile from
 read access to this file ahead of time. All available permissions are documented
 in the [extension manifest documentation].
 
-[extension manifest documentation]: https://docs.phylum.io/docs/extension_manifest#permissions
+[extension manifest documentation]: ./extension_manifest.md#permissions
 
 While it would be possible to request read access to just `./package-lock.json`,
 this would only work for `package-lock.json` files defeating the purpose of

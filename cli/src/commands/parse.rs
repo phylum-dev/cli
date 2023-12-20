@@ -194,17 +194,18 @@ fn generate_lockfile(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(anyhow!("subprocess failed:\n{stderr}"))
-                .context("Lockfile generation failed! For details, see: \
-                    https://docs.phylum.io/docs/lockfile_generation")
+            Err(anyhow!("subprocess failed:\n{stderr}")).context(
+                "Lockfile generation failed! For details, see: \
+                    https://docs.phylum.io/cli/lockfile_generation",
+            )
         } else {
             Ok(String::from_utf8_lossy(&output.stdout).into())
         }
     } else {
-        generator
-            .generate_lockfile(&canonical_path)
-            .context("Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/docs/lockfile_generation")
+        generator.generate_lockfile(&canonical_path).context(
+            "Lockfile generation failed! For details, see: \
+                https://docs.phylum.io/cli/lockfile_generation",
+        )
     }
 }
 

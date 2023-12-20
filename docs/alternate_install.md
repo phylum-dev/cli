@@ -1,6 +1,4 @@
----
-title: Alternate Installation Methods
----
+# Alternate Installation Methods
 
 ## Build from source
 
