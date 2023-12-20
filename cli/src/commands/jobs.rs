@@ -136,7 +136,7 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
             if pretty_print {
                 print_user_success!(
                     "Successfully parsed dependency file {:?} as type {:?}",
-                    parsed_depfile.id,
+                    parsed_depfile.path,
                     parsed_depfile.format.name()
                 );
             }

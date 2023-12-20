@@ -231,6 +231,19 @@ pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
     LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
 }
 
+/// Identify a dependency file's format based on its path.
+///
+/// Returns `None` if no supported format could be identified.
+///
+/// The file does not need to exist.
+pub fn get_depfile_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
+    let path = path.as_ref();
+    LockfileFormat::iter().find(|format| {
+        let parser = format.parser();
+        parser.is_path_lockfile(path) || parser.is_path_manifest(path)
+    })
+}
+
 /// Find a manifest file's lockfile.
 ///
 /// Returns `None` if no lockfile exists or the format isn't supported.
