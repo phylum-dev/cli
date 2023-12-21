@@ -3,26 +3,29 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-pub use cargo::Cargo;
-pub use csharp::{CSProj, PackagesLock};
-pub use cyclonedx::CycloneDX;
-pub use golang::GoSum;
 use ignore::WalkBuilder;
-pub use java::{GradleLock, Pom};
-pub use javascript::{PackageLock, Pnpm, YarnLock};
 #[cfg(feature = "generator")]
 pub use lockfile_generator as generator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
+pub use phylum_types;
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
-pub use python::{PipFile, Poetry, PyRequirements};
-pub use ruby::GemLock;
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
-pub use spdx::Spdx;
 use thiserror::Error;
 use walkdir::WalkDir;
+
+pub use crate::cargo::Cargo;
+pub use crate::csharp::{CSProj, PackagesLock};
+pub use crate::cyclonedx::CycloneDX;
+pub use crate::golang::GoSum;
+pub use crate::java::{GradleLock, Pom};
+pub use crate::javascript::{PackageLock, Pnpm, YarnLock};
+pub use crate::parse_depfile::{parse_depfile, ParseError, ParsedLockfile};
+pub use crate::python::{PipFile, Poetry, PyRequirements};
+pub use crate::ruby::GemLock;
+pub use crate::spdx::Spdx;
 
 mod cargo;
 mod csharp;
@@ -30,6 +33,7 @@ mod cyclonedx;
 mod golang;
 mod java;
 mod javascript;
+mod parse_depfile;
 mod parsers;
 mod python;
 mod ruby;
@@ -225,6 +229,19 @@ pub struct ThirdPartyVersion {
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
     LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
+}
+
+/// Identify a dependency file's format based on its path.
+///
+/// Returns `None` if no supported format could be identified.
+///
+/// The file does not need to exist.
+pub fn get_depfile_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
+    let path = path.as_ref();
+    LockfileFormat::iter().find(|format| {
+        let parser = format.parser();
+        parser.is_path_lockfile(path) || parser.is_path_manifest(path)
+    })
 }
 
 /// Find a manifest file's lockfile.

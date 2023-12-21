@@ -4,6 +4,7 @@ use std::{fs, io};
 use anyhow::{anyhow, Context, Result};
 use console::style;
 use log::debug;
+use phylum_lockfile::ParseError;
 use phylum_project::DepfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::package::{PackageDescriptor, PackageType};
@@ -14,8 +15,7 @@ use vulnreach_types::{Job, JobPackage};
 use crate::api::PhylumApi;
 #[cfg(feature = "vulnreach")]
 use crate::auth::jwt::RealmRole;
-use crate::commands::parse::{self, ParseError};
-use crate::commands::{CommandResult, ExitCode};
+use crate::commands::{parse, CommandResult, ExitCode};
 use crate::format::Format;
 #[cfg(feature = "vulnreach")]
 use crate::vulnreach;
