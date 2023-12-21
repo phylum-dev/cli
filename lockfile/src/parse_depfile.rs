@@ -1,7 +1,5 @@
 //! Parse generic dependency files.
-#[cfg(feature = "generator")]
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context};
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
@@ -79,9 +77,9 @@ pub fn parse_depfile(
     let parser = format.parser();
 
     // Check if file could be a lockfile/manifest based on file name.
-    let pseudopath = PathBuf::from(&path);
-    let maybe_lockfile = parser.is_path_lockfile(&pseudopath);
-    let maybe_manifest = parser.is_path_manifest(&pseudopath);
+    let pseudopath = Path::new(&path);
+    let maybe_lockfile = parser.is_path_lockfile(pseudopath);
+    let maybe_manifest = parser.is_path_manifest(pseudopath);
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
