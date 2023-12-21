@@ -97,7 +97,7 @@ pub fn parse_depfile(
     // Generate lockfile if path might be a manifest and feature and option are
     // enabled.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) = _generation_path {
+    if let Some(generation_path) = _generation_path.filter(|_| maybe_manifest) {
         return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
     }
 
