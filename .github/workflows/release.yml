@@ -257,18 +257,3 @@ jobs:
               client_payload: {CLI_version: process.env.GITHUB_REF_NAME},
             });
             console.log(response);
-
-  Update-Documentation:
-    name: Update the documentation
-    needs: Release
-    # Don't trigger for pre-releases
-    if: ${{ !contains(github.ref, 'rc') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-      - name: Update v2-latest using rdme
-        uses: readmeio/rdme@51a80867c45de15e2b41af0c4bd5bbc61b932804 # v8.6.6
-        with:
-          rdme: docs ./docs --key=${{ secrets.README_API }} --version=2-latest
