@@ -13,8 +13,8 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, extensions, find_dependency_files, generate_lockfile, group, init, jobs, packages, parse,
-    project, status, CommandResult, ExitCode,
+    auth, extensions, find_dependency_files, group, init, jobs, packages, parse, project, status,
+    CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -142,6 +142,7 @@ async fn handle_commands() -> CommandResult {
         },
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),
+        "parse-sandboxed" => parse::handle_parse_sandboxed(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
         "project" => {
             project::handle_project(&Spinner::wrap(api).await?, app_helper, sub_matches).await
@@ -162,7 +163,6 @@ async fn handle_commands() -> CommandResult {
         #[cfg(unix)]
         "sandbox" => sandbox::handle_sandbox(sub_matches).await,
         "find-dependency-files" => find_dependency_files::handle_command(),
-        "generate-lockfile" => generate_lockfile::handle_command(sub_matches),
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },

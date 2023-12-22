@@ -4,53 +4,17 @@ use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::result::Result as StdResult;
+use std::str::FromStr;
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
-use phylum_lockfile::generator::Generator;
-use phylum_lockfile::{
-    LockfileFormat, Package as LockfilePackage, PackageVersion, Parse, ThirdPartyVersion,
-};
-use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
-use serde::{Deserialize, Serialize};
+use birdcage::{Birdcage, Exception, Sandbox};
+use clap::ArgMatches;
+use phylum_lockfile::{LockfileFormat, ParseError, ParsedLockfile};
 
+use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
-use crate::{config, print_user_failure, print_user_warning};
-
-/// Lockfile parsing error.
-#[derive(thiserror::Error, Debug)]
-pub enum ParseError {
-    /// Dependency file is a manifest, but lockfile generation is disabled.
-    #[error("Parsing {0:?} requires lockfile generation, but it was disabled through the CLI")]
-    ManifestWithoutGeneration(PathBuf),
-    #[error(transparent)]
-    Other(#[from] anyhow::Error),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ParsedLockfile {
-    pub packages: Vec<PackageDescriptor>,
-    pub format: LockfileFormat,
-    pub path: PathBuf,
-}
-
-impl ParsedLockfile {
-    fn new(path: PathBuf, format: LockfileFormat, packages: Vec<PackageDescriptor>) -> Self {
-        Self { packages, format, path }
-    }
-
-    /// Convert packages to API's expected format.
-    pub fn api_packages(&self) -> Vec<PackageDescriptorAndLockfile> {
-        let lockfile = Some(self.path.to_string_lossy().into_owned());
-        self.packages
-            .iter()
-            .map(|package_descriptor| PackageDescriptorAndLockfile {
-                package_descriptor: package_descriptor.clone(),
-                lockfile: lockfile.clone(),
-            })
-            .collect()
-    }
-}
+use crate::{config, dirs, print_user_failure, print_user_warning};
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();
@@ -63,7 +27,7 @@ pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     lockfile_types
 }
 
-pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
+pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
     let sandbox_generation = !matches.get_flag("skip-sandbox");
     let generate_lockfiles = !matches.get_flag("no-generation");
 
@@ -103,6 +67,75 @@ pub fn handle_parse(matches: &clap::ArgMatches) -> CommandResult {
     Ok(ExitCode::Ok)
 }
 
+pub fn handle_parse_sandboxed(matches: &ArgMatches) -> CommandResult {
+    let path = PathBuf::from(matches.get_raw("depfile").unwrap().next().unwrap());
+    let display_path = matches.get_one::<String>("display-path").unwrap();
+    let generate_lockfile = matches.get_flag("generate-lockfile");
+    let lockfile_type = matches.get_one::<String>("type");
+    let skip_sandbox = matches.get_flag("skip-sandbox");
+
+    if skip_sandbox {
+        child_parse_depfile(&path, display_path, lockfile_type, generate_lockfile)
+    } else {
+        spawn_sandbox(&path, display_path, lockfile_type, generate_lockfile)
+    }
+}
+
+/// Reexecute `parse-sandboxed` inside the sandbox.
+fn spawn_sandbox(
+    path: &Path,
+    display_path: &str,
+    lockfile_type: Option<&String>,
+    generate_lockfile: bool,
+) -> CommandResult {
+    // Setup sandbox for lockfile generation.
+    let birdcage = depfile_parsing_sandbox(path)?;
+
+    // Reexecute command inside sandbox.
+    let command =
+        parse_sandboxed_command(path, display_path, lockfile_type, generate_lockfile, true)?;
+    let mut child = birdcage.spawn(command)?;
+
+    // Check for process failure.
+    let status = child.wait()?;
+    match status.code() {
+        Some(code) => Ok(ExitCode::Custom(code)),
+        None if !status.success() => Ok(ExitCode::Generic),
+        None => Ok(ExitCode::Ok),
+    }
+}
+
+/// Handle dependency file parsing inside of our sandbox.
+fn child_parse_depfile(
+    path: &PathBuf,
+    display_path: &str,
+    lockfile_type: Option<&String>,
+    generate_lockfile: bool,
+) -> CommandResult {
+    let lockfile_type = lockfile_type.map(|t| LockfileFormat::from_str(t).unwrap());
+
+    let generation_path = generate_lockfile.then(|| path.clone());
+    let contents = fs::read_to_string(path)?;
+
+    // Parse dependency file.
+    let parse_result =
+        phylum_lockfile::parse_depfile(&contents, display_path, lockfile_type, generation_path);
+
+    // Map lockfile generation failure to specific exit code.
+    let parsed = match parse_result {
+        Ok(parsed) => parsed,
+        Err(ParseError::ManifestWithoutGeneration(_)) => {
+            return Ok(ExitCode::ManifestWithoutGeneration)
+        },
+        Err(ParseError::Other(err)) => return Err(err),
+    };
+
+    // Serialize dependency file to stdout.
+    println!("{}", serde_json::to_string(&parsed)?);
+
+    Ok(ExitCode::Ok)
+}
+
 /// Parse a dependency file.
 pub fn parse_depfile(
     path: impl Into<PathBuf>,
@@ -113,109 +146,49 @@ pub fn parse_depfile(
 ) -> StdResult<ParsedLockfile, ParseError> {
     // Try and determine dependency file format.
     let path = path.into();
-    let format = find_depfile_format(&path, depfile_type);
-
-    // Attempt to parse with all known parsers as fallback.
-    let (format, lockfile) = match format {
-        Some(format) => format,
-        None => return Ok(try_get_packages(path, project_root)?),
+    let (format, path) = match find_depfile_format(&path, depfile_type) {
+        Some((format, Some(path))) => (Some(format), path),
+        Some((format, None)) => (Some(format), path),
+        None => (None, path),
     };
 
-    // Parse with the identified parser.
-    let parser = format.parser();
+    let display_path = strip_root_path(&path, project_root)?.display().to_string();
 
-    // Attempt to parse the identified lockfile.
-    let mut lockfile_error = None;
-    if let Some(lockfile) = lockfile {
-        // Parse lockfile content.
-        let content = fs::read_to_string(&lockfile).map_err(Into::into);
-        let packages = content.and_then(|content| parse_lockfile_content(&content, parser));
-
-        // Attempt to strip root path for identified lockfile
-        let lockfile = strip_root_path(lockfile, project_root)?;
-
-        match packages {
-            Ok(packages) => return Ok(ParsedLockfile::new(lockfile, format, packages)),
-            // Store error on failure.
-            Err(err) => lockfile_error = Some(err),
-        }
-    }
-
-    // Abort if generation is disabled or path is neither lockfile nor manifest.
-    let maybe_manifest = parser.is_path_manifest(&path);
-    if !(generate_lockfiles && maybe_manifest) {
-        // Return the original lockfile parsing error.
-        match lockfile_error {
-            // Report parsing errors only for lockfiles.
-            Some(err) if !maybe_manifest => return Err(err.into()),
-            _ => return Err(ParseError::ManifestWithoutGeneration(path)),
-        }
-    }
-
-    // If the lockfile couldn't be parsed, or there is none, we generate a new one.
-
-    // Find the generator for this format.
-    let generator = match parser.generator() {
-        Some(generator) => generator,
-        None => return Err(anyhow!("unsupported manifest file {path:?}").into()),
-    };
-
-    let display_path = strip_root_path(path.to_path_buf(), project_root)?;
-
-    eprintln!("Generating lockfile for manifest {display_path:?} using {format:?}…");
-
-    // Generate a new lockfile.
-    let generated_lockfile =
-        generate_lockfile(generator, format.name(), &path, sandbox_generation)?;
-
-    // Parse the generated lockfile.
-    let packages = parse_lockfile_content(&generated_lockfile, parser)?;
-
-    Ok(ParsedLockfile::new(display_path, format, packages))
-}
-
-/// Generate a lockfile from a manifest inside a sandbox.
-fn generate_lockfile(
-    generator: &dyn Generator,
-    lockfile_type: &str,
-    path: &Path,
-    sandbox: bool,
-) -> Result<String> {
-    let canonical_path = path.canonicalize()?;
-
-    if sandbox {
-        // Spawn separate sandboxed process to generate the lockfile.
-        let current_exe = env::current_exe()?;
-        let output = Command::new(current_exe)
-            .arg("generate-lockfile")
-            .arg(lockfile_type)
-            .arg(canonical_path)
-            .output()?;
+    if sandbox_generation && generate_lockfiles {
+        // Spawn separate process to allow sandboxing lockfile generation.
+        let path = path.canonicalize().map_err(anyhow::Error::from)?;
+        let lockfile_type = format.map(|format| format.to_string());
+        let mut command = parse_sandboxed_command(
+            &path,
+            &display_path,
+            lockfile_type.as_ref(),
+            generate_lockfiles,
+            false,
+        )?;
+        let output = command.output().map_err(anyhow::Error::from)?;
 
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(anyhow!("subprocess failed:\n{stderr}")).context(
-                "Lockfile generation failed! For details, see: \
-                    https://docs.phylum.io/cli/lockfile_generation",
-            )
+            // Check exit code to special-case lockfile generation failure.
+            if output.status.code() == Some(i32::from(&ExitCode::ManifestWithoutGeneration)) {
+                Err(ParseError::ManifestWithoutGeneration(path.display().to_string()))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(ParseError::Other(
+                    anyhow!("subprocess failed:\n{stderr}")
+                        .context("Dependency file parsing failed"),
+                ))
+            }
         } else {
-            Ok(String::from_utf8_lossy(&output.stdout).into())
+            let json = String::from_utf8_lossy(&output.stdout);
+            let parsed_lockfile = serde_json::from_str(&json).map_err(anyhow::Error::from)?;
+            Ok(parsed_lockfile)
         }
     } else {
-        generator.generate_lockfile(&canonical_path).context(
-            "Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/cli/lockfile_generation",
-        )
-    }
-}
+        let contents = fs::read_to_string(&path).map_err(anyhow::Error::from)?;
+        let generation_path = generate_lockfiles.then(|| path.clone());
 
-/// Attempt to parse a lockfile.
-fn parse_lockfile_content(
-    content: &str,
-    parser: &'static dyn Parse,
-) -> Result<Vec<PackageDescriptor>> {
-    let packages = parser.parse(content).context("Failed to parse lockfile")?;
-    Ok(filter_packages(packages))
+        phylum_lockfile::parse_depfile(&contents, display_path, format, generation_path)
+    }
 }
 
 /// Find a dependency file's format.
@@ -225,7 +198,7 @@ fn find_depfile_format(
 ) -> Option<(LockfileFormat, Option<PathBuf>)> {
     // Determine format from dependency file type.
     if let Some(depfile_type) = depfile_type.filter(|depfile_type| depfile_type != &"auto") {
-        let format = depfile_type.parse::<LockfileFormat>().unwrap();
+        let format = LockfileFormat::from_str(depfile_type).unwrap();
 
         // Skip lockfile analysis when path is only valid manifest.
         let parser = format.parser();
@@ -275,60 +248,6 @@ fn find_manifest_format(path: &Path) -> Option<(LockfileFormat, Option<PathBuf>)
     }
 }
 
-/// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(path: PathBuf, project_root: Option<&PathBuf>) -> Result<ParsedLockfile> {
-    let data = fs::read_to_string(&path)?;
-    let lockfile = strip_root_path(path, project_root)?;
-
-    for format in LockfileFormat::iter() {
-        let parser = format.parser();
-        if let Some(packages) = parser.parse(data.as_str()).ok().filter(|pkgs| !pkgs.is_empty()) {
-            log::info!("Identified lockfile type: {}", format);
-
-            let packages = filter_packages(packages);
-
-            return Ok(ParsedLockfile::new(lockfile, format, packages));
-        }
-    }
-
-    Err(anyhow!("Failed to identify type for lockfile {lockfile:?}"))
-}
-
-/// Filter packages for submission.
-fn filter_packages(mut packages: Vec<LockfilePackage>) -> Vec<PackageDescriptor> {
-    packages
-        .drain(..)
-        .filter_map(|package| {
-            // Check if package should be submitted based on version format.
-            let version = match package.version {
-                PackageVersion::FirstParty(version) => version,
-                PackageVersion::ThirdParty(ThirdPartyVersion { registry, version }) => {
-                    log::debug!("Using registry {registry:?} for {} ({version})", package.name);
-                    version
-                },
-                PackageVersion::Git(url) => {
-                    log::debug!("Git dependency {} will not be analyzed ({url:?})", package.name);
-                    url
-                },
-                PackageVersion::Path(path) => {
-                    log::debug!("Ignoring filesystem dependency {} ({path:?})", package.name);
-                    return None;
-                },
-                PackageVersion::DownloadUrl(url) => {
-                    log::debug!("Ignoring remote dependency {} ({url:?})", package.name);
-                    return None;
-                },
-            };
-
-            Some(PackageDescriptor {
-                package_type: package.package_type,
-                version,
-                name: package.name,
-            })
-        })
-        .collect()
-}
-
 /// Find a file by walking from a directory towards the root.
 ///
 /// `MAX_DEPTH` is the maximum number of directory traversals before the search
@@ -362,13 +281,13 @@ where
 /// function will return a path relative to this root. If no project root is
 /// provided, or if the path doesn't start with the project root, the function
 /// will return a path relative to the current directory.
-fn strip_root_path(path: PathBuf, project_root: Option<&PathBuf>) -> Result<PathBuf> {
+fn strip_root_path(path: &Path, project_root: Option<&PathBuf>) -> Result<PathBuf> {
     let base: Cow<'_, Path> = match project_root {
         Some(p) => p.into(),
         None => env::current_dir()?.into(),
     };
 
-    relative_path(&base, &path)
+    relative_path(&base, path)
 }
 
 /// Computes the relative path from the `from` path to the `to` path.
@@ -397,47 +316,119 @@ fn relative_path(from: &Path, to: &Path) -> Result<PathBuf> {
     Ok(result)
 }
 
+/// Construct command for sandboxed lockfile parsing.
+fn parse_sandboxed_command(
+    path: &Path,
+    display_path: &str,
+    lockfile_type: Option<&String>,
+    generate_lockfile: bool,
+    skip_sandbox: bool,
+) -> Result<Command> {
+    let current_exe = env::current_exe()?;
+    let mut command = Command::new(current_exe);
+
+    command.arg("parse-sandboxed");
+    command.arg(path);
+    command.arg(display_path);
+
+    if let Some(lockfile_type) = lockfile_type {
+        command.args(["--type", &lockfile_type.to_string()]);
+    }
+
+    if generate_lockfile {
+        command.arg("--generate-lockfile");
+    }
+
+    if skip_sandbox {
+        command.arg("--skip-sandbox");
+    }
+
+    Ok(command)
+}
+
+/// Create sandbox for dependency file parsing.
+///
+/// This sandbox will automatically add all exceptions necessary to generate
+/// lockfiles for any ecosystem.
+fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
+    let mut birdcage = permissions::default_sandbox()?;
+
+    // Allow all networking.
+    birdcage.add_exception(Exception::Networking)?;
+
+    // Allow reexecuting phylum.
+    let current_exe = env::current_exe()?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(current_exe))?;
+
+    // Add exception for the manifest's parent directory.
+    let project_path = canonical_manifest_path.parent().expect("Invalid manifest path");
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(project_path.into()))?;
+
+    // Add exception for all the executables required for generation.
+    let ecosystem_bins = [
+        "cargo", "bundle", "mvn", "gradle", "npm", "pnpm", "yarn", "python3", "pipenv", "poetry",
+        "go", "dotnet",
+    ];
+    for bin in ecosystem_bins {
+        let absolute_path = permissions::resolve_bin_path(bin);
+        permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(absolute_path))?;
+    }
+
+    // Allow any executable in common binary directories.
+    //
+    // Reading binaries shouldn't be an attack vector, but significantly simplifies
+    // complex ecosystems (like Python's symlinks).
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/bin".into()))?;
+
+    // Add paths required by specific ecosystems.
+    let home = dirs::home_dir()?;
+    // Cargo.
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".rustup")))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".cargo")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/etc/passwd".into()))?;
+    // Bundle.
+    permissions::add_exception(&mut birdcage, Exception::Read("/dev/urandom".into()))?;
+    // Maven.
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".m2")))?;
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/var/folders".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/opt/maven".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/maven".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/openjdk".into()))?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::Read("/opt/homebrew/Cellar/maven".into()),
+    )?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::Read("/opt/homebrew/Cellar/openjdk".into()),
+    )?;
+    // Gradle.
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/opt/gradle".into()))?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::Read("/usr/share/java/gradle/lib".into()),
+    )?;
+    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/gradle".into()))?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::Read("/opt/homebrew/Cellar/gradle".into()),
+    )?;
+    // Pnpm.
+    permissions::add_exception(&mut birdcage, Exception::Read("/tmp".into()))?;
+    // Yarn.
+    permissions::add_exception(&mut birdcage, Exception::Read(home.join("./yarn")))?;
+
+    Ok(birdcage)
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs::{self, File};
 
     use super::*;
-
-    #[test]
-    fn it_can_identify_lock_file_types() {
-        let test_cases = [
-            ("../tests/fixtures/Gemfile.lock", LockfileFormat::Gem),
-            ("../tests/fixtures/yarn-v1.lock", LockfileFormat::Yarn),
-            ("../tests/fixtures/yarn.lock", LockfileFormat::Yarn),
-            ("../tests/fixtures/package-lock.json", LockfileFormat::Npm),
-            ("../tests/fixtures/package-lock-v6.json", LockfileFormat::Npm),
-            ("../tests/fixtures/packages.lock.json", LockfileFormat::NugetLock),
-            ("../tests/fixtures/gradle.lockfile", LockfileFormat::Gradle),
-            ("../tests/fixtures/effective-pom.xml", LockfileFormat::Maven),
-            ("../tests/fixtures/workspace-effective-pom.xml", LockfileFormat::Maven),
-            ("../tests/fixtures/requirements-locked.txt", LockfileFormat::Pip),
-            ("../tests/fixtures/Pipfile.lock", LockfileFormat::Pipenv),
-            ("../tests/fixtures/poetry.lock", LockfileFormat::Poetry),
-            ("../tests/fixtures/poetry_v2.lock", LockfileFormat::Poetry),
-            ("../tests/fixtures/go.sum", LockfileFormat::Go),
-            ("../tests/fixtures/Cargo_v1.lock", LockfileFormat::Cargo),
-            ("../tests/fixtures/Cargo_v2.lock", LockfileFormat::Cargo),
-            ("../tests/fixtures/Cargo_v3.lock", LockfileFormat::Cargo),
-            ("../tests/fixtures/spdx-2.2.spdx", LockfileFormat::Spdx),
-            ("../tests/fixtures/spdx-2.2.spdx.json", LockfileFormat::Spdx),
-            ("../tests/fixtures/spdx-2.3.spdx.json", LockfileFormat::Spdx),
-            ("../tests/fixtures/spdx-2.3.spdx.yaml", LockfileFormat::Spdx),
-            ("../tests/fixtures/bom.1.3.json", LockfileFormat::CycloneDX),
-            ("../tests/fixtures/bom.1.3.xml", LockfileFormat::CycloneDX),
-            ("../tests/fixtures/bom.json", LockfileFormat::CycloneDX),
-            ("../tests/fixtures/bom.xml", LockfileFormat::CycloneDX),
-        ];
-
-        for (file, expected_format) in test_cases {
-            let parsed = try_get_packages(PathBuf::from(file), None).unwrap();
-            assert_eq!(parsed.format, expected_format, "{}", file);
-        }
-    }
 
     #[test]
     fn find_lockfile_for_manifest() {
