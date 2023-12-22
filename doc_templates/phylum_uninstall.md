@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # Remove installed phylum binary and data files

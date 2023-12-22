@@ -1,8 +1,4 @@
----
-title: phylum project update
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum project update
 
 Update a project
 
@@ -10,7 +6,7 @@ Update a project
 Usage: phylum project update [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-i`, `--project-id` `<PROJECT_ID>`
 &emsp; ID of the project to be updated

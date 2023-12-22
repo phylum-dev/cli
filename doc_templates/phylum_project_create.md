@@ -1,13 +1,8 @@
----
-title: phylum project create
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62757a105ec2660021a19e4d
-hidden: false
----
+{PH-HEADER}
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # Create a new project named 'sample'

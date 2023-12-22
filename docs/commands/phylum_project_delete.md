@@ -1,9 +1,4 @@
----
-title: phylum project delete
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62757a105ec2660021a19e4d
-hidden: false
----
+# phylum project delete
 
 Delete a project
 
@@ -11,12 +6,12 @@ Delete a project
 Usage: phylum project delete [OPTIONS] <NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<NAME>`
 &emsp; Name of the project
 
-### Options
+## Options
 
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group that owns the project

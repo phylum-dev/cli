@@ -1,9 +1,4 @@
----
-title: phylum extension uninstall
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62d04d1ec90dcf008e476330
-hidden: false
----
+# phylum extension uninstall
 
 Uninstall extension
 
@@ -11,11 +6,11 @@ Uninstall extension
 Usage: phylum extension uninstall [OPTIONS] <NAME>
 ```
 
-### Arguments
+## Arguments
 
 `<NAME>`
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

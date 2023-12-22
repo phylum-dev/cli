@@ -19,7 +19,7 @@ phylum find-permissions --read --write --bin /usr/bin/ls
 ```
 
 To find out more about the usage of `find-permissions`, check its `--help` or
-visit the [extension sandboxing documentation].
+visit the [extension sandboxing documentation][ext_sandbox_doc].
 
 [phylum-cli]: https://github.com/phylum-dev/cli
-[extension sandboxing documentation]: https://docs.phylum.io/docs/extension_sandboxing#finding-required-exceptions
+[ext_sandbox_doc]: https://docs.phylum.io/cli/extensions/extension_sandboxing#finding-required-exceptions

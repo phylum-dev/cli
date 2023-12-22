@@ -1,9 +1,4 @@
----
-title: phylum auth revoke-token
-category: 6255e67693d5200013b1fa3e
-parentDoc: 625758b12a1e9d0186416451
-hidden: false
----
+# phylum auth revoke-token
 
 Revoke an API token
 
@@ -11,12 +6,12 @@ Revoke an API token
 Usage: phylum auth revoke-token [OPTIONS] [TOKEN_NAME]...
 ```
 
-### Arguments
+## Arguments
 
 `[TOKEN_NAME]`
 &emsp; Unique token names which identify the tokens
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -27,7 +22,7 @@ Usage: phylum auth revoke-token [OPTIONS] [TOKEN_NAME]...
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Interactively select tokens to revoke.

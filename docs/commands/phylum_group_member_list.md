@@ -1,9 +1,4 @@
----
-title: phylum group member list
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62866c2ce78584036d7cbbf7
-hidden: false
----
+# phylum group member list
 
 List group members
 
@@ -11,7 +6,7 @@ List group members
 Usage: phylum group member --group <GROUP> list [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce member list in json format (default: false)
@@ -25,7 +20,7 @@ Usage: phylum group member --group <GROUP> list [OPTIONS]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # List all group members for the 'sample' group

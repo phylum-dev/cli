@@ -1,9 +1,4 @@
----
-title: phylum extension list
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62d04d1ec90dcf008e476330
-hidden: false
----
+# phylum extension list
 
 List installed extensions
 
@@ -11,7 +6,7 @@ List installed extensions
 Usage: phylum extension list [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

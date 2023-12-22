@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Details
+## Details
 
 The following order is used to determine which dependency file will be analyzed:
 
@@ -14,7 +14,7 @@ If any of these locations provides a dependency file, no further search will be
 done. Recursive filesystem search takes common ignore files like `.gitignore`
 and `.ignore` into account.
 
-### Examples
+## Examples
 
 ```sh
 # Analyze your project's default dependency files

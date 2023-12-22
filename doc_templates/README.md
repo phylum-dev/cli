@@ -22,13 +22,25 @@ These placeholers are currently supported:
 
 | Name             | Description                                                                            |
 | ---------------- | -------------------------------------------------------------------------------------- |
-| `{PH-HEADER}`    | ReadMe.com metadata header; omit this when manually overriding the header              |
-| `{PH-TITLE}`     | Command title (i.e. `phylum init`); use this for the ReadMe.com metadata header title  |
+| `{PH-HEADER}`    | Docusaurus metadata header; omit this when manually overriding the header              |
+| `{PH-TITLE}`     | Command title (i.e. `phylum init`); use this for the Docusaurus metadata header title  |
 | `{PH-MARKDOWN}`  | Automatically generated command documentation; this should be present in all templates |
 
-## ReadMe.com metadata
+## Docusaurus metadata
 
-Some additional metadata can be specified by overriding the ReadMe.com header.
-Available fields can be found in the [ReadMe.com docs].
+Some additional metadata can be specified by overriding the Docusaurus header.
+Available fields can be found in the [Docusaurus docs].
 
-[ReadMe.com docs]: https://docs.readme.com/main/reference/createdoc
+[Docusaurus docs]: https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter
+
+## Adding links
+
+Markdown links to other docs should be provided as relative file paths, with
+extensions. This is the [recommended approach from Docusaurus][docu_links].
+
+The relative structure is as found in the [documentation repository][doc_repo].
+All docs are stored or aggregated (via git submodules and symlinks) to the
+`docs` subdirectory there, which forms the root/anchor of relative paths.
+
+[docu_links]: https://docusaurus.io/docs/markdown-features/links
+[doc_repo]: https://github.com/phylum-dev/documentation

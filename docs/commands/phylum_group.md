@@ -1,8 +1,4 @@
----
-title: phylum group
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum group
 
 Interact with user groups
 
@@ -10,7 +6,7 @@ Interact with user groups
 Usage: phylum group [OPTIONS] <COMMAND>
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -21,10 +17,10 @@ Usage: phylum group [OPTIONS] <COMMAND>
 `-h`, `--help`
 &emsp; Print help
 
-### Commands
+## Commands
 
-* [phylum group create](./phylum_group_create)
-* [phylum group delete](./phylum_group_delete)
-* [phylum group list](./phylum_group_list)
-* [phylum group member](./phylum_group_member)
-* [phylum group transfer](./phylum_group_transfer)
+* [phylum group create](./phylum_group_create.md)
+* [phylum group delete](./phylum_group_delete.md)
+* [phylum group list](./phylum_group_list.md)
+* [phylum group member](./phylum_group_member.md)
+* [phylum group transfer](./phylum_group_transfer.md)

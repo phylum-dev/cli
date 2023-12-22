@@ -1,9 +1,4 @@
----
-title: phylum project list
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62757a105ec2660021a19e4d
-hidden: false
----
+# phylum project list
 
 List all existing projects
 
@@ -11,7 +6,7 @@ List all existing projects
 Usage: phylum project list [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
@@ -28,7 +23,7 @@ Usage: phylum project list [OPTIONS]
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # List all existing projects

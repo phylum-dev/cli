@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # List the last 30 analysis runs

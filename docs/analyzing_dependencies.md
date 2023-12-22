@@ -1,16 +1,12 @@
----
-title: Analyzing Dependencies
-category: 6255e67693d5200013b1fa41
-hidden: false
----
+# Analyzing Dependencies
 
-After setting up a Phylum [project](https://docs.phylum.io/docs/create_project), you can begin analysis by running:
+After setting up a Phylum [project](../knowledge_base/create_project.md), you can begin analysis by running:
 
 ```sh
 phylum analyze
 ```
 
-The default response will provide an overall summary result to indicate whether the [project's established policy](https://docs.phylum.io/docs/policy) has been met. If there are still packages being processed, an incomplete status will be indicated. Any policy violations will be reported, along with a link to the complete report.
+The default response will provide an overall summary result to indicate whether the [project's established policy](../knowledge_base/policy.md) has been met. If there are still packages being processed, an incomplete status will be indicated. Any policy violations will be reported, along with a link to the complete report.
 
 ```shellsession
 ❯ phylum analyze

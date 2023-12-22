@@ -1,8 +1,4 @@
----
-title: phylum ping
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum ping
 
 Ping the remote system to verify it is available
 
@@ -10,7 +6,7 @@ Ping the remote system to verify it is available
 Usage: phylum ping [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

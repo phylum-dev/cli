@@ -1,8 +1,4 @@
----
-title: Extension Example
-category: 62c5cb137dbdad00536291a6
-hidden: false
----
+# Extension Example
 
 In this chapter, we'll go over a simple real-world example of what a Phylum CLI
 extension might look like.
@@ -213,7 +209,7 @@ operating system APIs. Since we want to read the lockfile from
 read access to this file ahead of time. All available permissions are documented
 in the [extension manifest documentation].
 
-[extension manifest documentation]: https://docs.phylum.io/docs/extension_manifest#permissions
+[extension manifest documentation]: ./extension_manifest.md#permissions
 
 While it would be possible to request read access to just `./package-lock.json`,
 this would only work for `package-lock.json` files defeating the purpose of

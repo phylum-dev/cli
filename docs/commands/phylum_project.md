@@ -1,8 +1,4 @@
----
-title: phylum project
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum project
 
 Manage Phylum projects
 
@@ -10,7 +6,7 @@ Manage Phylum projects
 Usage: phylum project [OPTIONS] <COMMAND>
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -21,11 +17,11 @@ Usage: phylum project [OPTIONS] <COMMAND>
 `-h`, `--help`
 &emsp; Print help
 
-### Commands
+## Commands
 
-* [phylum project create](./phylum_project_create)
-* [phylum project delete](./phylum_project_delete)
-* [phylum project link](./phylum_project_link)
-* [phylum project list](./phylum_project_list)
-* [phylum project status](./phylum_project_status)
-* [phylum project update](./phylum_project_update)
+* [phylum project create](./phylum_project_create.md)
+* [phylum project delete](./phylum_project_delete.md)
+* [phylum project link](./phylum_project_link.md)
+* [phylum project list](./phylum_project_list.md)
+* [phylum project status](./phylum_project_status.md)
+* [phylum project update](./phylum_project_update.md)

@@ -1,8 +1,4 @@
----
-title: phylum project status
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum project status
 
 Get current project information
 
@@ -10,7 +6,7 @@ Get current project information
 Usage: phylum project status [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)

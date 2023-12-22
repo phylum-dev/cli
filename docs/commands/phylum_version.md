@@ -1,8 +1,4 @@
----
-title: phylum version
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum version
 
 Display application version
 
@@ -10,7 +6,7 @@ Display application version
 Usage: phylum version [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

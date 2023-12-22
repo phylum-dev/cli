@@ -1,8 +1,4 @@
----
-title: phylum analyze
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# phylum analyze
 
 Submit a request for analysis to the processing system
 
@@ -10,12 +6,12 @@ Submit a request for analysis to the processing system
 Usage: phylum analyze [OPTIONS] [DEPENDENCY_FILE]...
 ```
 
-### Arguments
+## Arguments
 
 `[DEPENDENCY_FILE]`
 &emsp; Path to the dependency file to submit
 
-### Options
+## Options
 
 `-l`, `--label` `<LABEL>`
 &emsp; Specify a label to use for analysis
@@ -48,7 +44,7 @@ Usage: phylum analyze [OPTIONS] [DEPENDENCY_FILE]...
 `-h`, `--help`
 &emsp; Print help
 
-### Details
+## Details
 
 The following order is used to determine which dependency file will be analyzed:
 
@@ -60,7 +56,7 @@ If any of these locations provides a dependency file, no further search will be
 done. Recursive filesystem search takes common ignore files like `.gitignore`
 and `.ignore` into account.
 
-### Examples
+## Examples
 
 ```sh
 # Analyze your project's default dependency files

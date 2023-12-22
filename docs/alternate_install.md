@@ -1,8 +1,4 @@
----
-title: Alternate Installation Methods
-category: 6255e67693d5200013b1fa3e
-hidden: false
----
+# Alternate Installation Methods
 
 ## Build from source
 

@@ -1,9 +1,4 @@
----
-title: phylum auth register
-category: 6255e67693d5200013b1fa3e
-parentDoc: 625758b12a1e9d0186416451
-hidden: false
----
+# phylum auth register
 
 Register a new account
 
@@ -11,7 +6,7 @@ Register a new account
 Usage: phylum auth register [OPTIONS]
 ```
 
-### Options
+## Options
 
 `-n`, `--token-name` `<token-name>`
 &emsp; Unique name for the new token that will be created

@@ -1,8 +1,4 @@
----
-title: Extension Quickstart
-category: 62c5cb137dbdad00536291a6
-hidden: false
----
+# Extension Quickstart
 
 ## Creating an extension
 
@@ -27,7 +23,7 @@ directory and imported from the entrypoint.
 The manifest file contains metadata about the extension beyond its executable
 source code. All available options can be found in [the manifest format].
 
-[the manifest format]: https://docs.phylum.io/docs/extension_manifest
+[the manifest format]: ./extension_manifest.md
 
 ## Installation
 

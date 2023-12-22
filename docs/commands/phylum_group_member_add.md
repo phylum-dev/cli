@@ -1,9 +1,4 @@
----
-title: phylum group member add
-category: 6255e67693d5200013b1fa3e
-parentDoc: 62866c2ce78584036d7cbbf7
-hidden: false
----
+# phylum group member add
 
 Add user to group
 
@@ -11,12 +6,12 @@ Add user to group
 Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 ```
 
-### Arguments
+## Arguments
 
 `<USER>`
 &emsp; User(s) to be added
 
-### Options
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
@@ -27,7 +22,7 @@ Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 `-h`, `--help`
 &emsp; Print help
 
-### Examples
+## Examples
 
 ```sh
 # Add user `demo@phylum.io` to the `sample` group

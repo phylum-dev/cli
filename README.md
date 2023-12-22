@@ -9,9 +9,9 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/phylum-dev/cli)](https://github.com/phylum-dev/cli/releases/latest/)
 [![License](https://img.shields.io/github/license/phylum-dev/cli)](https://github.com/phylum-dev/cli/blob/main/LICENSE)
 [![Test Status](https://github.com/phylum-dev/cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/phylum-dev/cli/actions/workflows/test.yml)
-[![README](https://img.shields.io/badge/docs-README-blue)](https://docs.phylum.io/docs/welcome)
+[![Docusaurus](https://img.shields.io/badge/docs-Docusaurus-blue)](https://docs.phylum.io)
 
-The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](https://docs.phylum.io/docs/alternate_install) for more options.
+The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](https://docs.phylum.io/cli/alternate_install) for more options.
 
 ## Install `phylum` CLI
 
@@ -38,25 +38,25 @@ brew install phylum
 
 ## Quickstart for Linux or macOS
 
-1. [Register](https://docs.phylum.io/docs/phylum_auth_register) for an account (if you don't already have one)
+1. [Register](https://docs.phylum.io/cli/commands/phylum_auth_register) for an account (if you don't already have one)
 
    ```sh
    phylum auth register
    ```
 
-1. [Authenticate](https://docs.phylum.io/docs/phylum_auth_login) with Phylum
+1. [Authenticate](https://docs.phylum.io/cli/commands/phylum_auth_login) with Phylum
 
    ```sh
    phylum auth login
    ```
 
-1. [Setup your Phylum project](https://docs.phylum.io/docs/phylum_init) in your project directory
+1. [Setup your Phylum project](https://docs.phylum.io/cli/commands/phylum_init) in your project directory
 
    ```sh
    phylum init
    ```
 
-1. [Submit your lockfiles and manifests](https://docs.phylum.io/docs/phylum_analyze) to [analyze dependencies](https://docs.phylum.io/docs/analyzing_dependencies)
+1. [Submit your lockfiles and manifests](https://docs.phylum.io/cli/commands/phylum_analyze) to [analyze dependencies](https://docs.phylum.io/cli/commands/analyzing_dependencies)
 
    ```sh
    phylum analyze

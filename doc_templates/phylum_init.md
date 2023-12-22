@@ -2,7 +2,7 @@
 
 {PH-MARKDOWN}
 
-### Examples
+## Examples
 
 ```sh
 # Interactively initialize the Phylum project.

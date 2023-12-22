@@ -8,7 +8,7 @@ dependency graph.
 This extension serves as a simple example and has its source code fully
 explained in our [extension example documentation].
 
-[extension example documentation]: https://docs.phylum.io/docs/extension_example
+[extension example documentation]: https://docs.phylum.io/cli/extensions/extension_example
 
 ## Installation and basic usage
 

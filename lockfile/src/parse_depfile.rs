@@ -150,7 +150,7 @@ fn generate_lockfile(
     let generated_lockfile = generator
             .generate_lockfile(&canonical_path)
             .context("Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/docs/lockfile_generation")?;
+                https://docs.phylum.io/cli/lockfile_generation")?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;

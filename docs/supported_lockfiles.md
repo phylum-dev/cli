@@ -1,8 +1,4 @@
----
-title: Supported Lockfiles
-category: 6255e67693d5200013b1fa41
-hidden: false
----
+# Supported Lockfiles
 
 The Phylum CLI supports processing many different lockfiles:
 
@@ -37,5 +33,4 @@ The Phylum CLI supports processing many different lockfiles:
 > **TIP:** Manifest Support
 >
 > Lockfiles can also automatically be generated for certain manifest files.
-> See [lockfile generation](https://docs.phylum.io/docs/lockfile_generation) for
-> details.
+> See [lockfile generation](./lockfile_generation.md) for details.
