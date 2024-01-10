@@ -11,6 +11,9 @@ Usage: phylum [OPTIONS] [COMMAND]
 `-c`, `--config` `<FILE>`
 &emsp; Sets a custom config file
 
+`--no-config`
+&emsp; Ignore all configuration files
+
 `-t`, `--timeout` `<TIMEOUT>`
 &emsp; Set the timeout (in seconds) for requests to the Phylum api
 
