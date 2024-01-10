@@ -39,6 +39,11 @@ pub fn app() -> Command {
                 .value_name("FILE")
                 .help("Sets a custom config file")
                 .value_hint(ValueHint::FilePath),
+            Arg::new("no-config")
+                .long("no-config")
+                .help("Ignore all configuration files")
+                .conflicts_with("config")
+                .action(ArgAction::SetTrue),
             Arg::new("timeout")
                 .short('t')
                 .long("timeout")

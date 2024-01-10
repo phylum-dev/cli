@@ -1,8 +1,7 @@
 use std::fmt::Display;
-use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 #[cfg(feature = "selfmanage")]
 use clap::ArgMatches;
 use env_logger::Env;
@@ -34,24 +33,21 @@ fn exit_fail(message: impl Display, exit_code: ExitCode) -> ! {
 
 /// Construct an instance of `PhylumApi` given configuration, optional timeout,
 /// and whether we need API to ignore certificates.
-async fn api_factory(
-    config: Config,
-    config_path: PathBuf,
-    timeout: Option<u64>,
-) -> Result<PhylumApi> {
+async fn api_factory(config: Config, timeout: Option<u64>) -> Result<PhylumApi> {
     let api = PhylumApi::new(config, timeout).await?;
 
     // PhylumApi may have had to log in, updating the auth info so we should save
     // the config
-    config::save_config(&config_path, api.config()).with_context(|| {
-        format!("Failed to save configuration to '{}'", config_path.to_string_lossy())
-    })?;
+    let api_config = api.config();
+    api_config
+        .save()
+        .with_context(|| format!("Failed to save configuration to {:?}", api_config.path))?;
 
     Ok(api)
 }
 
 /// Check for an updated release of the CLI
-async fn check_for_updates(config: &mut Config, config_path: &Path) -> Result<()> {
+async fn check_for_updates(config: &mut Config) -> Result<()> {
     let now = UNIX_EPOCH.elapsed().expect("Time went backwards").as_secs() as usize;
 
     if let Some(last_update) = config.last_update {
@@ -66,8 +62,7 @@ async fn check_for_updates(config: &mut Config, config_path: &Path) -> Result<()
 
     // Update last update check timestamp.
     config.last_update = Some(now);
-    config::save_config(config_path, &config)
-        .unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
+    config.save().unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
 
     if update::needs_update(false).await {
         print::print_update_message();
@@ -104,19 +99,9 @@ async fn handle_commands() -> CommandResult {
         None => env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init(),
     };
 
-    let settings_path = config::get_home_settings_path()?;
-    let config_path = matches
-        .get_one::<String>("config")
-        .and_then(|config_path| shellexpand::env(config_path).ok())
-        .map(|config_path| PathBuf::from(config_path.to_string()))
-        .unwrap_or(settings_path);
+    let mut config = config::load_config(&matches)?;
 
-    log::debug!("Reading config from {}", config_path.to_string_lossy());
-    let mut config: Config = config::read_configuration(&config_path).map_err(|err| {
-        anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
-    })?;
     config.set_ignore_certs_cli(matches.get_flag("no-check-certificate"));
-
     if config.ignore_certs() {
         log::warn!("Ignoring TLS server certificate verification per user request.");
     }
@@ -124,21 +109,23 @@ async fn handle_commands() -> CommandResult {
     // We initialize these value here, for later use by the PhylumApi object.
     let timeout = matches.get_one::<String>("timeout").and_then(|t| t.parse::<u64>().ok());
 
-    // Check for updates if enabled and if we haven't explicitly invoked `update`.
-    if cfg!(feature = "selfmanage") && matches.subcommand_matches("update").is_none() {
-        check_for_updates(&mut config, &config_path).await?;
+    let (subcommand, sub_matches) = matches.subcommand().unwrap();
+
+    // Check for updates unless we're running without config or the `update`
+    // subcommand.
+    if cfg!(feature = "selfmanage") && config.path.is_some() && subcommand != "update" {
+        check_for_updates(&mut config).await?;
     }
 
     // Get the future, but don't await. Commands that require access to the API will
     // await on this, so that the API is not instantiated ahead of time for
     // subcommands that don't require it.
-    let api = api_factory(config.clone(), config_path.clone(), timeout);
+    let api = api_factory(config.clone(), timeout);
 
-    let (subcommand, sub_matches) = matches.subcommand().unwrap();
     match subcommand {
         "auth" => {
             drop(api);
-            auth::handle_auth(config, &config_path, sub_matches, timeout).await
+            auth::handle_auth(config, sub_matches, timeout).await
         },
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),
