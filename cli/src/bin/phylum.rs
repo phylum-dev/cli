@@ -111,8 +111,8 @@ async fn handle_commands() -> CommandResult {
 
     let (subcommand, sub_matches) = matches.subcommand().unwrap();
 
-    // Check for updates if enabled and if we haven't explicitly invoked `update` or
-    // `parse-sandboxed`.
+    // Check for updates unless we're running without config or the `update`
+    // subcommand.
     if cfg!(feature = "selfmanage") && config.path.is_some() && subcommand != "update" {
         check_for_updates(&mut config).await?;
     }
