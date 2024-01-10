@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use anyhow::{anyhow, Result};
+use clap::ArgMatches;
 use phylum_project::{DepfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -50,6 +51,8 @@ pub struct Config {
     pub auth_info: AuthInfo,
     pub last_update: Option<usize>,
     #[serde(skip)]
+    pub path: Option<PathBuf>,
+    #[serde(skip)]
     ignore_certs_cli: bool,
     #[serde(deserialize_with = "default_option_bool")]
     ignore_certs: bool,
@@ -63,6 +66,7 @@ impl Default for Config {
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
+            path: None,
         }
     }
 }
@@ -77,6 +81,16 @@ impl Config {
     pub fn set_ignore_certs_cli(&mut self, ignore_certs_cli: bool) {
         self.ignore_certs_cli = ignore_certs_cli;
     }
+
+    /// Write updates to the configuration file.
+    pub fn save(&self) -> Result<()> {
+        let path = match &self.path {
+            Some(path) => path,
+            None => return Ok(()),
+        };
+
+        save_config(path, self)
+    }
 }
 
 fn default_option_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -84,6 +98,30 @@ where
     D: Deserializer<'de>,
 {
     Ok(Option::<bool>::deserialize(deserializer)?.unwrap_or_default())
+}
+
+/// Load the configuration file.
+pub fn load_config(matches: &ArgMatches) -> Result<Config> {
+    // Early return with configuration disabled.
+    if matches.get_flag("no-config") {
+        return Ok(Config::default());
+    }
+
+    let settings_path = get_home_settings_path()?;
+    let config_path = matches
+        .get_one::<String>("config")
+        .and_then(|config_path| shellexpand::env(config_path).ok())
+        .map(|config_path| PathBuf::from(config_path.to_string()))
+        .unwrap_or(settings_path);
+
+    log::debug!("Reading config from {}", config_path.to_string_lossy());
+    let mut config: Config = read_configuration(&config_path).map_err(|err| {
+        anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
+    })?;
+
+    config.path = Some(config_path);
+
+    Ok(config)
 }
 
 /// Atomically overwrite the configuration file.
@@ -151,7 +189,7 @@ where
     Ok(serde_yaml::from_str::<T>(&contents)?)
 }
 
-pub fn read_configuration(path: &Path) -> Result<Config> {
+fn read_configuration(path: &Path) -> Result<Config> {
     let mut config: Config = match parse_config(path) {
         Ok(c) => c,
         Err(orig_err) => match orig_err.downcast_ref::<io::Error>() {
@@ -244,6 +282,7 @@ mod tests {
             ignore_certs_cli: false,
             ignore_certs: false,
             last_update: None,
+            path: None,
         }
     }
 

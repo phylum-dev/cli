@@ -326,6 +326,7 @@ fn parse_sandboxed_command(
 ) -> Result<Command> {
     let current_exe = env::current_exe()?;
     let mut command = Command::new(current_exe);
+    command.arg("--no-config");
 
     command.arg("parse-sandboxed");
     command.arg(path);

@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use chrono::{Duration, Utc};
@@ -11,17 +10,13 @@ use tokio::io::{self, AsyncBufReadExt, BufReader};
 use crate::api::PhylumApi;
 use crate::auth::{is_locksmith_token, AuthAction};
 use crate::commands::{CommandResult, ExitCode};
-use crate::config::{save_config, Config};
+use crate::config::Config;
 use crate::format::Format;
 use crate::{auth, print_user_failure, print_user_success, print_user_warning};
 
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
-async fn handle_auth_register(
-    mut config: Config,
-    config_path: &Path,
-    matches: &ArgMatches,
-) -> Result<()> {
+async fn handle_auth_register(mut config: Config, matches: &ArgMatches) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
     config.auth_info = PhylumApi::register(
@@ -31,17 +26,13 @@ async fn handle_auth_register(
         api_uri,
     )
     .await?;
-    save_config(config_path, &config).map_err(|error| anyhow!(error))?;
+    config.save().map_err(|error| anyhow!(error))?;
     Ok(())
 }
 
 /// Login a user. Opens a browser, and redirects the user to the oauth server
 /// login page
-async fn handle_auth_login(
-    mut config: Config,
-    config_path: &Path,
-    matches: &ArgMatches,
-) -> Result<()> {
+async fn handle_auth_login(mut config: Config, matches: &ArgMatches) -> Result<()> {
     let api_uri = &config.connection.uri;
     let ignore_certs = config.ignore_certs();
     config.auth_info = PhylumApi::login(
@@ -52,7 +43,7 @@ async fn handle_auth_login(
         matches.get_flag("reauth"),
     )
     .await?;
-    save_config(config_path, &config).map_err(|error| anyhow!(error))?;
+    config.save().map_err(|error| anyhow!(error))?;
     Ok(())
 }
 
@@ -133,14 +124,13 @@ async fn stdin_read_token() -> Result<RefreshToken> {
 pub async fn handle_auth_set_token(
     mut config: Config,
     matches: &clap::ArgMatches,
-    config_path: &Path,
 ) -> CommandResult {
     let offline_access = match matches.get_one::<String>("token") {
         Some(t) => RefreshToken::new(t),
         None => stdin_read_token().await?,
     };
     config.auth_info.set_offline_access(offline_access);
-    save_config(config_path, &config)?;
+    config.save()?;
     Ok(ExitCode::Ok)
 }
 
@@ -247,19 +237,18 @@ pub async fn handle_auth_create_token(
 /// Handle the subcommands for the `auth` subcommand.
 pub async fn handle_auth(
     config: Config,
-    config_path: &Path,
     matches: &clap::ArgMatches,
     timeout: Option<u64>,
 ) -> CommandResult {
     match matches.subcommand() {
-        Some(("register", _)) => match handle_auth_register(config, config_path, matches).await {
+        Some(("register", _)) => match handle_auth_register(config, matches).await {
             Ok(_) => {
                 print_user_success!("{}", "User successfuly regsistered");
                 Ok(ExitCode::Ok)
             },
             Err(error) => Err(error).context("User registration failed"),
         },
-        Some(("login", matches)) => match handle_auth_login(config, config_path, matches).await {
+        Some(("login", matches)) => match handle_auth_login(config, matches).await {
             Ok(_) => {
                 print_user_success!("{}", "User login successful");
                 Ok(ExitCode::Ok)
@@ -268,7 +257,7 @@ pub async fn handle_auth(
         },
         Some(("status", _)) => handle_auth_status(config, timeout).await,
         Some(("token", matches)) => handle_auth_token(&config, matches).await,
-        Some(("set-token", matches)) => handle_auth_set_token(config, matches, config_path).await,
+        Some(("set-token", matches)) => handle_auth_set_token(config, matches).await,
         Some(("list-tokens", matches)) => handle_auth_list_tokens(config, matches, timeout).await,
         Some(("revoke-token", matches)) => handle_auth_revoke_token(config, matches, timeout).await,
         Some(("create-token", matches)) => handle_auth_create_token(config, matches, timeout).await,
