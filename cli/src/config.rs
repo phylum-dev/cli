@@ -115,9 +115,8 @@ pub fn load_config(matches: &ArgMatches) -> Result<Config> {
         .unwrap_or(settings_path);
 
     log::debug!("Reading config from {}", config_path.to_string_lossy());
-    let mut config: Config = read_configuration(&config_path).with_context(|| {
-        anyhow!("Failed to read configuration at {:?}", config_path)
-    })?;
+    let mut config: Config = read_configuration(&config_path)
+        .with_context(|| anyhow!("Failed to read configuration at {:?}", config_path))?;
 
     config.path = Some(config_path);
 
