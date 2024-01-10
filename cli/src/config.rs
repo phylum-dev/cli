@@ -9,7 +9,7 @@ use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use phylum_project::{DepfileConfig, ProjectConfig};
 use phylum_types::types::auth::RefreshToken;
@@ -115,8 +115,8 @@ pub fn load_config(matches: &ArgMatches) -> Result<Config> {
         .unwrap_or(settings_path);
 
     log::debug!("Reading config from {}", config_path.to_string_lossy());
-    let mut config: Config = read_configuration(&config_path).map_err(|err| {
-        anyhow!("Failed to read configuration at `{}`: {}", config_path.to_string_lossy(), err)
+    let mut config: Config = read_configuration(&config_path).with_context(|| {
+        anyhow!("Failed to read configuration at {:?}", config_path)
     })?;
 
     config.path = Some(config_path);
