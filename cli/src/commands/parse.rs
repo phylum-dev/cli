@@ -2,7 +2,7 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::result::Result as StdResult;
 use std::str::FromStr;
 use std::{env, fs, io};
@@ -165,18 +165,19 @@ pub fn parse_depfile(
             generate_lockfiles,
             false,
         )?;
+        command.stderr(Stdio::inherit());
         let output = command.output().map_err(anyhow::Error::from)?;
 
         if !output.status.success() {
+            // Forward STDOUT to the user on failure.
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            println!("{stdout}");
+
             // Check exit code to special-case lockfile generation failure.
             if output.status.code() == Some(i32::from(&ExitCode::ManifestWithoutGeneration)) {
                 Err(ParseError::ManifestWithoutGeneration(path.display().to_string()))
             } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                Err(ParseError::Other(
-                    anyhow!("subprocess failed:\n{stderr}")
-                        .context("Dependency file parsing failed"),
-                ))
+                Err(ParseError::Other(anyhow!("Dependency file parsing failed")))
             }
         } else {
             let json = String::from_utf8_lossy(&output.stdout);
