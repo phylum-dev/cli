@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Parse `pip` manifest files with names other than `requirements*.txt`
+
 ## 6.0.1 - 2023-12-19
 
 ### Fixed

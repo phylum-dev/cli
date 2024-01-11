@@ -95,9 +95,11 @@ pub fn parse_depfile(
     }
 
     // Generate lockfile if path might be a manifest and feature and option are
-    // enabled.
+    // enabled. NOTE: All pip format files have the potential to be a manifest.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) = _generation_path.filter(|_| maybe_manifest) {
+    if let Some(generation_path) =
+        _generation_path.filter(|_| maybe_manifest || format == LockfileFormat::Pip)
+    {
         return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
     }
 
@@ -126,7 +128,10 @@ fn try_get_packages(
         }
     }
 
-    Err(anyhow!("Failed to identify type for lockfile {path:?}"))
+    Err(anyhow!(
+        "Failed to identify type for lockfile {path:?}. \
+         Consider specifying it as an argument or in `.phylum_project`."
+    ))
 }
 
 /// Generate a lockfile from a manifest path.
@@ -147,10 +152,10 @@ fn generate_lockfile(
 
     // Generate a new lockfile.
     let canonical_path = generation_path.canonicalize()?;
-    let generated_lockfile = generator
-            .generate_lockfile(&canonical_path)
-            .context("Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/cli/lockfile_generation")?;
+    let generated_lockfile = generator.generate_lockfile(&canonical_path).context(
+        "Lockfile generation failed! For details, see: \
+         https://docs.phylum.io/cli/lockfile_generation",
+    )?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;

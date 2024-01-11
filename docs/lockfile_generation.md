@@ -72,6 +72,17 @@ a lockfile (e.g., `pip freeze > requirements.txt`).
 Phylum handles these files by first attempting to analyze them as a lockfile. If anything in the file is not fully
 specified, this will fail, and Phylum will silence the error and proceed to lockfile generation.
 
+Python's `pip` dependency files can be named anything. When submitting `pip` **manifest** files whose name does not fit
+the `requirements*.txt` pattern, it is necessary to specify the `pip` lockfile type for lockfile generation. This can be
+done when [creating the project][create_project] or with the `--type` (`-t`) option for the `parse` and `analyze`
+commands. For example:
+
+```sh
+phylum parse -t pip dev-requirements.txt
+```
+
+[create_project]: ../knowledge_base/create_project.md
+
 ## Example scenario
 
 1. A user runs `phylum analyze package.json`
