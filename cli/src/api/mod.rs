@@ -6,10 +6,8 @@ use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{
     CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse, ListUserGroupsResponse,
 };
-use phylum_types::types::job::{
-    AllJobsStatusResponse, SubmitPackageRequest, SubmitPackageResponse,
-};
-use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
+use phylum_types::types::job::{AllJobsStatusResponse, SubmitPackageResponse};
+use phylum_types::types::package::PackageDescriptor;
 use phylum_types::types::project::{
     CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse, UpdateProjectRequest,
 };
@@ -31,8 +29,9 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    HistoryJob, PackageSpecifier, PackageSubmitResponse, PingResponse, PolicyEvaluationRequest,
-    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RevokeTokenRequest, UserToken,
+    AnalysisPackageDescriptor, HistoryJob, PackageSpecifier, PackageSubmitResponse, PingResponse,
+    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
+    RevokeTokenRequest, SubmitPackageRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -310,12 +309,11 @@ impl PhylumApi {
     /// Submit a new request to the system
     pub async fn submit_request(
         &self,
-        package_list: &[PackageDescriptorAndLockfile],
+        package_list: &[AnalysisPackageDescriptor],
         project: ProjectId,
         label: Option<String>,
         group_name: Option<String>,
     ) -> Result<JobId> {
-        #[allow(deprecated)]
         let req = SubmitPackageRequest {
             packages: package_list.to_vec(),
             is_user: true,
@@ -507,7 +505,7 @@ mod tests {
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
-    use phylum_types::types::package::PackageType;
+    use phylum_types::types::package::{PackageDescriptorAndLockfile, PackageType};
     use wiremock::http::HeaderName;
     use wiremock::matchers::{method, path, path_regex, query_param};
     use wiremock::{Mock, ResponseTemplate};
@@ -575,10 +573,10 @@ mod tests {
             package_type: PackageType::Npm,
         };
 
-        let pkg = PackageDescriptorAndLockfile {
+        let pkg = AnalysisPackageDescriptor::PackageDescriptor(PackageDescriptorAndLockfile {
             package_descriptor,
             lockfile: Some("package-lock.json".to_owned()),
-        };
+        });
 
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());
@@ -611,10 +609,10 @@ mod tests {
             package_type: PackageType::Npm,
         };
 
-        let pkg = PackageDescriptorAndLockfile {
+        let pkg = AnalysisPackageDescriptor::PackageDescriptor(PackageDescriptorAndLockfile {
             package_descriptor,
             lockfile: Some("package-lock.json".to_owned()),
-        };
+        });
 
         let project_id = ProjectId::new_v4();
         let label = Some("mylabel".to_string());

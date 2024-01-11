@@ -36,9 +36,31 @@ use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
 use crate::types::{
-    Package, PackageSpecifier, PackageSubmitResponse, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw,
+    AnalysisPackageDescriptor, Package, PackageSpecifier, PackageSubmitResponse,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, PurlWithOrigin,
 };
+
+/// Package format accepted by extension API.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum ExtensionApiPackage {
+    PackageDescriptor(PackageWithOrigin),
+    Purl(PurlWithOrigin),
+}
+
+impl From<ExtensionApiPackage> for AnalysisPackageDescriptor {
+    fn from(package: ExtensionApiPackage) -> Self {
+        match package {
+            ExtensionApiPackage::PackageDescriptor(package) => {
+                AnalysisPackageDescriptor::PackageDescriptor(PackageDescriptorAndLockfile {
+                    package_descriptor: package.package,
+                    lockfile: package.origin,
+                })
+            },
+            ExtensionApiPackage::Purl(package) => AnalysisPackageDescriptor::Purl(package),
+        }
+    }
+}
 
 /// Package with its source attached.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
@@ -48,15 +70,6 @@ struct PackageWithOrigin {
     #[serde(alias = "lockfile")]
     #[serde(skip_serializing_if = "Option::is_none")]
     origin: Option<String>,
-}
-
-impl From<PackageWithOrigin> for PackageDescriptorAndLockfile {
-    fn from(package: PackageWithOrigin) -> Self {
-        PackageDescriptorAndLockfile {
-            package_descriptor: package.package,
-            lockfile: package.origin,
-        }
-    }
 }
 
 /// New process to be launched.
@@ -151,7 +164,7 @@ struct ProcessOutput {
 #[serde]
 async fn analyze(
     op_state: Rc<RefCell<OpState>>,
-    #[serde] packages: Vec<PackageWithOrigin>,
+    #[serde] packages: Vec<ExtensionApiPackage>,
     #[string] project: Option<String>,
     #[string] group: Option<String>,
     #[string] label: Option<String>,

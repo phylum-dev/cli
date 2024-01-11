@@ -5,7 +5,12 @@ export type PackageWithOrigin = {
   name: string;
   version: string;
   type: string;
-  origin: string;
+  origin?: string;
+};
+
+export type PurlWithOrigin = {
+  purl: string;
+  origin?: string;
 };
 
 export type Package = {
