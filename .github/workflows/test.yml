@@ -72,6 +72,9 @@ jobs:
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
 
+      - name: Upgrade pip
+        run: python3 -m pip install --upgrade pip
+
       - name: Test
         run: cargo +stable test --locked
 
@@ -119,6 +122,9 @@ jobs:
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
+
+      - name: Upgrade pip
+        run: python3 -m pip install --upgrade pip
 
       - name: All Features
         env:

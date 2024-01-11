@@ -129,8 +129,8 @@ fn try_get_packages(
     }
 
     Err(anyhow!(
-        "Failed to identify type for lockfile {path:?}. \
-         Consider specifying it as an argument or in `.phylum_project`."
+        "Failed to identify type for lockfile {path:?}. Consider specifying it as an argument or \
+         in `.phylum_project`."
     ))
 }
 
