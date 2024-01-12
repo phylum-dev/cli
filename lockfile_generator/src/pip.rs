@@ -120,6 +120,13 @@ fn check_pip_version(project_path: &Path) -> Result<()> {
         Error::ProcessCreation(program, String::from("pip"), err)
     })?;
 
+    // Report errors with `pip` version check.
+    if !version_output.status.success() {
+        let exit_code = version_output.status.code();
+        let version_stderr = String::from_utf8_lossy(&version_output.stderr).trim().to_owned();
+        return Err(Error::NonZeroExit(exit_code, version_stderr));
+    }
+
     let version_stdout = String::from_utf8(version_output.stdout)?.trim().to_owned();
 
     // Strip "pip " prefix.
