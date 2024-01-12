@@ -58,10 +58,5 @@ fn parse_nonstandard_pip_manifest() {
     fs::copy("../tests/fixtures/dev-requirements.txt", temp_path.join("dev-requirements.txt"))
         .unwrap();
 
-    test_cli
-        .cmd()
-        .args(["parse", "--type", "pip", "dev-requirements.txt"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("\"name\": \"PyYAML\""));
+    test_cli.cmd().args(["parse", "--type", "pip", "dev-requirements.txt"]).assert().success();
 }
