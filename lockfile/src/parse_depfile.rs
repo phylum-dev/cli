@@ -73,7 +73,7 @@ pub fn parse_depfile(
     // Attempt to parse with all known parsers as fallback.
     let format = match format {
         Some(format) => format,
-        None => return Ok(try_get_packages(path, contents)?),
+        None => return try_get_packages(path, contents),
     };
 
     // Parse with the identified parser.
