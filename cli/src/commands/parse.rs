@@ -45,12 +45,17 @@ pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
             generate_lockfiles,
         );
 
-        // Map dedicated exit code for failure due to disabled generation.
+        // Map dedicated exit codes for failures due to disabled generation or
+        // unknown dependency file format.
         let parsed_lockfile = match parse_result {
             Ok(parsed_lockfile) => parsed_lockfile,
             Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
                 print_user_failure!("Could not parse manifest: {}", err);
                 return Ok(ExitCode::ManifestWithoutGeneration);
+            },
+            Err(err @ ParseError::UnknownManifestFormat(_)) => {
+                print_user_failure!("Could not parse manifest: {}", err);
+                return Ok(ExitCode::UnknownManifestFormat);
             },
             Err(ParseError::Other(err)) => {
                 return Err(err).with_context(|| {
@@ -127,6 +132,7 @@ fn child_parse_depfile(
         Err(ParseError::ManifestWithoutGeneration(_)) => {
             return Ok(ExitCode::ManifestWithoutGeneration)
         },
+        Err(ParseError::UnknownManifestFormat(_)) => return Ok(ExitCode::UnknownManifestFormat),
         Err(ParseError::Other(err)) => return Err(err),
     };
 
@@ -175,7 +181,9 @@ pub fn parse_depfile(
 
             // Check exit code to special-case lockfile generation failure.
             if output.status.code() == Some(i32::from(&ExitCode::ManifestWithoutGeneration)) {
-                Err(ParseError::ManifestWithoutGeneration(path.display().to_string()))
+                Err(ParseError::ManifestWithoutGeneration(display_path))
+            } else if output.status.code() == Some(i32::from(&ExitCode::UnknownManifestFormat)) {
+                Err(ParseError::UnknownManifestFormat(display_path))
             } else {
                 Err(ParseError::Other(anyhow!("Dependency file parsing failed")))
             }

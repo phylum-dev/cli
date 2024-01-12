@@ -13,6 +13,9 @@ pub enum ParseError {
     /// Dependency file is a manifest, but lockfile generation is disabled.
     #[error("Parsing {0:?} requires lockfile generation, but it was disabled")]
     ManifestWithoutGeneration(String),
+    /// Dependency file is a manifest, but file type was not provided.
+    #[error("Parsing {0:?} requires a type to be specified")]
+    UnknownManifestFormat(String),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -80,10 +83,12 @@ pub fn parse_depfile(
     let pseudopath = Path::new(&path);
     let maybe_lockfile = parser.is_path_lockfile(pseudopath);
     let maybe_manifest = parser.is_path_manifest(pseudopath);
+    let lockfile_likely = maybe_lockfile || !maybe_manifest;
+    let manifest_likely = !maybe_lockfile || maybe_manifest;
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
-    if maybe_lockfile || !maybe_manifest {
+    if lockfile_likely {
         // Parse lockfile content.
         let packages = parse_lockfile_content(contents, parser);
 
@@ -94,12 +99,9 @@ pub fn parse_depfile(
         }
     }
 
-    // Generate lockfile if path might be a manifest and feature and option are
-    // enabled. NOTE: All pip format files have the potential to be a manifest.
+    // Generate lockfile for likely manifests when the feature and option are enabled.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) =
-        _generation_path.filter(|_| maybe_manifest || format == LockfileFormat::Pip)
-    {
+    if let Some(generation_path) = _generation_path.filter(|_| manifest_likely) {
         return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
     }
 
@@ -112,10 +114,7 @@ pub fn parse_depfile(
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(
-    path: impl Into<String>,
-    contents: &str,
-) -> Result<ParsedLockfile, anyhow::Error> {
+fn try_get_packages(path: impl Into<String>, contents: &str) -> Result<ParsedLockfile, ParseError> {
     let path = path.into();
     for format in LockfileFormat::iter() {
         let parser = format.parser();
@@ -128,10 +127,7 @@ fn try_get_packages(
         }
     }
 
-    Err(anyhow!(
-        "Failed to identify type for lockfile {path:?}. Consider specifying it as an argument or \
-         in `.phylum_project`."
-    ))
+    Err(ParseError::UnknownManifestFormat(path))
 }
 
 /// Generate a lockfile from a manifest path.

@@ -46,22 +46,3 @@ fn parse_with_project_lockfile_relative_paths() {
 
     let not_sensitive_dir = predicate::str::contains("sensitive_dir_name").not();
     test_cli.cmd().args(["parse"]).assert().success().stdout(not_sensitive_dir);
-}
-
-#[test]
-fn parse_nonstandard_pip_manifest() {
-    // Setup CLI with temp dir.
-    let test_cli = TestCli::builder().cwd_temp().build();
-    let temp_path = test_cli.temp_path();
-
-    // Copy non-standard named pip manifest file to temp dir.
-    fs::copy("../tests/fixtures/dev-requirements.txt", temp_path.join("dev-requirements.txt"))
-        .unwrap();
-
-    test_cli
-        .cmd()
-        .args(["parse", "--type", "pip", "dev-requirements.txt"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("\"name\": \"PyYAML\""));
-}

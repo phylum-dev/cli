@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Parse `pip` manifest files with names other than `requirements*.txt`
+- Parse manifest files with non-standard names
 
 ## 6.0.1 - 2023-12-19
 

@@ -123,6 +123,10 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                     print_user_failure!("Could not parse manifest: {}", err);
                     return Ok(ExitCode::ManifestWithoutGeneration);
                 },
+                Err(err @ ParseError::UnknownManifestFormat(_)) => {
+                    print_user_failure!("Could not parse manifest: {}", err);
+                    return Ok(ExitCode::UnknownManifestFormat);
+                },
                 Err(ParseError::Other(err)) => {
                     return Err(err).with_context(|| {
                         format!(
