@@ -99,7 +99,7 @@ pub fn parse_depfile(
         }
     }
 
-    // Generate lockfile for likely manifests when the feature and option are enabled.
+    // Generate lockfile for likely manifests when feature and option are enabled.
     #[cfg(feature = "generator")]
     if let Some(generation_path) = _generation_path.filter(|_| manifest_likely) {
         return Ok(generate_lockfile(&generation_path, &path, format, parser)?);

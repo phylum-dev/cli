@@ -46,3 +46,4 @@ fn parse_with_project_lockfile_relative_paths() {
 
     let not_sensitive_dir = predicate::str::contains("sensitive_dir_name").not();
     test_cli.cmd().args(["parse"]).assert().success().stdout(not_sensitive_dir);
+}
