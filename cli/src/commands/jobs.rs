@@ -116,7 +116,8 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                 generate_lockfiles,
             );
 
-            // Map dedicated exit code for failure due to disabled generation.
+            // Map dedicated exit codes for failures due to disabled generation or
+            // unknown dependency file format.
             let parsed_depfile = match parse_result {
                 Ok(parsed_depfile) => parsed_depfile,
                 Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
@@ -130,8 +131,9 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                 Err(ParseError::Other(err)) => {
                     return Err(err).with_context(|| {
                         format!(
-                            "Unable to locate any valid package in dependency file {:?}",
-                            depfile.path
+                            "Could not parse dependency file {:?} as {:?} type",
+                            depfile.path.display(),
+                            depfile.depfile_type
                         )
                     });
                 },

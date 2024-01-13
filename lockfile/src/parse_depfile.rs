@@ -83,12 +83,10 @@ pub fn parse_depfile(
     let pseudopath = Path::new(&path);
     let maybe_lockfile = parser.is_path_lockfile(pseudopath);
     let maybe_manifest = parser.is_path_manifest(pseudopath);
-    let lockfile_likely = maybe_lockfile || !maybe_manifest;
-    let manifest_likely = !maybe_lockfile || maybe_manifest;
 
     // Attempt to parse the identified lockfile.
     let mut lockfile_error = None;
-    if lockfile_likely {
+    if maybe_lockfile || !maybe_manifest {
         // Parse lockfile content.
         let packages = parse_lockfile_content(contents, parser);
 
@@ -99,10 +97,16 @@ pub fn parse_depfile(
         }
     }
 
-    // Generate lockfile for likely manifests when feature and option are enabled.
+    // Attempt to generate a lockfile for likely manifests when feature and option
+    // are enabled. This is a best effort attempt for files that are known at this
+    // point to not be a valid/parseable lockfile but may parse as a manifest with
+    // a non-standard name.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) = _generation_path.filter(|_| manifest_likely) {
-        return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
+    if let Some(generation_path) = _generation_path.filter(|_| !maybe_lockfile || maybe_manifest) {
+        let result = generate_lockfile(&generation_path, &path, format, parser);
+        if result.is_ok() {
+            return Ok(result?);
+        }
     }
 
     // Return the original lockfile parsing error.

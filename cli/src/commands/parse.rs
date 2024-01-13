@@ -59,7 +59,11 @@ pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
             },
             Err(ParseError::Other(err)) => {
                 return Err(err).with_context(|| {
-                    format!("could not parse dependency file \"{}\"", depfile.path.display())
+                    format!(
+                        "Could not parse dependency file {:?} as {:?} type",
+                        depfile.path.display(),
+                        depfile.depfile_type
+                    )
                 });
             },
         };
