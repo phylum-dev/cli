@@ -14,6 +14,7 @@ use phylum_lockfile::{LockfileFormat, ParseError, ParsedLockfile};
 
 use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
+use crate::types::AnalysisPackageDescriptor;
 use crate::{config, dirs, print_user_failure, print_user_warning};
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
@@ -59,7 +60,9 @@ pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
             },
         };
 
-        pkgs.append(&mut parsed_lockfile.api_packages());
+        let mut analysis_packages =
+            AnalysisPackageDescriptor::descriptors_from_lockfile(parsed_lockfile);
+        pkgs.append(&mut analysis_packages);
     }
 
     serde_json::to_writer_pretty(&mut io::stdout(), &pkgs)?;

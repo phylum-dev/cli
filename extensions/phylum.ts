@@ -5,7 +5,12 @@ export type PackageWithOrigin = {
   name: string;
   version: string;
   type: string;
-  origin: string;
+  origin?: string;
+};
+
+export type PurlWithOrigin = {
+  purl: string;
+  origin?: string;
 };
 
 export type Package = {
@@ -136,7 +141,7 @@ export class PhylumApi {
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
-    packages: PackageWithOrigin[],
+    packages: (PackageWithOrigin | PurlWithOrigin)[],
     project?: string,
     group?: string,
     label?: string,

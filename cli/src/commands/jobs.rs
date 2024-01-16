@@ -17,6 +17,7 @@ use crate::api::PhylumApi;
 use crate::auth::jwt::RealmRole;
 use crate::commands::{parse, CommandResult, ExitCode};
 use crate::format::Format;
+use crate::types::AnalysisPackageDescriptor;
 #[cfg(feature = "vulnreach")]
 use crate::vulnreach;
 use crate::{config, print_user_failure, print_user_success, print_user_warning};
@@ -141,7 +142,9 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                 );
             }
 
-            packages.append(&mut parsed_depfile.api_packages());
+            let mut analysis_packages =
+                AnalysisPackageDescriptor::descriptors_from_lockfile(parsed_depfile);
+            packages.append(&mut analysis_packages);
         }
 
         if let Some(base) = matches.get_one::<String>("base") {
@@ -184,14 +187,14 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
                     let pkg_version = pkg_info.pop().unwrap();
                     let pkg_name = pkg_info.join(":");
 
-                    packages.push(
+                    packages.push(AnalysisPackageDescriptor::PackageDescriptor(
                         PackageDescriptor {
                             name: pkg_name.to_owned(),
                             version: pkg_version.to_owned(),
                             package_type: request_type.to_owned(),
                         }
                         .into(),
-                    );
+                    ));
                     line.clear();
                 },
                 Err(err) => {
@@ -227,7 +230,15 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
     if synch {
         if pretty_print {
             #[cfg(feature = "vulnreach")]
-            let packages: Vec<_> = packages.into_iter().map(|pkg| pkg.package_descriptor).collect();
+            let packages: Vec<_> = packages
+                .into_iter()
+                .filter_map(|pkg| match pkg {
+                    AnalysisPackageDescriptor::PackageDescriptor(package) => {
+                        Some(package.package_descriptor)
+                    },
+                    AnalysisPackageDescriptor::Purl(_) => None,
+                })
+                .collect();
             #[cfg(feature = "vulnreach")]
             if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
                 print_user_failure!("Reachability analysis failed: {err:?}");
