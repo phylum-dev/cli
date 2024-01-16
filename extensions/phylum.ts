@@ -141,7 +141,7 @@ export class PhylumApi {
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
   static analyze(
-    packages: PackageWithOrigin[],
+    packages: (PackageWithOrigin|PurlWithOrigin)[],
     project?: string,
     group?: string,
     label?: string,
