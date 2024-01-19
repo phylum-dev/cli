@@ -2,8 +2,11 @@ use std::fmt;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
+use phylum_lockfile::ParsedLockfile;
+use phylum_types::types::common::ProjectId;
 use phylum_types::types::package::{
-    PackageDescriptor, RiskDomain as PTRiskDomain, RiskLevel as PTRiskLevel,
+    PackageDescriptor, PackageDescriptorAndLockfile, RiskDomain as PTRiskDomain,
+    RiskLevel as PTRiskLevel,
 };
 use serde::{Deserialize, Serialize};
 
@@ -407,4 +410,57 @@ impl From<PTRiskLevel> for RiskLevel {
             PTRiskLevel::Critical => RiskLevel::Critical,
         }
     }
+}
+
+/// Package descriptor formats accepted by analysis endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum AnalysisPackageDescriptor {
+    PackageDescriptor(PackageDescriptorAndLockfile),
+    Purl(PurlWithOrigin),
+}
+
+impl AnalysisPackageDescriptor {
+    pub fn descriptors_from_lockfile(
+        parsed_lockfile: ParsedLockfile,
+    ) -> Vec<AnalysisPackageDescriptor> {
+        parsed_lockfile
+            .packages
+            .iter()
+            .map(|package_descriptor| {
+                AnalysisPackageDescriptor::PackageDescriptor(PackageDescriptorAndLockfile {
+                    package_descriptor: package_descriptor.clone(),
+                    lockfile: Some(parsed_lockfile.path.clone()),
+                })
+            })
+            .collect()
+    }
+}
+
+/// Submit Package for analysis
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct SubmitPackageRequest {
+    /// The subpackage dependencies of this package
+    pub packages: Vec<AnalysisPackageDescriptor>,
+    /// Was this submitted by a user interactively and not a CI?
+    pub is_user: bool,
+    /// The id of the project this top level package should be associated with
+    pub project: ProjectId,
+    /// A label for this package. Often it's the branch.
+    pub label: String,
+    /// The group that owns the project, if applicable
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group_name: Option<String>,
+}
+
+/// Package URL with attached dependency file origin.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct PurlWithOrigin {
+    purl: String,
+    // NOTE: This is named `lockfile` with an `origin` alias because the API does
+    // not support the `origin` name. So we force conversion to `lockfile` while
+    // allowing a more proper name through the alias.
+    #[serde(alias = "origin")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    lockfile: Option<String>,
 }

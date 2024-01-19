@@ -2,7 +2,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context};
-use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
+use phylum_types::types::package::PackageDescriptor;
 use serde::{Deserialize, Serialize};
 
 use crate::{LockfileFormat, Package, PackageVersion, Parse, ThirdPartyVersion};
@@ -35,17 +35,6 @@ impl ParsedLockfile {
         packages: Vec<PackageDescriptor>,
     ) -> Self {
         Self { path: path.into(), packages, format }
-    }
-
-    /// Convert packages to API's expected format.
-    pub fn api_packages(&self) -> Vec<PackageDescriptorAndLockfile> {
-        self.packages
-            .iter()
-            .map(|package_descriptor| PackageDescriptorAndLockfile {
-                package_descriptor: package_descriptor.clone(),
-                lockfile: Some(self.path.clone()),
-            })
-            .collect()
     }
 }
 
