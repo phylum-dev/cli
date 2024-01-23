@@ -35,9 +35,9 @@ impl Generator for Cargo {
         Ok(workspace_root.join("Cargo.lock"))
     }
 
-    fn command(&self, _manifest_path: &Path) -> Command {
+    fn command(&self, manifest_path: &Path) -> Command {
         let mut command = Command::new("cargo");
-        command.args(["generate-lockfile"]);
+        command.arg("generate-lockfile").arg("--manifest-path").arg(manifest_path);
         command
     }
 

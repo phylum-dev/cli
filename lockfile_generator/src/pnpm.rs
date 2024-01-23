@@ -1,5 +1,6 @@
 //! JavaScript pnpm ecosystem.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
@@ -41,6 +42,14 @@ impl Generator for Pnpm {
 
     fn tool(&self) -> &'static str {
         "pnpm"
+    }
+
+    fn check_prerequisites(&self, manifest_path: &Path) -> Result<()> {
+        if manifest_path.file_name() != Some(OsStr::new("package.json")) {
+            Err(Error::InvalidManifest(manifest_path.to_path_buf()))
+        } else {
+            Ok(())
+        }
     }
 }
 
