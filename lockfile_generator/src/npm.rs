@@ -1,5 +1,6 @@
 //! JavaScript npm ecosystem.
 
+use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -9,7 +10,7 @@ use serde::Deserialize;
 
 use crate::{Error, Generator, Result};
 
-/// Maximum upwards travelsal when searching for a workspace root.
+/// Maximum upwards traversal when searching for a workspace root.
 const WORKSPACE_ROOT_RECURSION_LIMIT: usize = 16;
 
 pub struct Npm;
@@ -37,6 +38,14 @@ impl Generator for Npm {
 
     fn tool(&self) -> &'static str {
         "npm"
+    }
+
+    fn check_prerequisites(&self, manifest_path: &Path) -> Result<()> {
+        if manifest_path.file_name() != Some(OsStr::new("package.json")) {
+            Err(Error::InvalidManifest(manifest_path.to_path_buf()))
+        } else {
+            Ok(())
+        }
     }
 }
 

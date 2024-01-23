@@ -1,5 +1,6 @@
 //! Python pipenv ecosystem.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -23,5 +24,13 @@ impl Generator for Pipenv {
 
     fn tool(&self) -> &'static str {
         "Pipenv"
+    }
+
+    fn check_prerequisites(&self, manifest_path: &Path) -> Result<()> {
+        if manifest_path.file_name() != Some(OsStr::new("Pipfile")) {
+            Err(Error::InvalidManifest(manifest_path.to_path_buf()))
+        } else {
+            Ok(())
+        }
     }
 }

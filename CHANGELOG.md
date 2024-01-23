@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Parse manifest files with non-standard names
+
 ## 6.0.1 - 2023-12-19
 
 ### Fixed

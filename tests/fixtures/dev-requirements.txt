@@ -1,0 +1,9 @@
+# This is an example of a pip manifest file that does not fit the expected naming convention of:
+#
+# requirements*.txt
+#
+# Pip manifest files can be named *anything* and they are therefore hard to identify.
+# Pip lockfiles can also be named *anything* but they will at least get picked up
+# by the fallback approach of attempting to parse with all known parsers (assuming
+# a "true" lockfile with no loose requirement entries).
+pyyaml

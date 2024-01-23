@@ -13,6 +13,9 @@ pub enum ParseError {
     /// Dependency file is a manifest, but lockfile generation is disabled.
     #[error("Parsing {0:?} requires lockfile generation, but it was disabled")]
     ManifestWithoutGeneration(String),
+    /// Dependency file is a manifest, but file type was not provided.
+    #[error("Parsing {0:?} requires a type to be specified")]
+    UnknownManifestFormat(String),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -59,7 +62,7 @@ pub fn parse_depfile(
     // Attempt to parse with all known parsers as fallback.
     let format = match format {
         Some(format) => format,
-        None => return Ok(try_get_packages(path, contents)?),
+        None => return try_get_packages(path, contents),
     };
 
     // Parse with the identified parser.
@@ -83,11 +86,21 @@ pub fn parse_depfile(
         }
     }
 
-    // Generate lockfile if path might be a manifest and feature and option are
-    // enabled.
+    // Attempt to generate a lockfile for likely manifests when feature and option
+    // are enabled. This is a best effort attempt for files that are known at this
+    // point to not be a valid/parseable lockfile but may parse as a manifest with
+    // a non-standard name.
     #[cfg(feature = "generator")]
-    if let Some(generation_path) = _generation_path.filter(|_| maybe_manifest) {
-        return Ok(generate_lockfile(&generation_path, &path, format, parser)?);
+    if let Some(generation_path) = _generation_path.filter(|_| !maybe_lockfile || maybe_manifest) {
+        if parser.generator().is_some() {
+            match generate_lockfile(&generation_path, &path, format, parser) {
+                Ok(depfile) => return Ok(depfile),
+                // Discard errors for unknown files.
+                // The error from the lockfile parser can be used instead.
+                Err(_) if !maybe_manifest => {},
+                Err(err) => return Err(err.into()),
+            }
+        }
     }
 
     // Return the original lockfile parsing error.
@@ -99,10 +112,7 @@ pub fn parse_depfile(
 }
 
 /// Attempt to get packages from an unknown lockfile type
-fn try_get_packages(
-    path: impl Into<String>,
-    contents: &str,
-) -> Result<ParsedLockfile, anyhow::Error> {
+fn try_get_packages(path: impl Into<String>, contents: &str) -> Result<ParsedLockfile, ParseError> {
     let path = path.into();
     for format in LockfileFormat::iter() {
         let parser = format.parser();
@@ -115,7 +125,7 @@ fn try_get_packages(
         }
     }
 
-    Err(anyhow!("Failed to identify type for lockfile {path:?}"))
+    Err(ParseError::UnknownManifestFormat(path))
 }
 
 /// Generate a lockfile from a manifest path.
@@ -136,10 +146,10 @@ fn generate_lockfile(
 
     // Generate a new lockfile.
     let canonical_path = generation_path.canonicalize()?;
-    let generated_lockfile = generator
-            .generate_lockfile(&canonical_path)
-            .context("Lockfile generation failed! For details, see: \
-                https://docs.phylum.io/cli/lockfile_generation")?;
+    let generated_lockfile = generator.generate_lockfile(&canonical_path).context(
+        "Lockfile generation failed! For details, see: \
+         https://docs.phylum.io/cli/lockfile_generation",
+    )?;
 
     // Parse the generated lockfile.
     let packages = parse_lockfile_content(&generated_lockfile, parser)?;

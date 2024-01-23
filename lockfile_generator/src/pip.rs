@@ -30,17 +30,17 @@ impl Generator for Pip {
             "--dry-run",
         ]);
 
-        // Check if we got a requirements file or a setup.py/pyproject.toml.
-        let is_requirements_file =
-            manifest_path.file_name().and_then(|f| f.to_str()).map_or(false, |file_name| {
-                file_name == "requirements.in"
-                    || (file_name.starts_with("requirements") && file_name.ends_with(".txt"))
-            });
+        // Check if we got a local project file (setup.py/pyproject.toml).
+        // All other files will be treated as requirements files.
+        let is_local_project = manifest_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .map_or(false, |file_name| file_name == "setup.py" || file_name == "pyproject.toml");
 
-        if is_requirements_file {
-            command.arg("-r").arg(manifest_path);
-        } else {
+        if is_local_project {
             command.arg(".");
+        } else {
+            command.arg("-r").arg(manifest_path);
         }
 
         command
@@ -119,6 +119,13 @@ fn check_pip_version(project_path: &Path) -> Result<()> {
         let program = format!("{:?}", version_command.get_program());
         Error::ProcessCreation(program, String::from("pip"), err)
     })?;
+
+    // Report errors with `pip` version check.
+    if !version_output.status.success() {
+        let exit_code = version_output.status.code();
+        let version_stderr = String::from_utf8_lossy(&version_output.stderr).trim().to_owned();
+        return Err(Error::NonZeroExit(exit_code, version_stderr));
+    }
 
     let version_stdout = String::from_utf8(version_output.stdout)?.trim().to_owned();
 
