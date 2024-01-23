@@ -5,7 +5,7 @@ use std::str::FromStr;
 use phylum_types::types::job::JobStatusResponse;
 use phylum_types::types::package::PackageStatusExtended;
 
-use crate::types::{Package, RiskDomain, RiskLevel, RiskType};
+use crate::types::{Package, RiskDomain, RiskLevel};
 
 /// Remove issues based on a filter.
 pub trait FilterIssues {
@@ -14,7 +14,7 @@ pub trait FilterIssues {
 
 impl FilterIssues for Package {
     fn filter(&mut self, filter: &Filter) {
-        self.issues.retain(|issue| !should_filter_issue(filter, issue.impact, issue.risk_type));
+        self.issues.retain(|issue| !should_filter_issue(filter, issue.severity, issue.domain));
     }
 }
 
@@ -39,7 +39,7 @@ impl FilterIssues for PackageStatusExtended {
 }
 
 /// Check if a package should be filtered out.
-fn should_filter_issue(filter: &Filter, level: RiskLevel, risk_type: impl Into<RiskType>) -> bool {
+fn should_filter_issue(filter: &Filter, level: RiskLevel, risk_domain: RiskDomain) -> bool {
     if let Some(filter_level) = filter.level {
         if level < filter_level {
             return true;
@@ -47,7 +47,7 @@ fn should_filter_issue(filter: &Filter, level: RiskLevel, risk_type: impl Into<R
     }
 
     if let Some(domains) = &filter.domains {
-        if !domains.contains(&risk_type.into()) {
+        if !domains.contains(&risk_domain) {
             return true;
         }
     }
@@ -57,7 +57,7 @@ fn should_filter_issue(filter: &Filter, level: RiskLevel, risk_type: impl Into<R
 
 pub struct Filter {
     pub level: Option<RiskLevel>,
-    pub domains: Option<Vec<RiskType>>,
+    pub domains: Option<Vec<RiskDomain>>,
 }
 
 impl FromStr for Filter {
@@ -88,28 +88,28 @@ impl FromStr for Filter {
         let domains = tokens
             .iter()
             .filter_map(|t| match *t {
-                "aut" => Some(RiskType::AuthorsRisk),
-                "AUT" => Some(RiskType::AuthorsRisk),
-                "auth" => Some(RiskType::AuthorsRisk),
-                "author" => Some(RiskType::AuthorsRisk),
-                "eng" => Some(RiskType::EngineeringRisk),
-                "ENG" => Some(RiskType::EngineeringRisk),
-                "engineering" => Some(RiskType::EngineeringRisk),
-                "code" => Some(RiskType::MaliciousRisk),
-                "malicious_code" => Some(RiskType::MaliciousRisk),
-                "malicious" => Some(RiskType::MaliciousRisk),
-                "mal" => Some(RiskType::MaliciousRisk),
-                "MAL" => Some(RiskType::MaliciousRisk),
-                "vuln" => Some(RiskType::Vulnerabilities),
-                "vulnerability" => Some(RiskType::Vulnerabilities),
-                "VLN" => Some(RiskType::Vulnerabilities),
-                "vln" => Some(RiskType::Vulnerabilities),
-                "license" => Some(RiskType::LicenseRisk),
-                "lic" => Some(RiskType::LicenseRisk),
-                "LIC" => Some(RiskType::LicenseRisk),
+                "aut" => Some(RiskDomain::AuthorRisk),
+                "AUT" => Some(RiskDomain::AuthorRisk),
+                "auth" => Some(RiskDomain::AuthorRisk),
+                "author" => Some(RiskDomain::AuthorRisk),
+                "eng" => Some(RiskDomain::EngineeringRisk),
+                "ENG" => Some(RiskDomain::EngineeringRisk),
+                "engineering" => Some(RiskDomain::EngineeringRisk),
+                "code" => Some(RiskDomain::Malicious),
+                "malicious_code" => Some(RiskDomain::Malicious),
+                "malicious" => Some(RiskDomain::Malicious),
+                "mal" => Some(RiskDomain::Malicious),
+                "MAL" => Some(RiskDomain::Malicious),
+                "vuln" => Some(RiskDomain::Vulnerabilities),
+                "vulnerability" => Some(RiskDomain::Vulnerabilities),
+                "VLN" => Some(RiskDomain::Vulnerabilities),
+                "vln" => Some(RiskDomain::Vulnerabilities),
+                "license" => Some(RiskDomain::LicenseRisk),
+                "lic" => Some(RiskDomain::LicenseRisk),
+                "LIC" => Some(RiskDomain::LicenseRisk),
                 _ => None,
             })
-            .collect::<HashSet<RiskType>>();
+            .collect::<HashSet<RiskDomain>>();
 
         let domains = if domains.is_empty() { None } else { Some(Vec::from_iter(domains)) };
 
@@ -150,8 +150,8 @@ mod tests {
         let domains = filter.domains.expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 2);
-        assert!(domains.contains(&RiskType::AuthorsRisk));
-        assert!(domains.contains(&RiskType::EngineeringRisk));
+        assert!(domains.contains(&RiskDomain::AuthorRisk));
+        assert!(domains.contains(&RiskDomain::EngineeringRisk));
 
         let filter_string = "crit,author,AUT,med,ENG,foo,engineering,VLN";
 
@@ -160,9 +160,9 @@ mod tests {
         let domains = filter.domains.expect("No risk domains parsed from filter string");
 
         assert_eq!(domains.len(), 3);
-        assert!(domains.contains(&RiskType::AuthorsRisk));
-        assert!(domains.contains(&RiskType::EngineeringRisk));
-        assert!(domains.contains(&RiskType::Vulnerabilities));
+        assert!(domains.contains(&RiskDomain::AuthorRisk));
+        assert!(domains.contains(&RiskDomain::EngineeringRisk));
+        assert!(domains.contains(&RiskDomain::Vulnerabilities));
     }
 
     #[test]

@@ -21,8 +21,8 @@ use vulnreach_types::Vulnerability;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    HistoryJob, IssuesListItem, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
-    RiskLevel, RiskType, UserToken,
+    HistoryJob, Issue, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RiskLevel,
+    UserToken,
 };
 
 /// Format type for CLI output.
@@ -133,10 +133,10 @@ impl Format for PolicyEvaluationResponseRaw {
             let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
 
             for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
-                let domain = rejection.source.domain.map_or_else(
-                    || "     ".into(),
-                    |domain| format!("[{}]", RiskType::from(domain)),
-                );
+                let domain = rejection
+                    .source
+                    .domain
+                    .map_or_else(|| "     ".into(), |domain| format!("[{}]", domain));
                 let message = format!("{domain} {}", rejection.title);
 
                 let colored = match rejection.source.severity {
@@ -285,7 +285,7 @@ impl Format for Package {
         let issues = self.issues.to_owned();
 
         for issue in &issues {
-            let rows: Vec<Row> = issueslistitem_to_row(issue);
+            let rows: Vec<Row> = issue_to_row(issue);
             for mut row in rows {
                 row.remove_cell(2);
                 issues_table.add_row(row);
@@ -466,11 +466,11 @@ fn leftpad(text: &str, width: usize) -> String {
     format!("{}{}", text, str::repeat(" ", delta))
 }
 
-fn issueslistitem_to_row(issue: &IssuesListItem) -> Vec<Row> {
+fn issue_to_row(issue: &Issue) -> Vec<Row> {
     let row_1 = Row::new(vec![
-        Cell::new_align(&issue.impact.to_string(), Alignment::LEFT)
-            .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.impact))),
-        Cell::new_align(&format!("{} [{}]", &issue.title, issue.risk_type), Alignment::LEFT)
+        Cell::new_align(&issue.severity.to_string(), Alignment::LEFT)
+            .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.severity))),
+        Cell::new_align(&format!("{} [{}]", &issue.title, issue.domain), Alignment::LEFT)
             .with_style(Attr::Bold),
     ]);
 
