@@ -27,12 +27,12 @@ impl Generator for Gradle {
     }
 
     fn check_prerequisites(&self, manifest_path: &Path) -> Result<()> {
-        if manifest_path.file_name() != Some(OsStr::new("build.gradle"))
-            && manifest_path.file_name() != Some(OsStr::new("build.gradle.kts"))
+        if manifest_path.file_name() == Some(OsStr::new("build.gradle"))
+            || manifest_path.file_name() == Some(OsStr::new("build.gradle.kts"))
         {
-            Err(Error::InvalidManifest(manifest_path.to_path_buf()))
-        } else {
             Ok(())
+        } else {
+            Err(Error::InvalidManifest(manifest_path.to_path_buf()))
         }
     }
 }
