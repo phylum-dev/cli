@@ -92,9 +92,14 @@ pub fn parse_depfile(
     // a non-standard name.
     #[cfg(feature = "generator")]
     if let Some(generation_path) = _generation_path.filter(|_| !maybe_lockfile || maybe_manifest) {
-        let result = generate_lockfile(&generation_path, &path, format, parser);
-        if result.is_ok() {
-            return Ok(result?);
+        if parser.generator().is_some() {
+            match generate_lockfile(&generation_path, &path, format, parser) {
+                Ok(depfile) => return Ok(depfile),
+                // Discard errors for unknown files.
+                // The error from the lockfile parser can be used instead.
+                Err(_) if !maybe_manifest => {},
+                Err(err) => return Err(err.into()),
+            }
         }
     }
 
