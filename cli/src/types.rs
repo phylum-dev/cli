@@ -161,8 +161,7 @@ pub struct Package {
     pub download_count: u32,
     pub risk_scores: RiskScores,
     pub total_risk_score_dynamics: Option<Vec<ScoreDynamicsPoint>>,
-    pub issues_details: Vec<Issue>,
-    pub issues: Vec<IssuesListItem>,
+    pub issues: Vec<Issue>,
     pub authors: Vec<Author>,
     pub developer_responsiveness: Option<DeveloperResponsiveness>,
     pub issue_impacts: IssueImpacts,
@@ -210,7 +209,7 @@ pub struct ScoreDynamicsPoint {
 }
 
 /// An issue that Phylum has found with a package.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Issue {
     pub tag: Option<String>,
     pub id: Option<String>,
@@ -224,13 +223,13 @@ pub struct Issue {
 }
 
 /// Extra information about an issue that depends on the type of issue.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum IssueDetails {
     Vulnerability(VulnDetails),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct VulnDetails {
     /// The CVE ids that this vuln is linked to.
     pub cves: Vec<String>,
@@ -238,59 +237,6 @@ pub struct VulnDetails {
     pub cvss: f32,
     /// The CVSS vector string assigned to this vuln.
     pub cvss_vector: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct IssuesListItem {
-    pub risk_type: RiskType,
-    pub score: f32,
-    pub impact: RiskLevel,
-    pub description: String,
-    pub title: String,
-    pub tag: Option<String>,
-    pub id: Option<String>,
-    pub ignored: IgnoredReason,
-}
-
-/// The category of risk that an issue poses.
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Copy, Clone)]
-#[serde(rename_all = "camelCase")]
-pub enum RiskType {
-    TotalRisk,
-    Vulnerabilities,
-    #[serde(alias = "maliciousRisk")]
-    #[serde(rename = "maliciousCodeRisk")]
-    MaliciousRisk,
-    AuthorsRisk,
-    EngineeringRisk,
-    LicenseRisk,
-}
-
-impl fmt::Display for RiskType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let risk_domain = match self {
-            RiskType::MaliciousRisk => "MAL",
-            RiskType::Vulnerabilities => "VLN",
-            RiskType::EngineeringRisk => "ENG",
-            RiskType::AuthorsRisk => "AUT",
-            RiskType::LicenseRisk => "LIC",
-            RiskType::TotalRisk => "ALL",
-        };
-        write!(f, "{risk_domain}")
-    }
-}
-
-impl From<RiskDomain> for RiskType {
-    fn from(risk_domain: RiskDomain) -> Self {
-        match risk_domain {
-            RiskDomain::Malicious => RiskType::MaliciousRisk,
-            RiskDomain::Vulnerabilities => RiskType::Vulnerabilities,
-            RiskDomain::EngineeringRisk => RiskType::EngineeringRisk,
-            RiskDomain::AuthorRisk => RiskType::AuthorsRisk,
-            RiskDomain::LicenseRisk => RiskType::LicenseRisk,
-        }
-    }
 }
 
 /// The user-specified reason for an issue to be ignored.
@@ -345,7 +291,7 @@ pub struct PackageReleaseData {
     pub last_release_date: String,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum RiskDomain {
     /// One or more authors is a possible bad actor or other problems.
     #[serde(rename = "author")]
@@ -363,6 +309,19 @@ pub enum RiskDomain {
     /// License is unknown, incompatible with the project, etc.
     #[serde(rename = "license")]
     LicenseRisk,
+}
+
+impl fmt::Display for RiskDomain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let risk_domain = match self {
+            RiskDomain::Malicious => "MAL",
+            RiskDomain::Vulnerabilities => "VLN",
+            RiskDomain::EngineeringRisk => "ENG",
+            RiskDomain::AuthorRisk => "AUT",
+            RiskDomain::LicenseRisk => "LIC",
+        };
+        write!(f, "{risk_domain}")
+    }
 }
 
 impl From<PTRiskDomain> for RiskDomain {
