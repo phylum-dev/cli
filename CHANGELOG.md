@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- Python lockfile generation with pip in ~/.local
+- Python lockfile generation with pyenv
+
 ## 6.1.0 - 2024-01-29
 
 ### Added
