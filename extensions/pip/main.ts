@@ -39,7 +39,14 @@ const installStatus = PhylumApi.runSandboxed({
   cmd: "pip3",
   args: Deno.args,
   exceptions: {
-    run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
+    run: [
+      "./",
+      "/bin",
+      "/usr/bin",
+      "/usr/local/bin",
+      "/usr/share/pyenv",
+      "~/.pyenv",
+    ],
     write: [
       "./",
       "~/Library/Caches",
@@ -54,7 +61,6 @@ const installStatus = PhylumApi.runSandboxed({
       "~/Library/Python",
       "~/.cache",
       "~/.local",
-      "~/.pyenv",
       "/tmp",
       "/etc/passwd",
     ],
@@ -71,7 +77,14 @@ async function checkDryRun() {
     cmd: "pip3",
     args: [...Deno.args, "--quiet", "--report", "-", "--dry-run"],
     exceptions: {
-      run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
+      run: [
+        "./",
+        "/bin",
+        "/usr/bin",
+        "/usr/local/bin",
+        "/usr/share/pyenv",
+        "~/.pyenv",
+      ],
       write: [
         "./",
         "~/Library/Caches",
@@ -183,7 +196,14 @@ function checkPipVersion() {
     cmd: "pip3",
     args: ["--version"],
     exceptions: {
-      run: ["./", "/bin", "/usr/bin", "/usr/local/bin", "~/.pyenv"],
+      run: [
+        "./",
+        "/bin",
+        "/usr/bin",
+        "/usr/local/bin",
+        "/usr/share/pyenv",
+        "~/.pyenv",
+      ],
     },
     stdout: "piped",
   });

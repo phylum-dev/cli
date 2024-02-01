@@ -437,6 +437,13 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     permissions::add_exception(&mut birdcage, Exception::Read("/tmp".into()))?;
     // Yarn.
     permissions::add_exception(&mut birdcage, Exception::Read(home.join("./yarn")))?;
+    // Python.
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::ExecuteAndRead("/usr/share/pyenv".into()),
+    )?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead(home.join(".pyenv")))?;
+    permissions::add_exception(&mut birdcage, Exception::Read(home.join(".local/lib")))?;
 
     Ok(birdcage)
 }
