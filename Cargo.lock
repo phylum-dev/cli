@@ -387,9 +387,9 @@ dependencies = [
 
 [[package]]
 name = "birdcage"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4270b12541e12bb8d8a323c015a1c317625b9ba511a027f05c4047456943f835"
+checksum = "3ed46d13ad2637d8609d5614963ebccde3dcb554e995a86bd4ff9d800b4bf14d"
 dependencies = [
  "bitflags 2.4.2",
  "libc",
