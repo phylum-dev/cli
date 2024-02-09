@@ -1,11 +1,14 @@
 # Lockfile Generation
 
-Lockfiles can be directly parsed and analyzed by Phylum's CLI. However since
+Lockfiles can be directly parsed and analyzed by Phylum's CLI. However, since
 manifest files only specify loose version requirements, it is necessary for the
-CLI to internaly generate the corresponding lockfile.
+CLI to internally generate the corresponding lockfile.
 
-No lockfile generation will take place if the `--no-generation` flag is passed
-to `parse` or `analyze`.
+No lockfile generation will take place if the `--no-generation` CLI flag is
+passed to [`phylum parse`] or [`phylum analyze`].
+
+[`phylum parse`]: ../cli/commands/phylum_parse.md
+[`phylum analyze`]: ../cli/commands/phylum_analyze.md
 
 ## Lockfile generators
 
