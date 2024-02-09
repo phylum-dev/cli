@@ -1,8 +1,19 @@
 # Lockfile Generation
 
-The Phylum CLI can generate a lockfile when it is given a manifest file.
+Lockfiles can be directly parsed and analyzed by Phylum's CLI. However, since
+manifest files only specify loose version requirements, it is necessary for the
+CLI to internally generate the corresponding lockfile.
+
+No lockfile generation will take place if the `--no-generation` CLI flag is
+passed to [`phylum parse`] or [`phylum analyze`].
+
+[`phylum parse`]: ../cli/commands/phylum_parse.md
+[`phylum analyze`]: ../cli/commands/phylum_analyze.md
 
 ## Lockfile generators
+
+The following table shows the supported manifest files for each lockfile type
+and which tools must be installed to facilitate automatic lockfile generation:
 
 | Lockfile type | Manifests        | Required tool               |
 | ------------- | ---------        | -------------               |
@@ -34,7 +45,8 @@ The Phylum CLI can generate a lockfile when it is given a manifest file.
 
 > **TIP:**
 >
-> For files that can be handled by multiple generators, a fallback is used:
+> If no type is specified for files which can be handled by multiple generators,
+> the most common tool will be used:
 >
 > * `package.json` will use `npm`
 > * `pyproject.toml` will use `pip`
@@ -55,13 +67,10 @@ opportunistically switch to the lockfile if it is available in the same director
 will automatically switch to `go.sum` if available. To override this, simply specify a lockfile type (i.e., `phylum
 analyze -t go go.mod`)
 
-Second, during automatic lockfile detection, manifest files will only be used if there is no corresponding lockfile in
-the same directory or any parent directory. For example, a single `Cargo.lock` file at the root of the repository will
-be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run `phylum init` and
-specify all files that you want analyzed.
-
-Additionally, no lockfile generation will take place if the `--no-generation`
-flag is passed to `parse` or `analyze`.
+Second, without explicitly specifying dependency files, manifest files will only be used if there is no corresponding
+lockfile in the same directory or any parent directory. For example, a single `Cargo.lock` file at the root of the
+repository will be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run
+`phylum init` and specify all files that you want analyzed.
 
 ## Lockifests
 
@@ -71,6 +80,23 @@ a lockfile (e.g., `pip freeze > requirements.txt`).
 
 Phylum handles these files by first attempting to analyze them as a lockfile. If anything in the file is not fully
 specified, this will fail, and Phylum will silence the error and proceed to lockfile generation.
+
+## Sandboxing
+
+It is necessary for Phylum's CLI to sandbox lockfile generation, since some
+ecosystems can execute arbitrary code when generating a lockfile with malicious
+dependencies. This sandbox only has limited filesystem access, based on what
+ecosystem tools commonly need to generate lockfiles.
+
+While this sandbox should work on most systems, there are some scenarios in
+which it can cause lockfile generation to fail. One common example is the
+presence of another sandbox like Docker, which prevents Phylum's CLI from
+setting up its own sandbox.
+
+If you're already running a sandbox designed to combat malicious code, you can
+disable the lockfile generation sandbox using `--skip-sandbox`. This is **NOT
+SAFE** without a sandbox in place and will harm the system when run on a
+compromised project.
 
 ## Example scenario
 
