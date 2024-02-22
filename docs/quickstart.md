@@ -14,7 +14,7 @@ curl https://sh.phylum.io/ | sh -
 
 ### Install on macOS
 
-On macOS, we recommend installing phylum with [Homebrew](https://brew.sh/):
+On macOS, we recommend installing the Phylum CLI with [Homebrew](https://brew.sh/):
 
 ```sh
 brew install phylum-cli
