@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 6.1.2 - 2024-02-22
+
 ### Fixed
 
 - Improved sandboxing error message for unsupported kernel versions
