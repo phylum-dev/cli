@@ -1,7 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until, take_while};
-use nom::character::complete::{multispace0, not_line_ending, space0};
-use nom::character::streaming::line_ending;
+use nom::character::complete::{line_ending, multispace0, not_line_ending, space0};
 use nom::combinator::{eof, map_opt, opt, recognize};
 use nom::error::{context, VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};

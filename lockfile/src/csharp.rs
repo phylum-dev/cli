@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
+use anyhow::anyhow;
 #[cfg(feature = "generator")]
 use lockfile_generator::dotnet::Dotnet as DotnetGenerator;
 #[cfg(feature = "generator")]
@@ -28,14 +29,15 @@ impl Parse for PackagesLock {
             .into_iter()
             .flat_map(|(_, deps)| deps.into_iter())
             .map(|(name, dependency)| {
-                let version = match dependency.dependency_type {
-                    DependencyType::Project => PackageVersion::Path(None),
-                    _ => PackageVersion::FirstParty(dependency.resolved.unwrap()),
+                let version = match (&dependency.dependency_type, &dependency.resolved) {
+                    (DependencyType::Project, _) => PackageVersion::Path(None),
+                    (_, Some(resolved)) => PackageVersion::FirstParty(resolved.clone()),
+                    _ => return Err(anyhow!("invalid dependency {name:?}: {dependency:?}")),
                 };
 
-                Package { version, name, package_type: PackageType::Nuget }
+                Ok(Package { version, name, package_type: PackageType::Nuget })
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         Ok(packages)
     }
