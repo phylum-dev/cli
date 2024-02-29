@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- Crashes when parsing invalid lockfiles
+
 ## 6.1.2 - 2024-02-22
 
 ### Fixed
