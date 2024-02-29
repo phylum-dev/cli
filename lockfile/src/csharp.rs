@@ -24,7 +24,7 @@ impl Parse for PackagesLock {
         let parsed: PackagesLockJson = serde_json::from_str(data)?;
 
         // Map all dependencies to their correct package types.
-        let packages = parsed
+        parsed
             .dependencies
             .into_iter()
             .flat_map(|(_, deps)| deps.into_iter())
@@ -37,9 +37,7 @@ impl Parse for PackagesLock {
 
                 Ok(Package { version, name, package_type: PackageType::Nuget })
             })
-            .collect::<Result<_, _>>()?;
-
-        Ok(packages)
+            .collect()
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
