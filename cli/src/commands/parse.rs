@@ -450,7 +450,7 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{self, File};
+    use std::fs::File;
 
     use super::*;
 

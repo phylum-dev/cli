@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::iter::FromIterator;
 use std::str::FromStr;
 
 use phylum_types::types::job::JobStatusResponse;

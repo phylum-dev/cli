@@ -483,7 +483,7 @@ pub(crate) fn determine_package_version(
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{self, File};
+    use std::fs::File;
 
     use super::*;
 

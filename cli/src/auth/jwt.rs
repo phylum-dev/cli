@@ -7,7 +7,6 @@ use base64::prelude::*;
 use base64::DecodeError;
 use serde::Deserialize;
 use serde_json::Error as JsonError;
-use thiserror;
 
 /// Get user roles from a bearer token without performing validation.
 pub fn user_roles(bearer: &str) -> Result<HashSet<RealmRole>, JwtError> {
