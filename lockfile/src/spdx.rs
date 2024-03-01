@@ -191,7 +191,6 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::PackageVersion;
 
     #[test]
     fn parse_spdx_2_2_json() {

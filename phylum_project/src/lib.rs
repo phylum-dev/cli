@@ -147,7 +147,6 @@ mod tests {
     use uuid::uuid;
 
     use super::*;
-    use crate::ProjectConfig;
 
     const PROJECT_ID: ProjectId = uuid!("a814bc7b-c17c-4e91-9515-edd7899680fb");
     const PROJECT_NAME: &str = "my project";

@@ -10,7 +10,7 @@ use dashmap::DashMap;
 use deno_ast::{EmitOptions, MediaType, ParseParams, SourceTextInfo, TranspiledSource};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
-    self, Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
+    Extension, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier, ModuleType,
     ResolutionKind, SourceMapGetter,
 };
 use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};

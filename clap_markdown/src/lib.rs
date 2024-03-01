@@ -1,5 +1,4 @@
 use std::fmt::Write;
-use std::string::ToString;
 
 use clap::{Arg, ArgAction, Command};
 

@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::env;
 #[cfg(unix)]
 use std::fs;

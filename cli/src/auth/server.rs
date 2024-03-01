@@ -7,8 +7,6 @@ use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use futures::TryFutureExt;
 use hyper::{Body, Request, Response, Server};
-#[cfg(not(test))]
-use open;
 use phylum_types::types::auth::{AuthorizationCode, RefreshToken};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};

@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::fs::{self, DirBuilder};
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
