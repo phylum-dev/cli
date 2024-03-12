@@ -23,4 +23,3 @@ Usage: phylum group [OPTIONS] <COMMAND>
 * [phylum group delete](./phylum_group_delete.md)
 * [phylum group list](./phylum_group_list.md)
 * [phylum group member](./phylum_group_member.md)
-* [phylum group transfer](./phylum_group_transfer.md)
