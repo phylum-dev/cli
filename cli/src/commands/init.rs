@@ -9,11 +9,11 @@ use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
 use phylum_lockfile::LockfileFormat;
 use phylum_project::{DepfileConfig, ProjectConfig, PROJ_CONF_FILE};
-use phylum_types::types::group::UserGroup;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
+use crate::types::UserGroup;
 use crate::{config, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.

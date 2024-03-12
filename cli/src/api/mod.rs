@@ -4,7 +4,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{
-    CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse, ListUserGroupsResponse,
+    CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse,
 };
 use phylum_types::types::job::{AllJobsStatusResponse, SubmitPackageResponse};
 use phylum_types::types::package::PackageDescriptor;
@@ -29,9 +29,9 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    AnalysisPackageDescriptor, HistoryJob, PackageSpecifier, PackageSubmitResponse, PingResponse,
-    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
-    RevokeTokenRequest, SubmitPackageRequest, UserToken,
+    AnalysisPackageDescriptor, HistoryJob, ListUserGroupsResponse, PackageSpecifier,
+    PackageSubmitResponse, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
+    PolicyEvaluationResponseRaw, RevokeTokenRequest, SubmitPackageRequest, UserToken,
 };
 
 pub mod endpoints;
