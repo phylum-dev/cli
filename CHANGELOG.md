@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Crashes when parsing invalid lockfiles
 
+### Removed
+
+- Removed owner email from `phylum group list` results
+
 ## 6.1.2 - 2024-02-22
 
 ### Fixed
