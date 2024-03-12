@@ -162,16 +162,11 @@ impl Format for Vec<ProjectSummaryResponse> {
         // Maximum length of the name column.
         const MAX_NAME_WIDTH: usize = 28;
 
-        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(
-            self,
-            &[
-                ("Project Name", |project| {
-                    print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()
-                }),
-                ("Project ID", |project| project.id.to_string()),
-                ("Repository URL", |project| project.repository_url.clone().unwrap_or_default()),
-            ],
-        );
+        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(self, &[
+            ("Project Name", |project| print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()),
+            ("Project ID", |project| project.id.to_string()),
+            ("Repository URL", |project| project.repository_url.clone().unwrap_or_default()),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -194,15 +189,10 @@ impl Format for ListUserGroupsResponse {
         // Maximum length of group name column.
         const MAX_NAME_WIDTH: usize = 25;
 
-        let table = format_table::<fn(&UserGroup) -> String, _>(
-            &self.groups,
-            &[
-                ("Group Name", |group| {
-                    print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()
-                }),
-                ("Creation Time", |group| format_datetime(group.created_at)),
-            ],
-        );
+        let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
+            ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
+            ("Creation Time", |group| format_datetime(group.created_at)),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -216,20 +206,15 @@ impl Format for ListGroupMembersResponse {
         // Maximum length of last name column.
         const MAX_LAST_NAME_WIDTH: usize = 15;
 
-        let table = format_table::<fn(&GroupMember) -> String, _>(
-            &self.members,
-            &[
-                ("E-Mail", |member| {
-                    print::truncate(&member.user_email, MAX_EMAIL_WIDTH).into_owned()
-                }),
-                ("First Name", |member| {
-                    print::truncate(&member.first_name, MAX_FIRST_NAME_WIDTH).into_owned()
-                }),
-                ("Last Name", |member| {
-                    print::truncate(&member.last_name, MAX_LAST_NAME_WIDTH).into_owned()
-                }),
-            ],
-        );
+        let table = format_table::<fn(&GroupMember) -> String, _>(&self.members, &[
+            ("E-Mail", |member| print::truncate(&member.user_email, MAX_EMAIL_WIDTH).into_owned()),
+            ("First Name", |member| {
+                print::truncate(&member.first_name, MAX_FIRST_NAME_WIDTH).into_owned()
+            }),
+            ("Last Name", |member| {
+                print::truncate(&member.last_name, MAX_LAST_NAME_WIDTH).into_owned()
+            }),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -339,14 +324,11 @@ impl Format for Package {
 
 impl Format for Vec<HistoryJob> {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        let table = format_table::<fn(&HistoryJob) -> String, _>(
-            self,
-            &[
-                ("Job ID", |job| job.id.clone()),
-                ("Label", |job| job.label.clone().unwrap_or_default()),
-                ("Creation Time", |job| format_datetime(job.created)),
-            ],
-        );
+        let table = format_table::<fn(&HistoryJob) -> String, _>(self, &[
+            ("Job ID", |job| job.id.clone()),
+            ("Label", |job| job.label.clone().unwrap_or_default()),
+            ("Creation Time", |job| format_datetime(job.created)),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
@@ -358,15 +340,12 @@ impl Format for Vec<UserToken> {
         // We use `47` here since it is the default CLI token length.
         const MAX_TOKEN_WIDTH: usize = 47;
 
-        let table = format_table::<fn(&UserToken) -> String, _>(
-            self,
-            &[
-                ("Name", |token| print::truncate(&token.name, MAX_TOKEN_WIDTH).into_owned()),
-                ("Creation Time", |token| format_datetime(token.creation_time)),
-                ("Access Time", |token| token.access_time.map_or(String::new(), format_datetime)),
-                ("Expiry", |token| token.expiry.map_or(String::new(), format_datetime)),
-            ],
-        );
+        let table = format_table::<fn(&UserToken) -> String, _>(self, &[
+            ("Name", |token| print::truncate(&token.name, MAX_TOKEN_WIDTH).into_owned()),
+            ("Creation Time", |token| format_datetime(token.creation_time)),
+            ("Access Time", |token| token.access_time.map_or(String::new(), format_datetime)),
+            ("Expiry", |token| token.expiry.map_or(String::new(), format_datetime)),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
