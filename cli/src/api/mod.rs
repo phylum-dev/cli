@@ -462,13 +462,6 @@ impl PhylumApi {
         Ok(())
     }
 
-    /// Change group ownership.
-    pub async fn group_set_owner(&self, group_name: &str, new_owner_email: &str) -> Result<()> {
-        let url = endpoints::set_owner(&self.config.connection.uri, group_name, new_owner_email)?;
-        self.send_request_raw(Method::PUT, url, None::<()>).await?;
-        Ok(())
-    }
-
     /// List a user's locksmith tokens.
     pub async fn list_tokens(&self) -> Result<Vec<UserToken>> {
         let url = endpoints::list_tokens(&self.config.connection.uri)?;
