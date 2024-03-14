@@ -423,3 +423,17 @@ pub struct PurlWithOrigin {
     #[serde(skip_serializing_if = "Option::is_none")]
     lockfile: Option<String>,
 }
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct UserGroup {
+    pub created_at: DateTime<Utc>,
+    pub last_modified: DateTime<Utc>,
+    pub group_name: String,
+    #[serde(default)]
+    pub is_admin: bool,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct ListUserGroupsResponse {
+    pub groups: Vec<UserGroup>,
+}

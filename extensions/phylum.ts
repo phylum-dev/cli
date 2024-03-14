@@ -310,10 +310,8 @@ export class PhylumApi {
    *     {
    *       created_at: "2022-05-02T14:25:24.184866508Z",
    *       last_modified: "2022-05-02T14:25:24.599950299Z",
-   *       owner_email: "null@phylum.io",
    *       group_name: "phlock",
    *       is_admin: false,
-   *       is_owner: true
    *     }
    *   ]
    * }

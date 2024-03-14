@@ -5,9 +5,7 @@ use std::{cmp, str};
 
 use chrono::{DateTime, Local, Utc};
 use console::style;
-use phylum_types::types::group::{
-    GroupMember, ListGroupMembersResponse, ListUserGroupsResponse, UserGroup,
-};
+use phylum_types::types::group::{GroupMember, ListGroupMembersResponse};
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
 use phylum_types::types::package::{PackageStatus, PackageStatusExtended};
 use phylum_types::types::project::ProjectSummaryResponse;
@@ -21,8 +19,8 @@ use vulnreach_types::Vulnerability;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    HistoryJob, Issue, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RiskLevel,
-    UserToken,
+    HistoryJob, Issue, ListUserGroupsResponse, Package, PolicyEvaluationResponse,
+    PolicyEvaluationResponseRaw, RiskLevel, UserGroup, UserToken,
 };
 
 /// Format type for CLI output.
@@ -190,12 +188,9 @@ impl Format for ListUserGroupsResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
         // Maximum length of group name column.
         const MAX_NAME_WIDTH: usize = 25;
-        // Maximum length of owner email column.
-        const MAX_OWNER_WIDTH: usize = 25;
 
         let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
             ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
-            ("Owner", |group| print::truncate(&group.owner_email, MAX_OWNER_WIDTH).into_owned()),
             ("Creation Time", |group| format_datetime(group.created_at)),
         ]);
         let _ = writeln!(writer, "{table}");

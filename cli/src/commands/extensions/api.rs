@@ -20,7 +20,6 @@ use phylum_lockfile::ParsedLockfile;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::group::ListUserGroupsResponse;
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
 use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
@@ -36,8 +35,8 @@ use crate::commands::ExitCode;
 #[cfg(unix)]
 use crate::dirs;
 use crate::types::{
-    AnalysisPackageDescriptor, Package, PackageSpecifier, PackageSubmitResponse,
-    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, PurlWithOrigin,
+    AnalysisPackageDescriptor, ListUserGroupsResponse, Package, PackageSpecifier,
+    PackageSubmitResponse, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, PurlWithOrigin,
 };
 
 /// Package format accepted by extension API.
