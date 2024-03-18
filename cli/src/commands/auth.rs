@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::{anyhow, Context, Result};
-use chrono::{Duration, Utc};
+use chrono::{Days, Utc};
 use clap::ArgMatches;
 use dialoguer::MultiSelect;
 use phylum_types::types::auth::RefreshToken;
@@ -215,13 +215,19 @@ pub async fn handle_auth_create_token(
     let api_uri = &api.config().connection.uri;
 
     // Try to parse expiry.
-    let expiry = match expiry.map(|expiry| expiry.parse()) {
-        Some(Ok(expiry)) => Some(Utc::now() + Duration::try_days(expiry).unwrap()),
-        Some(Err(err)) => {
+    let expiry = expiry
+        .map(|expiry| {
+            Utc::now()
+                .checked_add_days(Days::new(expiry.parse()?))
+                .ok_or_else(|| anyhow!("expiration is too far into the future"))
+        })
+        .transpose();
+    let expiry = match expiry {
+        Ok(expiry) => expiry,
+        Err(err) => {
             print_user_failure!("invalid token expiry: {err}");
             return Ok(ExitCode::InvalidTokenExpiration);
         },
-        None => None,
     };
 
     let token =
