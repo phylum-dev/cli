@@ -216,7 +216,7 @@ pub async fn handle_auth_create_token(
 
     // Try to parse expiry.
     let expiry = match expiry.map(|expiry| expiry.parse()) {
-        Some(Ok(expiry)) => Some(Utc::now() + Duration::days(expiry)),
+        Some(Ok(expiry)) => Some(Utc::now() + Duration::try_days(expiry).unwrap()),
         Some(Err(err)) => {
             print_user_failure!("invalid token expiry: {err}");
             return Ok(ExitCode::InvalidTokenExpiration);
