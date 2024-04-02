@@ -3,16 +3,53 @@ use nom::bytes::complete::{tag, take_until, take_while};
 use nom::character::complete::{line_ending, multispace0, not_line_ending, space0};
 use nom::combinator::{eof, map_opt, opt, recognize};
 use nom::error::{context, VerboseError, VerboseErrorKind};
-use nom::multi::{many1, many_till};
+use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, tuple};
 use nom::Err as NomErr;
 
 use crate::parsers::{take_till_blank_line, take_till_line_end, IResult};
-use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory};
+use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory, Relationship, SpdxInfo};
 
-pub(crate) fn parse(input: &str) -> IResult<&str, Vec<PackageInformation>> {
-    let (i, pkgs_info) = many1(package)(input)?;
-    Ok((i, pkgs_info))
+pub(crate) fn parse(input: &str) -> IResult<&str, SpdxInfo> {
+    let (_, relationships) = parse_relationships(input)?;
+    let (i, spdx_id) = parse_spdx_id(input)?;
+    let (i, packages) = many1(package)(i)?;
+
+    Ok((i, SpdxInfo { spdx_id: spdx_id.into(), packages, relationships }))
+}
+
+fn parse_spdx_id(input: &str) -> IResult<&str, &str> {
+    let (i, _) = skip_until_tag(input, "SPDXID:")?;
+    let (i, spdx_id) = take_till_line_end(i)?;
+    Ok((i, spdx_id.trim()))
+}
+
+fn skip_until_tag<'a>(input: &'a str, line_tag: &'a str) -> IResult<&'a str, ()> {
+    let (i, _) = take_until(line_tag)(input)?;
+    let (i, _) = tag(line_tag)(i)?;
+    Ok((i, ()))
+}
+
+fn parse_relationships(input: &str) -> IResult<&str, Vec<Relationship>> {
+    many0(parse_relationship)(input)
+}
+
+fn parse_relationship(input: &str) -> IResult<&str, Relationship> {
+    let (i, _) = skip_until_tag(input, "Relationship:")?;
+    let (i, rel) = recognize(ws(take_till_line_end))(i)?;
+
+    let parts: Vec<&str> = rel.split_whitespace().collect();
+    if parts.len() == 3 {
+        Ok((i, Relationship {
+            spdx_element_id: Some(parts[0].to_string()),
+            relationship_type: Some(parts[1].to_string()),
+            related_spdx_element: Some(parts[2].to_string()),
+        }))
+    } else {
+        let kind = VerboseErrorKind::Context("Invalid relationship format");
+        let error = VerboseError { errors: vec![(input, kind)] };
+        Err(NomErr::Failure(error))
+    }
 }
 
 fn package_name(input: &str) -> IResult<&str, &str> {
@@ -41,37 +78,37 @@ fn parse_package(input: &str) -> IResult<&str, PackageInformation> {
 fn package_info(input: &str) -> IResult<&str, PackageInformation> {
     let (i, _) = package_name(input)?;
 
-    // PackageName is required
+    // PackageName is required.
     let (i, _) = tag("PackageName:")(i)?;
 
     let (i, name) = recognize(ws(take_till_line_end))(i)?;
 
-    // SPDXID is required
+    // SPDXID is required.
     let (i, _) = tag("SPDXID:")(i)?;
-    let (tail, _) = recognize(ws(take_till_line_end))(i)?;
+    let (tail, spdx_id) = recognize(ws(take_till_line_end))(i)?;
 
-    // PackageVersion is optional
+    // PackageVersion is optional.
     // Version can be obtained from PURL if present, so we don't return an error
-    // here
+    // here.
     let (i, has_version) = opt(tag("PackageVersion:"))(tail)?;
     let (i, v) = recognize(ws(take_till_line_end))(i)?;
     let version = has_version.map(|_| v.trim().to_string());
 
-    // Update input
+    // Update input.
     let i = match version {
         Some(_) => i,
         None => tail,
     };
 
-    // PackageDownloadLocation is required
-    let (i, _) = tag("PackageDownloadLocation:")(i)?;
+    // PackageDownloadLocation is required.
+    let (i, _) = skip_until_tag(i, "PackageDownloadLocation:")?;
     let (i, download_location) = recognize(ws(take_till_line_end))(i)?;
 
-    // Look for external references
+    // Look for external references.
     let (i, next_input) = extern_ref(i)?;
     let (_, external_ref) = opt(recognize(ws(take_till_line_end)))(i)?;
 
-    // Package name
+    // Package name.
     let name = name.trim();
 
     if let Some(external_ref) = external_ref {
@@ -79,6 +116,7 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
 
         Ok((next_input, PackageInformation {
             name: name.into(),
+            spdx_id: spdx_id.trim().into(),
             version_info: version,
             download_location: download_location.into(),
             external_refs: vec![external_ref],
