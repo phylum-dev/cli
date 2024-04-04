@@ -28,6 +28,7 @@ pub(crate) struct PackageInformation {
     pub(crate) name: String,
     pub(crate) version_info: Option<String>,
     pub(crate) download_location: String,
+    #[serde(default)]
     pub(crate) external_refs: Vec<ExternalRefs>,
 }
 
@@ -124,7 +125,8 @@ impl TryFrom<&PackageInformation> for Package {
     type Error = anyhow::Error;
 
     fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
-        pkg_info
+        // Attempt to determine package data from external refs.
+        let pkg_result = pkg_info
             .external_refs
             .iter()
             .find_map(|external| match external.reference_category {
@@ -137,7 +139,24 @@ impl TryFrom<&PackageInformation> for Package {
                 },
                 _ => None,
             })
-            .ok_or(anyhow!("Missing package locator for {}", pkg_info.name))?
+            .ok_or(anyhow!("Missing package locator for {}", pkg_info.name));
+
+        match pkg_result {
+            Ok(pkg) => pkg,
+            Err(e) => {
+                // Attempt to determine registry from downloadLocation.
+                match (pkg_info.version_info.as_ref(), type_from_url(&pkg_info.download_location)) {
+                    (Some(version), Ok(package_type)) => Ok(Package {
+                        name: pkg_info.name.to_owned(),
+                        version: PackageVersion::FirstParty(version.to_owned()),
+                        package_type,
+                    }),
+                    (Some(_), Err(_)) => Err(UnknownEcosystem.into()),
+                    (None, Ok(_)) => Err(anyhow!("Missing package version {}", pkg_info.name)),
+                    _ => Err(e),
+                }
+            },
+        }
     }
 }
 
@@ -270,42 +289,6 @@ mod tests {
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg));
         }
-    }
-
-    #[test]
-    fn fail_missing_purl() {
-        let data = json!({
-              "spdxVersion": "SPDX-2.3",
-              "dataLicense": "CC0-1.0",
-              "SPDXID": "SPDXRef-DOCUMENT",
-              "name": "sbom-example",
-              "packages": [ {
-                "name": "@colors/colors",
-                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
-                "versionInfo": "1.5.0",
-                "originator": "Person: DABH",
-                "downloadLocation": "http://github.com/DABH/colors.js.git",
-                "homepage": "https://github.com/DABH/colors.js",
-                "sourceInfo": "acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json",
-                "licenseConcluded": "MIT",
-                "licenseDeclared": "MIT",
-                "copyrightText": "NOASSERTION",
-                "externalRefs": [
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceType": "cpe23Type",
-                    "referenceLocator": "cpe:2.3:a:\\@colors\\/colors:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                },
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceType": "cpe23Type",
-                    "referenceLocator": "cpe:2.3:a:*:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                }]
-            }]
-        }).to_string();
-
-        let error = Spdx.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("Missing package locator"))
     }
 
     #[test]
@@ -471,6 +454,36 @@ mod tests {
     }
 
     #[test]
+    fn ecosystem_from_download_location() {
+        let data = json!({
+              "spdxVersion": "SPDX-2.3",
+              "dataLicense": "CC0-1.0",
+              "SPDXID": "SPDXRef-DOCUMENT",
+              "name": "sbom-example",
+              "packages": [ {
+                "name": "@types/ramda",
+                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
+                "versionInfo": "0.28.0",
+                "originator": "Person: Scott Sauyet and Michael Hurley ()",
+                "downloadLocation": "https://registry.npmjs.org/ramda/-/ramda-0.28.0.tgz",
+                "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/ramda",
+                "licenseConcluded": "MIT",
+                "licenseDeclared": "MIT",
+                "copyrightText": "Copyright (c) Microsoft Corporation.",
+            }]
+        }).to_string();
+
+        let pkgs = Spdx.parse(&data).unwrap();
+
+        let expected_pkg = [Package {
+            name: "@types/ramda".into(),
+            version: PackageVersion::FirstParty("0.28.0".into()),
+            package_type: PackageType::Npm,
+        }];
+        assert_eq!(pkgs, expected_pkg)
+    }
+
+    #[test]
     fn parse_spdx_2_2_tag_value() {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx")).unwrap();
         assert_eq!(pkgs.len(), 2673);
@@ -591,7 +604,7 @@ mod tests {
     fn test_file_type() {
         let parse_results =
             Spdx.parse(include_str!("../../tests/fixtures/appbomination.spdx.json"));
-        let expected = anyhow!("missing field `externalRefs`").to_string();
+        let expected = anyhow!("Missing package locator for Gradle").to_string();
         let actual = parse_results.err().unwrap().to_string();
 
         assert_eq!(actual, expected)
