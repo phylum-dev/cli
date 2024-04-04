@@ -21,6 +21,9 @@ use crate::{
 pub(crate) struct SpdxInfo {
     #[serde(rename = "SPDXID")]
     pub(crate) spdx_id: String,
+    // Deprecated in v2.3 but kept for v2.2 compatability.
+    #[serde(default)]
+    pub(crate) document_describes: Vec<String>,
     pub(crate) packages: Vec<PackageInformation>,
     #[serde(default)]
     pub(crate) relationships: Vec<Relationship>,
@@ -168,19 +171,25 @@ impl Parse for Spdx {
             spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?.1
         };
 
-        let spdx_id = spdx_info
+        let spdx_ids: Vec<_> = spdx_info
             .relationships
             .into_iter()
-            .find(|r| {
-                r.relationship_type.as_ref().map_or(false, |t| t == "DESCRIBES")
+            .filter_map(|r| {
+                if r.relationship_type.as_ref().map_or(false, |t| t == "DESCRIBES")
                     && r.spdx_element_id.as_ref().map_or(false, |t| t == &spdx_info.spdx_id)
+                {
+                    r.related_spdx_element
+                } else {
+                    None
+                }
             })
-            .map(|r| r.related_spdx_element.unwrap_or_default())
-            .unwrap_or_default();
+            .collect();
 
         let mut packages = Vec::new();
         for package_info in spdx_info.packages {
-            if package_info.spdx_id == spdx_id {
+            if spdx_info.document_describes.contains(&package_info.spdx_id)
+                || spdx_ids.contains(&package_info.spdx_id)
+            {
                 continue;
             }
             match Package::try_from(&package_info) {
@@ -500,7 +509,7 @@ mod tests {
 
     #[test]
     fn removes_self_identified_package() {
-        let data = r##"SPDXVersion: SPDX-2.3
+        let data = r##"SPDXVersion: SPDX-2.2
             DataLicense: CC0-1.0
             SPDXID: SPDXRef-DOCUMENT
             DocumentName: Python-cve-bin-tool
@@ -509,6 +518,7 @@ mod tests {
             Creator: Tool: sbom4python-0.10.4
             Created: 2024-04-01T00:28:13Z
             CreatorComment: <text>This document has been automatically generated.</text>
+            DocumentDescribes: SPDXRef-Package1, SPDXRef-Package2
             ##### 
 
             PackageName: cve-bin-tool
@@ -541,6 +551,37 @@ mod tests {
             PackageSummary: <text>Async http client/server framework (asyncio)</text>
             ExternalRef: PACKAGE_MANAGER purl pkg:pypi/aiohttp@3.9.3
             #####
+
+            PackageName: @colors/colors
+            SPDXID: SPDXRef-Package1
+            PackageVersion: 1.5.0
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git
+            PackageSourceInfo: acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json
+            PackageOriginator: Person: DABH
+            PackageLicenseDeclared: MIT
+            PackageLicenseConcluded: MIT
+            PackageCopyrightText: NOASSERTION
+            PackageHomePage: https://github.com/DABH/colors.js
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@colors\/colors:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:DABH:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:dabh:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: PACKAGE-MANAGER purl pkg:npm/%40colors/colors@1.5.0
+
+            PackageName: @discoveryjs/json-ext
+            SPDXID: SPDXRef-Package2
+            PackageVersion: 0.5.6
+            PackageDownloadLocation: NOASSERTION
+            PackageSourceInfo: acquired package info from installed node module manifest file: /usr/local/go/src/cmd/vendor/github.com/google/pprof/third_party/d3flamegraph/package-lock.json
+            PackageLicenseDeclared: NONE
+            PackageLicenseConcluded: NONE
+            PackageCopyrightText: NOASSERTION
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json-ext:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json-ext:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json_ext:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json_ext:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: PACKAGE-MANAGER purl pkg:npm/%40discoveryjs/json-ext@0.5.6
             
             Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-1-cve-bin-tool
             Relationship: SPDXRef-Package-1-cve-bin-tool DEPENDS_ON SPDXRef-Package-2-aiohttp

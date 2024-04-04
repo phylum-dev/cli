@@ -1,10 +1,10 @@
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_until, take_while};
+use nom::bytes::complete::{tag, take_till, take_until, take_while};
 use nom::character::complete::{line_ending, multispace0, not_line_ending, space0};
 use nom::combinator::{eof, map_opt, opt, recognize};
 use nom::error::{context, VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, many_till};
-use nom::sequence::{delimited, tuple};
+use nom::sequence::{delimited, preceded, tuple};
 use nom::Err as NomErr;
 
 use crate::parsers::{take_till_blank_line, take_till_line_end, IResult};
@@ -12,16 +12,39 @@ use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory, Relations
 
 pub(crate) fn parse(input: &str) -> IResult<&str, SpdxInfo> {
     let (_, relationships) = parse_relationships(input)?;
+    let (_, document_describes) = parse_document_describes(input)?;
     let (i, spdx_id) = parse_spdx_id(input)?;
     let (i, packages) = many1(package)(i)?;
 
-    Ok((i, SpdxInfo { spdx_id: spdx_id.into(), packages, relationships }))
+    Ok((i, SpdxInfo { spdx_id: spdx_id.into(), document_describes, packages, relationships }))
 }
 
 fn parse_spdx_id(input: &str) -> IResult<&str, &str> {
     let (i, _) = skip_until_tag(input, "SPDXID:")?;
     let (i, spdx_id) = take_till_line_end(i)?;
     Ok((i, spdx_id.trim()))
+}
+
+fn parse_document_describes(input: &str) -> IResult<&str, Vec<String>> {
+    let (i, describes) = opt(preceded(
+        take_until("DocumentDescribes:"),
+        take_till(|c| c == '\n' || c == '\r'),
+    ))(input)?;
+
+    let describes_list = if let Some(describes_str) = describes {
+        describes_str
+            .trim_start_matches("DocumentDescribes:")
+            .trim()
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    Ok((i, describes_list))
 }
 
 fn skip_until_tag<'a>(input: &'a str, line_tag: &'a str) -> IResult<&'a str, ()> {
