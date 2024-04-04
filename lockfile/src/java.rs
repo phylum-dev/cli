@@ -49,7 +49,7 @@ impl Parse for Pom {
     /// Parses maven effective-pom files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         // Parse effective-pom.xml.
-        let pom: EffectivePom = serde_xml_rs::from_str(data)?;
+        let pom: EffectivePom = quick_xml::de::from_str(data)?;
 
         // Retrieve all dependencies.
         match pom {
@@ -226,6 +226,24 @@ mod tests {
 
         assert_eq!(pkgs[1].name, "org.codehaus.mojo:exec-maven-plugin");
         assert_eq!(pkgs[1].version, PackageVersion::FirstParty("1.2.1".into()));
+
+        let last = pkgs.last().unwrap();
+        assert_eq!(last.name, "org.apache.maven.plugins:maven-site-plugin");
+        assert_eq!(last.version, PackageVersion::FirstParty("3.3".into()));
+    }
+
+    #[test]
+    fn lock_parse_effective_pom_cp1252() {
+        let mut pkgs =
+            Pom.parse(include_str!("../../tests/fixtures/effective-pom-cp1252.xml")).unwrap();
+
+        pkgs.sort_by(|a, b| a.version.cmp(&b.version));
+        assert_eq!(pkgs.len(), 8);
+        assert_eq!(pkgs[0].name, "org.apache.maven.plugins:maven-surefire-plugin");
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("2.12.4".into()));
+
+        assert_eq!(pkgs[1].name, "org.apache.maven.plugins:maven-jar-plugin");
+        assert_eq!(pkgs[1].version, PackageVersion::FirstParty("2.4".into()));
 
         let last = pkgs.last().unwrap();
         assert_eq!(last.name, "org.apache.maven.plugins:maven-site-plugin");

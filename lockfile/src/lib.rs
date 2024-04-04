@@ -600,7 +600,7 @@ mod tests {
             (LockfileFormat::Gem, 1),
             (LockfileFormat::Pipenv, 1),
             (LockfileFormat::Poetry, 2),
-            (LockfileFormat::Maven, 2),
+            (LockfileFormat::Maven, 3),
             (LockfileFormat::Gradle, 1),
             (LockfileFormat::Msbuild, 2),
             (LockfileFormat::NugetLock, 1),
