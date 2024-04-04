@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Improve parsing of non-UTF-8 encoded pom.xml files
+- `SPDX` SBOM registry determination from downloadLocation
 
 ## 6.2.0 - 2024-03-19
 
