@@ -38,7 +38,7 @@ struct Components<T> {
 /// Represents a single XML component.
 #[derive(Clone, Debug, Deserialize)]
 struct XmlComponent {
-    #[serde(rename = "type")]
+    #[serde(rename = "@type")]
     component_type: String,
     name: String,
     version: String,
@@ -181,7 +181,7 @@ impl Parse for CycloneDX {
             let parsed: Bom<Vec<JsonComponent>> = serde_json::from_value(lock)?;
             Self::process_components(parsed.components.as_deref())
         } else {
-            let parsed: Bom<Components<XmlComponent>> = serde_xml_rs::from_str(data)?;
+            let parsed: Bom<Components<XmlComponent>> = quick_xml::de::from_str(data)?;
             let components = parsed.components.map(|c| c.components);
             Self::process_components(components.as_deref())
         }
