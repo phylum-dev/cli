@@ -64,8 +64,8 @@ export type RejectionSource = {
   reason: string | null;
 };
 
-async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
-  const headers = new Headers(headersInit);
+async function ensureRequestHeaders(init: RequestInit) {
+  const headers = init.headers = new Headers(init.headers);
 
   // Set Authorization header if it is missing.
   if (!headers.has("Authorization")) {
@@ -74,11 +74,9 @@ async function requestHeaders(headersInit?: HeadersInit): Promise<Headers> {
   }
 
   // Set Content-Type header if it is missing.
-  if (!headers.has("Content-Type")) {
+  if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-
-  return headers;
 }
 
 export class PhylumApi {
@@ -98,7 +96,7 @@ export class PhylumApi {
     // Ensure header object is initialized.
     const fetchInit = init ?? {};
 
-    fetchInit.headers = await requestHeaders(fetchInit.headers);
+    await ensureRequestHeaders(fetchInit);
 
     // Get API base URI without version.
     const baseUrl = await PhylumApi.apiBaseUrl();
