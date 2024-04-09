@@ -9,7 +9,6 @@ use lockfile_generator::dotnet::Dotnet as DotnetGenerator;
 use lockfile_generator::Generator;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
-use serde_xml_rs::Deserializer;
 
 use crate::{Package, PackageVersion, Parse};
 
@@ -95,10 +94,10 @@ pub struct CSProj;
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct PackageReference {
-    #[serde(alias = "Include", default)]
+    #[serde(alias = "@Include", default)]
     pub name: String,
 
-    #[serde(alias = "Version", default)]
+    #[serde(alias = "@Version", alias = "@version", default)]
     pub version: String,
 }
 
@@ -143,9 +142,7 @@ impl Parse for CSProj {
     /// Parses `.csproj` files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let data = data.trim_start_matches(UTF8_BOM);
-        let mut de =
-            Deserializer::new_from_reader(data.as_bytes()).non_contiguous_seq_elements(true);
-        let parsed = Project::deserialize(&mut de)?;
+        let parsed: Project = quick_xml::de::from_str(data)?;
         Ok(parsed.into())
     }
 
@@ -265,5 +262,24 @@ mod tests {
     fn strip_utf8_bom() {
         let pkgs = CSProj.parse(include_str!("../../tests/fixtures/Calculator.csproj")).unwrap();
         assert!(!pkgs.is_empty());
+    }
+
+    #[test]
+    fn test_overlapped_case() {
+        let proj = r##"
+        <Project Sdk="Microsoft.NET.Sdk">
+            <ItemGroup>
+                <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
+                <Reference Include="System.Web" />
+                <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+            </ItemGroup>
+        </Project>
+        "##;
+        let pkgs = CSProj.parse(proj).unwrap();
+        assert_eq!(pkgs.len(), 2);
+        assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.0.0".into()));
+        assert_eq!(pkgs[1].name, "NUnit3TestAdapter");
+        assert_eq!(pkgs[1].version, PackageVersion::FirstParty("3.13.0".into()));
     }
 }
