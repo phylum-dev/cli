@@ -266,21 +266,20 @@ mod tests {
 
     #[test]
     fn test_overlapped_case() {
-        #[derive(Debug, Deserialize, PartialEq)]
-        struct Foo {
-            bar: Vec<usize>,
-            baz: String,
-        }
-        let s = r##"
-        <foo>
-            <bar>1</bar>
-            <bar>2</bar>
-            <baz>Hello, world</baz>
-            <bar>3</bar>
-            <bar>4</bar>
-        </foo>
+        let proj = r##"
+        <Project Sdk="Microsoft.NET.Sdk">
+            <ItemGroup>
+                <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
+                <Reference Include="System.Web" />
+                <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+            </ItemGroup>
+        </Project>
         "##;
-        let foo: Foo = quick_xml::de::from_str(s).unwrap();
-        assert_eq!(foo, Foo { bar: vec![1, 2, 3, 4], baz: "Hello, world".to_string() });
+        let pkgs = CSProj.parse(proj).unwrap();
+        assert_eq!(pkgs.len(), 2);
+        assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
+        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.0.0".into()));
+        assert_eq!(pkgs[1].name, "NUnit3TestAdapter");
+        assert_eq!(pkgs[1].version, PackageVersion::FirstParty("3.13.0".into()));
     }
 }
