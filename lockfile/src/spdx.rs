@@ -18,16 +18,26 @@ use crate::{
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SpdxInfo {
-    packages: Vec<PackageInformation>,
+pub(crate) struct SpdxInfo {
+    #[serde(rename = "SPDXID")]
+    pub(crate) spdx_id: String,
+    // Deprecated in v2.3 but kept for v2.2 compatability.
+    #[serde(default)]
+    pub(crate) document_describes: Vec<String>,
+    pub(crate) packages: Vec<PackageInformation>,
+    #[serde(default)]
+    pub(crate) relationships: Vec<Relationship>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PackageInformation {
     pub(crate) name: String,
+    #[serde(rename = "SPDXID")]
+    pub(crate) spdx_id: String,
     pub(crate) version_info: Option<String>,
     pub(crate) download_location: String,
+    #[serde(default)]
     pub(crate) external_refs: Vec<ExternalRefs>,
 }
 
@@ -52,6 +62,14 @@ pub(crate) enum ReferenceCategory {
     PackageManager,
     #[serde(other)]
     Unknown,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Relationship {
+    pub(crate) spdx_element_id: Option<String>,
+    pub(crate) related_spdx_element: Option<String>,
+    pub(crate) relationship_type: Option<String>,
 }
 
 fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
@@ -105,7 +123,7 @@ fn from_locator(registry: &str, locator: &str) -> anyhow::Result<Package> {
         PackageType::Nuget => locator.rsplit_once('/'),
         PackageType::Maven => locator.rsplit_once(':').filter(|(name, _)| name.contains(':')),
         _ => {
-            // Not in the spec, but included for compatibility with our API
+            // Not in the spec, but included for compatibility with our API.
             locator.rsplit_once('@')
         },
     }
@@ -145,16 +163,35 @@ pub struct Spdx;
 
 impl Parse for Spdx {
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let packages_info = if let Ok(lock) = serde_json::from_str::<serde_json::Value>(data) {
-            serde_json::from_value::<SpdxInfo>(lock)?.packages
+        let spdx_info = if let Ok(lock) = serde_json::from_str::<serde_json::Value>(data) {
+            serde_json::from_value::<SpdxInfo>(lock)?
         } else if let Ok(lock) = serde_yaml::from_str::<serde_yaml::Value>(data) {
-            serde_yaml::from_value::<SpdxInfo>(lock)?.packages
+            serde_yaml::from_value::<SpdxInfo>(lock)?
         } else {
             spdx::parse(data).finish().map_err(|e| anyhow!(convert_error(data, e)))?.1
         };
 
+        let spdx_ids: Vec<_> = spdx_info
+            .relationships
+            .into_iter()
+            .filter_map(|r| {
+                if r.relationship_type.as_ref().map_or(false, |t| t == "DESCRIBES")
+                    && r.spdx_element_id.as_ref().map_or(false, |t| t == &spdx_info.spdx_id)
+                {
+                    r.related_spdx_element
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         let mut packages = Vec::new();
-        for package_info in packages_info {
+        for package_info in spdx_info.packages {
+            if spdx_info.document_describes.contains(&package_info.spdx_id)
+                || spdx_ids.contains(&package_info.spdx_id)
+            {
+                continue;
+            }
             match Package::try_from(&package_info) {
                 Ok(pkg) => packages.push(pkg),
                 Err(e) => {
@@ -471,6 +508,98 @@ mod tests {
     }
 
     #[test]
+    fn removes_self_identified_package() {
+        let data = r##"SPDXVersion: SPDX-2.2
+            DataLicense: CC0-1.0
+            SPDXID: SPDXRef-DOCUMENT
+            DocumentName: Python-cve-bin-tool
+            DocumentNamespace: http://spdx.org/spdxdocs/Python-cve-bin-tool-4137f958-709e-4f44-940e-f477ded25cbd
+            LicenseListVersion: 3.22
+            Creator: Tool: sbom4python-0.10.4
+            Created: 2024-04-01T00:28:13Z
+            CreatorComment: <text>This document has been automatically generated.</text>
+            DocumentDescribes: SPDXRef-Package1, SPDXRef-Package2
+            ##### 
+
+            PackageName: cve-bin-tool
+            SPDXID: SPDXRef-Package-1-cve-bin-tool
+            PackageVersion: 3.3rc2
+            PrimaryPackagePurpose: APPLICATION
+            PackageSupplier: Person: Terri Oda (terri.oda@intel.com)
+            PackageDownloadLocation: https://pypi.org/project/cve-bin-tool/3.3rc2
+            FilesAnalyzed: false
+            PackageChecksum: SHA1: c491590aeea36235930d1c6b8480d2489a470ece
+            PackageLicenseDeclared: GPL-3.0-or-later
+            PackageLicenseConcluded: GPL-3.0-or-later
+            PackageCopyrightText: NOASSERTION
+            PackageSummary: <text>CVE Binary Checker Tool</text>
+            ExternalRef: PACKAGE_MANAGER purl pkg:pypi/cve-bin-tool@3.3rc2
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:terri_oda:cve-bin-tool:3.3rc2:*:*:*:*:*:*:*
+            ##### 
+
+            PackageName: aiohttp
+            SPDXID: SPDXRef-Package-2-aiohttp
+            PackageVersion: 3.9.3
+            PrimaryPackagePurpose: LIBRARY
+            PackageSupplier: NOASSERTION
+            PackageDownloadLocation: https://pypi.org/project/aiohttp/3.9.3
+            FilesAnalyzed: false
+            PackageLicenseDeclared: NOASSERTION
+            PackageLicenseConcluded: Apache-2.0
+            PackageLicenseComments: <text>aiohttp declares Apache 2 which is not currently a valid SPDX License identifier or expression.</text>
+            PackageCopyrightText: NOASSERTION
+            PackageSummary: <text>Async http client/server framework (asyncio)</text>
+            ExternalRef: PACKAGE_MANAGER purl pkg:pypi/aiohttp@3.9.3
+            #####
+
+            PackageName: @colors/colors
+            SPDXID: SPDXRef-Package1
+            PackageVersion: 1.5.0
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git
+            PackageSourceInfo: acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json
+            PackageOriginator: Person: DABH
+            PackageLicenseDeclared: MIT
+            PackageLicenseConcluded: MIT
+            PackageCopyrightText: NOASSERTION
+            PackageHomePage: https://github.com/DABH/colors.js
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@colors\/colors:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:DABH:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:dabh:\@colors\/colors:1.5.0:*:*:*:*:*:*:*
+            ExternalRef: PACKAGE-MANAGER purl pkg:npm/%40colors/colors@1.5.0
+
+            PackageName: @discoveryjs/json-ext
+            SPDXID: SPDXRef-Package2
+            PackageVersion: 0.5.6
+            PackageDownloadLocation: NOASSERTION
+            PackageSourceInfo: acquired package info from installed node module manifest file: /usr/local/go/src/cmd/vendor/github.com/google/pprof/third_party/d3flamegraph/package-lock.json
+            PackageLicenseDeclared: NONE
+            PackageLicenseConcluded: NONE
+            PackageCopyrightText: NOASSERTION
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json-ext:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json-ext:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json_ext:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json_ext:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
+            ExternalRef: PACKAGE-MANAGER purl pkg:npm/%40discoveryjs/json-ext@0.5.6
+            
+            Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-1-cve-bin-tool
+            Relationship: SPDXRef-Package-1-cve-bin-tool DEPENDS_ON SPDXRef-Package-2-aiohttp
+            "##;
+
+        let pkgs = Spdx.parse(data).unwrap();
+        assert_eq!(pkgs.len(), 1);
+
+        let expected_pkgs = Package {
+            name: "aiohttp".into(),
+            version: PackageVersion::FirstParty("3.9.3".into()),
+            package_type: PackageType::PyPi,
+        };
+
+        assert_eq!(expected_pkgs, pkgs[0]);
+    }
+
+    #[test]
     fn parse_spdx_2_2_tag_value() {
         let pkgs = Spdx.parse(include_str!("../../tests/fixtures/spdx-2.2.spdx")).unwrap();
         assert_eq!(pkgs.len(), 2673);
@@ -591,7 +720,7 @@ mod tests {
     fn test_file_type() {
         let parse_results =
             Spdx.parse(include_str!("../../tests/fixtures/appbomination.spdx.json"));
-        let expected = anyhow!("missing field `externalRefs`").to_string();
+        let expected = anyhow!("Missing package locator for Gradle").to_string();
         let actual = parse_results.err().unwrap().to_string();
 
         assert_eq!(actual, expected)

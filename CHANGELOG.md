@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Improve parsing of non-UTF-8 encoded pom.xml files
+- `SPDX` parsing adding the described package as a dependency
+- `SPDX` parsing certain text files with optional package fields
 
 ## 6.2.0 - 2024-03-19
 
@@ -57,7 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Renamed multiple CLI arguments to avoid the term `lockfile` in places where
-    manifests are also accepted
+  manifests are also accepted
 - Renamed `lockfiles` key in `phylum status --json` output to `dependency_files`
 
 ## 5.9.0 - 2023-12-05
@@ -99,7 +101,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Automatic manifest resolution with `init`, `parse`, `analyze`, and `status`
-    will no longer return manifests in subdirectories of other manifests
+  will no longer return manifests in subdirectories of other manifests
 
 ### Fixed
 
@@ -339,7 +341,7 @@ before, the existing project ID will be re-linked.
 ### Fixed
 
 - Fix parser lockfile consistency by @cd-work (#882)
-- Add deno.window lib reference to extension\_api.ts by @kylewillmon (#890)
+- Add deno.window lib reference to extension_api.ts by @kylewillmon (#890)
 
 ## 4.1.0 - 2022-12-20
 
@@ -375,7 +377,7 @@ before, the existing project ID will be re-linked.
 - `phylum auth set-token` by @kylewillmon (#786)
 - Add `--lockfile-type` option to `phylum analyze` by @cd-work (#798)
 - Add `phylum init` subcommand by @cd-work (#801)
-- Add lockfile path and type to .phylum\_project by @cd-work (#806)
+- Add lockfile path and type to .phylum_project by @cd-work (#806)
 - Add `unsandboxed_run` manifest permission by @cd-work (#777)
 - Add group member management subcommands by @cd-work (#809)
 
@@ -492,7 +494,7 @@ before, the existing project ID will be re-linked.
 
 ### Fixed
 
-- Fix PHYLUM\_API\_KEY overwriting config token by @cd-work in #631
+- Fix PHYLUM_API_KEY overwriting config token by @cd-work in #631
 - Fix parsing gradle lockfile without classpath by @cd-work in #627
 - Fix link dependencies in yarn parser by @cd-work in #621
 
@@ -565,7 +567,7 @@ before, the existing project ID will be re-linked.
 - Ignore certs everywhere when requested by @kylewillmon (#389)
 - Remove Web UI link from analyze output by @cd-work (#397)
 - Don't use streaming parsers by @kylewillmon (#401)
-- Bump phylum\_types version by @kylewillmon (#409)
+- Bump phylum_types version by @kylewillmon (#409)
 
 ## 3.4.0 - 2022-05-19
 
@@ -589,7 +591,7 @@ before, the existing project ID will be re-linked.
 ### Fixed
 
 - Fix non-frozen Pipfile suffix by @cd-work (#366)
-- Use new endpoint for ping  by @kylewillmon (#369)
+- Use new endpoint for ping by @kylewillmon (#369)
 
 ## 3.2.0 - 2022-05-06
 
@@ -665,7 +667,7 @@ before, the existing project ID will be re-linked.
 
 - Continue install/upgrade even if quarantine flag isn't found by @kylewillmon (#249)
 - Replace Language/Type with Ecosystem by @cd-work (#248)
-- Use git\_version for version numbers by @kylewillmon (#243)
+- Use git_version for version numbers by @kylewillmon (#243)
 - Use Ecosystem in `phylum package` output by @cd-work (#255)
 - Add support for new npm package-lock format by @cd-work (#242)
 
@@ -696,7 +698,7 @@ before, the existing project ID will be re-linked.
 
 - Bring Oauth Support to CLI by @DanielJoyce (#118)
 - Better error handling by @DanielJoyce (#145)
-- Swap out static\_init module for lazy\_static by @DanielJoyce (#146)
+- Swap out static_init module for lazy_static by @DanielJoyce (#146)
 - Gather files from static builder by @louislang (#147)
 - Adding release script by @eeclfrei (#150)
 - Updates for recent api changes by @eeclfrei (#160)
