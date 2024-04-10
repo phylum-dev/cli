@@ -110,9 +110,9 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
     let (i, _) = tag("SPDXID:")(i)?;
     let (tail, spdx_id) = recognize(ws(take_till_line_end))(i)?;
 
-    // PackageVersion is optional
+    // PackageVersion is optional.
     // The version can be obtained from PURL if present, so we don't return an
-    // error
+    // error.
     let (i, has_version) = opt(tag("PackageVersion:"))(tail)?;
     let (i, v) = recognize(ws(take_till_line_end))(i)?;
     let version = has_version.map(|_| v.trim().to_string());
