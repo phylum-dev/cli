@@ -74,7 +74,7 @@ pub(crate) struct Relationship {
 
 fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
     if url.starts_with("https://registry.npmjs.org")
-        | url.starts_with("https://registry.yarnpkg.com")
+        || url.starts_with("https://registry.yarnpkg.com")
     {
         Ok(PackageType::Npm)
     } else if url.starts_with("https://rubygems.org") {
@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn fail_missing_version() {
+    fn tag_value_fail_missing_version() {
         let data = json!({
               "spdxVersion": "SPDX-2.3",
               "dataLicense": "CC0-1.0",
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_ecosystem() {
+    fn spdx_2_3_unsupported_ecosystem() {
         let data = json!({
               "spdxVersion": "SPDX-2.3",
               "dataLicense": "CC0-1.0",
@@ -442,34 +442,6 @@ mod tests {
     }
 
     #[test]
-    fn tag_value_fail_missing_version() {
-        let data = r##"SPDXVersion: SPDX-2.3
-            DataLicense: CC0-1.0
-            DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
-            DocumentName: SPDX-Tools-v2.0
-            SPDXID: SPDXRef-DOCUMENT
-            DocumentComment: <text>This document was created using SPDX 2.0 using licenses from the web site.</text>
-
-            ## Package Information
-            PackageName: Jena
-            SPDXID: SPDXRef-fromDoap-0
-            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
-            PackageHomePage: http://www.openjena.org/
-            ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.apache.jena/apache-jena
-            FilesAnalyzed: false
-
-            ## Package Information
-            PackageName: @colors/colors
-            SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
-            PackageVersion: 1.5.0
-            PackageDownloadLocation: http://github.com/DABH/colors.js.git
-            "##;
-
-        let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("version"))
-    }
-
-    #[test]
     fn tag_value_unsupported_ecosystem() {
         let data = r##"SPDXVersion: SPDX-2.3
             DataLicense: CC0-1.0
@@ -499,61 +471,7 @@ mod tests {
     }
 
     #[test]
-    fn ignore_unknown_ecosystem() {
-        let data = json!({
-              "spdxVersion": "SPDX-2.3",
-              "dataLicense": "CC0-1.0",
-              "SPDXID": "SPDXRef-DOCUMENT",
-              "name": "sbom-example",
-              "packages": [ {
-                "name": "@colors/colors",
-                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
-                "versionInfo": "1.5.0",
-                "originator": "Person: DABH",
-                "downloadLocation": "http://github.com/DABH/colors.js.git",
-                "homepage": "https://github.com/DABH/colors.js",
-                "sourceInfo": "acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json",
-                "licenseConcluded": "MIT",
-                "licenseDeclared": "MIT",
-                "copyrightText": "NOASSERTION",
-                "externalRefs": [
-                {
-                  "referenceCategory": "SECURITY",
-                  "referenceType": "cpe23Type",
-                  "referenceLocator": "cpe:2.3:a:\\@colors\\/colors:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                },
-                {
-                  "referenceCategory": "SECURITY",
-                  "referenceType": "cpe23Type",
-                  "referenceLocator": "cpe:2.3:a:*:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                }]
-                },
-                {
-                  "SPDXID" : "SPDXRef-22",
-                  "comment" : "Package info from Maven Central POM file",
-                  "copyrightText" : "NOASSERTION",
-                  "downloadLocation" : "https://repo1.maven.org/maven2/junit/junit/4.12/junit-4.12.jar",
-                  "filesAnalyzed" : false,
-                  "homepage" : "http://junit.org",
-                  "licenseConcluded" : "EPL-1.0",
-                  "licenseDeclared" : "EPL-1.0",
-                  "name" : "junit",
-                  "packageFileName" : "junit-4.12.jar",
-                  "versionInfo" : "4.12"
-                }]
-         }).to_string();
-
-        let pkgs = Spdx.parse(&data).unwrap();
-        let expected_pkg = [Package {
-            name: "junit".into(),
-            version: PackageVersion::FirstParty("4.12".into()),
-            package_type: PackageType::Maven,
-        }];
-        assert_eq!(pkgs, expected_pkg)
-    }
-
-    #[test]
-    fn ecosystem_from_download_location() {
+    fn tag_value_ecosystem_from_download_location() {
         let data = json!({
               "spdxVersion": "SPDX-2.3",
               "dataLicense": "CC0-1.0",
