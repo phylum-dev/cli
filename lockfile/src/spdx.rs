@@ -83,6 +83,7 @@ fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
         Ok(PackageType::PyPi)
     } else if url.starts_with("https://repo1.maven.org")
         || url.starts_with("https://search.maven.org")
+        || url.starts_with("central.sonatype.com")
     {
         Ok(PackageType::Maven)
     } else if url.starts_with("https://api.nuget.org") {
@@ -145,17 +146,17 @@ impl TryFrom<&PackageInformation> for Package {
 
     fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
         // Attempt to determine package data from external refs.
-        let pkg_result =
-            pkg_info.external_refs.iter().find_map(|external| match external.reference_category {
-                ReferenceCategory::PackageManager => {
-                    if external.reference_type == "purl" {
-                        Some(from_purl(&external.reference_locator, pkg_info))
-                    } else {
-                        Some(from_locator(&external.reference_type, &external.reference_locator))
-                    }
+        let pkg_result = pkg_info.external_refs.iter().find_map(|external| {
+            match (&external.reference_category, external.reference_type.as_str()) {
+                (ReferenceCategory::PackageManager, "purl") => {
+                    Some(from_purl(&external.reference_locator, pkg_info))
+                },
+                (ReferenceCategory::PackageManager, _) => {
+                    Some(from_locator(&external.reference_type, &external.reference_locator))
                 },
                 _ => None,
-            });
+            }
+        });
 
         pkg_result.unwrap_or_else(|| {
             let version = pkg_info
