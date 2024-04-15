@@ -633,10 +633,8 @@ mod tests {
                      ],
                     "msg": "Project met threshold requirements",
                     "pass": true,
-                    "action": "warn",
                     "project": "test-project",
                     "total_jobs": 1,
-                    "score": 1.0,
                     "ecosystem": "npm"
                 },
                 {
@@ -653,10 +651,8 @@ mod tests {
                      ],
                     "msg": "Project met threshold requirements",
                     "pass": true,
-                    "action": "break",
                     "project": "test-project",
                     "total_jobs": 1,
-                    "score": 1.0,
                     "ecosystem": "npm"
                 }
 
