@@ -716,12 +716,6 @@ mod tests {
                 "total_pull_request_count": 476,
                 "open_pull_request_avg_duration": 474
             },
-            "issueImpacts": {
-                "low": 0,
-                "medium": 0,
-                "high": 0,
-                "critical": 0
-            },
             "complete": false
           }
         }
