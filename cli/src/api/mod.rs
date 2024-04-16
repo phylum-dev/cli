@@ -633,10 +633,8 @@ mod tests {
                      ],
                     "msg": "Project met threshold requirements",
                     "pass": true,
-                    "action": "warn",
                     "project": "test-project",
                     "total_jobs": 1,
-                    "score": 1.0,
                     "ecosystem": "npm"
                 },
                 {
@@ -653,10 +651,8 @@ mod tests {
                      ],
                     "msg": "Project met threshold requirements",
                     "pass": true,
-                    "action": "break",
                     "project": "test-project",
                     "total_jobs": 1,
-                    "score": 1.0,
                     "ecosystem": "npm"
                 }
 
@@ -715,12 +711,6 @@ mod tests {
                 "open_pull_request_count": 50,
                 "total_pull_request_count": 476,
                 "open_pull_request_avg_duration": 474
-            },
-            "issueImpacts": {
-                "low": 0,
-                "medium": 0,
-                "high": 0,
-                "critical": 0
             },
             "complete": false
           }

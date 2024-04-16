@@ -411,7 +411,6 @@ export class PhylumApi {
    *     total_pull_request_count: 0,
    *     open_pull_request_avg_duration: null
    *   },
-   *   issueImpacts: { low: 0, medium: 0, high: 0, critical: 0 },
    *   complete: true
    * }
    * ```

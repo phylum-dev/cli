@@ -164,7 +164,6 @@ pub struct Package {
     pub issues: Vec<Issue>,
     pub authors: Vec<Author>,
     pub developer_responsiveness: Option<DeveloperResponsiveness>,
-    pub issue_impacts: IssueImpacts,
     pub complete: bool,
     pub release_data: Option<PackageReleaseData>,
     pub repo_url: Option<String>,
@@ -269,17 +268,6 @@ pub struct DeveloperResponsiveness {
     pub open_pull_request_count: Option<usize>,
     pub total_pull_request_count: Option<usize>,
     pub open_pull_request_avg_duration: Option<u32>,
-}
-
-/// The number of issues a package has, broken down by severity.
-#[derive(Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-#[serde(default)]
-pub struct IssueImpacts {
-    pub low: u32,
-    pub medium: u32,
-    pub high: u32,
-    pub critical: u32,
 }
 
 /// Information about when package releases have happened.
