@@ -74,14 +74,17 @@ pub(crate) struct Relationship {
 
 fn type_from_url(url: &str) -> anyhow::Result<PackageType> {
     if url.starts_with("https://registry.npmjs.org")
-        | url.starts_with("https://registry.yarnpkg.com")
+        || url.starts_with("https://registry.yarnpkg.com")
     {
         Ok(PackageType::Npm)
     } else if url.starts_with("https://rubygems.org") {
         Ok(PackageType::RubyGems)
     } else if url.starts_with("https://files.pythonhosted.org") {
         Ok(PackageType::PyPi)
-    } else if url.starts_with("https://repo1.maven.org") {
+    } else if url.starts_with("https://repo1.maven.org")
+        || url.starts_with("https://search.maven.org")
+        || url.starts_with("central.sonatype.com")
+    {
         Ok(PackageType::Maven)
     } else if url.starts_with("https://api.nuget.org") {
         Ok(PackageType::Nuget)
@@ -142,20 +145,34 @@ impl TryFrom<&PackageInformation> for Package {
     type Error = anyhow::Error;
 
     fn try_from(pkg_info: &PackageInformation) -> anyhow::Result<Self> {
-        pkg_info
-            .external_refs
-            .iter()
-            .find_map(|external| match external.reference_category {
-                ReferenceCategory::PackageManager => {
-                    if external.reference_type == "purl" {
-                        Some(from_purl(&external.reference_locator, pkg_info))
-                    } else {
-                        Some(from_locator(&external.reference_type, &external.reference_locator))
-                    }
+        // Attempt to determine package data from external refs.
+        let pkg_result = pkg_info.external_refs.iter().find_map(|external| {
+            match (&external.reference_category, external.reference_type.as_str()) {
+                (ReferenceCategory::PackageManager, "purl") => {
+                    Some(from_purl(&external.reference_locator, pkg_info))
+                },
+                (ReferenceCategory::PackageManager, _) => {
+                    Some(from_locator(&external.reference_type, &external.reference_locator))
                 },
                 _ => None,
+            }
+        });
+
+        pkg_result.unwrap_or_else(|| {
+            let version = pkg_info
+                .version_info
+                .as_ref()
+                .ok_or_else(|| anyhow!("Missing package version: {}", pkg_info.name))?;
+
+            let package_type = type_from_url(&pkg_info.download_location)
+                .map_err(|_| anyhow::Error::from(UnknownEcosystem))?;
+
+            Ok(Package {
+                name: pkg_info.name.to_owned(),
+                version: PackageVersion::FirstParty(version.to_owned()),
+                package_type,
             })
-            .ok_or(anyhow!("Missing package locator for {}", pkg_info.name))?
+        })
     }
 }
 
@@ -310,43 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn fail_missing_purl() {
-        let data = json!({
-              "spdxVersion": "SPDX-2.3",
-              "dataLicense": "CC0-1.0",
-              "SPDXID": "SPDXRef-DOCUMENT",
-              "name": "sbom-example",
-              "packages": [ {
-                "name": "@colors/colors",
-                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
-                "versionInfo": "1.5.0",
-                "originator": "Person: DABH",
-                "downloadLocation": "http://github.com/DABH/colors.js.git",
-                "homepage": "https://github.com/DABH/colors.js",
-                "sourceInfo": "acquired package info from installed node module manifest file: /usr/local/lib/node_modules/npm/node_modules/@colors/colors/package.json",
-                "licenseConcluded": "MIT",
-                "licenseDeclared": "MIT",
-                "copyrightText": "NOASSERTION",
-                "externalRefs": [
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceType": "cpe23Type",
-                    "referenceLocator": "cpe:2.3:a:\\@colors\\/colors:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                },
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceType": "cpe23Type",
-                    "referenceLocator": "cpe:2.3:a:*:\\@colors\\/colors:1.5.0:*:*:*:*:*:*:*"
-                }]
-            }]
-        }).to_string();
-
-        let error = Spdx.parse(&data).err().unwrap();
-        assert!(error.to_string().contains("Missing package locator"))
-    }
-
-    #[test]
-    fn fail_missing_version() {
+    fn tag_value_fail_missing_version() {
         let data = json!({
               "spdxVersion": "SPDX-2.3",
               "dataLicense": "CC0-1.0",
@@ -386,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_ecosystem() {
+    fn spdx_2_3_unsupported_ecosystem() {
         let data = json!({
               "spdxVersion": "SPDX-2.3",
               "dataLicense": "CC0-1.0",
@@ -427,7 +408,7 @@ mod tests {
     }
 
     #[test]
-    fn tag_value_fail_missing_purl() {
+    fn tag_value_ignore_unknown_ecosystem() {
         let data = r##"SPDXVersion: SPDX-2.3
             DataLicense: CC0-1.0
             DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
@@ -447,37 +428,18 @@ mod tests {
             PackageName: @colors/colors
             SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
             PackageVersion: 1.5.0
-            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
-
-        let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("Missing package locator"))
-    }
-
-    #[test]
-    fn tag_value_fail_missing_version() {
-        let data = r##"SPDXVersion: SPDX-2.3
-            DataLicense: CC0-1.0
-            DocumentNamespace: http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301
-            DocumentName: SPDX-Tools-v2.0
-            SPDXID: SPDXRef-DOCUMENT
-            DocumentComment: <text>This document was created using SPDX 2.0 using licenses from the web site.</text>
-
-            ## Package Information
-            PackageName: Jena
-            SPDXID: SPDXRef-fromDoap-0
-            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git
             PackageHomePage: http://www.openjena.org/
-            ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.apache.jena/apache-jena
             FilesAnalyzed: false
+            "##;
 
-            ## Package Information
-            PackageName: @colors/colors
-            SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
-            PackageVersion: 1.5.0
-            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
-
-        let error = Spdx.parse(data).err().unwrap();
-        assert!(error.to_string().contains("version"))
+        let pkgs = Spdx.parse(data).unwrap();
+        let expected_pkg = [Package {
+            name: "Jena".into(),
+            version: PackageVersion::FirstParty("3.12.0".into()),
+            package_type: PackageType::Maven,
+        }];
+        assert_eq!(pkgs, expected_pkg)
     }
 
     #[test]
@@ -492,7 +454,8 @@ mod tests {
             ## Package Information
             PackageName: TBD
             SPDXID: SPDXRef-fromDoap-0
-            PackageDownloadLocation: https://search.maven.org/remotecontent?filepath=org/apache/jena/apache-jena/3.12.0/apache-jena-3.12.0.tar.gz
+            PackageVersion: 1.0.0
+            PackageDownloadLocation: http://github.com/tbd/tbd.git
             PackageHomePage: http://www.openjena.org/
             ExternalRef: PACKAGE-MANAGER purl pkg:tbd/org.apache.jena/apache-jena
             FilesAnalyzed: false
@@ -501,10 +464,41 @@ mod tests {
             PackageName: @colors/colors
             SPDXID: SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b
             PackageVersion: 1.5.0
-            PackageDownloadLocation: http://github.com/DABH/colors.js.git"##;
+            PackageDownloadLocation: http://github.com/DABH/colors.js.git
+            "##;
 
         let pkgs = Spdx.parse(data).unwrap();
         assert!(pkgs.is_empty())
+    }
+
+    #[test]
+    fn tag_value_ecosystem_from_download_location() {
+        let data = json!({
+              "spdxVersion": "SPDX-2.3",
+              "dataLicense": "CC0-1.0",
+              "SPDXID": "SPDXRef-DOCUMENT",
+              "name": "sbom-example",
+              "packages": [ {
+                "name": "@types/ramda",
+                "SPDXID": "SPDXRef-Package-npm--colors-colors-2f307524f9ea3c7b",
+                "versionInfo": "0.28.0",
+                "originator": "Person: Scott Sauyet and Michael Hurley ()",
+                "downloadLocation": "https://registry.npmjs.org/ramda/-/ramda-0.28.0.tgz",
+                "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/ramda",
+                "licenseConcluded": "MIT",
+                "licenseDeclared": "MIT",
+                "copyrightText": "Copyright (c) Microsoft Corporation.",
+            }]
+        }).to_string();
+
+        let pkgs = Spdx.parse(&data).unwrap();
+
+        let expected_pkg = [Package {
+            name: "@types/ramda".into(),
+            version: PackageVersion::FirstParty("0.28.0".into()),
+            package_type: PackageType::Npm,
+        }];
+        assert_eq!(pkgs, expected_pkg)
     }
 
     #[test]
@@ -717,10 +711,10 @@ mod tests {
     }
 
     #[test]
-    fn test_file_type() {
+    fn test_missing_version() {
         let parse_results =
             Spdx.parse(include_str!("../../tests/fixtures/appbomination.spdx.json"));
-        let expected = anyhow!("Missing package locator for Gradle").to_string();
+        let expected = anyhow!("Missing package version: Gradle").to_string();
         let actual = parse_results.err().unwrap().to_string();
 
         assert_eq!(actual, expected)

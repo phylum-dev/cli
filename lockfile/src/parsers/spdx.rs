@@ -103,16 +103,16 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
 
     // PackageName is required.
     let (i, _) = tag("PackageName:")(i)?;
-
     let (i, name) = recognize(ws(take_till_line_end))(i)?;
+    let name = name.trim();
 
     // SPDXID is required.
     let (i, _) = tag("SPDXID:")(i)?;
     let (tail, spdx_id) = recognize(ws(take_till_line_end))(i)?;
 
     // PackageVersion is optional.
-    // Version can be obtained from PURL if present, so we don't return an error
-    // here.
+    // The version can be obtained from PURL if present, so we don't return an
+    // error.
     let (i, has_version) = opt(tag("PackageVersion:"))(tail)?;
     let (i, v) = recognize(ws(take_till_line_end))(i)?;
     let version = has_version.map(|_| v.trim().to_string());
@@ -126,29 +126,22 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
     // PackageDownloadLocation is required.
     let (i, _) = skip_until_tag(i, "PackageDownloadLocation:")?;
     let (i, download_location) = recognize(ws(take_till_line_end))(i)?;
+    let download_location = download_location.trim();
 
     // Look for external references.
     let (i, next_input) = extern_ref(i)?;
     let (_, external_ref) = opt(recognize(ws(take_till_line_end)))(i)?;
+    let external_refs = external_ref
+        .map(|er| parse_external_refs(er).map(|(_, external_ref)| vec![external_ref]))
+        .unwrap_or_else(|| Ok(Vec::new()))?;
 
-    // Package name.
-    let name = name.trim();
-
-    if let Some(external_ref) = external_ref {
-        let (_, external_ref) = parse_external_refs(external_ref)?;
-
-        Ok((next_input, PackageInformation {
-            name: name.into(),
-            spdx_id: spdx_id.trim().into(),
-            version_info: version,
-            download_location: download_location.into(),
-            external_refs: vec![external_ref],
-        }))
-    } else {
-        let kind = VerboseErrorKind::Context("Missing package locator");
-        let error = VerboseError { errors: vec![(input, kind)] };
-        Err(NomErr::Failure(error))
-    }
+    Ok((next_input, PackageInformation {
+        name: name.into(),
+        spdx_id: spdx_id.trim().into(),
+        version_info: version,
+        download_location: download_location.into(),
+        external_refs,
+    }))
 }
 
 fn extern_ref(input: &str) -> IResult<&str, &str> {
