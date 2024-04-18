@@ -18,23 +18,6 @@ struct Module {
     version: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct GoDep {
-    name: String,
-    version: String,
-}
-
-fn create_go_dep(module: Module) -> Option<GoDep> {
-    // Skip main module.
-    if module.main.unwrap_or(false) {
-        return None;
-    }
-
-    let version = module.version?;
-
-    Some(GoDep { name: module.path, version })
-}
-
 pub struct Go;
 
 impl Generator for Go {
@@ -83,14 +66,19 @@ impl Generator for Go {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(Error::NonZeroExit(code, stderr.into()));
         }
-        // Parse go list STDOUT.
-        let stdout = String::from_utf8(output.stdout)?;
-        let stream = serde_json::Deserializer::from_str(&stdout).into_iter::<Module>();
-        let packages = stream.filter_map(|res| res.ok()).filter_map(create_go_dep);
 
+        // Parse go list STDOUT.
+        let stream = serde_json::Deserializer::from_slice(&output.stdout).into_iter::<Module>();
         let mut lockfile = String::new();
-        for pkg in packages {
-            let _ = writeln!(lockfile, "{} {} h1:h1", pkg.name, pkg.version);
+        for res in stream {
+            let module = res?;
+            if module.main == Some(true) {
+                // Skip main module.
+                continue;
+            }
+            if let Some(version) = module.version {
+                let _ = writeln!(lockfile, "{} {} h1:FAKEHASH", module.path, version);
+            }
         }
 
         Ok(lockfile)
