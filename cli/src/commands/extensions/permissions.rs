@@ -269,6 +269,7 @@ impl From<&Permissions> for PermissionsOptions {
         let allow_net = allow_net.get().cloned();
 
         PermissionsOptions {
+            allow_all: false,
             allow_read,
             allow_write,
             allow_run,
