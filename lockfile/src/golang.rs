@@ -66,4 +66,69 @@ mod tests {
             assert!(pkgs.contains(&expected_pkg));
         }
     }
+
+    #[cfg(feature = "generator")]
+    #[test]
+    fn lock_generate_goproj() {
+        let path = Path::new("../tests/fixtures/lock_generate_go/go.mod");
+        let lockfile = GoGenerator.generate_lockfile(path).unwrap();
+
+        let pkgs = GoSum.parse(&lockfile).unwrap();
+        assert_eq!(pkgs.len(), 9);
+
+        let expected_pkgs = [
+            // Go.mod direct dependencies.
+            Package {
+                name: "github.com/go-chi/chi/v5".into(),
+                version: PackageVersion::FirstParty("v5.0.12".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/rs/zerolog".into(),
+                version: PackageVersion::FirstParty("v1.32.0".into()),
+                package_type: PackageType::Golang,
+            },
+            // Go.mod indirect dependencies.
+            Package {
+                name: "github.com/mattn/go-colorable".into(),
+                version: PackageVersion::FirstParty("v0.1.13".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/mattn/go-isatty".into(),
+                version: PackageVersion::FirstParty("v0.0.19".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "golang.org/x/sys".into(),
+                version: PackageVersion::FirstParty("v0.12.0".into()),
+                package_type: PackageType::Golang,
+            },
+            // Transitive dependencies.
+            Package {
+                name: "github.com/coreos/go-systemd/v22".into(),
+                version: PackageVersion::FirstParty("v22.5.0".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/godbus/dbus/v5".into(),
+                version: PackageVersion::FirstParty("v5.0.4".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/pkg/errors".into(),
+                version: PackageVersion::FirstParty("v0.9.1".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/rs/xid".into(),
+                version: PackageVersion::FirstParty("v1.5.0".into()),
+                package_type: PackageType::Golang,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
+    }
 }
