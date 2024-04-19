@@ -73,10 +73,9 @@ mod tests {
         let path = Path::new("../tests/fixtures/lock_generate_go/go.mod");
         let lockfile = GoGenerator.generate_lockfile(path).unwrap();
 
-        let pkgs = GoSum.parse(&lockfile).unwrap();
-        assert_eq!(pkgs.len(), 9);
+        let mut actual_pkgs = GoSum.parse(&lockfile).unwrap();
 
-        let expected_pkgs = [
+        let mut expected_pkgs = [
             // Go.mod direct dependencies.
             Package {
                 name: "github.com/go-chi/chi/v5".into(),
@@ -127,8 +126,9 @@ mod tests {
             },
         ];
 
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
-        }
+        expected_pkgs.sort();
+        actual_pkgs.sort();
+
+        assert_eq!(expected_pkgs, *actual_pkgs);
     }
 }
