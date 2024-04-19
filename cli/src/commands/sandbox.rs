@@ -1,9 +1,9 @@
 //! Sandbox subcommand handling.
 
 use std::os::unix::process::ExitStatusExt;
-use std::process::Command;
 
 use anyhow::{anyhow, Result};
+use birdcage::process::Command;
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 
