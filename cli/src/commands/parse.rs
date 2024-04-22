@@ -2,12 +2,13 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command as StdCommand;
 use std::result::Result as StdResult;
 use std::str::FromStr;
 use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
+use birdcage::process::{Command, Stdio};
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 use phylum_lockfile::{LockfileFormat, ParseError, ParsedLockfile};
@@ -179,7 +180,9 @@ pub fn parse_depfile(
             false,
         )?;
         command.stderr(Stdio::inherit());
-        let output = command.output().map_err(anyhow::Error::from)?;
+        #[allow(clippy::useless_conversion)]
+        let mut std_command: StdCommand = command.into();
+        let output = std_command.output().map_err(anyhow::Error::from)?;
 
         if !output.status.success() {
             // Forward STDOUT to the user on failure.
