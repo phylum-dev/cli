@@ -1,7 +1,9 @@
 //! Parse generic dependency files.
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context};
+#[cfg(feature = "generator")]
+use anyhow::anyhow;
+use anyhow::Context;
 use phylum_types::types::package::PackageDescriptor;
 use serde::{Deserialize, Serialize};
 
