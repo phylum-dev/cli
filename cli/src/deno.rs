@@ -209,8 +209,8 @@ impl ModuleLoader for ExtensionsModuleLoader {
 
             if should_transpile {
                 let transpiled =
-                    source_mapper.transpile(module_specifier.to_string(), code, media_type)?;
-                code = transpiled.text.clone();
+                    source_mapper.transpile(module_specifier.to_string(), &code, media_type)?;
+                code.clone_from(&transpiled.text);
             } else {
                 source_mapper.source_cache.insert(module_specifier.to_string(), code.clone());
             }
