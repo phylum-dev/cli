@@ -2,19 +2,23 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alphanumeric1, line_ending, space0, space1};
 use nom::combinator::{opt, recognize};
-use nom::multi::many1;
+use nom::multi::{many0, many1};
 use nom::sequence::{preceded, tuple};
 use phylum_types::types::package::PackageType;
 
-use super::IResult;
+use crate::parsers::IResult;
 use crate::{Package, PackageVersion};
 
 pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
-    let (input, mut pkgs) = many1(package)(input)?;
+    let (input, pkgs) = many0(package)(input)?;
 
-    // Filter duplicate packages.
-    pkgs.sort_unstable();
-    pkgs.dedup();
+    let pkgs = pkgs
+        .into_iter()
+        .filter(|p| match &p.version {
+            PackageVersion::FirstParty(v) => !v.ends_with("/go.mod"),
+            _ => false,
+        })
+        .collect();
 
     Ok((input, pkgs))
 }
@@ -45,14 +49,12 @@ fn package_version(input: &str) -> IResult<&str, &str> {
     // Take away any leading whitespace.
     let (input, _) = space0(input)?;
 
-    // Accept all of `v[a-zA-Z0-9.+-]+` as valid version characters.
+    // Accept all of `v[a-zA-Z0-9.+-]+` with an optional "/go.mod" suffix.
     let (input, version) = recognize(tuple((
         tag("v"),
         many1(alt((alphanumeric1, tag("."), tag("-"), tag("+")))),
+        opt(tag("/go.mod")),
     )))(input)?;
-
-    // Strip `/go.mod` suffix.
-    let (input, _) = opt(tag("/go.mod"))(input)?;
 
     // Expect at least one whitespace after version.
     let (input, _) = space1(input)?;

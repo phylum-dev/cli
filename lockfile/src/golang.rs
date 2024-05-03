@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn parse_go_sum() {
         let pkgs = GoSum.parse(include_str!("../../tests/fixtures/go.sum")).unwrap();
-        assert_eq!(pkgs.len(), 1711);
+        assert_eq!(pkgs.len(), 674);
 
         let expected_pkgs = [
             Package {
@@ -56,8 +56,8 @@ mod tests {
                 package_type: PackageType::Golang,
             },
             Package {
-                name: "sourcegraph.com/sourcegraph/appdash".into(),
-                version: PackageVersion::FirstParty("v0.0.0-20190731080439-ebfcffb1b5c0".into()),
+                name: "sigs.k8s.io/yaml".into(),
+                version: PackageVersion::FirstParty("v1.2.0".into()),
                 package_type: PackageType::Golang,
             },
         ];

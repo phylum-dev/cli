@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## Changed
+
+- Improved `go.sum` file parsing to prevent the parser from listing unused packages
+
 ## 6.3.0 - 2024-04-18
 
 ### Fixed
