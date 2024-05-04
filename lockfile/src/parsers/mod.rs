@@ -8,6 +8,7 @@ use nom::sequence::{delimited, terminated, tuple};
 use nom::AsChar;
 
 pub mod gem;
+pub mod go_mod;
 pub mod go_sum;
 pub mod gradle_dep;
 pub mod pypi;
