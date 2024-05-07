@@ -107,7 +107,7 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
                     version: version.to_owned(),
                     indirect: false,
                 };
-                // Remove all modules wtih the same name and version.
+                // Remove all modules with the same name and version.
                 modules.remove(&dep);
             },
             None => {
