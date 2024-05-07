@@ -27,7 +27,7 @@ Usage: phylum analyze [OPTIONS] [DEPENDENCY_FILE]...
 
 `-t`, `--type` `<TYPE>`
 &emsp; Dependency file type used for all lockfiles (default: auto)
-&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `gomod`, `cargo`, `spdx`, `cyclonedx`, `auto`
+&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `gomod`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `--skip-sandbox`
 &emsp; Run lockfile generation without sandbox protection

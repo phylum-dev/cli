@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
 use lockfile_generator::go::Go as GoGenerator;
 #[cfg(feature = "generator")]
@@ -43,17 +43,17 @@ pub struct GoDeps {
 }
 
 fn check_go_directive(version: &str) -> anyhow::Result<()> {
-    let numeric_part = version.split(|c: char| !c.is_numeric()).collect::<Vec<&str>>();
-    if let (Some(major), Some(minor)) = (numeric_part.first(), numeric_part.get(1)) {
+    let mut parts = version.split(|c: char| !c.is_numeric());
+    if let (Some(major), Some(minor)) = (parts.next(), parts.next()) {
         let major: u32 = major.parse().unwrap_or(0);
         let minor: u32 = minor.parse().unwrap_or(0);
 
         // Check if version meets the criteria.
-        if major < 1 || minor < 17 {
-            bail!("Minimum supported go directive is 1.17")
+        if major < 1 || (major == 1 && minor < 17) {
+            return Err(anyhow!("Minimum supported go directive is 1.17"));
         }
     } else {
-        bail!("Error parsing go directive")
+        return Err(anyhow!("Error parsing go directive"));
     }
     Ok(())
 }
@@ -113,18 +113,38 @@ mod tests {
 
     #[test]
     fn parse_go_mod() {
-        let pkgs = GoMod.parse(include_str!("../../tests/fixtures/go.mod")).unwrap();
-        assert_eq!(pkgs.len(), 5);
+        let mut pkgs = GoMod.parse(include_str!("../../tests/fixtures/go.mod")).unwrap();
+        pkgs.sort();
 
         let expected_pkgs = [
             Package {
-                name: "github.com/go-chi/chi/v5".into(),
-                version: PackageVersion::FirstParty("v5.0.12".into()),
+                name: "../replacedmodule".into(),
+                version: PackageVersion::Path(Some("../replacedmodule".into())),
                 package_type: PackageType::Golang,
             },
             Package {
-                name: "github.com/rs/zerolog".into(),
-                version: PackageVersion::FirstParty("v1.32.0".into()),
+                name: "example.com/newmodule".into(),
+                version: PackageVersion::FirstParty("v3.2.1".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "example.com/newmodule".into(),
+                version: PackageVersion::FirstParty("v3.2.2".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "example.com/newmodule".into(),
+                version: PackageVersion::FirstParty("v3.2.3".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "example.com/othermodule".into(),
+                version: PackageVersion::FirstParty("v1.2.3".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
+                name: "github.com/go-chi/chi/v5".into(),
+                version: PackageVersion::FirstParty("v5.0.12".into()),
                 package_type: PackageType::Golang,
             },
             Package {
@@ -138,15 +158,18 @@ mod tests {
                 package_type: PackageType::Golang,
             },
             Package {
+                name: "github.com/rs/zerolog".into(),
+                version: PackageVersion::FirstParty("v1.32.0".into()),
+                package_type: PackageType::Golang,
+            },
+            Package {
                 name: "golang.org/x/sys".into(),
                 version: PackageVersion::FirstParty("v0.12.0".into()),
                 package_type: PackageType::Golang,
             },
         ];
 
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
-        }
+        assert_eq!(expected_pkgs, *pkgs)
     }
 
     #[test]
@@ -170,198 +193,5 @@ mod tests {
 
         let error = GoMod.parse(go_mod_content).err().unwrap();
         assert_eq!(error.to_string(), "Minimum supported go directive is 1.17")
-    }
-
-    #[test]
-    fn parse_go_mod_replace() {
-        let go_mod_content = r#"
-            module cli/example
-            
-            go 1.17
-
-            require (
-                example.com/othermodule v1.2.3
-                example.com/thismodule v1.2.3
-                example.com/thatmodule v1.2.3
-            )
-
-            replace example.com/thatmodule => ../thatmodule
-            replace example.com/thismodule v1.2.3 => example.com/newmodule v3.2.1
-        "#;
-
-        let pkgs = GoMod.parse(go_mod_content).unwrap();
-        assert_eq!(pkgs.len(), 3);
-
-        let expected_pkgs = [
-            Package {
-                name: "example.com/othermodule".into(),
-                version: PackageVersion::FirstParty("v1.2.3".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "example.com/newmodule".into(),
-                version: PackageVersion::FirstParty("v3.2.1".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "../thatmodule".into(),
-                version: PackageVersion::Path(Some("../thatmodule".into())),
-                package_type: PackageType::Golang,
-            },
-        ];
-
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
-        }
-    }
-
-    #[test]
-    fn parse_go_mod_replace_block() {
-        let go_mod_content = r#"
-            module cli/example
-            
-            go 1.17
-
-            require (
-                example.com/othermodule v1.2.3
-                example.com/thismodule v1.2.3
-                example.com/thatmodule v1.2.3
-            )
-
-            replace (
-                example.com/thatmodule => ../thatmodule
-                example.com/thismodule v1.2.3 => example.com/newmodule v3.2.1
-            )
-        "#;
-
-        let pkgs = GoMod.parse(go_mod_content).unwrap();
-        assert_eq!(pkgs.len(), 3);
-
-        let expected_pkgs = [
-            Package {
-                name: "example.com/othermodule".into(),
-                version: PackageVersion::FirstParty("v1.2.3".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "example.com/newmodule".into(),
-                version: PackageVersion::FirstParty("v3.2.1".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "../thatmodule".into(),
-                version: PackageVersion::Path(Some("../thatmodule".into())),
-                package_type: PackageType::Golang,
-            },
-        ];
-
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
-        }
-    }
-
-    #[test]
-    fn parse_go_mod_replace_block_indirect() {
-        let go_mod_content = r#"
-            module cli/example
-            
-            go 1.17
-
-            require (
-                example.com/othermodule v1.2.3
-                example.com/thismodule v1.2.3
-            )
-
-            require (
-                example.com/othermodule v1.2.3 // indirect
-            )
-
-            replace (
-                example.com/othermodule v1.2.3 => example.com/newmodule v3.2.1
-            )
-        "#;
-
-        let pkgs = GoMod.parse(go_mod_content).unwrap();
-        assert_eq!(pkgs.len(), 3);
-
-        let expected_pkgs = [
-            Package {
-                name: "example.com/othermodule".into(),
-                version: PackageVersion::FirstParty("v1.2.3".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "example.com/thismodule".into(),
-                version: PackageVersion::FirstParty("v1.2.3".into()),
-                package_type: PackageType::Golang,
-            },
-            Package {
-                name: "example.com/newmodule".into(),
-                version: PackageVersion::FirstParty("v3.2.1".into()),
-                package_type: PackageType::Golang,
-            },
-        ];
-
-        for expected_pkg in expected_pkgs {
-            assert!(pkgs.contains(&expected_pkg));
-        }
-    }
-
-    #[test]
-    fn parse_go_mod_exclude() {
-        let go_mod_content = r#"
-            module cli/example
-            
-            go 1.17
-
-            require (
-                example.com/othermodule v1.2.3
-                example.com/thismodule v1.2.3
-                example.com/thatmodule v1.2.3
-            )
-
-            exclude example.com/thismodule v1.2.3
-            exclude example.com/thatmodule v1.2.3
-        "#;
-
-        let pkgs = GoMod.parse(go_mod_content).unwrap();
-
-        let expected_pkgs = [Package {
-            name: "example.com/othermodule".into(),
-            version: PackageVersion::FirstParty("v1.2.3".into()),
-            package_type: PackageType::Golang,
-        }];
-
-        assert_eq!(expected_pkgs, *pkgs)
-    }
-
-    #[test]
-    fn parse_go_mod_exclude_block() {
-        let go_mod_content = r#"
-            module cli/example
-            
-            go 1.17
-
-            require (
-                example.com/othermodule v1.2.3
-                example.com/thismodule v1.2.3
-                example.com/thatmodule v1.2.3
-            )
-
-            exclude (
-                example.com/thismodule v1.2.3
-                example.com/thatmodule v1.2.3
-            )
-        "#;
-
-        let pkgs = GoMod.parse(go_mod_content).unwrap();
-
-        let expected_pkgs = [Package {
-            name: "example.com/othermodule".into(),
-            version: PackageVersion::FirstParty("v1.2.3".into()),
-            package_type: PackageType::Golang,
-        }];
-
-        assert_eq!(expected_pkgs, *pkgs)
     }
 }

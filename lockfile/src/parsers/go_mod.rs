@@ -98,21 +98,20 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
     for replacement in replacement_set {
         let module_path = &replacement.path;
 
-        // Check if the replacement module version is available.
+        // Check if the replacement module version is available and remove any modules
+        // marked for replacement.
         match &replacement.version {
             Some(version) => {
-                // Remove the specific module version.
-                let dep = Module {
+                let module = Module {
                     path: module_path.to_owned(),
                     version: version.to_owned(),
                     indirect: false,
                 };
-                // Remove all modules with the same name and version.
-                modules.remove(&dep);
+                modules.remove(&module);
             },
             None => {
                 // Remove all modules with the same path since version isn't specified.
-                modules.retain(|m| (&m.path != module_path) && !m.indirect);
+                modules.retain(|m| (&m.path != module_path) || m.indirect);
             },
         }
 
