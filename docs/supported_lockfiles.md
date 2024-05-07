@@ -16,6 +16,7 @@ The Phylum CLI supports processing many different lockfiles:
 | `mvn`         | `effective-pom.xml`                                                    |
 | `gradle`      | `gradle.lockfile`                                                      |
 | `go`          | `go.sum`                                                               |
+| `gomod`       | `go.mod`                                                               |
 | `cargo`       | `Cargo.lock`                                                           |
 | `spdx`        | `*.spdx.json` <br /> `*.spdx.yaml` <br /> `*.spdx.yml` <br /> `*.spdx` |
 | `cyclonedx`   | `*bom.json` <br /> `*bom.xml`                                          |
