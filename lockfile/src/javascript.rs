@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
+use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
 #[cfg(feature = "generator")]
@@ -299,7 +300,7 @@ impl Parse for Pnpm {
 #[serde(rename_all = "camelCase")]
 struct PnpmLock {
     #[serde(rename = "lockfileVersion")]
-    _lockfile_version: String,
+    lockfile_version: String,
     #[serde(default)]
     packages: HashMap<String, PnpmPackage>,
 }
@@ -309,17 +310,31 @@ impl PnpmLock {
     fn packages(self) -> anyhow::Result<Vec<Package>> {
         let mut packages = Vec::new();
 
-        for (name, package) in self.packages.into_iter() {
+        // Try and parse manifest version.
+        let major = self.lockfile_version.split('.').next().and_then(|v| u8::from_str(v).ok());
+        let pre_v9 = match major {
+            Some(major) => major < 9,
+            None => {
+                return Err(anyhow!("Invalid pnpm lockfile version: '{}'", self.lockfile_version))
+            },
+        };
+
+        for (key, package) in self.packages.into_iter() {
             // Parse package based on available fields.
             let directory = package.resolution.directory;
             let tarball = package.resolution.tarball;
             let git = package.resolution.repo.zip(package.resolution.commit);
 
+            let (name, version) = match package.name {
+                Some(name) => (name, None),
+                None => Self::parse_key(&key, pre_v9).map(|(n, v)| (n, Some(v)))?,
+            };
+
             let package = match (tarball, git, directory) {
-                (Some(tarball), ..) => Self::tarball_package(tarball, package.name)?,
-                (_, Some((repo, commit)), _) => Self::git_package(repo, commit, package.name)?,
-                (_, _, Some(directory)) => Self::path_package(directory, package.name)?,
-                _ => Self::firstparty_package(&name)?,
+                (Some(tarball), ..) => Self::tarball_package(tarball, name),
+                (_, Some((repo, commit)), _) => Self::git_package(repo, commit, name),
+                (_, _, Some(directory)) => Self::path_package(directory, name),
+                _ => Self::firstparty_package(name, version)?,
             };
 
             packages.push(package);
@@ -328,57 +343,60 @@ impl PnpmLock {
         Ok(packages)
     }
 
-    /// Parse a first-party registry package.
-    fn firstparty_package(name: &str) -> anyhow::Result<Package> {
-        // Remove `/` prefix.
-        let name = name
-            .strip_prefix('/')
-            .ok_or_else(|| anyhow!("Dependency '{name}' is missing '/' prefix"))?;
+    /// Parse package key.
+    ///
+    /// This parses the combined name and version used as an index for the
+    /// `packages` map.
+    fn parse_key(mut key: &str, pre_v9: bool) -> anyhow::Result<(String, String)> {
+        // Strip prefix from `version < 9` lockfiles.
+        if pre_v9 {
+            key = key
+                .strip_prefix('/')
+                .ok_or_else(|| anyhow!("Dependency '{key}' is missing '/' prefix"))?;
+        }
 
         // Remove annotations.
-        let name = name.split_once('(').map(|(name, _)| name).unwrap_or(name);
+        let name = key.split_once('(').map(|(name, _)| name).unwrap_or(key);
 
         // Separate name and version.
         match name.rsplit_once('@') {
-            Some((name, version)) => Ok(Package {
-                name: name.into(),
-                version: PackageVersion::FirstParty(version.into()),
-                package_type: PackageType::Npm,
-            }),
+            Some((name, version)) => Ok((name.into(), version.into())),
             None => Err(anyhow!("Dependency '{name}' is missing a version")),
         }
     }
 
-    /// Parse a tarball package.
-    fn tarball_package(tarball: String, name: Option<String>) -> anyhow::Result<Package> {
-        let name = name.ok_or_else(|| anyhow!("Tarball '{tarball}' is missing a package name"))?;
-
+    /// Parse a first-party registry package.
+    fn firstparty_package(name: String, version: Option<String>) -> anyhow::Result<Package> {
+        let version = version.ok_or_else(|| anyhow!("Package '{name}' is missing a version"))?;
         Ok(Package {
+            name,
+            version: PackageVersion::FirstParty(version),
+            package_type: PackageType::Npm,
+        })
+    }
+
+    /// Parse a tarball package.
+    fn tarball_package(tarball: String, name: String) -> Package {
+        Package {
             name,
             version: PackageVersion::DownloadUrl(tarball),
             package_type: PackageType::Npm,
-        })
+        }
     }
 
     /// Parse a git package.
-    fn git_package(repo: String, commit: String, name: Option<String>) -> anyhow::Result<Package> {
-        let name =
-            name.ok_or_else(|| anyhow!("Repository '{repo}#{commit}' is missing a package name"))?;
+    fn git_package(repo: String, commit: String, name: String) -> Package {
         let git_uri = format!("{repo}#{commit}");
-
-        Ok(Package { name, version: PackageVersion::Git(git_uri), package_type: PackageType::Npm })
+        Package { name, version: PackageVersion::Git(git_uri), package_type: PackageType::Npm }
     }
 
     /// Parse a path package.
-    fn path_package(directory: String, name: Option<String>) -> anyhow::Result<Package> {
-        let name =
-            name.ok_or_else(|| anyhow!("Directory '{directory}' is missing a package name"))?;
-
-        Ok(Package {
+    fn path_package(directory: String, name: String) -> Package {
+        Package {
             name,
             version: PackageVersion::Path(Some(directory.into())),
             package_type: PackageType::Npm,
-        })
+        }
     }
 }
 
@@ -699,5 +717,34 @@ mod tests {
         let pkgs = Pnpm.parse(lockfile).unwrap();
 
         assert!(pkgs.is_empty());
+    }
+
+    #[test]
+    fn pnpm_v9() {
+        let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock-v9.yaml")).unwrap();
+
+        assert_eq!(pkgs.len(), 66);
+
+        let expected_pkgs = [
+            Package {
+                name: "accepts".into(),
+                version: PackageVersion::FirstParty("1.3.8".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "bytes".into(),
+                version: PackageVersion::FirstParty("3.1.2".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "typescript".into(),
+                version: PackageVersion::DownloadUrl("https://codeload.github.com/Microsoft/TypeScript/tar.gz/9d714f47c0f49e9db04ac5289614a41cbbbab704".into()),
+                package_type: PackageType::Npm,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
     }
 }
