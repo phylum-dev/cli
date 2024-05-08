@@ -21,7 +21,7 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 
 `-t`, `--type` `<TYPE>`
 &emsp; Dependency file type used for all lockfiles (default: auto)
-&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
+&emsp; Accepted values: `npm`, `yarn`, `pnpm`, `gem`, `pip`, `poetry`, `pipenv`, `mvn`, `gradle`, `nugetlock`, `msbuild`, `gomod`, `go`, `cargo`, `spdx`, `cyclonedx`, `auto`
 
 `-f`, `--force`
 &emsp; Overwrite existing configurations without confirmation

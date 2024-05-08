@@ -19,7 +19,7 @@ use walkdir::WalkDir;
 pub use crate::cargo::Cargo;
 pub use crate::csharp::{CSProj, PackagesLock};
 pub use crate::cyclonedx::CycloneDX;
-pub use crate::golang::GoSum;
+pub use crate::golang::{GoMod, GoSum};
 pub use crate::java::{GradleLock, Pom};
 pub use crate::javascript::{PackageLock, Pnpm, YarnLock};
 pub use crate::parse_depfile::{parse_depfile, ParseError, ParsedLockfile};
@@ -61,6 +61,7 @@ pub enum LockfileFormat {
     #[serde(alias = "nuget")]
     Msbuild,
     NugetLock,
+    GoMod,
     Go,
     Cargo,
     Spdx,
@@ -102,6 +103,7 @@ impl LockfileFormat {
             LockfileFormat::Gradle => "gradle",
             LockfileFormat::Msbuild => "msbuild",
             LockfileFormat::NugetLock => "nugetlock",
+            LockfileFormat::GoMod => "gomod",
             LockfileFormat::Go => "go",
             LockfileFormat::Cargo => "cargo",
             LockfileFormat::Spdx => "spdx",
@@ -123,6 +125,7 @@ impl LockfileFormat {
             LockfileFormat::Gradle => &GradleLock,
             LockfileFormat::Msbuild => &CSProj,
             LockfileFormat::NugetLock => &PackagesLock,
+            LockfileFormat::GoMod => &GoMod,
             LockfileFormat::Go => &GoSum,
             LockfileFormat::Cargo => &Cargo,
             LockfileFormat::Spdx => &Spdx,
@@ -160,10 +163,11 @@ impl Iterator for LockfileFormatIter {
             8 => LockfileFormat::Gradle,
             9 => LockfileFormat::NugetLock,
             10 => LockfileFormat::Msbuild,
-            11 => LockfileFormat::Go,
-            12 => LockfileFormat::Cargo,
-            13 => LockfileFormat::Spdx,
-            14 => LockfileFormat::CycloneDX,
+            11 => LockfileFormat::GoMod,
+            12 => LockfileFormat::Go,
+            13 => LockfileFormat::Cargo,
+            14 => LockfileFormat::Spdx,
+            15 => LockfileFormat::CycloneDX,
             _ => return None,
         };
         self.0 += 1;
@@ -502,6 +506,7 @@ mod tests {
             ("requirements.txt", LockfileFormat::Pip),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
+            ("go.mod", LockfileFormat::GoMod),
             ("go.sum", LockfileFormat::Go),
             ("Cargo.lock", LockfileFormat::Cargo),
             (".spdx.json", LockfileFormat::Spdx),
@@ -532,6 +537,7 @@ mod tests {
             ("nuget", LockfileFormat::Msbuild),
             ("msbuild", LockfileFormat::Msbuild),
             ("nugetlock", LockfileFormat::NugetLock),
+            ("gomod", LockfileFormat::GoMod),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
@@ -561,6 +567,7 @@ mod tests {
             ("gradle", LockfileFormat::Gradle),
             ("msbuild", LockfileFormat::Msbuild),
             ("nugetlock", LockfileFormat::NugetLock),
+            ("gomod", LockfileFormat::GoMod),
             ("go", LockfileFormat::Go),
             ("cargo", LockfileFormat::Cargo),
             ("spdx", LockfileFormat::Spdx),
@@ -604,6 +611,7 @@ mod tests {
             (LockfileFormat::Gradle, 1),
             (LockfileFormat::Msbuild, 2),
             (LockfileFormat::NugetLock, 1),
+            (LockfileFormat::GoMod, 1),
             (LockfileFormat::Go, 1),
             (LockfileFormat::Cargo, 3),
             (LockfileFormat::Spdx, 6),
