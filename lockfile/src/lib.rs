@@ -596,7 +596,7 @@ mod tests {
         for (format, lockfile_count) in [
             (LockfileFormat::Yarn, 3),
             (LockfileFormat::Npm, 2),
-            (LockfileFormat::Pnpm, 1),
+            (LockfileFormat::Pnpm, 2),
             (LockfileFormat::Gem, 1),
             (LockfileFormat::Pipenv, 1),
             (LockfileFormat::Poetry, 2),
