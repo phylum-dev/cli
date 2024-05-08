@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Improved `go.sum` file parsing to prevent the parser from listing unused packages
 
+### Fixed
+
+- Sandboxed processes sticking around after CLI is killed with a signal
+
 ## 6.3.0 - 2024-04-18
 
 ### Fixed
@@ -25,7 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `SPDX` SBOM registry determination from downloadLocation
 - `SPDX` parsing adding the described package as a dependency
 - `SPDX` parsing certain text files with optional package fields
-- Sandboxed processes sticking around after CLI is killed with a signal
 
 ## 6.2.0 - 2024-03-19
 
