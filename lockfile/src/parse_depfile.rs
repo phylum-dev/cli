@@ -192,6 +192,10 @@ fn filter_packages(mut packages: Vec<Package>) -> Vec<PackageDescriptor> {
                     log::debug!("Ignoring remote dependency {} ({url:?})", package.name);
                     return None;
                 },
+                PackageVersion::Unknown => {
+                    log::debug!("Ignoring dependency {}", package.name);
+                    return None;
+                },
             };
 
             Some(PackageDescriptor {
