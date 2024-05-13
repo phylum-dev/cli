@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Sandboxed processes sticking around after CLI is killed with a signal
+- Lockfiles with local versions breaking the `requirements.txt` parser
 
 ## 6.3.0 - 2024-04-18
 
