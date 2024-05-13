@@ -102,12 +102,17 @@ fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Packa
 
     // Parse first-party dependencies.
     let (input, version) = package_version(input)?;
-    let version = match registry {
-        Some(registry) => PackageVersion::ThirdParty(ThirdPartyVersion {
-            version: version.trim().into(),
+
+    // Parse local version specifier.
+    let (input, local_version) = opt(local_version)(input)?;
+
+    let version = match (registry, local_version) {
+        (_, Some(_)) => PackageVersion::Unknown,
+        (Some(registry), _) => PackageVersion::ThirdParty(ThirdPartyVersion {
+            version: local_version.unwrap_or(version).trim().into(),
             registry: registry.into(),
         }),
-        None => PackageVersion::FirstParty(version.trim().into()),
+        (None, None) => PackageVersion::FirstParty(version.trim().into()),
     };
 
     // Ensure line is empty after the dependency.
@@ -182,6 +187,15 @@ fn package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("==")(input)?;
 
     // Take all valid semver character.
+    recognize(many1(alt((alphanumeric1, tag(".")))))(input)
+}
+
+/// Parse local version specifiers.
+///
+/// https://packaging.python.org/en/latest/specifications/version-specifiers/#local-version-identifiers
+fn local_version(input: &str) -> IResult<&str, &str> {
+    let (input, _) = tag("+")(input)?;
+
     recognize(many1(alt((alphanumeric1, tag(".")))))(input)
 }
 

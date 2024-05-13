@@ -238,7 +238,7 @@ mod tests {
         let pkgs = PyRequirements
             .parse(include_str!("../../tests/fixtures/requirements-locked.txt"))
             .unwrap();
-        assert_eq!(pkgs.len(), 14);
+        assert_eq!(pkgs.len(), 15);
 
         let expected_pkgs = [
             Package {
@@ -315,6 +315,11 @@ mod tests {
                     registry: "https://mirror2.phylum.io/simple/".into(),
                     version: "1.2.3".into(),
                 }),
+                package_type: PackageType::PyPi,
+            },
+            Package {
+                name: "localversion".into(),
+                version: PackageVersion::Unknown,
                 package_type: PackageType::PyPi,
             },
         ];

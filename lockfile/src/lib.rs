@@ -217,6 +217,11 @@ pub enum PackageVersion {
     Git(String),
     /// Version distributed over HTTP(S).
     DownloadUrl(String),
+    /// Untracked version source.
+    ///
+    /// Used for package versions which cannot clearly be identified, like
+    /// Python's local version.
+    Unknown,
 }
 
 /// Version from a foreign package registry.
