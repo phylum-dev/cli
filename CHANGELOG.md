@@ -8,12 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
-## Added
+### Added
 
 - PNPM v9 lockfile support
 - Support for parsing `go.mod` files with a Go directive of version 1.17 and higher
 
-## Changed
+### Changed
 
 - Improved `go.sum` file parsing to prevent the parser from listing unused packages
 
