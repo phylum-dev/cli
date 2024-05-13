@@ -32,3 +32,4 @@ FooProject8 > 1.8.*
 FooProject9 > 2.0.*, !=2.1
 FooProject10==1.2.3 --random-flag
 git+https://github.com/matiascodesal/git-for-pip-example.git@v1.0.0#egg=my-git-package
+localversion >= 2.3.4+1.0.99.local

@@ -20,7 +20,7 @@ requests[security,tests]==2.28.1
 
 werkzeug==2.9.2 ; python_version >= "3.7" and python_version < "3.12"
 
-localversion==2.3.4+1.0.99
+localversion==2.3.4+1.0.99.local
 
 attr @ file:///tmp/attr
 

@@ -102,7 +102,10 @@ fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Packa
 
     // Parse first-party dependencies.
     let (input, version) = package_version(input)?;
+
+    // Parse local version specifier.
     let (input, local_version) = opt(local_version)(input)?;
+
     let version = match (registry, local_version) {
         (_, Some(_)) => PackageVersion::Unknown,
         (Some(registry), _) => PackageVersion::ThirdParty(ThirdPartyVersion {
