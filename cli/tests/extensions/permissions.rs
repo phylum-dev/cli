@@ -151,7 +151,7 @@ pub async fn disallow_permission_request() {
         .build()
         .run()
         .failure()
-        .stderr(predicate::str::contains("TypeError: ops.op_request_permission is not a function"));
+        .stderr(predicate::str::contains("Error: op is disabled"));
 }
 
 #[test]
