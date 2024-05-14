@@ -8,7 +8,7 @@ pub async fn get_user_info() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getUserInfo())")
+        .extension("console.log(await Phylum.getUserInfo())")
         .build()
         .run()
         .success()
@@ -20,7 +20,7 @@ pub async fn get_access_token() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getAccessToken())")
+        .extension("console.log(await Phylum.getAccessToken())")
         .build()
         .run()
         .success()
@@ -32,7 +32,7 @@ pub async fn get_refresh_token() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getRefreshToken())")
+        .extension("console.log(await Phylum.getRefreshToken())")
         .build()
         .run()
         .success()
@@ -44,7 +44,7 @@ pub async fn get_package_details() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getPackageDetails('express', '4.18.1', 'npm'))")
+        .extension("console.log(await Phylum.getPackageDetails('express', '4.18.1', 'npm'))")
         .build()
         .run()
         .success()
@@ -56,7 +56,7 @@ pub fn get_current_project() {
     let test_cli = TestCli::builder().cwd_temp().with_config(None).build();
 
     test_cli
-        .extension("console.log(PhylumApi.getCurrentProject())")
+        .extension("console.log(Phylum.getCurrentProject())")
         .build()
         .run()
         .success()
@@ -68,7 +68,7 @@ pub async fn get_groups() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getGroups())")
+        .extension("console.log(await Phylum.getGroups())")
         .build()
         .run()
         .success()
@@ -83,12 +83,12 @@ pub async fn create_and_delete_project() {
         .extension(
             r#"
             try {
-                await PhylumApi.deleteProject("create_and_delete")
+                await Phylum.deleteProject("create_and_delete")
             } catch (e) {
             }
 
-            let newPrj = await PhylumApi.createProject("create_and_delete")
-            let existingPrj = await PhylumApi.createProject("create_and_delete")
+            let newPrj = await Phylum.createProject("create_and_delete")
+            let existingPrj = await Phylum.createProject("create_and_delete")
 
             if (newPrj.id !== existingPrj.id) {
                 throw `ERROR IDs: ${newPrj.id} vs ${existingPrj.id}`
@@ -113,7 +113,7 @@ pub async fn get_projects() {
     let test_cli = TestCli::builder().with_config(None).build();
 
     test_cli
-        .extension("console.log(await PhylumApi.getProjects())")
+        .extension("console.log(await Phylum.getProjects())")
         .build()
         .run()
         .success()
@@ -130,7 +130,7 @@ pub async fn parse_lockfile() {
         Permissions { read: Permission::List(vec![lockfile_str]), ..Permissions::default() };
 
     let parse_lockfile = format!(
-        "const lockfile = await PhylumApi.parseDependencyFile({lockfile:?}, 'yarn');
+        "const lockfile = await Phylum.parseDependencyFile({lockfile:?}, 'yarn');
          console.log(JSON.stringify(lockfile));",
     );
     test_cli
@@ -154,8 +154,8 @@ pub async fn get_job_status() {
         "
         const pkg = {{ name: 'typescript', version: '4.7.4', type: 'npm', lockfile: \
          'package-lock.json' }};
-        const jobId = await PhylumApi.analyze([pkg], {project:?});
-        console.log(await PhylumApi.getJobStatus(jobId));"
+        const jobId = await Phylum.analyze([pkg], {project:?});
+        console.log(await Phylum.getJobStatus(jobId));"
     );
 
     test_cli
@@ -174,7 +174,7 @@ pub async fn check_packages() {
         .extension(
             "
             const pkg = { name: 'typescript', version: '4.7.4', type: 'npm' };
-            const res = await PhylumApi.checkPackages([pkg]);
+            const res = await Phylum.checkPackages([pkg]);
             console.log(res);",
         )
         .build()
@@ -192,11 +192,11 @@ pub fn async_state() {
         .extension(
             r#"
             const promises = [];
-            promises.push(PhylumApi.getUserInfo());
-            promises.push(PhylumApi.getUserInfo());
-            promises.push(PhylumApi.getUserInfo());
-            promises.push(PhylumApi.getUserInfo());
-            promises.push(PhylumApi.getUserInfo());
+            promises.push(Phylum.getUserInfo());
+            promises.push(Phylum.getUserInfo());
+            promises.push(Phylum.getUserInfo());
+            promises.push(Phylum.getUserInfo());
+            promises.push(Phylum.getUserInfo());
             await Promise.all(promises);
         "#,
         )
@@ -212,7 +212,7 @@ pub async fn rest_api() {
     test_cli
         .extension(
             "
-            const reply = await PhylumApi.fetch(ApiVersion.V0, '/health');
+            const reply = await Phylum.fetch(ApiVersion.V0, '/health');
             console.log(await reply.json());
         ",
         )

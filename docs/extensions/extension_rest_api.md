@@ -11,17 +11,15 @@ All endpoints are documented here:
 
 ## Extension API requests
 
-To make a Request to Phylum's REST API, you can use the built-in
-`PhylumApi.fetch` function, which takes care of authentication and finding the
-correct base URI. The following example retrieves projects owned by the user
-which do not belong to any group:
+To make a Request to Phylum's REST API, you can use the built-in `Phylum.fetch`
+function, which takes care of authentication and finding the correct base URI.
+The following example retrieves projects owned by the user which do not belong
+to any group:
 
 ```ts
-import { PhylumApi, ApiVersion } from "phylum";
-
 // Create a fetch request to the `/data/projects/overview` endpoint.
-const reply = await PhylumApi.fetch(
-    ApiVersion.V0,
+const reply = await Phylum.fetch(
+    Phylum.ApiVersion.V0,
     '/data/projects/overview',
 );
 
@@ -39,11 +37,9 @@ project through the API:
 [Deno's `fetch` function]: https://deno.land/api@latest?s=fetch
 
 ```ts
-import { PhylumApi, ApiVersion } from "phylum";
-
 // Create a fetch request to the `/data/projects` endpoint.
-const reply = await PhylumApi.fetch(
-    ApiVersion.V0,
+const reply = await Phylum.fetch(
+    Phylum.ApiVersion.V0,
     '/data/projects',
     {
         method: 'POST',

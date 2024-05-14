@@ -136,7 +136,7 @@ env = true
 
 Run permissions list executable paths which can be executed by the extension.
 
-This permission is required for executing paths with `PhylumApi.runSandboxed`.
+This permission is required for executing paths with `Phylum.runSandboxed`.
 
 The executable paths take `$PATH` into account, so it is recommended to avoid
 using absolute paths to improve portability.

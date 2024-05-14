@@ -1,31 +1,28 @@
-// @ts-ignore Deno[Deno.internal].core is not defined in types
-const DenoCore = Deno[Deno.internal].core;
-
-export type PackageWithOrigin = {
+type PackageWithOrigin = {
   name: string;
   version: string;
   type: string;
   origin?: string;
 };
 
-export type PurlWithOrigin = {
+type PurlWithOrigin = {
   purl: string;
   origin?: string;
 };
 
-export type Package = {
+type Package = {
   name: string;
   version: string;
   type: string;
 };
 
-export type DependencyFile = {
+type DependencyFile = {
   packages: Package[];
   format: string;
   path: string;
 };
 
-export type ProcessOutput = {
+type ProcessOutput = {
   stdout: string;
   stderr: string;
   success: boolean;
@@ -33,7 +30,7 @@ export type ProcessOutput = {
   code: number | null;
 };
 
-export type PolicyEvaluationResponseRaw = {
+type PolicyEvaluationResponseRaw = {
   is_failure: boolean;
   incomplete_packages_count: number;
   help: string;
@@ -41,7 +38,7 @@ export type PolicyEvaluationResponseRaw = {
   dependencies: EvaluatedDependencies[];
 };
 
-export type EvaluatedDependencies = {
+type EvaluatedDependencies = {
   purl: string;
   registry: string;
   name: string;
@@ -49,13 +46,13 @@ export type EvaluatedDependencies = {
   rejections: PolicyRejection[];
 };
 
-export type PolicyRejection = {
+type PolicyRejection = {
   title: string;
   suppressed: boolean;
   source: RejectionSource;
 };
 
-export type RejectionSource = {
+type RejectionSource = {
   type: string;
   tag: string | null;
   domain: string | null;
@@ -64,22 +61,7 @@ export type RejectionSource = {
   reason: string | null;
 };
 
-async function ensureRequestHeaders(init: RequestInit) {
-  const headers = init.headers = new Headers(init.headers);
-
-  // Set Authorization header if it is missing.
-  if (!headers.has("Authorization")) {
-    const token = await PhylumApi.getAccessToken();
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  // Set Content-Type header if it is missing.
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-}
-
-export class PhylumApi {
+declare namespace Phylum {
   /**
    * Send a request to the Phylum REST API.
    *
@@ -88,31 +70,11 @@ export class PhylumApi {
    * The `init` parameter matches the `init` parameter of the Deno `fetch` function:
    * https://deno.land/api@latest?s=fetch
    */
-  static async fetch(
+  function fetch(
     apiVersion: ApiVersion | string,
     endpoint: string,
     init?: RequestInit,
-  ): Promise<Response> {
-    // Ensure header object is initialized.
-    const fetchInit = init ?? {};
-
-    await ensureRequestHeaders(fetchInit);
-
-    // Get API base URI without version.
-    const baseUrl = await PhylumApi.apiBaseUrl();
-
-    // Send fetch request.
-    return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchInit);
-  }
-
-  /**
-   * Get the Phylum REST API base URL.
-   *
-   * This will usually return `https://api.phylum.io/api`.
-   */
-  static async apiBaseUrl(): Promise<URL> {
-    return new URL(await DenoCore.opAsync("api_base_url"));
-  }
+  ): Promise<Response>;
 
   /**
    * Run Phylum analysis on a list of packages.
@@ -138,20 +100,12 @@ export class PhylumApi {
    *
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
-  static analyze(
+  function analyze(
     packages: (PackageWithOrigin | PurlWithOrigin)[],
     project?: string,
     group?: string,
     label?: string,
-  ): Promise<string> {
-    return DenoCore.opAsync(
-      "analyze",
-      packages,
-      project,
-      group,
-      label,
-    );
-  }
+  ): Promise<string>;
 
   /**
    * Check a list of packages against the default policy.
@@ -160,11 +114,9 @@ export class PhylumApi {
    *
    * @returns Raw job analysis results (see `getJobStatusRaw()` for details)
    */
-  static checkPackagesRaw(
+  function checkPackagesRaw(
     packages: Package[],
-  ): Promise<PolicyEvaluationResponseRaw> {
-    return DenoCore.opAsync("check_packages_raw", packages);
-  }
+  ): Promise<PolicyEvaluationResponseRaw>;
 
   /**
    * Check a list of packages against the default policy.
@@ -173,9 +125,7 @@ export class PhylumApi {
    *
    * @returns Job analysis results (see `getJobStatus()` for details)
    */
-  static checkPackages(packages: Package[]): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync("check_packages", packages);
-  }
+  function checkPackages(packages: Package[]): Promise<Record<string, unknown>>;
 
   /**
    * Get info about the logged in user.
@@ -195,24 +145,18 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getUserInfo(): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync("get_user_info");
-  }
+  function getUserInfo(): Promise<Record<string, unknown>>;
 
   /** Get the current short-lived API access token. */
-  static getAccessToken(): Promise<string> {
-    return DenoCore.opAsync("get_access_token");
-  }
+  function getAccessToken(): Promise<string>;
 
   /** Get the long-lived user refresh token. */
-  static getRefreshToken(): Promise<string> {
-    return DenoCore.opAsync("get_refresh_token");
-  }
+  function getRefreshToken(): Promise<string>;
 
   /**
    * Get job results.
    *
-   * @param jobId - ID of the analysis job, see `PhylumApi.analyze`.
+   * @param jobId - ID of the analysis job, see `analyze()`.
    * @param ignoredPackages - List of packages which will be ignored in the report.
    *
    * @returns Job analysis results
@@ -227,17 +171,15 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getJobStatus(
+  function getJobStatus(
     jobId: string,
     ignoredPackages?: Package[],
-  ): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
-  }
+  ): Promise<Record<string, unknown>>;
 
   /**
    * Get job results.
    *
-   * @param jobId - ID of the analysis job, see `PhylumApi.analyze`.
+   * @param jobId - ID of the analysis job, see `analyze()`.
    * @param ignoredPackages - List of packages which will be ignored in the report.
    *
    * @returns Raw job analysis results
@@ -270,12 +212,10 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getJobStatusRaw(
+  function getJobStatusRaw(
     jobId: string,
     ignoredPackages?: Package[],
-  ): Promise<PolicyEvaluationResponseRaw> {
-    return DenoCore.opAsync("get_job_status", jobId, ignoredPackages);
-  }
+  ): Promise<PolicyEvaluationResponseRaw>;
 
   /**
    * Get currently linked project.
@@ -292,9 +232,7 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getCurrentProject(): Record<string, unknown> | null {
-    return DenoCore.ops.get_current_project();
-  }
+  function getCurrentProject(): Record<string, unknown> | null;
 
   /**
    * List the user's groups.
@@ -315,9 +253,7 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getGroups(): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync("get_groups");
-  }
+  function getGroups(): Promise<Record<string, unknown>>;
 
   /**
    * List the user's projects.
@@ -338,31 +274,25 @@ export class PhylumApi {
    * ]
    * ```
    */
-  static getProjects(group?: string): Promise<Record<string, unknown>[]> {
-    return DenoCore.opAsync("get_projects", group);
-  }
+  function getProjects(group?: string): Promise<Record<string, unknown>[]>;
 
   /**
    * Create a project.
    *
    * @return Project ID and status indication
    */
-  static createProject(
+  function createProject(
     name: string,
     group?: string,
     repository_url?: string,
-  ): Promise<{ id: string; status: "Created" | "Exists" }> {
-    return DenoCore.opAsync("create_project", name, group, repository_url);
-  }
+  ): Promise<{ id: string; status: "Created" | "Exists" }>;
 
   /**
    * Delete a project.
    *
    * Throws an error if unsuccessful.
    */
-  static deleteProject(name: string, group?: string): Promise<void> {
-    return DenoCore.opAsync("delete_project", name, group);
-  }
+  function deleteProject(name: string, group?: string): Promise<void>;
 
   /**
    * Get analysis results for a single package.
@@ -415,18 +345,11 @@ export class PhylumApi {
    * }
    * ```
    */
-  static getPackageDetails(
+  function getPackageDetails(
     name: string,
     version: string,
     packageType: string,
-  ): Promise<Record<string, unknown>> {
-    return DenoCore.opAsync(
-      "get_package_details",
-      name,
-      version,
-      packageType,
-    );
-  }
+  ): Promise<Record<string, unknown>>;
 
   /**
    * Get packages inside a dependency file.
@@ -447,20 +370,12 @@ export class PhylumApi {
    * }
    * ```
    */
-  static parseDependencyFile(
+  function parseDependencyFile(
     depfile: string,
     depfileType?: string,
     generateLockfiles?: boolean,
     sandboxGeneration?: boolean,
-  ): Promise<DependencyFile> {
-    return DenoCore.opAsync(
-      "parse_depfile",
-      depfile,
-      depfileType,
-      generateLockfiles,
-      sandboxGeneration,
-    );
-  }
+  ): Promise<DependencyFile>;
 
   /**
    * Run a command inside a more restrictive sandbox.
@@ -527,9 +442,7 @@ export class PhylumApi {
    * }
    * ```
    */
-  static runSandboxed(process: Record<string, unknown>): ProcessOutput {
-    return DenoCore.ops.run_sandboxed(process);
-  }
+  function runSandboxed(process: Record<string, unknown>): ProcessOutput;
 
   /**
    * Get the extension's manifest permissions.
@@ -547,12 +460,10 @@ export class PhylumApi {
    * }
    * ```
    */
-  static permissions(): Record<string, unknown> {
-    return DenoCore.ops.op_permissions();
-  }
-}
+  function permissions(): Record<string, unknown>;
 
-/** Available Phylum REST API versions. **/
-export enum ApiVersion {
-  V0 = "v0",
+  /** Available Phylum REST API versions. **/
+  enum ApiVersion {
+    V0 = "v0",
+  }
 }

@@ -3,7 +3,6 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -107,7 +106,7 @@ try {
 console.log(`[${green("phylum")}] Downloading packages to cache…`);
 
 // Download packages to cache without sandbox.
-const status = PhylumApi.runSandboxed({
+const status = Phylum.runSandboxed({
   cmd: "yarn",
   args: [...Deno.args, "--mode=skip-build"],
   exceptions: {
@@ -136,7 +135,7 @@ if (!status.success) {
 console.log(`[${green("phylum")}] Building packages inside sandbox…`);
 
 // Run build inside a sandbox.
-const output = PhylumApi.runSandboxed({
+const output = Phylum.runSandboxed({
   cmd: "yarn",
   args: ["install", "--immutable", "--immutable-cache"],
   exceptions: {
@@ -179,7 +178,7 @@ if (!output.success) {
 async function checkDryRun() {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
-  const status = PhylumApi.runSandboxed({
+  const status = Phylum.runSandboxed({
     cmd: "yarn",
     args: [...Deno.args, "--mode=skip-build", "--mode=update-lockfile"],
     exceptions: {
@@ -196,7 +195,7 @@ async function checkDryRun() {
     await abort(status.code ?? 255);
   }
 
-  const lockfile = await PhylumApi.parseDependencyFile("./yarn.lock", "yarn");
+  const lockfile = await Phylum.parseDependencyFile("./yarn.lock", "yarn");
 
   // Ensure `checkDryRun` never modifies package manager files,
   // regardless of success.
@@ -210,7 +209,7 @@ async function checkDryRun() {
     return;
   }
 
-  const result = await PhylumApi.checkPackagesRaw(lockfile.packages);
+  const result = await Phylum.checkPackagesRaw(lockfile.packages);
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {

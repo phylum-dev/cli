@@ -162,7 +162,7 @@ fn permissions_op() {
         Permissions { read: Permission::List(vec!["/tmp".to_string()]), ..Permissions::default() };
 
     let permissions_ext = "
-         const perms = PhylumApi.permissions()
+         const perms = Phylum.permissions()
          console.log(perms);";
 
     test_cli

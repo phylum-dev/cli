@@ -1,5 +1,0 @@
-{
-  "imports": {
-    "phylum": "./extensions/phylum.ts"
-  }
-}

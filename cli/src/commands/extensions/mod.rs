@@ -26,8 +26,6 @@ pub mod permissions;
 pub mod state;
 
 const EXTENSION_SKELETON: &[u8] = b"\
-import { PhylumApi } from 'phylum';
-
 console.log('Hello, World!');
 ";
 

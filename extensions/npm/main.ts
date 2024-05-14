@@ -3,7 +3,6 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -134,7 +133,7 @@ if (!status.success) {
 console.log(`[${green("phylum")}] Running build scripts inside sandbox…`);
 
 // Run build scripts inside a sandbox.
-const output = PhylumApi.runSandboxed({
+const output = Phylum.runSandboxed({
   cmd: "npm",
   args: ["install"],
   exceptions: {
@@ -235,7 +234,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseDependencyFile(lockfilePath, "npm");
+    lockfile = await Phylum.parseDependencyFile(lockfilePath, "npm");
   } catch (_e) {
     console.warn(`[${yellow("phylum")}] No lockfile created.\n`);
     return;
@@ -253,7 +252,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     return;
   }
 
-  const result = await PhylumApi.checkPackagesRaw(lockfile.packages);
+  const result = await Phylum.checkPackagesRaw(lockfile.packages);
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {

@@ -1,5 +1,6 @@
 //! Deno runtime for extensions.
 
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -10,7 +11,10 @@ use deno_ast::{
     EmitOptions, EmittedSource, MediaType, ParseParams, SourceMapOption, SourceTextInfo,
     TranspileOptions,
 };
-use deno_core::{ModuleLoadResponse, ModuleSourceCode, RequestedModuleType};
+use deno_core::{
+    include_js_files, ExtensionFileSource, ModuleCodeString, ModuleLoadResponse, ModuleSourceCode,
+    RequestedModuleType,
+};
 use deno_runtime::deno_core::error::JsError;
 use deno_runtime::deno_core::{
     Extension, ModuleLoader, ModuleSource, ModuleSpecifier, ModuleType, ResolutionKind,
@@ -28,8 +32,19 @@ use crate::commands::extensions::state::ExtensionState;
 use crate::commands::extensions::{api, extension};
 use crate::commands::{CommandResult, ExitCode};
 
-/// Load Phylum API for module injection.
-const EXTENSION_API: &str = include_str!("../../extensions/phylum.ts");
+/// Internal extension module that creates global Phylum object.
+const EXTENSION_API: &[ExtensionFileSource] = &include_js_files!(
+    phylum_api
+    dir "js",
+    "api.js",
+    "api_version.js",
+    "main.js");
+
+/// Importable "phylum" module for backwards compatibility.
+const PHYLUM_MODULE: &str = "
+export const PhylumApi = Phylum;
+export const ApiVersion = Phylum.ApiVersion;
+";
 
 /// Execute Phylum extension.
 pub async fn run(
@@ -44,6 +59,8 @@ pub async fn run(
             "op_request_permission" => op.disable(),
             _ => op,
         })),
+        esm_files: Cow::Borrowed(EXTENSION_API),
+        esm_entry_point: Some("ext:phylum_api/main.js"),
         ops: api::api_decls().into(),
         op_state_fn: Some(Box::new(|deno_state| deno_state.put(state))),
         ..Default::default()
@@ -175,7 +192,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
         ModuleLoadResponse::Async(Box::pin(async move {
             // Inject Phylum API module.
             if module_specifier.as_str() == "deno:phylum" {
-                return phylum_module(&source_mapper);
+                return phylum_module();
             }
 
             // Determine source file type.
@@ -281,7 +298,7 @@ impl SourceMapper {
 
             // Transpile to JavaScript.
             let emit_options =
-                EmitOptions { source_map: SourceMapOption::None, ..EmitOptions::default() };
+                EmitOptions { source_map: SourceMapOption::Separate, ..EmitOptions::default() };
             let transpile_options = TranspileOptions::default();
             let transpiled = parsed.transpile(&transpile_options, &emit_options)?.into_source();
 
@@ -299,14 +316,12 @@ impl SourceMapper {
 }
 
 /// Load the internal Phylum API module
-fn phylum_module(mapper: &SourceMapper) -> Result<ModuleSource> {
+fn phylum_module() -> Result<ModuleSource> {
     let module_url = ModuleSpecifier::parse("deno:phylum").unwrap();
-    let transpiled = mapper.transpile(module_url.as_str(), EXTENSION_API, MediaType::TypeScript)?;
-    let code = transpiled.text.clone();
 
     Ok(ModuleSource::new(
         ModuleType::JavaScript,
-        ModuleSourceCode::String(code.into()),
+        ModuleSourceCode::String(ModuleCodeString::from_static(PHYLUM_MODULE)),
         &module_url,
         None,
     ))

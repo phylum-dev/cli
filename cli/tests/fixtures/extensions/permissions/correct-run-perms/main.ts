@@ -1,6 +1,4 @@
-import { PhylumApi } from 'phylum';
-
-let cmd = PhylumApi.runSandboxed({
+let cmd = Phylum.runSandboxed({
   cmd: 'echo',
   args: ['hello'],
   stdout: 'piped',
