@@ -237,8 +237,7 @@ pub struct ThirdPartyVersion {
 ///
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
-    LockfileFormat::iter()
-        .find(|f| f != &LockfileFormat::GoMod && f.parser().is_path_lockfile(path.as_ref()))
+    LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
 }
 
 /// Identify a dependency file's format based on its path.
@@ -250,8 +249,7 @@ pub fn get_depfile_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat
     let path = path.as_ref();
     LockfileFormat::iter().find(|format| {
         let parser = format.parser();
-        format != &LockfileFormat::GoMod
-            && (parser.is_path_lockfile(path) || parser.is_path_manifest(path))
+        parser.is_path_lockfile(path) || parser.is_path_manifest(path)
     })
 }
 
@@ -270,7 +268,7 @@ pub fn find_manifest_lockfile<P: AsRef<Path>>(path: P) -> Option<(PathBuf, Lockf
     // Find matching format and lockfile in the manifest's directory.
     LockfileFormat::iter()
         // Check if file is a valid manifest.
-        .filter(|format| format != &LockfileFormat::GoMod && format.parser().is_path_manifest(path))
+        .filter(|format| format.parser().is_path_manifest(path))
         // Try to find the associated lockfile.
         .find_map(|format| {
             let lockfile_path = WalkDir::new(manifest_dir)
