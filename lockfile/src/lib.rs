@@ -237,7 +237,8 @@ pub struct ThirdPartyVersion {
 ///
 /// The file does not need to exist.
 pub fn get_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat> {
-    LockfileFormat::iter().find(|f| f.parser().is_path_lockfile(path.as_ref()))
+    LockfileFormat::iter()
+        .find(|f| f != &LockfileFormat::GoMod && f.parser().is_path_lockfile(path.as_ref()))
 }
 
 /// Identify a dependency file's format based on its path.
@@ -249,7 +250,8 @@ pub fn get_depfile_path_format<P: AsRef<Path>>(path: P) -> Option<LockfileFormat
     let path = path.as_ref();
     LockfileFormat::iter().find(|format| {
         let parser = format.parser();
-        parser.is_path_lockfile(path) || parser.is_path_manifest(path)
+        format != &LockfileFormat::GoMod
+            && (parser.is_path_lockfile(path) || parser.is_path_manifest(path))
     })
 }
 
@@ -268,7 +270,7 @@ pub fn find_manifest_lockfile<P: AsRef<Path>>(path: P) -> Option<(PathBuf, Lockf
     // Find matching format and lockfile in the manifest's directory.
     LockfileFormat::iter()
         // Check if file is a valid manifest.
-        .filter(|format| format.parser().is_path_manifest(path))
+        .filter(|format| format != &LockfileFormat::GoMod && format.parser().is_path_manifest(path))
         // Try to find the associated lockfile.
         .find_map(|format| {
             let lockfile_path = WalkDir::new(manifest_dir)
@@ -331,7 +333,10 @@ impl DepFiles {
                 let parser = format.parser();
 
                 let mut format_found = false;
-                if parser.is_path_lockfile(path) {
+                // GoMod can reprsent a manifest and lockfile which causes duplicate
+                // lockfiles being submitted when a go.sum is present. This removees
+                // go.mod files from being automatically recognized as a lockfile.
+                if format != LockfileFormat::GoMod && parser.is_path_lockfile(path) {
                     depfiles.lockfiles.push((path.to_path_buf(), format));
                     format_found = true;
                 }
@@ -511,7 +516,6 @@ mod tests {
             ("requirements.txt", LockfileFormat::Pip),
             ("Pipfile.lock", LockfileFormat::Pipenv),
             ("poetry.lock", LockfileFormat::Poetry),
-            ("go.mod", LockfileFormat::GoMod),
             ("go.sum", LockfileFormat::Go),
             ("Cargo.lock", LockfileFormat::Cargo),
             (".spdx.json", LockfileFormat::Spdx),
@@ -712,6 +716,44 @@ mod tests {
 
         // Ensure requirements.txt is only reported once.
         let expected = vec![(files[0].clone(), LockfileFormat::Pip)];
+        assert_eq!(lockable_files, expected);
+    }
+
+    #[test]
+    fn skip_go_mod() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [tempdir.path().join("go.mod"), tempdir.path().join("go.sum")];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find lockfile.
+        let lockable_files = find_depfiles_at(tempdir.path());
+
+        // Compare results.
+        let expected = vec![(tempdir.path().join("go.sum"), LockfileFormat::Go)];
+        assert_eq!(lockable_files, expected);
+    }
+
+    #[test]
+    fn allow_go_mod_manifest() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [tempdir.path().join("go.mod"), tempdir.path().join("main.go")];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find manifest file.
+        let lockable_files = find_depfiles_at(tempdir.path());
+
+        // Compare results.
+        let expected = vec![(tempdir.path().join("go.mod"), LockfileFormat::GoMod)];
         assert_eq!(lockable_files, expected);
     }
 }
