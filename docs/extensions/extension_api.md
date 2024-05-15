@@ -32,5 +32,5 @@ The Phylum extension API is documented in the [TypeScript module file].
 
 You can keep track of the latest changes by following the [API's changelog].
 
-[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/extensions/phylum.ts
+[TypeScript module file]: https://github.com/phylum-dev/cli/blob/main/extensions/phylum.d.ts
 [API's changelog]: https://github.com/phylum-dev/cli/blob/main/extensions/CHANGELOG.md
