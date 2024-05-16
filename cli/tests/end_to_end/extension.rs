@@ -212,7 +212,7 @@ pub async fn rest_api() {
     test_cli
         .extension(
             "
-            const reply = await Phylum.fetch(ApiVersion.V0, '/health');
+            const reply = await Phylum.fetch(Phylum.ApiVersion.V0, '/health');
             console.log(await reply.json());
         ",
         )
