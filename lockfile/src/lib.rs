@@ -331,8 +331,8 @@ impl DepFiles {
                 let parser = format.parser();
 
                 let mut format_found = false;
-                // GoMod can reprsent a manifest and lockfile which causes duplicate
-                // lockfiles being submitted when a go.sum is present. This removees
+                // GoMod can represent a manifest and lockfile which causes duplicate
+                // lockfiles being submitted when a go.sum is present. This removes
                 // go.mod files from being automatically recognized as a lockfile.
                 if format != LockfileFormat::GoMod && parser.is_path_lockfile(path) {
                     depfiles.lockfiles.push((path.to_path_buf(), format));
