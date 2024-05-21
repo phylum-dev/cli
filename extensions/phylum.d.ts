@@ -77,6 +77,13 @@ declare namespace Phylum {
   ): Promise<Response>;
 
   /**
+   * Get the Phylum REST API base URL.
+   *
+   * This will usually return `https://api.phylum.io/api`.
+   */
+  function apiBaseUrl(): Promise<URL>;
+
+  /**
    * Run Phylum analysis on a list of packages.
    *
    * Packages are expected in the following format:
