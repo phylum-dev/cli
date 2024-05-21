@@ -51,7 +51,7 @@ export async function fetch(
   const baseUrl = await apiBaseUrl();
 
   // Send fetch request.
-  return fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchInit);
+  return globalThis.fetch(`${baseUrl}/${apiVersion}${endpoint}`, fetchInit);
 }
 
 export async function apiBaseUrl() {
