@@ -1,4 +1,5 @@
 use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+use predicates::prelude::PredicateBooleanExt;
 
 use crate::common::{create_lockfile, create_project, TestCli};
 
@@ -24,7 +25,7 @@ pub async fn get_access_token() {
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains("ey"));
+        .stdout(predicates::str::starts_with("ph0_").or(predicates::str::contains("ey")));
 }
 
 #[tokio::test]
@@ -36,7 +37,7 @@ pub async fn get_refresh_token() {
         .build()
         .run()
         .success()
-        .stdout(predicates::str::contains("ey"));
+        .stdout(predicates::str::starts_with("ph0_").or(predicates::str::contains("ey")));
 }
 
 #[tokio::test]
