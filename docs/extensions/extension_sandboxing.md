@@ -10,8 +10,6 @@ The following code provides an example on how you could sandbox `cat` to only
 allow access to files in the current working directory or below it:
 
 ```ts
-import { PhylumApi } from "phylum";
-
 // Ensure a file path is passed as the only argument.
 if (Deno.args.length !== 1) {
     console.log("USAGE: local-cat <FILE>");
@@ -19,7 +17,7 @@ if (Deno.args.length !== 1) {
 }
 
 // Run `cat` in our sandboxed environment.
-const output = PhylumApi.runSandboxed({
+const output = Phylum.runSandboxed({
     cmd: 'cat',
     args: [Deno.args[0]],
     stdout: 'inherit',
@@ -54,13 +52,13 @@ allows for a boolean value.
 
 ## Limitations
 
-The `PhylumApi.runSandboxed` method is the only recommended means of spawning
-child processes from an extension. The `Deno.Command` method should be avoided
-in order to prevent extensions from escaping the sandbox, and will be disabled
-in a future version.
+The `Phylum.runSandboxed` method is the only recommended means of spawning child
+processes from an extension. The `Deno.Command` method should be avoided in
+order to prevent extensions from escaping the sandbox, and will be disabled in a
+future version.
 
-The `PhylumApi.runSandboxed` method is only allowed to request permissions that
-are at least as restrictive as the ones specified in the manifest.
+The `Phylum.runSandboxed` method is only allowed to request permissions that are
+at least as restrictive as the ones specified in the manifest.
 
 ## Advanced Usage
 
@@ -70,7 +68,7 @@ more control over your sandboxing exceptions, you can pass `strict: true` to the
 `exceptions`:
 
 ```ts
-const output = PhylumApi.runSandboxed({
+const output = Phylum.runSandboxed({
     cmd: 'cat',
     args: [Deno.args[0]],
     stdout: 'inherit',

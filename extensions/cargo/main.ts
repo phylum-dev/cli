@@ -4,7 +4,6 @@ import {
   yellow,
 } from "https://deno.land/std@0.199.0/fmt/colors.ts";
 import { crypto } from "https://deno.land/std@0.199.0/crypto/crypto.ts";
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -146,7 +145,7 @@ async function checkDryRun() {
   console.log(`[${green("phylum")}] Updating lockfile…`);
 
   // Ensure lockfile is always up to date.
-  const status = PhylumApi.runSandboxed({
+  const status = Phylum.runSandboxed({
     cmd: "cargo",
     args: ["generate-lockfile"],
     exceptions: {
@@ -176,7 +175,7 @@ async function checkDryRun() {
   console.log(`[${green("phylum")}] Parsing lockfile…`);
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseDependencyFile("./Cargo.lock", "cargo");
+    lockfile = await Phylum.parseDependencyFile("./Cargo.lock", "cargo");
   } catch (e) {
     console.error(`[${red("phylum")}] Lockfile parsing failed: ${e}.\n`);
     await abort(125);
@@ -194,7 +193,7 @@ async function checkDryRun() {
     return;
   }
 
-  const result = await PhylumApi.checkPackagesRaw(lockfile.packages);
+  const result = await Phylum.checkPackagesRaw(lockfile.packages);
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {

@@ -4,7 +4,6 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi } from "phylum";
 
 // Print help.
 if (
@@ -215,7 +214,7 @@ function test(directories: string[]): boolean {
 
   // Run pre-test setup executable.
   if (pre_test_bin) {
-    const preStatus = PhylumApi.runSandboxed({
+    const preStatus = Phylum.runSandboxed({
       cmd: pre_test_bin,
       exceptions: {
         write: true,
@@ -246,7 +245,7 @@ function test(directories: string[]): boolean {
   // Run test against test executable.
   let output = undefined;
   try {
-    output = PhylumApi.runSandboxed({
+    output = Phylum.runSandboxed({
       cmd: test_bin,
       exceptions: {
         strict,
@@ -265,7 +264,7 @@ function test(directories: string[]): boolean {
 
   // Run post-test cleanup executable.
   if (post_test_bin) {
-    const post_status = PhylumApi.runSandboxed({
+    const post_status = Phylum.runSandboxed({
       cmd: post_test_bin,
       exceptions: {
         write: true,

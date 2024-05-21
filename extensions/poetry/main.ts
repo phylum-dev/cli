@@ -1,4 +1,3 @@
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 import {
   green,
   red,
@@ -77,7 +76,7 @@ async function poetryCheckDryRun(
   subcommand: string,
   args: string[],
 ) {
-  const result = PhylumApi.runSandboxed({
+  const result = Phylum.runSandboxed({
     cmd: "poetry",
     args: [
       subcommand,
@@ -193,7 +192,7 @@ async function poetryCheckDryRun(
   }
 
   // Run Phylum analysis on the packages.
-  const checkResult = await PhylumApi.checkPackagesRaw(packages);
+  const checkResult = await Phylum.checkPackagesRaw(packages);
   logPackageAnalysisResults(checkResult);
 
   if (checkResult.is_failure) {

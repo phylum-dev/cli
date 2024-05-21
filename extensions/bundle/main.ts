@@ -3,7 +3,6 @@ import {
   red,
   yellow,
 } from "https://deno.land/std@0.150.0/fmt/colors.ts";
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 
 class FileBackup {
   readonly fileName: string;
@@ -118,7 +117,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
   // Update lockfile if a new dependency is being added.
   let status;
   if ("add".startsWith(subcommand)) {
-    status = PhylumApi.runSandboxed({
+    status = Phylum.runSandboxed({
       cmd: "bundle",
       args: [subcommand, "--skip-install", ...args],
       exceptions: {
@@ -136,7 +135,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
       },
     });
   } else {
-    status = PhylumApi.runSandboxed({
+    status = Phylum.runSandboxed({
       cmd: "bundle",
       args: ["lock"],
       exceptions: {
@@ -163,7 +162,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
 
   let lockfile;
   try {
-    lockfile = await PhylumApi.parseDependencyFile("./Gemfile.lock", "gem");
+    lockfile = await Phylum.parseDependencyFile("./Gemfile.lock", "gem");
   } catch (_e) {
     console.warn(`[${yellow("phylum")}] No lockfile present.\n`);
     await abort(125);
@@ -181,7 +180,7 @@ async function checkDryRun(subcommand: string, args: string[]) {
     return;
   }
 
-  const result = await PhylumApi.checkPackagesRaw(lockfile.packages);
+  const result = await Phylum.checkPackagesRaw(lockfile.packages);
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {

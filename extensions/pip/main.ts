@@ -1,4 +1,3 @@
-import { PhylumApi, PolicyEvaluationResponseRaw } from "phylum";
 import {
   green,
   red,
@@ -35,7 +34,7 @@ checkPipVersion();
 await checkDryRun();
 
 // Perform the package installation.
-const installStatus = PhylumApi.runSandboxed({
+const installStatus = Phylum.runSandboxed({
   cmd: "pip3",
   args: Deno.args,
   exceptions: {
@@ -73,7 +72,7 @@ Deno.exit(installStatus.code ?? 255);
 async function checkDryRun() {
   console.log(`[${green("phylum")}] Finding new dependencies…`);
 
-  const status = PhylumApi.runSandboxed({
+  const status = Phylum.runSandboxed({
     cmd: "pip3",
     args: [...Deno.args, "--quiet", "--report", "-", "--dry-run"],
     exceptions: {
@@ -128,7 +127,7 @@ async function checkDryRun() {
     return;
   }
 
-  const result = await PhylumApi.checkPackagesRaw(packages);
+  const result = await Phylum.checkPackagesRaw(packages);
   logPackageAnalysisResults(result);
 
   if (result.is_failure) {
@@ -192,7 +191,7 @@ function parseDryRun(output: string): Package[] {
 
 // Ensure pip version is at least 23.0.0.
 function checkPipVersion() {
-  const versionStatus = PhylumApi.runSandboxed({
+  const versionStatus = Phylum.runSandboxed({
     cmd: "pip3",
     args: ["--version"],
     exceptions: {

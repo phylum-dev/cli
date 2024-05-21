@@ -13,8 +13,6 @@ import { mapValues } from "https://deno.land/std@0.150.0/collections/map_values.
 import { distinct } from "https://deno.land/std@0.150.0/collections/distinct.ts";
 import { groupBy } from "https://deno.land/std@0.150.0/collections/group_by.ts";
 
-import { PhylumApi } from "phylum";
-
 // Ensure dependency file argument is present.
 if (Deno.args.length != 1) {
     console.error("Usage: phylum duplicates <DEPENDENCY_FILE>");
@@ -22,7 +20,7 @@ if (Deno.args.length != 1) {
 }
 
 // Parse dependency file using Phylum's API.
-const depfile = await PhylumApi.parseDependencyFile(Deno.args[0]);
+const depfile = await Phylum.parseDependencyFile(Deno.args[0]);
 
 // Group all versions for the same dependency together.
 const groupedDeps = groupBy(depfile.packages, dep => dep.name);
@@ -66,14 +64,6 @@ We'll go into more detail on what we need these for later.
 [deno_std]: https://deno.land/std
 
 ```ts
-import { PhylumApi } from "phylum";
-```
-
-This is the import for the built-in Phylum API. You'll see this in most Phylum
-API extensions and this is where you find all functionality you need from
-Phylum's API.
-
-```ts
 // Ensure dependency file argument is present.
 if (Deno.args.length != 1) {
     console.error("Usage: phylum duplicates <DEPENDENCY_FILE>");
@@ -93,10 +83,11 @@ error code.
 
 ```ts
 // Parse dependency file using Phylum's API.
-const depfile = await PhylumApi.parseDependencyFile(Deno.args[0]);
+const depfile = await Phylum.parseDependencyFile(Deno.args[0]);
 ```
 
-The `parseDependencyFile` method reads the lockfile or manifest path passed as
+Phylum's API is exposed in the global `Phylum` object. Here we are using the
+`parseDependencyFile` method which reads the lockfile or manifest path passed as
 an argument and returns an object containing all dependencies and the package
 ecosystem. Since this function is asynchronous, we need to `await` it.
 

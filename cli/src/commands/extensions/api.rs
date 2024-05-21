@@ -14,7 +14,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Error, Result};
-use deno_runtime::deno_core::{op2, Op, OpDecl, OpState};
+use deno_runtime::deno_core::{op2, OpDecl, OpState};
 use deno_runtime::permissions::PermissionsContainer;
 use phylum_lockfile::ParsedLockfile;
 use phylum_project::ProjectConfig;
@@ -32,6 +32,7 @@ use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 #[cfg(unix)]
 use crate::commands::ExitCode;
+use crate::config::Config;
 #[cfg(unix)]
 use crate::dirs;
 use crate::types::{
@@ -225,6 +226,15 @@ async fn get_user_info(op_state: Rc<RefCell<OpState>>) -> Result<UserInfo> {
     api.user_info().await.map_err(Error::from)
 }
 
+/// Retrieve the refresh token.
+async fn refresh_token(config: &Config) -> Result<RefreshToken> {
+    config
+        .auth_info
+        .offline_access()
+        .cloned()
+        .ok_or_else(|| anyhow!("User is not currently authenticated"))
+}
+
 /// Retrieve the access token.
 /// Equivalent to `phylum auth token --bearer`.
 #[op2(async)]
@@ -233,11 +243,11 @@ async fn get_access_token(
     op_state: Rc<RefCell<OpState>>,
     ignore_certs: bool,
 ) -> Result<AccessToken> {
-    let refresh_token = get_refresh_token::call(op_state.clone()).await?;
-
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
     let config = api.config();
+
+    let refresh_token = refresh_token(config).await?;
 
     let access_token =
         crate::auth::renew_access_token(&refresh_token, ignore_certs, &config.connection.uri)
@@ -255,11 +265,7 @@ async fn get_refresh_token(op_state: Rc<RefCell<OpState>>) -> Result<RefreshToke
     let api = state.api().await?;
     let config = api.config();
 
-    config
-        .auth_info
-        .offline_access()
-        .cloned()
-        .ok_or_else(|| anyhow!("User is not currently authenticated"))
+    refresh_token(config).await
 }
 
 /// Retrieve a job's status.
@@ -576,23 +582,23 @@ async fn api_base_url(op_state: Rc<RefCell<OpState>>) -> Result<String> {
 
 pub(crate) fn api_decls() -> Vec<OpDecl> {
     vec![
-        analyze::DECL,
-        api_base_url::DECL,
-        check_packages::DECL,
-        check_packages_raw::DECL,
-        create_project::DECL,
-        delete_project::DECL,
-        get_access_token::DECL,
-        get_current_project::DECL,
-        get_groups::DECL,
-        get_job_status::DECL,
-        get_job_status_raw::DECL,
-        get_package_details::DECL,
-        get_projects::DECL,
-        get_refresh_token::DECL,
-        get_user_info::DECL,
-        op_permissions::DECL,
-        parse_depfile::DECL,
-        run_sandboxed::DECL,
+        analyze(),
+        api_base_url(),
+        check_packages(),
+        check_packages_raw(),
+        create_project(),
+        delete_project(),
+        get_access_token(),
+        get_current_project(),
+        get_groups(),
+        get_job_status(),
+        get_job_status_raw(),
+        get_package_details(),
+        get_projects(),
+        get_refresh_token(),
+        get_user_info(),
+        op_permissions(),
+        parse_depfile(),
+        run_sandboxed(),
     ]
 }

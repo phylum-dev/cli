@@ -163,11 +163,7 @@ impl<'a> TestExtension<'a> {
 
         // Overwrite skeleton code.
         let main = extension_path.join("main.ts");
-        fs::write(
-            main,
-            format!("import {{ PhylumApi, ApiVersion }} from 'phylum';\n{code}").as_bytes(),
-        )
-        .unwrap();
+        fs::write(main, code).unwrap();
 
         // Overwrite permissions.
         let manifest_path = extension_path.join("PhylumExt.toml");

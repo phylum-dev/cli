@@ -1,5 +1,7 @@
 {
-  "importMap": "import_map.json",
+  "compilerOptions": {
+    "types": ["./extensions/phylum.d.ts"]
+  },
   "lint": {
     "include": ["extensions/"]
   },

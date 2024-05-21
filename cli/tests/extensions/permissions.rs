@@ -151,7 +151,7 @@ pub async fn disallow_permission_request() {
         .build()
         .run()
         .failure()
-        .stderr(predicate::str::contains("TypeError: ops.op_request_permission is not a function"));
+        .stderr(predicate::str::contains("Error: op is disabled"));
 }
 
 #[test]
@@ -162,7 +162,7 @@ fn permissions_op() {
         Permissions { read: Permission::List(vec!["/tmp".to_string()]), ..Permissions::default() };
 
     let permissions_ext = "
-         const perms = PhylumApi.permissions()
+         const perms = Phylum.permissions()
          console.log(perms);";
 
     test_cli
