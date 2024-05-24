@@ -51,7 +51,6 @@ fn yarn_version(manifest_path: &Path) -> Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).into())
     } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        Err(Error::NonZeroExit(output.status.code(), stderr.into()))
+        Err(Error::NonZeroExit(output))
     }
 }

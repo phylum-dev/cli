@@ -1,6 +1,8 @@
 use std::ffi::OsString;
+use std::fmt::{self, Display, Formatter};
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf, StripPrefixError};
-use std::process::{Command, Stdio};
+use std::process::{Command, Output, Stdio};
 use std::string::FromUtf8Error;
 use std::{fs, io};
 
@@ -76,9 +78,7 @@ pub trait Generator {
 
         // Ensure generation was successful.
         if !output.status.success() {
-            let code = output.status.code();
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::NonZeroExit(code, stderr.into()));
+            return Err(Error::NonZeroExit(output));
         }
 
         // Ensure lockfile was created.
@@ -135,28 +135,63 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Lockfile generation error.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("{0}")]
     Anyhow(#[from] anyhow::Error),
-    #[error("invalid manifest path: {0:?}")]
     InvalidManifest(PathBuf),
-    #[error("utf8 parsing error")]
     InvalidUtf8(#[from] FromUtf8Error),
-    #[error("I/O error")]
     Io(#[from] io::Error),
-    #[error("json parsing error")]
     Json(#[from] JsonError),
-    #[error("package manager quit unexpectedly (code: {0:?}):\n\n{1}")]
-    NonZeroExit(Option<i32>, String),
-    #[error("unsupported pip report version {1:?}, expected {0:?}")]
+    NonZeroExit(Output),
     PipReportVersionMismatch(&'static str, String),
-    #[error("failed to spawn command {0}: Is {1} installed?")]
     ProcessCreation(String, String, io::Error),
-    #[error("could not strip path prefix")]
     StripPrefix(#[from] StripPrefixError),
-    #[error("unexpected output for {0:?}: {1}")]
-    UnexpectedOutput(&'static str, String),
-    #[error("unsupported {0:?} version {2:?}, expected {1:?}")]
     UnsupportedCommandVersion(&'static str, &'static str, String),
-    #[error("no lockfile was generated")]
     NoLockfileGenerated,
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Anyhow(err) => write!(f, "{err}"),
+            Self::InvalidManifest(path) => write!(f, "invalid manifest path: {path:?}"),
+            Self::InvalidUtf8(_) => write!(f, "utf8 parsing error"),
+            Self::Io(_) => write!(f, "I/O error"),
+            Self::Json(_) => write!(f, "json parsing error"),
+            Self::NonZeroExit(output) => {
+                write!(
+                    f,
+                    "package manager quit unexpectedly (code: {:?}, signal: {:?})",
+                    output.status.code(),
+                    output.status.signal()
+                )?;
+
+                if !output.stderr.is_empty() {
+                    write!(f, "\n    STDERR:")?;
+                    for line in String::from_utf8_lossy(&output.stderr).lines() {
+                        write!(f, "\n        {line}")?;
+                    }
+                }
+
+                if !output.stdout.is_empty() {
+                    write!(f, "\n    STDOUT:")?;
+                    for line in String::from_utf8_lossy(&output.stdout).lines() {
+                        write!(f, "\n        {line}")?;
+                    }
+                }
+
+                Ok(())
+            },
+            Self::PipReportVersionMismatch(expected, version) => {
+                write!(f, "unsupported pip report version {version:?}, expected {expected:?}")
+            },
+            Self::ProcessCreation(command, tool_name, _) => {
+                write!(f, "failed to spawn command {command}: Is {tool_name} installed?")
+            },
+            Self::StripPrefix(_) => write!(f, "could not strip path prefix"),
+            Self::UnsupportedCommandVersion(command, expected_version, version) => write!(
+                f,
+                "unsupported {command:?} version {version:?}, expected {expected_version:?}"
+            ),
+            Self::NoLockfileGenerated => write!(f, "no lockfile was generated"),
+        }
+    }
 }
