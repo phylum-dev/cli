@@ -4276,7 +4276,7 @@ dependencies = [
  "futures",
  "git-version",
  "home",
- "hyper 0.14.28",
+ "hyper 1.1.0",
  "ignore",
  "lazy_static",
  "libc",
