@@ -36,6 +36,9 @@ use crate::types::{
 
 pub mod endpoints;
 
+/// Port used for internal auth server.
+const AUTH_PORT: u16 = 6661;
+
 type Result<T> = std::result::Result<T, PhylumApiError>;
 
 pub struct PhylumApi {
@@ -109,6 +112,7 @@ impl PhylumApi {
                     None,
                     ignore_certs,
                     &config.connection.uri,
+                    AUTH_PORT,
                 )
                 .await
                 .context("User login failed")?;
@@ -220,7 +224,7 @@ impl PhylumApi {
     ) -> Result<AuthInfo> {
         let action = if reauth { AuthAction::Reauth } else { AuthAction::Login };
         let refresh_token =
-            handle_auth_flow(action, token_name, None, ignore_certs, api_uri).await?;
+            handle_auth_flow(action, token_name, None, ignore_certs, api_uri, AUTH_PORT).await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
@@ -234,8 +238,15 @@ impl PhylumApi {
         ignore_certs: bool,
         api_uri: &str,
     ) -> Result<AuthInfo> {
-        let refresh_token =
-            handle_auth_flow(AuthAction::Register, token_name, None, ignore_certs, api_uri).await?;
+        let refresh_token = handle_auth_flow(
+            AuthAction::Register,
+            token_name,
+            None,
+            ignore_certs,
+            api_uri,
+            AUTH_PORT,
+        )
+        .await?;
         auth_info.set_offline_access(refresh_token);
         Ok(auth_info)
     }
