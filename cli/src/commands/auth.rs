@@ -14,9 +14,6 @@ use crate::config::Config;
 use crate::format::Format;
 use crate::{auth, print_user_failure, print_user_success, print_user_warning};
 
-/// Port used for internal auth server.
-const AUTH_PORT: u16 = 6661;
-
 /// Register a user. Opens a browser, and redirects the user to the oauth server
 /// registration page
 async fn handle_auth_register(mut config: Config, matches: &ArgMatches) -> Result<()> {
@@ -233,15 +230,9 @@ pub async fn handle_auth_create_token(
         },
     };
 
-    let token = auth::handle_auth_flow(
-        AuthAction::Login,
-        Some(token_name),
-        expiry,
-        ignore_certs,
-        api_uri,
-        AUTH_PORT,
-    )
-    .await?;
+    let token =
+        auth::handle_auth_flow(AuthAction::Login, Some(token_name), expiry, ignore_certs, api_uri)
+            .await?;
 
     eprintln!();
     println!("{token}");

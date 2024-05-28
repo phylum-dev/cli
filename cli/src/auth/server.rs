@@ -120,9 +120,10 @@ async fn spawn_server_and_get_auth_code(
     redirect_type: AuthAction,
     code_challenge: &ChallengeCode,
     state: impl Into<String>,
-    port: u16,
 ) -> Result<(AuthorizationCode, Url)> {
-    let auth_address = format!("127.0.0.1:{port}");
+    // Bind TCP address, to get local port.
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let auth_address = listener.local_addr()?;
 
     // Get OIDC auth url.
     let state = state.into();
@@ -166,7 +167,6 @@ async fn spawn_server_and_get_auth_code(
 
     // Start server.
     debug!("Starting local login server at {:?}", auth_address);
-    let listener = TcpListener::bind(auth_address).await?;
     axum::serve(listener, router)
         .with_graceful_shutdown(async move {
             let _ = receive_shutdown.recv().await;
@@ -187,19 +187,13 @@ pub async fn handle_auth_flow(
     expiry: Option<DateTime<Utc>>,
     ignore_certs: bool,
     api_uri: &str,
-    port: u16,
 ) -> Result<RefreshToken> {
     let locksmith_settings = fetch_locksmith_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
     let state: String = thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
-    let (auth_code, callback_url) = spawn_server_and_get_auth_code(
-        &locksmith_settings,
-        auth_action,
-        &challenge_code,
-        state,
-        port,
-    )
-    .await?;
+    let (auth_code, callback_url) =
+        spawn_server_and_get_auth_code(&locksmith_settings, auth_action, &challenge_code, state)
+            .await?;
     acquire_tokens(
         &locksmith_settings,
         &callback_url,
@@ -230,14 +224,8 @@ mod test {
         let state: String =
             thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
-        spawn_server_and_get_auth_code(
-            &locksmith_settings,
-            AuthAction::Login,
-            &challenge,
-            state,
-            6662,
-        )
-        .await?;
+        spawn_server_and_get_auth_code(&locksmith_settings, AuthAction::Login, &challenge, state)
+            .await?;
 
         Ok(())
     }
@@ -251,7 +239,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri, 6663).await?;
+        let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri).await?;
 
         debug!("{:?}", result);
 
@@ -267,8 +255,7 @@ mod test {
         let (_verifier, _challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let result =
-            handle_auth_flow(AuthAction::Register, None, None, false, &api_uri, 6664).await?;
+        let result = handle_auth_flow(AuthAction::Register, None, None, false, &api_uri).await?;
 
         debug!("{:?}", result);
 
