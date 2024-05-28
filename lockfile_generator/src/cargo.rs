@@ -18,8 +18,7 @@ impl Generator for Cargo {
 
         // Ensure command was successful.
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::NonZeroExit(output.status.code(), stderr.into()));
+            return Err(Error::NonZeroExit(output));
         }
 
         // Parse metadata output.

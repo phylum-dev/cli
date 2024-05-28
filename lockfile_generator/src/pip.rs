@@ -79,9 +79,7 @@ impl Generator for Pip {
 
         // Ensure generation was successful.
         if !output.status.success() {
-            let code = output.status.code();
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::NonZeroExit(code, stderr.into()));
+            return Err(Error::NonZeroExit(output));
         }
 
         // Parse pip install report STDOUT.
@@ -122,9 +120,7 @@ fn check_pip_version(project_path: &Path) -> Result<()> {
 
     // Report errors with `pip` version check.
     if !version_output.status.success() {
-        let exit_code = version_output.status.code();
-        let version_stderr = String::from_utf8_lossy(&version_output.stderr).trim().to_owned();
-        return Err(Error::NonZeroExit(exit_code, version_stderr));
+        return Err(Error::NonZeroExit(version_output));
     }
 
     let version_stdout = String::from_utf8(version_output.stdout)?.trim().to_owned();
