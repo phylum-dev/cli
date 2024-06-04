@@ -16,8 +16,7 @@ use rand::{thread_rng, Rng};
 use reqwest::Url;
 use serde::Deserialize;
 use tokio::net::TcpListener;
-use tokio::sync::mpsc::{self, Sender};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Notify};
 
 use super::oidc::{
     acquire_tokens, build_auth_url, check_if_routable, fetch_locksmith_server_settings, AuthAction,
@@ -35,7 +34,7 @@ struct ServerState {
     /// OAuth 2 state parameter to check in the callback.
     oauth2_callback_state: String,
     /// Shutdown channel.
-    shutdown: Sender<()>,
+    shutdown: Arc<Notify>,
 }
 
 /// Auth callback query parameters.
@@ -107,9 +106,7 @@ async fn keycloak_callback_handler(
     };
 
     // Shutdown the web server.
-    if let Err(err) = state.shutdown.send(()).await {
-        error!("Failed to shutdown auth server: {err}");
-    }
+    state.shutdown.notify_one();
 
     // Return the response.
     response
@@ -157,20 +154,18 @@ async fn spawn_server_and_get_auth_code(
     }
 
     // Configure server routes.
-    let (send_shutdown, mut receive_shutdown) = mpsc::channel(4);
+    let notify = Arc::new(Notify::new());
     let state = Arc::new(ServerState {
         oauth2_callback_state: state,
         auth_code: Mutex::new(None),
-        shutdown: send_shutdown,
+        shutdown: notify.clone(),
     });
     let router = Router::new().route("/", get(keycloak_callback_handler)).with_state(state.clone());
 
     // Start server.
     debug!("Starting local login server at {:?}", auth_address);
     axum::serve(listener, router)
-        .with_graceful_shutdown(async move {
-            let _ = receive_shutdown.recv().await;
-        })
+        .with_graceful_shutdown(async move { notify.notified().await })
         .await?;
 
     let auth_code = state.auth_code.lock().await.take();
