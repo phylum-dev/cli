@@ -110,6 +110,7 @@ pub struct LocksmithServerSettings {
     pub token_endpoint: Url,
     pub userinfo_endpoint: Url,
 }
+
 /// Using config information, build the url for the keycloak login page.
 pub fn build_auth_url(
     action: AuthAction,

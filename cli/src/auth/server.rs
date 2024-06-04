@@ -1,20 +1,22 @@
-use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::{anyhow, Result};
+use axum::body::Body;
+use axum::extract::{Host, OriginalUri, Query, State};
+use axum::http::response::Response;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::routing::get;
+use axum::Router;
 use chrono::{DateTime, Utc};
-use futures::TryFutureExt;
-use hyper::{Body, Request, Response, Server};
+use log::{debug, error};
 use phylum_types::types::auth::{AuthorizationCode, RefreshToken};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use reqwest::Url;
-use routerify::ext::RequestExt;
-use routerify::{Router, RouterService};
-use tokio::sync::oneshot::{self, Sender};
-use tokio::sync::Mutex;
+use serde::Deserialize;
+use tokio::net::TcpListener;
+use tokio::sync::{Mutex, Notify};
 
 use super::oidc::{
     acquire_tokens, build_auth_url, check_if_routable, fetch_locksmith_server_settings, AuthAction,
@@ -25,77 +27,66 @@ use crate::test::open;
 
 pub const AUTH_CALLBACK_TEMPLATE: &str = include_str!("./auth_callback_template.html");
 
-// State to store the auth code
-// Not high concurrency, so using a simple mutex
-#[derive(Clone)]
-struct AuthCodeState(Arc<Mutex<Option<String>>>);
+/// Auth server state.
+struct ServerState {
+    /// Auth code return value.
+    auth_code: Mutex<Option<String>>,
+    /// OAuth 2 state parameter to check in the callback.
+    oauth2_callback_state: String,
+    /// Shutdown channel.
+    shutdown: Arc<Notify>,
+}
 
-// State to store the oauth2 state parameter so it can be set and checked in the
-// callback
-#[derive(Clone)]
-struct OAuth2CallbackState(Arc<String>);
-
-// State to store the shutdown hook state
-struct ShutdownHookState(Mutex<Option<Sender<()>>>);
+/// Auth callback query parameters.
+#[derive(Deserialize)]
+struct AuthQuery {
+    state: Option<String>,
+    code: Option<String>,
+    error: Option<String>,
+    error_description: Option<String>,
+}
 
 /// Handler to be used as the GET endpoint that keycloak redirects to.
 ///
-/// This handler tries to parse the request and extract the code.
-///
-/// If a code is present, it updates the internal state and stores the code in
-/// it
-async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Body>> {
-    log::debug!("Callback handler triggered!");
-
-    let shutdown_hook =
-        request.data::<ShutdownHookState>().expect("Shutdown hook not set as hyper state");
-
-    let auth_code: &AuthCodeState =
-        request.data::<AuthCodeState>().expect("State for holding auth code not set");
-
-    let saved_state: &OAuth2CallbackState = request
-        .data::<OAuth2CallbackState>()
-        .expect("oauth2 XSRF prevention state parameter was not set");
-
-    log::debug!("Oauth server has called redirect uri: {}", request.uri());
-
-    let query_parameters: HashMap<String, String> = request
-        .uri()
-        .query()
-        .map(|v| url::form_urlencoded::parse(v.as_bytes()).into_owned().collect())
-        .unwrap_or_default();
+/// If a code is present, it is stored in the server's state.
+async fn keycloak_callback_handler(
+    Host(host): Host,
+    OriginalUri(uri): OriginalUri,
+    State(state): State<Arc<ServerState>>,
+    Query(query): Query<AuthQuery>,
+) -> Response<Body> {
+    log::debug!("Oauth server has called redirect uri: {host}{uri}");
 
     // Check that XSRF prevention state was properly returned.
-    match query_parameters.get("state") {
+    match query.state {
+        Some(nonce) if nonce != state.oauth2_callback_state => {
+            let msg = "OAuth server returned wrong XSRF prevention state nonce";
+            error!("{msg}");
+            return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
+        },
+        Some(_) => (),
         None => {
             let msg = "Oauth server did return XSRF prevention state nonce";
-            log::error!("{}", msg);
-            return Err(anyhow!(msg));
-        },
-        Some(state) => {
-            if *state != *saved_state.0 {
-                let msg = "OAuth server returned wrong XSRF prevention state nonce";
-                log::error!("{}", msg);
-                return Err(anyhow!(msg));
-            }
+            error!("{msg}");
+            return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
         },
     };
 
-    let response_body = match query_parameters.get("code") {
+    // Construct response body.
+    let response_body = match query.code {
+        Some(code) => {
+            debug!("Authoriztion successful, acquired authorization code");
+            *state.auth_code.lock().await = Some(code);
+            AUTH_CALLBACK_TEMPLATE.replace("{{}}", "Login / Registration succeeded")
+        },
         None => {
-            log::error!(
+            error!(
                 "Encountered error during auth response\n  Error: {} :{}",
-                query_parameters.get("error").unwrap_or(&"".to_owned()),
-                query_parameters.get("error_description").unwrap_or(&"".to_owned())
+                query.error.unwrap_or_default(),
+                query.error_description.unwrap_or_default(),
             );
             AUTH_CALLBACK_TEMPLATE
                 .replace("{{}}", "Login / Registration failed, did not get authorization code")
-        },
-        Some(code) => {
-            log::debug!("Authoriztion successful, acquired authorization code");
-            let mut lock = auth_code.0.lock().await;
-            *lock = Some(code.to_owned());
-            AUTH_CALLBACK_TEMPLATE.replace("{{}}", "Login / Registration succeeded")
         },
     };
 
@@ -103,77 +94,41 @@ async fn keycloak_callback_handler(request: Request<Body>) -> Result<Response<Bo
         .status(200)
         .header("Content-Type", "text/html")
         .header("Cache-Control", "no-cache")
-        .body(response_body.into())?;
+        .body(response_body.into());
+    let response = match response {
+        Ok(response) => response,
+        Err(err) => {
+            let msg = format!("Could not build auth server response: {err}");
+            error!("{msg}");
+            return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
+        },
+    };
 
-    // Schedule shutdown of the hyper server
-    let mut shutdown_lock = shutdown_hook.0.lock().await;
-    if let Some(sender) = (*shutdown_lock).take() {
-        // Slight delay to ensure we send a browser response before the server shuts
-        // down...
-        tokio::spawn(async {
-            tokio::time::sleep(Duration::from_millis(250)).await;
-            match sender.send(()) {
-                Err(error) => log::error!("Failed to send hyper shutdown signal: {:?}", error),
-                _ => log::debug!("Sent hyper server shutdown signal"),
-            }
-        });
-    } else {
-        return Err(anyhow!("Missing shutdown hook, can't shut down."));
-    }
+    // Shutdown the web server.
+    state.shutdown.notify_one();
 
-    // Return the response
-    Ok(response)
+    // Return the response.
+    response
 }
 
-/// Spawn a server to redirect users to either login or register,
-/// and return an authorization code and the callback uri of THIS client
-/// which then need to passed on to the /token endpoint to obtain tokens
 async fn spawn_server_and_get_auth_code(
     locksmith_settings: &LocksmithServerSettings,
     redirect_type: AuthAction,
     code_challenge: &ChallengeCode,
-    state: impl AsRef<str> + 'static,
+    state: impl Into<String>,
 ) -> Result<(AuthorizationCode, Url)> {
-    // Oneshot channel to shutdown server
-    let (send_shutdown, receive_shutdown) = oneshot::channel::<()>();
+    // Bind TCP address, to get local port.
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let auth_address = listener.local_addr()?;
 
-    let auth_code_state = AuthCodeState(Arc::new(Mutex::new(None::<String>)));
-
-    // Router
-    let router = Router::builder()
-        // Place to store Auth Code once acquired
-        .data(auth_code_state.clone())
-        // Shutdown oneshot channel
-        .data(ShutdownHookState(Mutex::new(Some(send_shutdown))))
-        .data(OAuth2CallbackState(Arc::new(state.as_ref().to_owned())))
-        .get("/", keycloak_callback_handler)
-        .build()
-        .expect("Failed to build router");
-    let router_service = RouterService::new(router).expect("Failed to build router service");
-
-    // Fire up on a random port
-    // In keycloak, configure redirect_uri with a pattern of http://127.0.0.1:*
-    let addr = SocketAddr::from(([127, 0, 0, 1], 0));
-    let server = Server::bind(&addr).serve(router_service);
-    let server_address = server.local_addr();
-
-    let callback_url = Url::parse(&format!("http://{}/", &server_address))?;
-
-    log::debug!("Started local login server: {:?}", server_address);
-
-    // Set graceful shutdown hook
-    let finished_serving = server.with_graceful_shutdown(async {
-        receive_shutdown.await.ok();
-    });
-
+    // Get OIDC auth url.
+    let state = state.into();
+    let callback_url = Url::parse(&format!("http://{}/", auth_address))?;
     let authorization_url =
-        build_auth_url(redirect_type, locksmith_settings, &callback_url, code_challenge, state)?;
+        build_auth_url(redirect_type, locksmith_settings, &callback_url, code_challenge, &state)?;
+    debug!("Authorization url is {}", authorization_url);
 
-    log::debug!("Authorization url is {}", authorization_url);
-
-    // If this routable beyond the local segment / interface / host / loopback
-    // and protocol is still http we are going to throw an error because
-    // something is misconfigured.
+    // Ensure external auth urls use https, rather than http.
     let auth_host = authorization_url
         .host_str()
         .ok_or_else(|| anyhow!("Authorization server url must be absolute"))?;
@@ -183,36 +138,40 @@ async fn spawn_server_and_get_auth_code(
     let is_routable = check_if_routable(format!("{auth_host}:{port}"))?;
     if is_routable && auth_scheme == "http" {
         return Err(anyhow!(
-            "Authorization host {} is publically routable, must use https to connect.",
-            auth_host
+            "Authorization host {auth_host} is publically routable, must use https to connect."
         ));
     }
 
+    // Instruct user on how to complete login.
     eprintln!("Please use browser window to complete login process");
-    eprintln!(
-        "If browser window doesn't open, you can use the link below:\n    {authorization_url}"
-    );
+    eprintln!("If browser window doesn't open, you can use the link below:");
+    eprintln!("    {authorization_url}");
 
-    // Open browser pointing at this server's /redirect url
-    // We don't want to join on this, might not even make sense.
-    if let Err(e) = open::that(authorization_url.as_ref()) {
-        log::debug!("Could not open browser: {}", e);
-    } else {
-        log::debug!("Opened browser window");
+    // Try automatically opening the browser at the login page.
+    if let Err(err) = open::that(authorization_url.as_ref()) {
+        debug!("Could not open browser: {err}");
     }
 
-    let auth_code = finished_serving
-        .map_err(anyhow::Error::from)
-        .and_then(|_| async {
-            let mut lock = auth_code_state.0.lock().await;
-            match (*lock).take() {
-                None => Err(anyhow!("Failed to get auth code")),
-                Some(auth_code) => Ok(auth_code),
-            }
-        })
+    // Configure server routes.
+    let notify = Arc::new(Notify::new());
+    let state = Arc::new(ServerState {
+        oauth2_callback_state: state,
+        auth_code: Mutex::new(None),
+        shutdown: notify.clone(),
+    });
+    let router = Router::new().route("/", get(keycloak_callback_handler)).with_state(state.clone());
+
+    // Start server.
+    debug!("Starting local login server at {:?}", auth_address);
+    axum::serve(listener, router)
+        .with_graceful_shutdown(async move { notify.notified().await })
         .await?;
 
-    Ok((AuthorizationCode::new(auth_code), callback_url))
+    let auth_code = state.auth_code.lock().await.take();
+    match auth_code {
+        Some(auth_code) => Ok((AuthorizationCode::new(auth_code), callback_url)),
+        None => Err(anyhow!("Failed to get auth code")),
+    }
 }
 
 /// Handle the user login/registration flow.
@@ -244,12 +203,7 @@ pub async fn handle_auth_flow(
 
 #[cfg(test)]
 mod test {
-    use anyhow::Result;
-    use rand::distributions::Alphanumeric;
-    use rand::{thread_rng, Rng};
-
-    use super::{handle_auth_flow, spawn_server_and_get_auth_code};
-    use crate::auth::{AuthAction, CodeVerifier};
+    use super::*;
     use crate::test::mockito::*;
 
     #[tokio::test]
@@ -281,7 +235,7 @@ mod test {
 
         let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri).await?;
 
-        log::debug!("{:?}", result);
+        debug!("{:?}", result);
 
         Ok(())
     }
@@ -297,7 +251,7 @@ mod test {
 
         let result = handle_auth_flow(AuthAction::Register, None, None, false, &api_uri).await?;
 
-        log::debug!("{:?}", result);
+        debug!("{:?}", result);
 
         Ok(())
     }
