@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use axum::body::Body;
-use axum::extract::{Query, State};
+use axum::extract::{Host, OriginalUri, Query, State};
 use axum::http::response::Response;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -50,13 +50,12 @@ struct AuthQuery {
 ///
 /// If a code is present, it is stored in the server's state.
 async fn keycloak_callback_handler(
+    Host(host): Host,
+    OriginalUri(uri): OriginalUri,
     State(state): State<Arc<ServerState>>,
     Query(query): Query<AuthQuery>,
 ) -> Response<Body> {
-    debug!("Callback handler triggered!");
-
-    // TODO: Necessary?
-    // log::debug!("Oauth server has called redirect uri: {}", request.uri());
+    log::debug!("Oauth server has called redirect uri: {host}{uri}");
 
     // Check that XSRF prevention state was properly returned.
     match query.state {
