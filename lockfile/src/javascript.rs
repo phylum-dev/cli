@@ -312,11 +312,11 @@ impl PnpmLock {
 
         // Try and parse manifest version.
         let major = self.lockfile_version.split('.').next().and_then(|v| u8::from_str(v).ok());
-        let pre_v9 = match major {
-            Some(major) => major < 9,
-            None => {
-                return Err(anyhow!("Invalid pnpm lockfile version: '{}'", self.lockfile_version))
-            },
+        let version = match major {
+            Some(9..) => PnpmVersion::V9,
+            Some(6..) => PnpmVersion::V6,
+            Some(5..) => PnpmVersion::V5,
+            _ => return Err(anyhow!("Invalid pnpm lockfile version: '{}'", self.lockfile_version)),
         };
 
         for (key, package) in self.packages.into_iter() {
@@ -327,7 +327,7 @@ impl PnpmLock {
 
             let (name, version) = match package.name {
                 Some(name) => (name, None),
-                None => Self::parse_key(&key, pre_v9).map(|(n, v)| (n, Some(v)))?,
+                None => Self::parse_key(&key, version).map(|(n, v)| (n, Some(v)))?,
             };
 
             let package = match (tarball, git, directory) {
@@ -347,9 +347,9 @@ impl PnpmLock {
     ///
     /// This parses the combined name and version used as an index for the
     /// `packages` map.
-    fn parse_key(mut key: &str, pre_v9: bool) -> anyhow::Result<(String, String)> {
+    fn parse_key(mut key: &str, version: PnpmVersion) -> anyhow::Result<(String, String)> {
         // Strip prefix from `version < 9` lockfiles.
-        if pre_v9 {
+        if version < PnpmVersion::V9 {
             key = key
                 .strip_prefix('/')
                 .ok_or_else(|| anyhow!("Dependency '{key}' is missing '/' prefix"))?;
@@ -358,8 +358,14 @@ impl PnpmLock {
         // Remove annotations.
         let name = key.split_once('(').map(|(name, _)| name).unwrap_or(key);
 
+        // Get version separator based on PNPM version.
+        let version_separator = match version {
+            PnpmVersion::V6 | PnpmVersion::V9 => '@',
+            PnpmVersion::V5 => '/',
+        };
+
         // Separate name and version.
-        match name.rsplit_once('@') {
+        match name.rsplit_once(version_separator) {
             Some((name, version)) => Ok((name.into(), version.into())),
             None => Err(anyhow!("Dependency '{name}' is missing a version")),
         }
@@ -416,6 +422,14 @@ struct PnpmResolution {
     tarball: Option<String>,
     commit: Option<String>,
     repo: Option<String>,
+}
+
+/// PNPM lockfile versions.
+#[derive(PartialOrd, Ord, PartialEq, Eq, Copy, Clone, Debug)]
+enum PnpmVersion {
+    V5,
+    V6,
+    V9,
 }
 
 #[cfg(test)]
@@ -746,5 +760,16 @@ mod tests {
         for expected_pkg in expected_pkgs {
             assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
         }
+    }
+
+    #[test]
+    fn pnpm_v5() {
+        let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock-v5.yaml")).unwrap();
+
+        assert_eq!(pkgs, vec![Package {
+            name: "lodash".into(),
+            version: PackageVersion::FirstParty("4.17.21".into()),
+            package_type: PackageType::Npm,
+        }]);
     }
 }
