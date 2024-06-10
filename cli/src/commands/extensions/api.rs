@@ -21,7 +21,6 @@ use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfile};
-use phylum_types::types::project::ProjectSummaryResponse;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +36,8 @@ use crate::dirs;
 use crate::permissions::{self, Permission};
 use crate::types::{
     AnalysisPackageDescriptor, ListUserGroupsResponse, Package, PackageSpecifier,
-    PackageSubmitResponse, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, PurlWithOrigin,
+    PackageSubmitResponse, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry,
+    PurlWithOrigin,
 };
 
 /// Package format accepted by extension API.
@@ -329,11 +329,11 @@ async fn get_groups(op_state: Rc<RefCell<OpState>>) -> Result<ListUserGroupsResp
 async fn get_projects(
     op_state: Rc<RefCell<OpState>>,
     #[string] group: Option<String>,
-) -> Result<Vec<ProjectSummaryResponse>> {
+) -> Result<Vec<ProjectListEntry>> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    api.get_projects(group.as_deref()).await.map_err(Error::from)
+    api.get_projects(group.as_deref(), None).await.map_err(Error::from)
 }
 
 #[derive(Serialize)]

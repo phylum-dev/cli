@@ -8,7 +8,6 @@ use console::style;
 use phylum_types::types::group::{GroupMember, ListGroupMembersResponse};
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
 use phylum_types::types::package::{PackageStatus, PackageStatusExtended};
-use phylum_types::types::project::ProjectSummaryResponse;
 use prettytable::format::Alignment;
 use prettytable::{color as table_color, row, table, Attr, Cell, Row, Table};
 use serde::Serialize;
@@ -19,9 +18,9 @@ use vulnreach_types::Vulnerability;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    HistoryJob, Issue, ListUserGroupsResponse, OrgMember, OrgMembersResponse, OrgsResponse,
-    Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RiskLevel, UserGroup,
-    UserToken,
+    GetProjectResponse, HistoryJob, Issue, ListUserGroupsResponse, OrgMember, OrgMembersResponse,
+    OrgsResponse, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry,
+    RiskLevel, UserGroup, UserToken,
 };
 
 // Maximum length of email column.
@@ -161,29 +160,45 @@ impl Format for PolicyEvaluationResponseRaw {
     }
 }
 
-impl Format for Vec<ProjectSummaryResponse> {
+impl Format for Vec<ProjectListEntry> {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        // Maximum length of the name column.
+        // Maximum length of the project and group name column.
         const MAX_NAME_WIDTH: usize = 28;
 
-        let table = format_table::<fn(&ProjectSummaryResponse) -> String, _>(self, &[
-            ("Project Name", |project| print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()),
-            ("Project ID", |project| project.id.to_string()),
-            ("Repository URL", |project| project.repository_url.clone().unwrap_or_default()),
-        ]);
-        let _ = writeln!(writer, "{table}");
+        // Hide group column if no group project is present.
+        if self.iter().all(|project| project.group_name.is_none()) {
+            let table = format_table::<fn(&ProjectListEntry) -> String, _>(self, &[
+                ("Project Name", |project| {
+                    print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()
+                }),
+                ("Project ID", |project| project.id.to_string()),
+            ]);
+            let _ = writeln!(writer, "{table}");
+        } else {
+            let table = format_table::<fn(&ProjectListEntry) -> String, _>(self, &[
+                ("Group Name", |project| {
+                    let group_name = project.group_name.as_deref().unwrap_or("");
+                    print::truncate(&group_name, MAX_NAME_WIDTH).into_owned()
+                }),
+                ("Project Name", |project| {
+                    print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()
+                }),
+                ("Project ID", |project| project.id.to_string()),
+            ]);
+            let _ = writeln!(writer, "{table}");
+        }
     }
 }
 
-impl Format for ProjectSummaryResponse {
+impl Format for GetProjectResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
         let _ = writeln!(writer, "{}: {}", style("ID").blue(), self.id);
         let _ = writeln!(writer, "{}: {}", style("Name").blue(), self.name);
-        if let Some(group_name) = &self.group_name {
-            let _ = writeln!(writer, "{}: {}", style("Group").blue(), group_name);
-        }
         if let Some(repository_url) = &self.repository_url {
             let _ = writeln!(writer, "{}: {}", style("Repository URL").blue(), repository_url);
+        }
+        if let Some(default_label) = &self.default_label {
+            let _ = writeln!(writer, "{}: {}", style("Default Label").blue(), default_label);
         }
     }
 }

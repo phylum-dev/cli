@@ -97,25 +97,18 @@ pub fn get_group_project_history(
     Ok(url)
 }
 
-/// GET /data/projects/overview
-pub fn get_project_summary(api_uri: &str) -> Result<Url, BaseUriError> {
-    Ok(get_api_path(api_uri)?.join("data/projects/overview")?)
+/// GET /projects
+pub fn projects(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_api_path(api_uri)?.join("projects")?)
 }
 
 /// POST /data/projects
-pub fn post_create_project(api_uri: &str) -> Result<Url, BaseUriError> {
+pub fn create_project(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("data/projects")?)
 }
 
-/// PUT /data/projects/<project_id>
-pub fn update_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
-    let mut url = get_api_path(api_uri)?;
-    url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", project_id]);
-    Ok(url)
-}
-
-/// DELETE /data/projects/<project_id>
-pub fn delete_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+/// GET/PUT/DELETE /data/projects/<project_id>
+pub fn project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
     url.path_segments_mut().unwrap().pop_if_empty().extend(["data", "projects", project_id]);
     Ok(url)
@@ -135,13 +128,6 @@ pub(crate) fn group_create(api_uri: &str) -> Result<Url, BaseUriError> {
 pub(crate) fn group_delete(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
     let mut url = get_api_path(api_uri)?;
     url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group]);
-    Ok(url)
-}
-
-/// GET /groups/<groupName>/projects
-pub fn group_project_summary(api_uri: &str, group: &str) -> Result<Url, BaseUriError> {
-    let mut url = get_api_path(api_uri)?;
-    url.path_segments_mut().unwrap().pop_if_empty().extend(["groups", group, "projects"]);
     Ok(url)
 }
 

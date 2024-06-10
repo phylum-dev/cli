@@ -14,6 +14,9 @@ Usage: phylum project list [OPTIONS]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to list projects for
 
+`--no-group`
+&emsp; Exclude all group projects from the output
+
 `-o`, `--org` `<ORG>`
 &emsp; Phylum organization
 

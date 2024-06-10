@@ -188,6 +188,10 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("repository-url")
                             .value_name("REPOSITORY_URL")
                             .help("New repository URL"),
+                        Arg::new("default-label")
+                            .short('l')
+                            .long("default-label")
+                            .help("Default project label"),
                     ]),
                 )
                 .subcommand(
@@ -202,6 +206,11 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("group")
                             .value_name("GROUP_NAME")
                             .help("Group to list projects for"),
+                        Arg::new("no-group")
+                            .action(ArgAction::SetTrue)
+                            .long("no-group")
+                            .help("Exclude all group projects from the output")
+                            .conflicts_with("group"),
                     ]),
                 )
                 .subcommand(
