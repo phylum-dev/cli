@@ -186,6 +186,11 @@ pub async fn update_project(
         None => prompt_project(api, group_name).await?,
     };
 
+    // Handle default label separately, since it is a different endpoint.
+    if let Some(default_label) = matches.get_one::<String>("default-label") {
+        return update_default_label(api, &project_id, default_label).await;
+    }
+
     // Get existing project information from the API.
     let project = api.get_project(&project_id, group_name.as_deref()).await?;
 
@@ -241,6 +246,20 @@ pub async fn update_project(
     print_user_success!("{}", success_msg);
 
     Ok(())
+}
+
+/// Update the project's default label.
+pub async fn update_default_label(
+    api: &PhylumApi,
+    project_id: &str,
+    label: impl Into<String>,
+) -> StdResult<(), PhylumApiError> {
+    // Get the current project preferences.
+    let mut preferences = api.get_project_preferences(project_id).await?;
+
+    // Store updated preferences.
+    preferences.default_label = Some(label.into());
+    api.set_project_preferences(project_id, preferences).await
 }
 
 /// Prompt for optional text input.

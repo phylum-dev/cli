@@ -239,7 +239,7 @@ pub struct VulnDetails {
 }
 
 /// The user-specified reason for an issue to be ignored.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum IgnoredReason {
     /// It is not ignored.
@@ -424,4 +424,57 @@ pub struct UserGroup {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct ListUserGroupsResponse {
     pub groups: Vec<UserGroup>,
+}
+
+/// Project preferences API interface.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectPreferences {
+    pub default_label: Option<String>,
+    #[serde(default)]
+    pub ignored_issues: Vec<IgnoredIssue>,
+    #[serde(default)]
+    pub ignored_packages: Vec<IgnoredPackage>,
+    pub policy: Option<String>,
+    pub continuous_monitoring: ContinuousMonitoring,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct IgnoredIssue {
+    pub id: String,
+    pub tag: String,
+    pub reason: IgnoredReason,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct IgnoredPackage {
+    pub purl: String,
+    pub reason: String,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct ContinuousMonitoring {
+    enabled: bool,
+    #[serde(default)]
+    webhooks: Vec<Webhook>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct Webhook {
+    #[serde(rename = "type")]
+    pub webhook_type: WebhookType,
+    pub url: String,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WebhookType {
+    Slack,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetProjectPreferencesResponse {
+    pub project_id: String,
+    pub preferences: ProjectPreferences,
 }
