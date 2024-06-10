@@ -20,6 +20,9 @@ Usage: phylum project update [OPTIONS]
 `-r`, `--repository-url` `<REPOSITORY_URL>`
 &emsp; New repository URL
 
+`-l`, `--default-label` `<default-label>`
+&emsp; Default project label
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
