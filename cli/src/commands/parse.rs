@@ -421,11 +421,19 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/openjdk".into()))?;
     permissions::add_exception(
         &mut birdcage,
+        Exception::ExecuteAndRead("/usr/local/opt/openjdk".into()),
+    )?;
+    permissions::add_exception(
+        &mut birdcage,
         Exception::ExecuteAndRead("/opt/homebrew/Cellar/maven".into()),
     )?;
     permissions::add_exception(
         &mut birdcage,
         Exception::Read("/opt/homebrew/Cellar/openjdk".into()),
+    )?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::ExecuteAndRead("/opt/homebrew/opt/openjdk".into()),
     )?;
     // Gradle.
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
