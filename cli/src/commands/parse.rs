@@ -429,6 +429,10 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     )?;
     permissions::add_exception(
         &mut birdcage,
+        Exception::ExecuteAndRead("/usr/share/maven".into()),
+    )?;
+    permissions::add_exception(
+        &mut birdcage,
         Exception::Read("/opt/homebrew/Cellar/openjdk".into()),
     )?;
     permissions::add_exception(
