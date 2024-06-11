@@ -412,13 +412,16 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     // Maven.
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".m2")))?;
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/var/folders".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/opt/maven".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/opt/maven".into()))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/maven".into()))?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::ExecuteAndRead("/usr/local/Cellar/maven".into()),
+    )?;
     permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/openjdk".into()))?;
     permissions::add_exception(
         &mut birdcage,
-        Exception::Read("/opt/homebrew/Cellar/maven".into()),
+        Exception::ExecuteAndRead("/opt/homebrew/Cellar/maven".into()),
     )?;
     permissions::add_exception(
         &mut birdcage,
