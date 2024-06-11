@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - PNPM v5 lockfile support
 
+### Fixed
+
+- Sandbox exceptions for maven when installed via Homebrew
+
 ## 6.5.0 - 2024-06-04
 
 ### Changed
