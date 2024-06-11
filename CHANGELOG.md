@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- Sandbox exceptions for `maven` when installed via `apt`
+
 ## 6.6.0 - 2024-06-11
 
 ### Added
