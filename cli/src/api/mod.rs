@@ -133,7 +133,7 @@ impl PhylumApi {
 
         let client = Client::builder()
             .user_agent(USER_AGENT.as_str())
-            .timeout(Duration::from_secs(request_timeout.unwrap_or(std::u64::MAX)))
+            .timeout(Duration::from_secs(request_timeout.unwrap_or(u64::MAX)))
             .danger_accept_invalid_certs(ignore_certs)
             .default_headers(headers)
             .build()?;
