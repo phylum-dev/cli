@@ -442,6 +442,7 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
         &mut birdcage,
         Exception::ExecuteAndRead("/etc/alternatives".into()),
     )?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/etc/maven".into()))?;
     for jdk_path in jdk_paths()? {
         permissions::add_exception(&mut birdcage, Exception::Read(jdk_path))?;
     }
