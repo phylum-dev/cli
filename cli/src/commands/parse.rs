@@ -413,7 +413,6 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".m2")))?;
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/var/folders".into()))?;
     permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/opt/maven".into()))?;
-    permissions::add_exception(&mut birdcage, Exception::Read("/etc/java-openjdk".into()))?;
     permissions::add_exception(
         &mut birdcage,
         Exception::ExecuteAndRead("/usr/local/Cellar/maven".into()),
@@ -439,13 +438,17 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
         &mut birdcage,
         Exception::ExecuteAndRead("/opt/homebrew/opt/openjdk".into()),
     )?;
+    permissions::add_exception(
+        &mut birdcage,
+        Exception::ExecuteAndRead("/etc/alternatives".into()),
+    )?;
+    for jdk_path in jdk_paths()? {
+        permissions::add_exception(&mut birdcage, Exception::Read(jdk_path))?;
+    }
     // Gradle.
     permissions::add_exception(&mut birdcage, Exception::WriteAndRead(home.join(".gradle")))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/opt/gradle".into()))?;
-    permissions::add_exception(
-        &mut birdcage,
-        Exception::Read("/usr/share/java/gradle/lib".into()),
-    )?;
+    permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/share/java".into()))?;
     permissions::add_exception(&mut birdcage, Exception::Read("/usr/local/Cellar/gradle".into()))?;
     permissions::add_exception(
         &mut birdcage,
@@ -464,6 +467,18 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     permissions::add_exception(&mut birdcage, Exception::Read(home.join(".local/lib")))?;
 
     Ok(birdcage)
+}
+
+/// Get all JDK paths in `/etc`.
+fn jdk_paths() -> Result<Vec<PathBuf>> {
+    let paths: Vec<_> = fs::read_dir("/etc")?
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            (path.starts_with("java") && path.ends_with("openjdk")).then_some(path)
+        })
+        .collect();
+    Ok(paths)
 }
 
 #[cfg(test)]
