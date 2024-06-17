@@ -109,7 +109,7 @@ const requiredPaths: string[] = [];
 
 // Abort if it doesn't work with all paths allowed.
 if (!test(["/"])) {
-  let msg =
+  const msg =
     "Executable failed with full permissions, ensure its exit code is 0 on success";
   console.error(`${red(msg)}`);
   Deno.exit(444);
