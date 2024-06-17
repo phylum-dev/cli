@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Sandbox exceptions for `maven` when installed via `apt`
+- Log output leaking into `effective-pom.xml` during lockfile generation
 
 ## 6.6.0 - 2024-06-11
 
