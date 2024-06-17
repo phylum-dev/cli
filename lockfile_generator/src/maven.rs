@@ -18,7 +18,11 @@ impl Generator for Maven {
     fn command(&self, manifest_path: &Path) -> Command {
         let lockfile_path = self.lockfile_path(manifest_path).unwrap();
         let mut command = Command::new("mvn");
-        command.args(["help:effective-pom", &format!("-Doutput={}", lockfile_path.display())]);
+        command.args([
+            "-q",
+            "help:effective-pom",
+            &format!("-Doutput={}", lockfile_path.display()),
+        ]);
         command
     }
 
