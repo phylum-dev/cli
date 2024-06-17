@@ -179,7 +179,7 @@ impl Parse for YarnLock {
             .flat_map(|(_k, v)| v.as_mapping())
         {
             let resolution = package
-                .get(&"resolution".to_string())
+                .get("resolution".to_string())
                 .and_then(YamlValue::as_str)
                 .filter(|s| !s.is_empty())
                 .ok_or_else(|| anyhow!("Failed to parse yarn resolution field"))?;
@@ -227,7 +227,7 @@ impl Parse for YarnLock {
                 PackageVersion::Path(None)
             } else if resolver.starts_with("npm:") {
                 let version = package
-                    .get(&"version".to_string())
+                    .get("version".to_string())
                     .and_then(YamlValue::as_str)
                     .ok_or_else(|| anyhow!("Failed to parse yarn version for '{}'", resolution))?;
 
