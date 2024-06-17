@@ -52,14 +52,14 @@ const check_read = Deno.args.includes("--read");
 
 // Ensure at least one type of permission is specified.
 if (!check_write && !check_read) {
-  console.error("Expected at least one of `--read`, `--write`");
+  console.error(`${red("Expected at least one of `--read`, `--write`")}`);
   Deno.exit(111);
 }
 
 // Ensure test executable was passed.
 const test_bin_path = getArgOption("--bin");
 if (!test_bin_path) {
-  console.error("Missing required `--bin <PATH>`");
+  console.error(`${red("Missing required option `--bin <PATH>`")}`);
   Deno.exit(222);
 }
 
@@ -68,7 +68,7 @@ let test_bin: string;
 try {
   test_bin = await Deno.realPath(test_bin_path);
 } catch (_e) {
-  console.error(`Invalid executable path: ${test_bin_path}`);
+  console.error(`${red("Invalid executable path:" + test_bin_path)}`);
   Deno.exit(333);
 }
 
@@ -107,6 +107,14 @@ for (let i = 0; true; i++) {
 // Required sandboxing exceptions.
 const requiredPaths: string[] = [];
 
+// Abort if it doesn't work with all paths allowed.
+if (!test(["/"])) {
+  let msg =
+    "Executable failed with full permissions, ensure its exit code is 0 on success";
+  console.error(`${red(msg)}`);
+  Deno.exit(444);
+}
+
 // Run analysis and report results.
 await checkPath([], "/");
 console.log("\nRequired paths: [");
@@ -133,26 +141,32 @@ async function checkPath(allowed: string[], path: string) {
   // Get all files and directories in this folder.
   const directories = [];
   const files = [];
-  for await (const entry of Deno.readDir(path)) {
-    if (entry.isDirectory) {
-      directories.push(path + entry.name);
-    } else if (entry.isFile) {
-      files.push(path + entry.name);
-    } else if (entry.isSymlink) {
-      let symlink_entry;
-      try {
-        symlink_entry = await Deno.stat(path + entry.name);
-      } catch (_e) {
-        // Ignore dead symlinks.
-        continue;
-      }
-
-      if (symlink_entry.isDirectory) {
+  try {
+    for await (const entry of Deno.readDir(path)) {
+      if (entry.isDirectory) {
         directories.push(path + entry.name);
-      } else if (symlink_entry.isFile) {
+      } else if (entry.isFile) {
         files.push(path + entry.name);
+      } else if (entry.isSymlink) {
+        let symlink_entry;
+        try {
+          symlink_entry = await Deno.stat(path + entry.name);
+        } catch (_e) {
+          // Ignore dead symlinks.
+          continue;
+        }
+
+        if (symlink_entry.isDirectory) {
+          directories.push(path + entry.name);
+        } else if (symlink_entry.isFile) {
+          files.push(path + entry.name);
+        }
       }
     }
+  } catch (_e) {
+    console.log(`${red(`${path}: Required directory due to access error`)}`);
+    requiredPaths.push(path);
+    return;
   }
 
   // Add path if it doesn't work with all directories and files.
