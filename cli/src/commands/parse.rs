@@ -476,7 +476,7 @@ fn jdk_paths() -> Result<Vec<PathBuf>> {
         .flatten()
         .filter_map(|entry| {
             let path = entry.path();
-            (path.starts_with("java") && path.ends_with("openjdk")).then_some(path)
+            path.to_str()?.ends_with("openjdk").then_some(path)
         })
         .collect();
     Ok(paths)
