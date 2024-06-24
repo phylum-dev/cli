@@ -1040,6 +1040,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashmap"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "804c8821570c3f8b70230c2ba75ffa5c0f9a4189b9a432b6656c536712acae28"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+ "hashbrown",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4313,7 +4327,7 @@ dependencies = [
  "cidr",
  "clap",
  "console",
- "dashmap",
+ "dashmap 6.0.1",
  "deno_ast",
  "deno_core",
  "deno_runtime",
@@ -5829,7 +5843,7 @@ checksum = "83406221c501860fce9c27444f44125eafe9e598b8b81be7563d7036784cd05c"
 dependencies = [
  "ahash",
  "anyhow",
- "dashmap",
+ "dashmap 5.5.3",
  "once_cell",
  "regex",
  "serde",
@@ -6048,7 +6062,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69c87599f4a10987fe2687967e5448858b458f2924faa62f044acd56f4e3ffda"
 dependencies = [
  "base64 0.21.7",
- "dashmap",
+ "dashmap 5.5.3",
  "indexmap",
  "once_cell",
  "serde",
