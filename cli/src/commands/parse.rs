@@ -456,7 +456,7 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
         Exception::Read("/opt/homebrew/Cellar/gradle".into()),
     )?;
     // Pnpm.
-    permissions::add_exception(&mut birdcage, Exception::Read("/tmp".into()))?;
+    permissions::add_exception(&mut birdcage, Exception::WriteAndRead("/tmp".into()))?;
     // Yarn.
     permissions::add_exception(&mut birdcage, Exception::Read(home.join("./yarn")))?;
     // Python.
