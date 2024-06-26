@@ -510,6 +510,7 @@ mod tests {
             ("sample.csproj", LockfileFormat::Msbuild),
             ("packages.lock.json", LockfileFormat::NugetLock),
             ("gradle.lockfile", LockfileFormat::Gradle),
+            ("default.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),
             ("requirements.txt", LockfileFormat::Pip),
             ("Pipfile.lock", LockfileFormat::Pipenv),
