@@ -25,7 +25,7 @@ and which tools must be installed to facilitate automatic lockfile generation:
 | `poetry`      | `pyproject.toml` | [`poetry`][poetry]          |
 | `gem`         | `Gemfile`        | `bundle` (from [Bundler][]) |
 | `mvn`         | `pom.xml`        | `mvn` (from [Maven][])      |
-| `gradle`      | `build.gradle` <br/> `build.gradle.kts`   | [`gradle`][gradle]          |
+| `gradle`      | `build.gradle` <br/> `build.gradle.kts`   | [`gradle`][gradle] version 7.0.0+ |
 | `go`          | `go.mod`         | [`go`][go]                  |
 | `cargo`       | `Cargo.toml`     | [`cargo`][cargo]            |
 | `nugetlock`   | `*.csproj`       | [`dotnet`][dotnet]          |

@@ -31,7 +31,9 @@ impl Parse for GradleLock {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name() == Some(OsStr::new("gradle.lockfile"))
+        path.file_name()
+            .and_then(|f| f.to_str())
+            .map_or(false, |file_name| file_name.ends_with(".lockfile"))
     }
 
     fn is_path_manifest(&self, path: &Path) -> bool {
