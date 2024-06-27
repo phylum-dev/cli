@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 6.6.4 - 2024-06-27
+
 ### Fixed
 
 - Gradle 5 lockfiles not overriding manifest files in the same project
