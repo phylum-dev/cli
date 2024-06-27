@@ -68,9 +68,9 @@ will automatically switch to `go.sum` if available. To override this, simply spe
 analyze -t go go.mod`)
 
 Second, without explicitly specifying dependency files, manifest files will only be used if there is no corresponding
-lockfile in the same directory or any parent directory. For example, a single `Cargo.lock` file at the root of the
-repository will be used instead of looking at any `Cargo.toml` files anywhere in the repository. To avoid this, run
-`phylum init` and specify all files that you want analyzed.
+lockfile. For example, a single `Cargo.lock` file at the root of the repository will be used instead of looking at any
+`Cargo.toml` files anywhere in the repository. To avoid this, run `phylum init` and specify all files that you want
+analyzed.
 
 ## Lockifests
 
