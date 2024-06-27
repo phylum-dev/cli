@@ -377,7 +377,16 @@ pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)
         // the manifest.
         let mut lockfile_dirs =
             depfiles.lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
-        remove |= lockfile_dirs.any(|(lockfile_dir, lockfile_format)| {
+        remove |= lockfile_dirs.any(|(mut lockfile_dir, lockfile_format)| {
+            // Gradle 5 lockfiles are in a subdirectory, so we truncate these directories to
+            // get the effective directory these lockfiles were created for.
+            let dir_str = lockfile_dir.to_string_lossy();
+            if lockfile_format == &LockfileFormat::Gradle
+                && dir_str.ends_with("/gradle/dependency-locks")
+            {
+                lockfile_dir = lockfile_dir.parent().unwrap().parent().unwrap();
+            }
+
             lockfile_format.parser().is_path_manifest(manifest_path)
                 && manifest_path.starts_with(lockfile_dir)
         });
