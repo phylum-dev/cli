@@ -362,7 +362,7 @@ impl DepFiles {
 ///
 /// This will filter out manifests if there is a manifest or lockfile in a
 /// directory above them. To get all lockfiles and manifests, see
-/// [`LockableFiles::find_at`].
+/// [`DepFiles::find_at`].
 ///
 /// Paths excluded by gitignore are automatically ignored.
 pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)> {
@@ -378,8 +378,9 @@ pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)
         let mut lockfile_dirs =
             depfiles.lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(mut lockfile_dir, lockfile_format)| {
-            // Gradle 5 lockfiles are in a subdirectory, so we truncate these directories to
-            // get the effective directory these lockfiles were created for.
+            // Legacy Gradle (before v7) lockfiles are in a subdirectory,
+            // so we truncate these directories to get the effective
+            // directory these lockfiles were created for.
             let dir_str = lockfile_dir.to_string_lossy();
             if lockfile_format == &LockfileFormat::Gradle
                 && dir_str.ends_with("/gradle/dependency-locks")
