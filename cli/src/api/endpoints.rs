@@ -121,6 +121,13 @@ pub fn delete_project(api_uri: &str, project_id: &str) -> Result<Url, BaseUriErr
     Ok(url)
 }
 
+/// GET/PUT /preferences/project/<project_id>
+pub fn project_preferences(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["preferences", "project", project_id]);
+    Ok(url)
+}
+
 /// GET /groups
 pub(crate) fn group_list(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join("groups")?)
