@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -78,7 +78,7 @@ jobs:
   oldstable:
     strategy:
       matrix:
-        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -103,7 +103,7 @@ jobs:
     if: github.secret_source == 'Actions'
     strategy:
       matrix:
-        os: [ubuntu-20.04, [self-hosted, macos, arm64]]
+        os: [ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
