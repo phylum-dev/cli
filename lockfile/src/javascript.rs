@@ -12,6 +12,7 @@ use lockfile_generator::pnpm::Pnpm as PnpmGenerator;
 use lockfile_generator::yarn::Yarn as YarnGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
+use log::debug;
 use nom::error::convert_error;
 use nom::Finish;
 use phylum_types::types::package::PackageType;
@@ -67,19 +68,15 @@ impl Parse for PackageLock {
                     None => continue,
                 };
 
-                // Ignore bundled dependencies.
-                if keys.get("inBundle").is_some() {
-                    continue;
-                }
-
-                // Ignore extraneous dependencies.
-                if keys.get("extraneous").is_some() {
-                    continue;
-                }
-
                 // Get dependency type.
-                let resolved = get_field(keys, "resolved")
-                    .ok_or_else(|| anyhow!("Dependency '{name}' is missing \"resolved\" key"))?;
+                let resolved = match get_field(keys, "resolved") {
+                    Some(resolved) => resolved,
+                    // Ignore packages without clear resolution details.
+                    None => {
+                        debug!("ignoring package without `resolved` field: {name}");
+                        continue;
+                    },
+                };
 
                 // Handle aliased dependencies.
                 let name = get_field(keys, "name").unwrap_or_else(|| name.into());
