@@ -4331,7 +4331,7 @@ dependencies = [
 
 [[package]]
 name = "phylum-cli"
-version = "6.6.4"
+version = "6.6.5"
 dependencies = [
  "anyhow",
  "assert_cmd",
