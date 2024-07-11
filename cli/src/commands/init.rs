@@ -7,6 +7,7 @@ use anyhow::Context;
 use clap::parser::ValuesRef;
 use clap::ArgMatches;
 use dialoguer::{Confirm, FuzzySelect, Input, MultiSelect};
+use git2::Repository;
 use phylum_lockfile::LockfileFormat;
 use phylum_project::{DepfileConfig, ProjectConfig, PROJ_CONF_FILE};
 use reqwest::StatusCode;
@@ -166,6 +167,18 @@ pub fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
 async fn prompt_repository_url() -> anyhow::Result<Option<String>> {
     println!();
 
+    // Suggest using the automatically inferred URL.
+    if let Some(repository_url) = git_repository_url() {
+        let use_inferred = Confirm::new()
+            .with_prompt(format!("Use {repository_url:?} as repository URL?"))
+            .default(true)
+            .interact()?;
+
+        if use_inferred {
+            return Ok(Some(repository_url));
+        }
+    }
+
     // Prompt for selection of one group.
     let prompt = "[ENTER] Confirm\nRepository URL [default: None]";
     let input: String = Input::new().with_prompt(prompt).allow_empty(true).interact()?;
@@ -310,4 +323,12 @@ fn prompt_depfile_type(depfile: &str, mut formats: Vec<&str>) -> io::Result<Stri
     println!();
 
     Ok(formats[index].to_owned())
+}
+
+/// Get repository URL from current directory's git info.
+fn git_repository_url() -> Option<String> {
+    let repository = Repository::open(".").ok()?;
+    let remote = repository.find_remote("origin").ok()?;
+    let url = remote.url()?;
+    url.starts_with("http").then(|| url.into())
 }
