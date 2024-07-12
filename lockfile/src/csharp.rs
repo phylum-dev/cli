@@ -97,7 +97,7 @@ pub struct PackageReference {
     #[serde(alias = "@Include", default)]
     pub name: String,
 
-    #[serde(alias = "@Version", alias = "@version", default)]
+    #[serde(alias = "@Version", alias = "@version", alias = "Version", default)]
     pub version: String,
 }
 
@@ -253,12 +253,22 @@ mod tests {
         let expected_pkgs = [
             Package {
                 name: "Microsoft.NETFramework.ReferenceAssemblies".into(),
+                version: PackageVersion::FirstParty("1.0.0".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "System.ValueTuple".into(),
                 version: PackageVersion::FirstParty("4.5.0".into()),
                 package_type: PackageType::Nuget,
             },
             Package {
                 name: "Microsoft.NETCore.UniversalWindowsPlatform".into(),
                 version: PackageVersion::FirstParty("6.2.10".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "System.Collections.Immutable".into(),
+                version: PackageVersion::FirstParty("1.5.0".into()),
                 package_type: PackageType::Nuget,
             },
         ];
