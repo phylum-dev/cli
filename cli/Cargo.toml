@@ -34,7 +34,7 @@ deno_runtime = { version = "0.159.0" }
 dialoguer = { version = "0.10.0", features = ["fuzzy-select"] }
 env_logger = "0.10.0"
 futures = "^0.3"
-git2 = "0.19.0"
+git2 = { version = "0.19.0", default-features = false }
 git-version = "0.3.5"
 home = "0.5.3"
 ignore = { version = "0.4.20", optional = true }
