@@ -97,7 +97,7 @@ pub struct PackageReference {
     #[serde(alias = "@Include", default)]
     pub name: String,
 
-    #[serde(alias = "@Version", alias = "@version", default)]
+    #[serde(alias = "@Version", alias = "@version", alias = "Version", default)]
     pub version: String,
 }
 
@@ -248,14 +248,34 @@ mod tests {
     #[test]
     fn lock_parse_csproj() {
         let pkgs = CSProj.parse(include_str!("../../tests/fixtures/sample.csproj")).unwrap();
+        assert_eq!(pkgs.len(), 6);
 
-        assert_eq!(pkgs.len(), 5);
-        assert_eq!(pkgs[0].name, "Microsoft.NETFramework.ReferenceAssemblies");
-        assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.0.0".into()));
+        let expected_pkgs = [
+            Package {
+                name: "Microsoft.NETFramework.ReferenceAssemblies".into(),
+                version: PackageVersion::FirstParty("1.0.0".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "System.ValueTuple".into(),
+                version: PackageVersion::FirstParty("4.5.0".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "Microsoft.NETCore.UniversalWindowsPlatform".into(),
+                version: PackageVersion::FirstParty("6.2.10".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "System.Collections.Immutable".into(),
+                version: PackageVersion::FirstParty("1.5.0".into()),
+                package_type: PackageType::Nuget,
+            },
+        ];
 
-        let last = pkgs.last().unwrap();
-        assert_eq!(last.name, "System.ValueTuple");
-        assert_eq!(last.version, PackageVersion::FirstParty("4.5.0".into()));
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg));
+        }
     }
 
     #[test]
