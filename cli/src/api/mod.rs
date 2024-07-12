@@ -29,9 +29,10 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    AnalysisPackageDescriptor, HistoryJob, ListUserGroupsResponse, PackageSpecifier,
-    PackageSubmitResponse, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, RevokeTokenRequest, SubmitPackageRequest, UserToken,
+    AnalysisPackageDescriptor, GetProjectPreferencesResponse, HistoryJob, ListUserGroupsResponse,
+    PackageSpecifier, PackageSubmitResponse, PingResponse, PolicyEvaluationRequest,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectPreferences, RevokeTokenRequest,
+    SubmitPackageRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -290,7 +291,7 @@ impl PhylumApi {
         let _: IgnoredAny = self
             .delete(endpoints::delete_project(
                 &self.config.connection.uri,
-                &format!("{project_id}"),
+                &project_id.to_string(),
             )?)
             .await?;
         Ok(())
@@ -304,6 +305,24 @@ impl PhylumApi {
         };
 
         self.get(uri).await
+    }
+
+    /// Get a project's preferences.
+    pub async fn get_project_preferences(&self, project_id: &str) -> Result<ProjectPreferences> {
+        let uri = endpoints::project_preferences(&self.config.connection.uri, project_id)?;
+        let response: GetProjectPreferencesResponse = self.get(uri).await?;
+        Ok(response.preferences)
+    }
+
+    /// Change a project's preferences.
+    pub async fn set_project_preferences(
+        &self,
+        project_id: &str,
+        preferences: ProjectPreferences,
+    ) -> Result<()> {
+        let uri = endpoints::project_preferences(&self.config.connection.uri, project_id)?;
+        let _: IgnoredAny = self.put(uri, preferences).await?;
+        Ok(())
     }
 
     /// Submit a new request to the system
