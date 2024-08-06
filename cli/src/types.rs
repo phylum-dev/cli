@@ -416,9 +416,16 @@ pub struct PurlWithOrigin {
 pub struct UserGroup {
     pub created_at: DateTime<Utc>,
     pub last_modified: DateTime<Utc>,
+    pub group_id: Option<String>,
     pub group_name: String,
-    #[serde(default)]
-    pub is_admin: bool,
+    pub role: GroupRole,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GroupRole {
+    Member,
+    Admin,
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
