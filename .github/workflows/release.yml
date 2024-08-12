@@ -32,7 +32,7 @@ jobs:
         run: cargo run --package xtask gencomp
 
       - name: Upload shell completions
-        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: shell-completions
           path: ./target/completions/
@@ -78,7 +78,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: phylum-${{ matrix.target }}
           path: ./target/${{ matrix.target }}/release/phylum
@@ -118,7 +118,7 @@ jobs:
           done
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: release-archives
           path: phylum-*.zip
@@ -148,7 +148,7 @@ jobs:
             fs.writeFileSync("RELEASE-NOTES.txt", releaseNotes);
 
       - name: Upload release notes
-        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: RELEASE-NOTES.txt
           path: RELEASE-NOTES.txt
