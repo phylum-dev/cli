@@ -24,3 +24,10 @@ Usage: phylum org member remove [OPTIONS] <USER>...
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# Remove user `demo@phylum.io` from the `sample` organization
+$ phylum org -o sample member remove demo@phylum.io
+```

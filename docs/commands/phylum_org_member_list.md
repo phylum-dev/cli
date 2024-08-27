@@ -22,3 +22,10 @@ Usage: phylum org member list [OPTIONS]
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# List all organization members for the `sample` organization
+$ phylum org -o sample member list
+```

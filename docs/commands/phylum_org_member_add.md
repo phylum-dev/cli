@@ -24,3 +24,10 @@ Usage: phylum org member add [OPTIONS] <USER>...
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# Add user `demo@phylum.io` to the `sample` organization
+$ phylum org -o sample member add demo@phylum.io
+```

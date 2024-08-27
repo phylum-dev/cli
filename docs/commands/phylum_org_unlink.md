@@ -19,3 +19,10 @@ Usage: phylum org unlink [OPTIONS]
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# Clear the default organization used by the CLI
+$ phylum org unlink
+```

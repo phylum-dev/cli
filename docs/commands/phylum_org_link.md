@@ -21,3 +21,10 @@ Usage: phylum org link [OPTIONS] <ORG>
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# Set `sample` as the default organization for all future operations
+$ phylum org link sample
+```
