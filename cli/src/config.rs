@@ -56,17 +56,23 @@ pub struct Config {
     ignore_certs_cli: bool,
     #[serde(deserialize_with = "default_option_bool")]
     ignore_certs: bool,
+    #[serde(rename = "organization")]
+    org: Option<String>,
+    #[serde(skip)]
+    org_cli: Option<String>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             connection: ConnectionInfo { uri: "https://api.phylum.io".into() },
-            auth_info: AuthInfo::default(),
-            ignore_certs_cli: false,
-            ignore_certs: false,
-            last_update: None,
-            path: None,
+            ignore_certs_cli: Default::default(),
+            ignore_certs: Default::default(),
+            last_update: Default::default(),
+            auth_info: Default::default(),
+            org_cli: Default::default(),
+            path: Default::default(),
+            org: Default::default(),
         }
     }
 }
@@ -80,6 +86,16 @@ impl Config {
     /// Set the CLI `--no-check-certificate` override value.
     pub fn set_ignore_certs_cli(&mut self, ignore_certs_cli: bool) {
         self.ignore_certs_cli = ignore_certs_cli;
+    }
+
+    /// Check target organization.
+    pub fn org(&self) -> Option<&String> {
+        self.org_cli.as_ref().or(self.org.as_ref())
+    }
+
+    /// Update the config organization.
+    pub fn set_org(&mut self, org: Option<String>) {
+        self.org = org;
     }
 
     /// Write updates to the configuration file.
@@ -117,6 +133,9 @@ pub fn load_config(matches: &ArgMatches) -> Result<Config> {
     log::debug!("Reading config from {}", config_path.to_string_lossy());
     let mut config: Config = read_configuration(&config_path)
         .with_context(|| anyhow!("Failed to read configuration at {:?}", config_path))?;
+
+    // Store CLI org separately, to allow overriding without ever writing it.
+    config.org_cli = matches.get_one::<String>("org").cloned();
 
     config.path = Some(config_path);
 
@@ -278,10 +297,7 @@ mod tests {
                 offline_access: Some(RefreshToken::new(CONFIG_TOKEN)),
                 env_token: Some(RefreshToken::new(ENV_TOKEN)),
             },
-            ignore_certs_cli: false,
-            ignore_certs: false,
-            last_update: None,
-            path: None,
+            ..Config::default()
         }
     }
 

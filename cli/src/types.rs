@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
@@ -136,7 +136,7 @@ pub struct RevokeTokenRequest<'a> {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "status", content = "data")]
 pub enum PackageSubmitResponse {
-    AlreadyProcessed(Package),
+    AlreadyProcessed(Box<Package>),
     AlreadySubmitted,
     New,
 }
@@ -427,8 +427,49 @@ pub enum GroupRole {
     Member,
     Admin,
 }
+pub type OrgRole = GroupRole;
+
+impl Display for GroupRole {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Member => write!(f, "Member"),
+            Self::Admin => write!(f, "Admin"),
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct ListUserGroupsResponse {
     pub groups: Vec<UserGroup>,
+}
+
+/// Response from Phylum's GET /organizations endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct OrgsResponse {
+    pub organizations: Vec<Org>,
+}
+
+/// Organization returned by Phylum's GET /organizations endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct Org {
+    pub name: String,
+}
+
+/// Response from Phylum's GET /organizations/<org>/members endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct OrgMembersResponse {
+    pub members: Vec<OrgMember>,
+}
+
+/// Member returned by Phylum's GET /organizations/<org>/members endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct OrgMember {
+    pub email: String,
+    pub role: OrgRole,
+}
+
+/// Request body for Phylum's POST /organizations/<org>/members endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct AddOrgUserRequest {
+    pub email: String,
 }

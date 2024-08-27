@@ -29,9 +29,10 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    AnalysisPackageDescriptor, HistoryJob, ListUserGroupsResponse, PackageSpecifier,
-    PackageSubmitResponse, PingResponse, PolicyEvaluationRequest, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, RevokeTokenRequest, SubmitPackageRequest, UserToken,
+    AddOrgUserRequest, AnalysisPackageDescriptor, HistoryJob, ListUserGroupsResponse,
+    OrgMembersResponse, OrgsResponse, PackageSpecifier, PackageSubmitResponse, PingResponse,
+    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
+    RevokeTokenRequest, SubmitPackageRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -473,6 +474,33 @@ impl PhylumApi {
         let url = endpoints::revoke_token(&self.config.connection.uri)?;
         let body = RevokeTokenRequest { name };
         self.send_request_raw(Method::POST, url, Some(body)).await?;
+        Ok(())
+    }
+
+    /// Get organizations the user is part of.
+    pub async fn orgs(&self) -> Result<OrgsResponse> {
+        let url = endpoints::orgs(&self.config.connection.uri)?;
+        self.get(url).await
+    }
+
+    /// Get members of an organization.
+    pub async fn org_members(&self, org: &str) -> Result<OrgMembersResponse> {
+        let url = endpoints::org_members(&self.config.connection.uri, org)?;
+        self.get(url).await
+    }
+
+    /// Add a member to an organization.
+    pub async fn org_member_add(&self, org: &str, email: &str) -> Result<()> {
+        let body = AddOrgUserRequest { email: email.into() };
+        let url = endpoints::org_members(&self.config.connection.uri, org)?;
+        self.send_request_raw(Method::POST, url, Some(body)).await?;
+        Ok(())
+    }
+
+    /// Remove a member from an organization.
+    pub async fn org_member_remove(&self, org: &str, email: &str) -> Result<()> {
+        let url = endpoints::org_member_remove(&self.config.connection.uri, org, email)?;
+        self.send_request_raw(Method::DELETE, url, None::<()>).await?;
         Ok(())
     }
 

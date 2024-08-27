@@ -19,9 +19,13 @@ use vulnreach_types::Vulnerability;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    HistoryJob, Issue, ListUserGroupsResponse, Package, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, RiskLevel, UserGroup, UserToken,
+    HistoryJob, Issue, ListUserGroupsResponse, OrgMember, OrgMembersResponse, OrgsResponse,
+    Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, RiskLevel, UserGroup,
+    UserToken,
 };
+
+// Maximum length of email column.
+const MAX_EMAIL_WIDTH: usize = 25;
 
 /// Format type for CLI output.
 pub trait Format: Serialize {
@@ -199,8 +203,6 @@ impl Format for ListUserGroupsResponse {
 
 impl Format for ListGroupMembersResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        // Maximum length of email column.
-        const MAX_EMAIL_WIDTH: usize = 25;
         // Maximum length of first name column.
         const MAX_FIRST_NAME_WIDTH: usize = 15;
         // Maximum length of last name column.
@@ -345,6 +347,32 @@ impl Format for Vec<UserToken> {
             ("Creation Time", |token| format_datetime(token.creation_time)),
             ("Access Time", |token| token.access_time.map_or(String::new(), format_datetime)),
             ("Expiry", |token| token.expiry.map_or(String::new(), format_datetime)),
+        ]);
+        let _ = writeln!(writer, "{table}");
+    }
+}
+
+impl Format for OrgsResponse {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        if self.organizations.is_empty() {
+            let _ = writeln!(writer, "User is not part of any organizations");
+            return;
+        }
+
+        for organization in &self.organizations {
+            let _ = writeln!(writer, "{}", organization.name);
+        }
+    }
+}
+
+impl Format for OrgMembersResponse {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        // Maximum length of email column.
+        const MAX_EMAIL_WIDTH: usize = 25;
+
+        let table = format_table::<fn(&OrgMember) -> String, _>(&self.members, &[
+            ("E-Mail", |member| print::truncate(&member.email, MAX_EMAIL_WIDTH).into_owned()),
+            ("Role", |member| member.role.to_string()),
         ]);
         let _ = writeln!(writer, "{table}");
     }

@@ -14,7 +14,7 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, find_dependency_files, group, init, jobs, packages, parse, project, status,
+    auth, find_dependency_files, group, init, jobs, org, packages, parse, project, status,
     CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
@@ -142,6 +142,7 @@ async fn handle_commands() -> CommandResult {
         "analyze" | "batch" => jobs::handle_submission(&Spinner::wrap(api).await?, &matches).await,
         "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
         "status" => status::handle_status(sub_matches).await,
+        "org" => org::handle_org(&Spinner::wrap(api).await?, sub_matches, config).await,
 
         #[cfg(feature = "selfmanage")]
         "uninstall" => uninstall::handle_uninstall(sub_matches),
