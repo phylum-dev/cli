@@ -28,6 +28,6 @@ Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 ## Examples
 
 ```sh
-# Delete an existing group named 'sample'
+# Delete an existing group named `sample`
 $ phylum group delete sample
 ```

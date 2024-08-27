@@ -28,6 +28,6 @@ Usage: phylum group create [OPTIONS] <GROUP_NAME>
 ## Examples
 
 ```sh
-# Create a new group named 'sample'
+# Create a new group named `sample`
 $ phylum group create sample
 ```

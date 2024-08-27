@@ -26,6 +26,6 @@ Usage: phylum group member --group <GROUP> list [OPTIONS]
 ## Examples
 
 ```sh
-# List all group members for the 'sample' group
+# List all group members for the `sample` group
 $ phylum group member --group sample list
 ```

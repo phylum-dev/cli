@@ -71,10 +71,10 @@ $ phylum analyze --json --verbose effective-pom.xml
 # Analyze a PyPI dependency file and apply a label
 $ phylum analyze --label test_branch requirements.txt
 
-# Analyze a Poetry lockfile and return the results to the 'sample' project
+# Analyze a Poetry lockfile and return the results to the `sample` project
 $ phylum analyze -p sample poetry.lock
 
-# Analyze a NuGet lockfile using the 'sample' project and 'sGroup' group
+# Analyze a NuGet lockfile using the `sample` project and `sGroup` group
 $ phylum analyze -p sample -g sGroup packages.lock.json
 
 # Analyze a RubyGems lockfile and return a verbose response with only critical malware

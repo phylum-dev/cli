@@ -5,6 +5,6 @@
 ## Examples
 
 ```sh
-# Delete an existing group named 'sample'
+# Delete an existing group named `sample`
 $ phylum group delete sample
 ```
