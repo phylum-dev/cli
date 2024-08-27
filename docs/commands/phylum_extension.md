@@ -8,6 +8,9 @@ Usage: phylum extension [OPTIONS] [COMMAND]
 
 ## Options
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

@@ -1,15 +1,15 @@
-# phylum group member remove
+# phylum org member add
 
-Remove user from group
+Add user to organization
 
 ```sh
-Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
+Usage: phylum org member add [OPTIONS] <USER>...
 ```
 
 ## Arguments
 
 `<USER>`
-&emsp; User(s) to be removed
+&emsp; User(s) to be added
 
 ## Options
 
@@ -24,10 +24,3 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 
 `-h`, `--help`
 &emsp; Print help
-
-## Examples
-
-```sh
-# Remove user `demo@phylum.io` from the `sample` group
-$ phylum group member --group sample remove demo@phylum.io
-```

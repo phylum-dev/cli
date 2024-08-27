@@ -17,6 +17,9 @@ Usage: phylum project status [OPTIONS]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Specify a group to use for analysis
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

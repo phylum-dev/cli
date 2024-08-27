@@ -14,6 +14,9 @@ Usage: phylum auth login [OPTIONS]
 `-n`, `--token-name` `<token-name>`
 &emsp; Unique name for the new token that will be created
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

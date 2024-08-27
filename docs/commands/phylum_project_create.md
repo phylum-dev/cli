@@ -19,6 +19,9 @@ Usage: phylum project create [OPTIONS] <NAME>
 `-r`, `--repository-url` `<repository_url>`
 &emsp; Repository URL of the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

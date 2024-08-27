@@ -22,6 +22,9 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to be queried
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

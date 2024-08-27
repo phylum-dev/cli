@@ -1,20 +1,15 @@
-# phylum auth create-token
+# phylum org list
 
-Create a new API token
+List all organizations the user is a member of
 
 ```sh
-Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
+Usage: phylum org list [OPTIONS]
 ```
-
-## Arguments
-
-`<TOKEN_NAME>`
-&emsp; Unique name to identify the new token
 
 ## Options
 
-`-e`, `--expiry` `<DAYS>`
-&emsp; Number of days the token will be valid
+`-j`, `--json`
+&emsp; Produce output in json format (default: false)
 
 `-o`, `--org` `<ORG>`
 &emsp; Phylum organization

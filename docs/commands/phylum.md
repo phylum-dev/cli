@@ -20,6 +20,9 @@ Usage: phylum [OPTIONS] [COMMAND]
 `--no-check-certificate`
 &emsp; Don't validate the server certificate when performing api requests
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -40,6 +43,7 @@ Usage: phylum [OPTIONS] [COMMAND]
 * [phylum group](./phylum_group.md)
 * [phylum history](./phylum_history.md)
 * [phylum init](./phylum_init.md)
+* [phylum org](./phylum_org.md)
 * [phylum package](./phylum_package.md)
 * [phylum parse](./phylum_parse.md)
 * [phylum ping](./phylum_ping.md)

@@ -14,6 +14,9 @@ Usage: phylum project list [OPTIONS]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to list projects for
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

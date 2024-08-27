@@ -1,20 +1,12 @@
-# phylum auth create-token
+# phylum org
 
-Create a new API token
+Manage organizations
 
 ```sh
-Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
+Usage: phylum org [OPTIONS] <COMMAND>
 ```
 
-## Arguments
-
-`<TOKEN_NAME>`
-&emsp; Unique name to identify the new token
-
 ## Options
-
-`-e`, `--expiry` `<DAYS>`
-&emsp; Number of days the token will be valid
 
 `-o`, `--org` `<ORG>`
 &emsp; Phylum organization
@@ -27,3 +19,10 @@ Usage: phylum auth create-token [OPTIONS] <TOKEN_NAME>
 
 `-h`, `--help`
 &emsp; Print help
+
+## Commands
+
+* [phylum org link](./phylum_org_link.md)
+* [phylum org list](./phylum_org_list.md)
+* [phylum org member](./phylum_org_member.md)
+* [phylum org unlink](./phylum_org_unlink.md)

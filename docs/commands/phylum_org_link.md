@@ -1,15 +1,17 @@
-# phylum extension list
+# phylum org link
 
-List installed extensions
+Select an organization as default for all operations
 
 ```sh
-Usage: phylum extension list [OPTIONS]
+Usage: phylum org link [OPTIONS] <ORG>
 ```
 
-## Options
+## Arguments
 
-`-o`, `--org` `<ORG>`
-&emsp; Phylum organization
+`<ORG>`
+&emsp; Organization to use as default
+
+## Options
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

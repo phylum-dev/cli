@@ -23,6 +23,9 @@ Usage: phylum parse [OPTIONS] [DEPENDENCY_FILE]...
 `--no-generation`
 &emsp; Disable generation of lockfiles from manifests
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

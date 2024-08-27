@@ -16,6 +16,9 @@ Usage: phylum project link [OPTIONS] <NAME>
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group owning the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

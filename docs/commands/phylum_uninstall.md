@@ -11,6 +11,9 @@ Usage: phylum uninstall [OPTIONS]
 `-p`, `--purge`
 &emsp; Remove all files, including configuration files (default: false)
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
