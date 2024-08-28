@@ -3,12 +3,12 @@
 Select an organization as default for all operations
 
 ```sh
-Usage: phylum org link [OPTIONS] <ORG>
+Usage: phylum org link [OPTIONS] [ORG]
 ```
 
 ## Arguments
 
-`<ORG>`
+`[ORG]`
 &emsp; Organization to use as default
 
 ## Options

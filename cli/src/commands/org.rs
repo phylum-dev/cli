@@ -1,6 +1,10 @@
 //! Subcommand `phylum org`.
 
+use std::borrow::Cow;
+
+use anyhow::Result;
 use clap::ArgMatches;
+use dialoguer::FuzzySelect;
 use reqwest::StatusCode;
 
 use crate::api::PhylumApi;
@@ -17,19 +21,19 @@ pub async fn handle_org(api: &PhylumApi, matches: &ArgMatches, config: Config) -
         Some(("unlink", _)) => handle_org_unlink(config).await,
         Some(("member", sub_matches)) => {
             let org = match config.org() {
-                Some(org) => org,
-                None => {
-                    print_user_failure!("Arguments missing target organization");
-                    print_user_failure!("Either add `--org` flag, or update your configuration:");
-                    print_user_failure!("    phylum org link <ORG>");
-                    return Ok(ExitCode::MissingOrg);
+                Some(org) => Cow::Borrowed(org),
+                None => match prompt_org(api).await? {
+                    Some(org) => Cow::Owned(org),
+                    None => {
+                        return Ok(ExitCode::Generic);
+                    },
                 },
             };
 
             match sub_matches.subcommand() {
-                Some(("list", sub_matches)) => handle_member_list(api, sub_matches, org).await,
-                Some(("add", sub_matches)) => handle_member_add(api, sub_matches, org).await,
-                Some(("remove", sub_matches)) => handle_member_remove(api, sub_matches, org).await,
+                Some(("list", sub_matches)) => handle_member_list(api, sub_matches, &org).await,
+                Some(("add", sub_matches)) => handle_member_add(api, sub_matches, &org).await,
+                Some(("remove", sub_matches)) => handle_member_remove(api, sub_matches, &org).await,
                 _ => unreachable!("invalid clap configuration"),
             }
         },
@@ -53,16 +57,24 @@ pub async fn handle_org_link(
     matches: &ArgMatches,
     mut config: Config,
 ) -> CommandResult {
-    let org = matches.get_one::<String>("org").unwrap();
+    // Try to get org from CLI, falling back to interactive entry.
+    let org = match matches.get_one::<String>("org") {
+        Some(org) => Cow::Borrowed(org),
+        // Interactively prompt for org selection.
+        None => match prompt_org(api).await? {
+            Some(org) => Cow::Owned(org),
+            None => return Ok(ExitCode::Generic),
+        },
+    };
 
     // Attempt org access, to simplify troubleshooting.
-    if api.org_members(org).await.is_err() {
+    if api.org_members(&org).await.is_err() {
         print_user_warning!(
             "Could not access organization {org:?}, future Phylum commands may fail unexpectedly"
         );
     }
 
-    config.set_org(Some(org.into()));
+    config.set_org(Some(org.to_string()));
     config.save()?;
 
     print_user_success!("Successfully set default organization to {org:?}");
@@ -130,4 +142,27 @@ pub async fn handle_member_remove(
     }
 
     Ok(ExitCode::Ok)
+}
+
+/// Prompt user for org selection.
+async fn prompt_org(api: &PhylumApi) -> Result<Option<String>> {
+    // Check if user is part of any organizations.
+    let orgs_response = api.orgs().await?;
+    if orgs_response.organizations.is_empty() {
+        print_user_failure!("User is not part of any organizations");
+        return Ok(None);
+    }
+
+    // Ask user to select one of their orgs.
+    let mut orgs: Vec<_> = orgs_response.organizations.into_iter().map(|org| org.name).collect();
+    let prompt = "[ENTER] Confirm\nOrganization";
+    let index = FuzzySelect::new().with_prompt(prompt).items(&orgs).default(0).interact()?;
+    println!();
+
+    if index < orgs.len() {
+        Ok(Some(orgs.swap_remove(index)))
+    } else {
+        print_user_failure!("Invalid selection");
+        Ok(None)
+    }
 }

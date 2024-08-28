@@ -652,8 +652,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .about("Select an organization as default for all operations")
                         .args(&[Arg::new("org")
                             .value_name("ORG")
-                            .help("Organization to use as default")
-                            .required(true)]),
+                            .help("Organization to use as default")]),
                 )
                 .subcommand(
                     Command::new("unlink").about("Clear the configured default organization"),
