@@ -367,9 +367,6 @@ impl Format for OrgsResponse {
 
 impl Format for OrgMembersResponse {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        // Maximum length of email column.
-        const MAX_EMAIL_WIDTH: usize = 25;
-
         let table = format_table::<fn(&OrgMember) -> String, _>(&self.members, &[
             ("E-Mail", |member| print::truncate(&member.email, MAX_EMAIL_WIDTH).into_owned()),
             ("Role", |member| member.role.to_string()),
