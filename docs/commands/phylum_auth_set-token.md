@@ -13,6 +13,9 @@ Usage: phylum auth set-token [OPTIONS] [TOKEN]
 
 ## Options
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

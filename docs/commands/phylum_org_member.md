@@ -1,9 +1,9 @@
-# phylum group
+# phylum org member
 
-Interact with user groups
+Manage organization members
 
 ```sh
-Usage: phylum group [OPTIONS] <COMMAND>
+Usage: phylum org member [OPTIONS] <COMMAND>
 ```
 
 ## Options
@@ -22,7 +22,6 @@ Usage: phylum group [OPTIONS] <COMMAND>
 
 ## Commands
 
-* [phylum group create](./phylum_group_create.md)
-* [phylum group delete](./phylum_group_delete.md)
-* [phylum group list](./phylum_group_list.md)
-* [phylum group member](./phylum_group_member.md)
+* [phylum org member add](./phylum_org_member_add.md)
+* [phylum org member list](./phylum_org_member_list.md)
+* [phylum org member remove](./phylum_org_member_remove.md)

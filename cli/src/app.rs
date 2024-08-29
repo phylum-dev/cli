@@ -55,6 +55,12 @@ pub fn app() -> Command {
                 .action(ArgAction::SetTrue)
                 .long("no-check-certificate")
                 .help("Don't validate the server certificate when performing api requests"),
+            Arg::new("org")
+                .short('o')
+                .long("org")
+                .value_name("ORG")
+                .help("Phylum organization")
+                .global(true),
             Arg::new("verbose")
                 .short('v')
                 .long("verbose")
@@ -486,8 +492,9 @@ pub fn add_subcommands(command: Command) -> Command {
                             .short('g')
                             .long("group")
                             .value_name("GROUP")
-                            .help("Group to list the members for")
+                            .help("Group to manage the members for")
                             .required(true)])
+                        .arg_required_else_help(true)
                         .subcommand_required(true)
                         .subcommand(
                             Command::new("list").about("List group members").args(&[Arg::new(
@@ -591,6 +598,65 @@ pub fn add_subcommands(command: Command) -> Command {
                 ])
                 .about("Run lockfile generation inside sandbox and write it to STDOUT")
                 .hide(true),
+        )
+        .subcommand(
+            Command::new("org")
+                .about("Manage organizations")
+                .arg_required_else_help(true)
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("list")
+                        .about("List all organizations the user is a member of")
+                        .args(&[Arg::new("json")
+                            .action(ArgAction::SetTrue)
+                            .short('j')
+                            .long("json")
+                            .help("Produce output in json format (default: false)")]),
+                )
+                .subcommand(
+                    Command::new("member")
+                        .about("Manage organization members")
+                        .arg_required_else_help(true)
+                        .subcommand_required(true)
+                        .subcommand(
+                            Command::new("list").about("List organization members").args(&[
+                                Arg::new("json")
+                                    .action(ArgAction::SetTrue)
+                                    .short('j')
+                                    .long("json")
+                                    .help("Produce member list in json format (default: false)"),
+                            ]),
+                        )
+                        .subcommand(
+                            Command::new("add").about("Add user to organization").args(&[
+                                Arg::new("user")
+                                    .value_name("USER")
+                                    .help("User(s) to be added")
+                                    .action(ArgAction::Append)
+                                    .required(true),
+                            ]),
+                        )
+                        .subcommand(
+                            Command::new("remove")
+                                .alias("rm")
+                                .about("Remove user from organization")
+                                .args(&[Arg::new("user")
+                                    .value_name("USER")
+                                    .help("User(s) to be removed")
+                                    .action(ArgAction::Append)
+                                    .required(true)]),
+                        ),
+                )
+                .subcommand(
+                    Command::new("link")
+                        .about("Select an organization as default for all operations")
+                        .args(&[Arg::new("org")
+                            .value_name("ORG")
+                            .help("Organization to use as default")]),
+                )
+                .subcommand(
+                    Command::new("unlink").about("Clear the configured default organization"),
+                ),
         );
 
     #[cfg(feature = "extensions")]

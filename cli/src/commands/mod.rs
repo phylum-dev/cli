@@ -7,6 +7,7 @@ pub mod find_dependency_files;
 pub mod group;
 pub mod init;
 pub mod jobs;
+pub mod org;
 pub mod packages;
 pub mod parse;
 pub mod project;
@@ -35,6 +36,7 @@ pub enum ExitCode {
     InvalidTokenExpiration,
     ManifestWithoutGeneration,
     UnknownManifestFormat,
+    MissingOrg,
     FailedPolicy,
     SandboxStart,
     SandboxStartCollision,
@@ -64,6 +66,7 @@ impl From<&ExitCode> for i32 {
             ExitCode::InvalidTokenExpiration => 19,
             ExitCode::ManifestWithoutGeneration => 20,
             ExitCode::UnknownManifestFormat => 21,
+            ExitCode::MissingOrg => 22,
             ExitCode::FailedPolicy => 100,
             ExitCode::SandboxStart => 117,
             ExitCode::SandboxStartCollision => 118,

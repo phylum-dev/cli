@@ -1,17 +1,15 @@
-# phylum group member remove
+# phylum org member list
 
-Remove user from group
+List organization members
 
 ```sh
-Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
+Usage: phylum org member list [OPTIONS]
 ```
 
-## Arguments
-
-`<USER>`
-&emsp; User(s) to be removed
-
 ## Options
+
+`-j`, `--json`
+&emsp; Produce member list in json format (default: false)
 
 `-o`, `--org` `<ORG>`
 &emsp; Phylum organization
@@ -28,6 +26,6 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 ## Examples
 
 ```sh
-# Remove user `demo@phylum.io` from the `sample` group
-$ phylum group member --group sample remove demo@phylum.io
+# List all organization members for the `sample` organization
+$ phylum org -o sample member list
 ```

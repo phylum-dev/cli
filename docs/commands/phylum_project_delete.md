@@ -16,6 +16,9 @@ Usage: phylum project delete [OPTIONS] <NAME>
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group that owns the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

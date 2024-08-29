@@ -13,6 +13,9 @@ Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 
 ## Options
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

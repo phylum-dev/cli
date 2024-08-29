@@ -11,6 +11,9 @@ Usage: phylum auth token [OPTIONS]
 `-b`, `--bearer`
 &emsp; Output the short-lived bearer token for the Phylum API
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

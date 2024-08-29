@@ -22,6 +22,9 @@ Usage: phylum history [OPTIONS] [JOB_ID]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to be queried
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -40,6 +43,6 @@ $ phylum history
 # View the analysis results of a historical job
 $ phylum history 338ea79f-0e82-4422-9769-4e583a84599f
 
-# View a list of analysis runs for the 'sample' project
+# View a list of analysis runs for the `sample` project
 $ phylum history --project sample
 ```

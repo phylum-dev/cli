@@ -11,6 +11,9 @@ Usage: phylum group member --group <GROUP> list [OPTIONS]
 `-j`, `--json`
 &emsp; Produce member list in json format (default: false)
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -23,6 +26,6 @@ Usage: phylum group member --group <GROUP> list [OPTIONS]
 ## Examples
 
 ```sh
-# List all group members for the 'sample' group
+# List all group members for the `sample` group
 $ phylum group member --group sample list
 ```

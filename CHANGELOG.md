@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Organization management under the `phylum org` subcommand
+
 ## 6.6.6 - 2024-07-12
 
 ### Added

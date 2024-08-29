@@ -1,15 +1,10 @@
-# phylum group member remove
+# phylum org unlink
 
-Remove user from group
+Clear the configured default organization
 
 ```sh
-Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
+Usage: phylum org unlink [OPTIONS]
 ```
-
-## Arguments
-
-`<USER>`
-&emsp; User(s) to be removed
 
 ## Options
 
@@ -28,6 +23,6 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 ## Examples
 
 ```sh
-# Remove user `demo@phylum.io` from the `sample` group
-$ phylum group member --group sample remove demo@phylum.io
+# Clear the default organization used by the CLI
+$ phylum org unlink
 ```

@@ -396,7 +396,7 @@ async fn get_package_details(
     #[string] name: String,
     #[string] version: String,
     #[string] package_type: String,
-) -> Result<Package> {
+) -> Result<Box<Package>> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 

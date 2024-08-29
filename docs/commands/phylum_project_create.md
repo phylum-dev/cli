@@ -19,6 +19,9 @@ Usage: phylum project create [OPTIONS] <NAME>
 `-r`, `--repository-url` `<repository_url>`
 &emsp; Repository URL of the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -31,9 +34,9 @@ Usage: phylum project create [OPTIONS] <NAME>
 ## Examples
 
 ```sh
-# Create a new project named 'sample'
+# Create a new project named `sample`
 $ phylum project create sample
 
-# Create a new project named 'sample' owned by the group 'sGroup'
+# Create a new project named `sample` owned by the group `sGroup`
 $ phylum project create -g sGroup sample
 ```

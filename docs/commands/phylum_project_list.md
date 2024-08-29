@@ -14,6 +14,9 @@ Usage: phylum project list [OPTIONS]
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group to list projects for
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -32,6 +35,6 @@ $ phylum project list
 # List all existing projects with json output
 $ phylum project list --json
 
-# List all existing projects for the 'sample' group
+# List all existing projects for the `sample` group
 $ phylum project list -g sample
 ```

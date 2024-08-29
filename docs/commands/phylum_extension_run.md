@@ -18,6 +18,9 @@ Usage: phylum extension run [OPTIONS] <PATH> [OPTIONS]...
 `-y`, `--yes`
 &emsp; Automatically accept requested permissions
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

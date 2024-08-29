@@ -9,7 +9,10 @@ Usage: phylum group member [OPTIONS] --group <GROUP> <COMMAND>
 ## Options
 
 `-g`, `--group` `<GROUP>`
-&emsp; Group to list the members for
+&emsp; Group to manage the members for
+
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
 
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)

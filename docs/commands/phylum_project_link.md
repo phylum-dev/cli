@@ -16,6 +16,9 @@ Usage: phylum project link [OPTIONS] <NAME>
 `-g`, `--group` `<GROUP_NAME>`
 &emsp; Group owning the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -28,9 +31,9 @@ Usage: phylum project link [OPTIONS] <NAME>
 ## Examples
 
 ```sh
-# Link current folder to an existing project named 'sample'
+# Link current folder to an existing project named `sample`
 $ phylum project link sample
 
-# Link current folder to an existing project named 'sample' owned by the group 'sGroup'
+# Link current folder to an existing project named `sample` owned by the group `sGroup`
 $ phylum project link -g sGroup sample
 ```

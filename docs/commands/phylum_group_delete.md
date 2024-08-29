@@ -13,6 +13,9 @@ Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 
 ## Options
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 
@@ -25,6 +28,6 @@ Usage: phylum group delete [OPTIONS] <GROUP_NAME>
 ## Examples
 
 ```sh
-# Delete an existing group named 'sample'
+# Delete an existing group named `sample`
 $ phylum group delete sample
 ```

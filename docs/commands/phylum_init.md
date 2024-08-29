@@ -29,6 +29,9 @@ Usage: phylum init [OPTIONS] [PROJECT_NAME]
 `-r`, `--repository-url` `<REPOSITORY_URL>`
 &emsp; Repository URL of the project
 
+`-o`, `--org` `<ORG>`
+&emsp; Phylum organization
+
 `-v`, `--verbose`...
 &emsp; Increase the level of verbosity (the maximum is -vvv)
 

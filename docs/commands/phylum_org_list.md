@@ -1,9 +1,9 @@
-# phylum auth list-tokens
+# phylum org list
 
-List all tokens associated with the logged-in user
+List all organizations the user is a member of
 
 ```sh
-Usage: phylum auth list-tokens [OPTIONS]
+Usage: phylum org list [OPTIONS]
 ```
 
 ## Options
@@ -22,3 +22,13 @@ Usage: phylum auth list-tokens [OPTIONS]
 
 `-h`, `--help`
 &emsp; Print help
+
+## Examples
+
+```sh
+# List all organizations the user is a member of
+$ phylum org list
+
+# List all organizations the user is a member of with json output
+$ phylum org list --json
+```
