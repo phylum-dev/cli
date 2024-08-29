@@ -25,6 +25,9 @@ Usage: phylum org link [OPTIONS] [ORG]
 ## Examples
 
 ```sh
+# Interactively select an organization for all future operations
+$ phylum org link
+
 # Set `sample` as the default organization for all future operations
 $ phylum org link sample
 ```
