@@ -572,34 +572,6 @@ pub fn add_subcommands(command: Command) -> Command {
                 .hide(true),
         )
         .subcommand(
-            Command::new("parse-sandboxed")
-                .args(&[
-                    Arg::new("depfile")
-                        .value_name("DEPENDENCY_FILE")
-                        .required(true)
-                        .help("Canonical dependency file path"),
-                    Arg::new("display-path")
-                        .value_name("DISPLAY_PATH")
-                        .required(true)
-                        .help("Dependency file display path"),
-                    Arg::new("type")
-                        .long("type")
-                        .value_name("TYPE")
-                        .help("Dependency file type used (default: auto)")
-                        .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
-                    Arg::new("generate-lockfile")
-                        .long("generate-lockfile")
-                        .help("Whether lockfile generation should be performed")
-                        .action(ArgAction::SetTrue),
-                    Arg::new("skip-sandbox")
-                        .long("skip-sandbox")
-                        .help("Skip sandbox initialization")
-                        .action(ArgAction::SetTrue),
-                ])
-                .about("Run lockfile generation inside sandbox and write it to STDOUT")
-                .hide(true),
-        )
-        .subcommand(
             Command::new("org")
                 .about("Manage organizations")
                 .arg_required_else_help(true)
@@ -666,50 +638,84 @@ pub fn add_subcommands(command: Command) -> Command {
 
     #[cfg(unix)]
     {
-        app = app.subcommand(
-            Command::new("sandbox").hide(true).about("Run an application in a sandbox").args(&[
-                Arg::new("allow-read")
-                    .help("Add filesystem read sandbox exception")
-                    .long("allow-read")
-                    .value_name("PATH")
-                    .value_hint(ValueHint::FilePath)
-                    .action(ArgAction::Append),
-                Arg::new("allow-write")
-                    .help("Add filesystem write sandbox exception")
-                    .long("allow-write")
-                    .value_name("PATH")
-                    .value_hint(ValueHint::FilePath)
-                    .action(ArgAction::Append),
-                Arg::new("allow-run")
-                    .help("Add filesystem execute sandbox exception")
-                    .long("allow-run")
-                    .value_name("PATH")
-                    .value_hint(ValueHint::FilePath)
-                    .action(ArgAction::Append),
-                Arg::new("allow-env")
-                    .help("Add environment variable access sandbox exception")
-                    .long("allow-env")
-                    .value_name("ENV_VAR")
-                    .num_args(0..=1)
-                    .default_missing_value("*")
-                    .action(ArgAction::Append),
-                Arg::new("allow-net")
-                    .help("Add network access sandbox exception")
-                    .long("allow-net")
-                    .action(ArgAction::SetTrue),
-                Arg::new("strict")
-                    .help("Do not add any default sandbox exceptions")
-                    .long("strict")
-                    .action(ArgAction::SetTrue),
-                Arg::new("cmd").help("Command to be executed").value_name("CMD").required(true),
-                Arg::new("args")
-                    .help("Command arguments")
-                    .value_name("ARG")
-                    .trailing_var_arg(true)
-                    .allow_hyphen_values(true)
-                    .action(ArgAction::Append),
-            ]),
-        )
+        app = app
+            .subcommand(
+                Command::new("sandbox").hide(true).about("Run an application in a sandbox").args(
+                    &[
+                        Arg::new("allow-read")
+                            .help("Add filesystem read sandbox exception")
+                            .long("allow-read")
+                            .value_name("PATH")
+                            .value_hint(ValueHint::FilePath)
+                            .action(ArgAction::Append),
+                        Arg::new("allow-write")
+                            .help("Add filesystem write sandbox exception")
+                            .long("allow-write")
+                            .value_name("PATH")
+                            .value_hint(ValueHint::FilePath)
+                            .action(ArgAction::Append),
+                        Arg::new("allow-run")
+                            .help("Add filesystem execute sandbox exception")
+                            .long("allow-run")
+                            .value_name("PATH")
+                            .value_hint(ValueHint::FilePath)
+                            .action(ArgAction::Append),
+                        Arg::new("allow-env")
+                            .help("Add environment variable access sandbox exception")
+                            .long("allow-env")
+                            .value_name("ENV_VAR")
+                            .num_args(0..=1)
+                            .default_missing_value("*")
+                            .action(ArgAction::Append),
+                        Arg::new("allow-net")
+                            .help("Add network access sandbox exception")
+                            .long("allow-net")
+                            .action(ArgAction::SetTrue),
+                        Arg::new("strict")
+                            .help("Do not add any default sandbox exceptions")
+                            .long("strict")
+                            .action(ArgAction::SetTrue),
+                        Arg::new("cmd")
+                            .help("Command to be executed")
+                            .value_name("CMD")
+                            .required(true),
+                        Arg::new("args")
+                            .help("Command arguments")
+                            .value_name("ARG")
+                            .trailing_var_arg(true)
+                            .allow_hyphen_values(true)
+                            .action(ArgAction::Append),
+                    ],
+                ),
+            )
+            .subcommand(
+                Command::new("parse-sandboxed")
+                    .args(&[
+                        Arg::new("depfile")
+                            .value_name("DEPENDENCY_FILE")
+                            .required(true)
+                            .help("Canonical dependency file path"),
+                        Arg::new("display-path")
+                            .value_name("DISPLAY_PATH")
+                            .required(true)
+                            .help("Dependency file display path"),
+                        Arg::new("type")
+                            .long("type")
+                            .value_name("TYPE")
+                            .help("Dependency file type used (default: auto)")
+                            .value_parser(PossibleValuesParser::new(parse::lockfile_types(true))),
+                        Arg::new("generate-lockfile")
+                            .long("generate-lockfile")
+                            .help("Whether lockfile generation should be performed")
+                            .action(ArgAction::SetTrue),
+                        Arg::new("skip-sandbox")
+                            .long("skip-sandbox")
+                            .help("Skip sandbox initialization")
+                            .action(ArgAction::SetTrue),
+                    ])
+                    .about("Run lockfile generation inside sandbox and write it to STDOUT")
+                    .hide(true),
+            );
     }
 
     #[cfg(feature = "selfmanage")]

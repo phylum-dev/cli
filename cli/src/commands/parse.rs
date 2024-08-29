@@ -2,20 +2,27 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
 use std::process::Command as StdCommand;
 use std::result::Result as StdResult;
 use std::str::FromStr;
 use std::{env, fs, io};
 
-use anyhow::{anyhow, Context, Result};
+#[cfg(unix)]
+use anyhow::anyhow;
+use anyhow::{Context, Result};
+#[cfg(unix)]
 use birdcage::process::{Command, Stdio};
+#[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 use phylum_lockfile::{LockfileFormat, ParseError, ParsedLockfile};
 
 use crate::commands::{CommandResult, ExitCode};
 use crate::types::AnalysisPackageDescriptor;
-use crate::{config, dirs, permissions, print_user_failure, print_user_warning};
+use crate::{config, print_user_failure, print_user_warning};
+#[cfg(unix)]
+use crate::{dirs, permissions};
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();
@@ -79,6 +86,7 @@ pub fn handle_parse(matches: &ArgMatches) -> CommandResult {
     Ok(ExitCode::Ok)
 }
 
+#[cfg(unix)]
 pub fn handle_parse_sandboxed(matches: &ArgMatches) -> CommandResult {
     let path = PathBuf::from(matches.get_raw("depfile").unwrap().next().unwrap());
     let display_path = matches.get_one::<String>("display-path").unwrap();
@@ -94,6 +102,7 @@ pub fn handle_parse_sandboxed(matches: &ArgMatches) -> CommandResult {
 }
 
 /// Reexecute `parse-sandboxed` inside the sandbox.
+#[cfg(unix)]
 fn spawn_sandbox(
     path: &Path,
     display_path: &str,
@@ -167,46 +176,66 @@ pub fn parse_depfile(
 
     let display_path = strip_root_path(&path, project_root)?.display().to_string();
 
-    if sandbox_generation && generate_lockfiles {
-        // Spawn separate process to allow sandboxing lockfile generation.
-        let path = path.canonicalize().map_err(anyhow::Error::from)?;
-        let lockfile_type = format.map(|format| format.to_string());
-        let mut command = parse_sandboxed_command(
-            &path,
-            &display_path,
-            lockfile_type.as_ref(),
-            generate_lockfiles,
-            false,
-        )?;
-        command.stderr(Stdio::inherit());
-        #[allow(clippy::useless_conversion)]
-        let mut std_command: StdCommand = command.into();
-        let output = std_command.output().map_err(anyhow::Error::from)?;
-
-        if !output.status.success() {
-            // Forward STDOUT to the user on failure.
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            println!("{stdout}");
-
-            // Check exit code to special-case lockfile generation failure.
-            if output.status.code() == Some(i32::from(&ExitCode::ManifestWithoutGeneration)) {
-                Err(ParseError::ManifestWithoutGeneration(display_path))
-            } else if output.status.code() == Some(i32::from(&ExitCode::UnknownManifestFormat)) {
-                Err(ParseError::UnknownManifestFormat(display_path))
-            } else {
-                Err(ParseError::Other(anyhow!("Dependency file parsing failed")))
-            }
-        } else {
-            let json = String::from_utf8_lossy(&output.stdout);
-            let parsed_lockfile = serde_json::from_str(&json).map_err(anyhow::Error::from)?;
-            Ok(parsed_lockfile)
-        }
+    if cfg!(unix) && sandbox_generation && generate_lockfiles {
+        parse_depfile_sandboxed(path, format, display_path, generate_lockfiles)
     } else {
         let contents = fs::read_to_string(&path).map_err(anyhow::Error::from)?;
         let generation_path = generate_lockfiles.then(|| path.clone());
 
         phylum_lockfile::parse_depfile(&contents, display_path, format, generation_path)
     }
+}
+
+#[cfg(unix)]
+fn parse_depfile_sandboxed(
+    path: PathBuf,
+    format: Option<LockfileFormat>,
+    display_path: String,
+    generate_lockfiles: bool,
+) -> StdResult<ParsedLockfile, ParseError> {
+    // Spawn separate process to allow sandboxing lockfile generation.
+    let path = path.canonicalize().map_err(anyhow::Error::from)?;
+    let lockfile_type = format.map(|format| format.to_string());
+    let mut command = parse_sandboxed_command(
+        &path,
+        &display_path,
+        lockfile_type.as_ref(),
+        generate_lockfiles,
+        false,
+    )?;
+    command.stderr(Stdio::inherit());
+    #[allow(clippy::useless_conversion)]
+    let mut std_command: StdCommand = command.into();
+    let output = std_command.output().map_err(anyhow::Error::from)?;
+
+    if !output.status.success() {
+        // Forward STDOUT to the user on failure.
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        println!("{stdout}");
+
+        // Check exit code to special-case lockfile generation failure.
+        if output.status.code() == Some(i32::from(&ExitCode::ManifestWithoutGeneration)) {
+            Err(ParseError::ManifestWithoutGeneration(display_path))
+        } else if output.status.code() == Some(i32::from(&ExitCode::UnknownManifestFormat)) {
+            Err(ParseError::UnknownManifestFormat(display_path))
+        } else {
+            Err(ParseError::Other(anyhow!("Dependency file parsing failed")))
+        }
+    } else {
+        let json = String::from_utf8_lossy(&output.stdout);
+        let parsed_lockfile = serde_json::from_str(&json).map_err(anyhow::Error::from)?;
+        Ok(parsed_lockfile)
+    }
+}
+
+#[cfg(not(unix))]
+fn parse_depfile_sandboxed(
+    _path: PathBuf,
+    _format: Option<LockfileFormat>,
+    _display_path: String,
+    _generate_lockfiles: bool,
+) -> StdResult<ParsedLockfile, ParseError> {
+    unreachable!()
 }
 
 /// Find a dependency file's format.
@@ -335,6 +364,7 @@ fn relative_path(from: &Path, to: &Path) -> Result<PathBuf> {
 }
 
 /// Construct command for sandboxed lockfile parsing.
+#[cfg(unix)]
 fn parse_sandboxed_command(
     path: &Path,
     display_path: &str,
@@ -369,6 +399,7 @@ fn parse_sandboxed_command(
 ///
 /// This sandbox will automatically add all exceptions necessary to generate
 /// lockfiles for any ecosystem.
+#[cfg(unix)]
 fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
     let mut birdcage = permissions::default_sandbox()?;
 
@@ -573,6 +604,6 @@ mod tests {
         // lockfile above the "sample" directory.
         let path = relative_path(&sample_dir, &rel_lockfile_path).unwrap();
         // The path to the lockfile should be relative to the "sample" directory.
-        assert_eq!(path.as_os_str(), "../Cargo.lock");
+        assert_eq!(path, Path::new("../Cargo.lock"));
     }
 }

@@ -13,6 +13,18 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install --no-self-update stable --profile minimal
+
+      - name: Test
+        run: cargo +stable test --workspace --exclude xtask --locked --no-default-features
+
   rustfmt:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-20.04

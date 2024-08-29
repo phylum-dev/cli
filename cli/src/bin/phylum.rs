@@ -131,6 +131,7 @@ async fn handle_commands() -> CommandResult {
         },
         "version" => handle_version(&app_name, &ver),
         "parse" => parse::handle_parse(sub_matches),
+        #[cfg(unix)]
         "parse-sandboxed" => parse::handle_parse_sandboxed(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
         "project" => {
