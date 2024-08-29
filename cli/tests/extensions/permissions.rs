@@ -1,4 +1,4 @@
-use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+use phylum_cli::permissions::{Permission, Permissions};
 use predicates::prelude::*;
 
 use crate::extensions::{fixtures_path, TestCli};

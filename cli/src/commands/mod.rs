@@ -1,6 +1,7 @@
 use std::process;
 
 pub mod auth;
+#[cfg(feature = "extensions")]
 pub mod extensions;
 pub mod find_dependency_files;
 pub mod group;

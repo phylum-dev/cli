@@ -7,8 +7,8 @@ use birdcage::process::Command;
 use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 
-use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
+use crate::permissions;
 
 /// Entry point for the `sandbox` subcommand.
 pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
