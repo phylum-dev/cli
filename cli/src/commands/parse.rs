@@ -127,6 +127,7 @@ fn spawn_sandbox(
 }
 
 /// Handle dependency file parsing inside of our sandbox.
+#[cfg(unix)]
 fn child_parse_depfile(
     path: &PathBuf,
     display_path: &str,
@@ -501,6 +502,7 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
 }
 
 /// Get all JDK paths in `/etc`.
+#[cfg(unix)]
 fn jdk_paths() -> Result<Vec<PathBuf>> {
     let paths: Vec<_> = fs::read_dir("/etc")?
         .flatten()

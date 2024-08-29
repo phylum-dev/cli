@@ -88,6 +88,7 @@ pub fn app() -> Command {
 
 /// Add non-extension subcommands.
 pub fn add_subcommands(command: Command) -> Command {
+    #[allow(unused_mut)]
     let mut app = command
         .subcommand(
             Command::new("history").about("Return information about historical jobs").args(&[
