@@ -160,9 +160,7 @@ impl Display for Error {
             Self::NonZeroExit(output) => {
                 write!(f, "package manager quit unexpectedly (code: {:?}", output.status.code())?;
                 #[cfg(unix)]
-                {
-                    write!(f, ", signal: {:?}", output.status.signal())?;
-                }
+                write!(f, ", signal: {:?}", output.status.signal())?;
                 write!(f, ")")?;
 
                 if !output.stderr.is_empty() {
