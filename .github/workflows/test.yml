@@ -23,7 +23,7 @@ jobs:
         run: rustup toolchain install --no-self-update stable --profile minimal
 
       - name: Test
-        run: cargo +stable test --workspace --exclude xtask --locked --no-default-features
+        run: cargo +stable test --locked --no-default-features
 
   rustfmt:
     if: github.event_name != 'schedule'

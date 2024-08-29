@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["selfmanage"]
-selfmanage = ["phylum-cli/selfmanage"]
+default = ["full-docs"]
+# Enable any CLI features that change the available commands
+full-docs = ["phylum-cli/selfmanage", "phylum-cli/extensions"]
 
 [dependencies]
 anyhow = "1.0.53"
