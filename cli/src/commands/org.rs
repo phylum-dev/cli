@@ -146,11 +146,23 @@ pub async fn handle_member_remove(
 
 /// Prompt user for org selection.
 async fn prompt_org(api: &PhylumApi) -> Result<Option<String>> {
-    // Check if user is part of any organizations.
+    // Get orgs the user is a member of.
     let orgs_response = api.orgs().await?;
-    if orgs_response.organizations.is_empty() {
-        print_user_failure!("User is not part of any organizations");
-        return Ok(None);
+    match orgs_response.organizations.as_slice() {
+        // Print error if user is not part of any orgs.
+        [] => {
+            print_user_failure!("User is not part of any organizations");
+            return Ok(None);
+        },
+        // Short-circuit if user is only part of one org.
+        [org] => {
+            print_user_success!(
+                "Automatically selected the only organization you are a member of: {:?}",
+                org.name
+            );
+            return Ok(Some(org.name.clone()));
+        },
+        _ => (),
     }
 
     // Ask user to select one of their orgs.
