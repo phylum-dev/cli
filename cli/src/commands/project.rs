@@ -33,7 +33,7 @@ pub async fn get_project_list(
     // Sort response for nicer output.
     resp.sort_unstable_by(|a, b| match a.group_name.cmp(&b.group_name) {
         Ordering::Equal => a.name.cmp(&b.name),
-        ordering => return ordering,
+        ordering => ordering,
     });
 
     resp.write_stdout(pretty_print);
@@ -123,10 +123,7 @@ pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), Phyl
 
     let project_id = match project {
         // If project is passed on CLI, lookup its ID.
-        Some(project) => {
-            let project_id = lookup_project(api, project, group.map(|g| g.as_str())).await?;
-            project_id
-        },
+        Some(project) => lookup_project(api, project, group.map(|g| g.as_str())).await?,
         // If no project is passed, use `.phylum_project`.
         None => match phylum_project::get_current_project() {
             Some(project_config) => project_config.id,
