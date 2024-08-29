@@ -4,6 +4,7 @@ pub mod common;
 mod end_to_end;
 
 mod config;
+#[cfg(feature = "extensions")]
 mod extensions;
 mod parse;
 #[cfg(unix)]

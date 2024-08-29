@@ -27,7 +27,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::{PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
-use crate::commands::extensions::permissions::{self, Permission};
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
 #[cfg(unix)]
@@ -35,6 +34,7 @@ use crate::commands::ExitCode;
 use crate::config::Config;
 #[cfg(unix)]
 use crate::dirs;
+use crate::permissions::{self, Permission};
 use crate::types::{
     AnalysisPackageDescriptor, ListUserGroupsResponse, Package, PackageSpecifier,
     PackageSubmitResponse, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, PurlWithOrigin,

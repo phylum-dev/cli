@@ -13,10 +13,9 @@ use birdcage::{Birdcage, Exception, Sandbox};
 use clap::ArgMatches;
 use phylum_lockfile::{LockfileFormat, ParseError, ParsedLockfile};
 
-use crate::commands::extensions::permissions;
 use crate::commands::{CommandResult, ExitCode};
 use crate::types::AnalysisPackageDescriptor;
-use crate::{config, dirs, print_user_failure, print_user_warning};
+use crate::{config, dirs, permissions, print_user_failure, print_user_warning};
 
 pub fn lockfile_types(add_auto: bool) -> Vec<&'static str> {
     let mut lockfile_types = LockfileFormat::iter().map(|format| format.name()).collect::<Vec<_>>();

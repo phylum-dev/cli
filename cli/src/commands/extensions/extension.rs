@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 use crate::api::PhylumApi;
-use crate::commands::extensions::permissions::Permissions;
 use crate::commands::CommandResult;
+use crate::permissions::Permissions;
 use crate::{deno, dirs, fs_compare};
 
 const MANIFEST_NAME: &str = "PhylumExt.toml";

@@ -11,6 +11,7 @@ use birdcage::error::Error as SandboxError;
 use birdcage::error::Result as SandboxResult;
 #[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
+#[cfg(feature = "extensions")]
 use deno_runtime::permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -249,6 +250,7 @@ impl Permissions {
     }
 }
 
+#[cfg(feature = "extensions")]
 impl From<&Permissions> for PermissionsOptions {
     fn from(value: &Permissions) -> Self {
         let allow_read =
@@ -383,6 +385,7 @@ pub fn resolve_bin_path<P: AsRef<Path>>(bin: P) -> PathBuf {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "extensions")]
     #[test]
     fn empty_vecs_are_turned_into_none() {
         let permissions = Permissions {
@@ -409,6 +412,7 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "extensions")]
     #[test]
     fn allow_all_becomes_empty_vec() {
         let permissions = Permissions {

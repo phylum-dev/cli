@@ -15,14 +15,13 @@ use log::error;
 
 use crate::api::PhylumApi;
 use crate::commands::extensions::extension::{Extension, ExtensionManifest};
-use crate::commands::extensions::permissions::Permission;
 use crate::commands::{CommandResult, ExitCode};
+use crate::permissions::Permission;
 use crate::print::print_sc_help;
 use crate::{app, print_user_success, print_user_warning};
 
 pub mod api;
 pub mod extension;
-pub mod permissions;
 pub mod state;
 
 const EXTENSION_SKELETON: &[u8] = b"\

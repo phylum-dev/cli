@@ -7,12 +7,14 @@ use clap::ArgMatches;
 use env_logger::Env;
 use log::LevelFilter;
 use phylum_cli::api::PhylumApi;
+#[cfg(feature = "extensions")]
+use phylum_cli::commands::extensions;
 #[cfg(unix)]
 use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, extensions, find_dependency_files, group, init, jobs, packages, parse, project, status,
+    auth, find_dependency_files, group, init, jobs, packages, parse, project, status,
     CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
@@ -146,13 +148,17 @@ async fn handle_commands() -> CommandResult {
         #[cfg(feature = "selfmanage")]
         "update" => handle_update(sub_matches, config.ignore_certs()).await,
 
+        #[cfg(feature = "extensions")]
         "extension" => extensions::handle_extensions(Box::pin(api), sub_matches, app_helper).await,
         #[cfg(unix)]
         "sandbox" => sandbox::handle_sandbox(sub_matches).await,
         "find-dependency-files" => find_dependency_files::handle_command(),
+        #[cfg(feature = "extensions")]
         extension_subcmd => {
             extensions::handle_run_extension(Box::pin(api), extension_subcmd, sub_matches).await
         },
+        #[cfg(not(feature = "extensions"))]
+        _ => unreachable!(),
     }
 }
 

@@ -3,7 +3,9 @@ use clap::{Arg, ArgAction, Command, ValueHint};
 use git_version::git_version;
 use lazy_static::lazy_static;
 
-use crate::commands::{extensions, parse};
+#[cfg(feature = "extensions")]
+use crate::commands::extensions;
+use crate::commands::parse;
 
 const VERSION: &str = git_version!(args = ["--dirty=-modified", "--tags"], cargo_suffix = "+");
 
@@ -70,7 +72,10 @@ pub fn app() -> Command {
 
     app = add_subcommands(app);
 
-    app = extensions::add_extensions_subcommands(app);
+    #[cfg(feature = "extensions")]
+    {
+        app = extensions::add_extensions_subcommands(app);
+    }
 
     app
 }
@@ -586,8 +591,12 @@ pub fn add_subcommands(command: Command) -> Command {
                 ])
                 .about("Run lockfile generation inside sandbox and write it to STDOUT")
                 .hide(true),
-        )
-        .subcommand(extensions::command());
+        );
+
+    #[cfg(feature = "extensions")]
+    {
+        app = app.subcommand(extensions::command());
+    }
 
     #[cfg(unix)]
     {

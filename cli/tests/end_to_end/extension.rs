@@ -1,4 +1,4 @@
-use phylum_cli::commands::extensions::permissions::{Permission, Permissions};
+use phylum_cli::permissions::{Permission, Permissions};
 use predicates::prelude::PredicateBooleanExt;
 
 use crate::common::{create_lockfile, create_project, TestCli};
