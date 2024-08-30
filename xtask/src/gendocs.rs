@@ -73,6 +73,7 @@ mod tests {
     use super::*;
 
     /// Ensure the generate CLI docs are always up-to-date.
+    #[cfg(feature = "full-docs")]
     #[test]
     fn docs_up_to_date() {
         // Move to project root.

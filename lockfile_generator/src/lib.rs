@@ -1,5 +1,6 @@
 use std::ffi::OsString;
 use std::fmt::{self, Display, Formatter};
+#[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf, StripPrefixError};
 use std::process::{Command, Output, Stdio};
@@ -157,12 +158,10 @@ impl Display for Error {
             Self::Io(_) => write!(f, "I/O error"),
             Self::Json(_) => write!(f, "json parsing error"),
             Self::NonZeroExit(output) => {
-                write!(
-                    f,
-                    "package manager quit unexpectedly (code: {:?}, signal: {:?})",
-                    output.status.code(),
-                    output.status.signal()
-                )?;
+                write!(f, "package manager quit unexpectedly (code: {:?}", output.status.code())?;
+                #[cfg(unix)]
+                write!(f, ", signal: {:?}", output.status.signal())?;
+                write!(f, ")")?;
 
                 if !output.stderr.is_empty() {
                     write!(f, "\n    STDERR:")?;

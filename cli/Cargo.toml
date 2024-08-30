@@ -22,7 +22,6 @@ end-to-end-tests = ["extensions"]
 anyhow = "1.0.44"
 axum = "0.7.4"
 base64 = "0.21.1"
-birdcage = { version = "0.8.1" }
 bytes = "1.1.0"
 chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
 cidr = "0.2.0"
@@ -70,6 +69,9 @@ vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true
 vulnreach_types = { path = "../vulnreach_types", optional = true }
 walkdir = "2.3.2"
 zip = { version = "2.1.0", default-features = false, features = ["deflate"] }
+
+[target.'cfg(unix)'.dependencies]
+birdcage = { version = "0.8.1" }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"

@@ -13,6 +13,18 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install --no-self-update stable --profile minimal
+
+      - name: Test
+        run: cargo +stable test --locked --no-default-features
+
   rustfmt:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-20.04
@@ -149,7 +161,7 @@ jobs:
   # This job reports the results of the matrixes above
   test:
     if: always()
-    needs: [clippy, test-matrix, all-features, oldstable]
+    needs: [windows, clippy, test-matrix, all-features, oldstable]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
