@@ -20,6 +20,9 @@ Usage: phylum project update [OPTIONS]
 `-r`, `--repository-url` `<REPOSITORY_URL>`
 &emsp; New repository URL
 
+`-l`, `--default-label` `<default-label>`
+&emsp; Default project label
+
 `-o`, `--org` `<ORG>`
 &emsp; Phylum organization
 

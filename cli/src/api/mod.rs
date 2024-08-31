@@ -8,15 +8,12 @@ use phylum_types::types::group::{
 };
 use phylum_types::types::job::{AllJobsStatusResponse, SubmitPackageResponse};
 use phylum_types::types::package::PackageDescriptor;
-use phylum_types::types::project::{
-    CreateProjectRequest, CreateProjectResponse, ProjectSummaryResponse, UpdateProjectRequest,
-};
+use phylum_types::types::project::CreateProjectResponse;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, IntoUrl, Method, StatusCode};
 use serde::de::{DeserializeOwned, IgnoredAny};
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
-use uuid::Uuid;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, Vulnerability};
 
@@ -29,10 +26,11 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    AddOrgUserRequest, AnalysisPackageDescriptor, HistoryJob, ListUserGroupsResponse,
-    OrgMembersResponse, OrgsResponse, PackageSpecifier, PackageSubmitResponse, PingResponse,
-    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
-    RevokeTokenRequest, SubmitPackageRequest, UserToken,
+    AddOrgUserRequest, AnalysisPackageDescriptor, CreateProjectRequest, GetProjectResponse,
+    HistoryJob, ListUserGroupsResponse, OrgMembersResponse, OrgsResponse, PackageSpecifier,
+    PackageSubmitResponse, Paginated, PingResponse, PolicyEvaluationRequest,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RevokeTokenRequest,
+    SubmitPackageRequest, UpdateProjectRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -266,8 +264,13 @@ impl PhylumApi {
         group: Option<String>,
         repository_url: Option<String>,
     ) -> Result<ProjectId> {
-        let url = endpoints::post_create_project(&self.config.connection.uri)?;
-        let body = CreateProjectRequest { repository_url, name: name.into(), group_name: group };
+        let url = endpoints::create_project(&self.config.connection.uri)?;
+        let body = CreateProjectRequest {
+            repository_url,
+            default_label: None,
+            group_name: group,
+            name: name.into(),
+        };
         let response: CreateProjectResponse = self.post(url, body).await?;
         Ok(response.id)
     }
@@ -279,9 +282,15 @@ impl PhylumApi {
         group: Option<String>,
         name: impl Into<String>,
         repository_url: Option<String>,
+        default_label: Option<String>,
     ) -> Result<ProjectId> {
-        let url = endpoints::update_project(&self.config.connection.uri, project_id)?;
-        let body = UpdateProjectRequest { repository_url, name: name.into(), group_name: group };
+        let url = endpoints::project(&self.config.connection.uri, project_id)?;
+        let body = UpdateProjectRequest {
+            repository_url,
+            default_label,
+            name: name.into(),
+            group_name: group,
+        };
         let response: CreateProjectResponse = self.put(url, body).await?;
         Ok(response.id)
     }
@@ -289,22 +298,55 @@ impl PhylumApi {
     /// Delete a project
     pub async fn delete_project(&self, project_id: ProjectId) -> Result<()> {
         let _: IgnoredAny = self
-            .delete(endpoints::delete_project(
-                &self.config.connection.uri,
-                &format!("{project_id}"),
-            )?)
+            .delete(endpoints::project(&self.config.connection.uri, &project_id.to_string())?)
             .await?;
         Ok(())
     }
 
-    /// Get a list of projects
-    pub async fn get_projects(&self, group: Option<&str>) -> Result<Vec<ProjectSummaryResponse>> {
-        let uri = match group {
-            Some(group) => endpoints::group_project_summary(&self.config.connection.uri, group)?,
-            None => endpoints::get_project_summary(&self.config.connection.uri)?,
-        };
+    /// Get all projects.
+    ///
+    /// If a group is passed, only projects of that group will be returned.
+    /// Otherwise all projects, including group projects, will be returned.
+    ///
+    /// The project name filter does not require an exact match, it is
+    /// equivalent to filtering with [`str::contains`].
+    pub async fn get_projects(
+        &self,
+        group: Option<&str>,
+        name_filter: Option<&str>,
+    ) -> Result<Vec<ProjectListEntry>> {
+        let mut uri = endpoints::projects(&self.config.connection.uri)?;
 
-        self.get(uri).await
+        // Add filter query parameters.
+        if let Some(group) = group {
+            uri.query_pairs_mut().append_pair("filter.group", group);
+        }
+        if let Some(name_filter) = name_filter {
+            uri.query_pairs_mut().append_pair("filter.name", name_filter);
+        }
+
+        // Set maximum pagination size, since we want everything anyway.
+        uri.query_pairs_mut().append_pair("paginate.limit", "100");
+
+        let mut projects: Vec<ProjectListEntry> = Vec::new();
+        loop {
+            // Update the pagination cursor point.
+            let mut uri = uri.clone();
+            if let Some(project) = projects.last() {
+                uri.query_pairs_mut().append_pair("paginate.cursor", &project.id.to_string());
+            }
+
+            // Get next page of projects.
+            let mut page: Paginated<ProjectListEntry> = self.get(uri).await?;
+            projects.append(&mut page.values);
+
+            // Keep paginating until there's nothing left.
+            if !page.has_more {
+                break;
+            }
+        }
+
+        Ok(projects)
     }
 
     /// Submit a new request to the system
@@ -395,7 +437,7 @@ impl PhylumApi {
         project_name: &str,
         group_name: Option<&str>,
     ) -> Result<ProjectId> {
-        let projects = self.get_projects(group_name).await?;
+        let projects = self.get_projects(group_name, Some(project_name)).await?;
 
         projects
             .iter()
@@ -405,19 +447,9 @@ impl PhylumApi {
     }
 
     /// Get a project using its ID and group name.
-    pub async fn get_project(
-        &self,
-        project_id: &str,
-        group_name: Option<&str>,
-    ) -> Result<ProjectSummaryResponse> {
-        let project_id = Uuid::parse_str(project_id).map_err(|err| anyhow!(err))?;
-
-        let projects = self.get_projects(group_name).await?;
-
-        projects
-            .into_iter()
-            .find(|project| project.id == project_id)
-            .ok_or_else(|| anyhow!("No project found with ID {:?}", project_id).into())
+    pub async fn get_project(&self, project_id: &str) -> Result<GetProjectResponse> {
+        let url = endpoints::project(&self.config.connection.uri, project_id)?;
+        self.get(url).await
     }
 
     /// Submit a single package

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::path::Path;
 use std::result::Result as StdResult;
 
@@ -20,8 +21,20 @@ pub async fn get_project_list(
     api: &PhylumApi,
     pretty_print: bool,
     group: Option<&str>,
+    no_group: bool,
 ) -> Result<()> {
-    let resp = api.get_projects(group).await?;
+    let mut resp = api.get_projects(group, None).await?;
+
+    // Remove group projects if requested.
+    if no_group {
+        resp.retain(|project| project.group_name.is_none());
+    }
+
+    // Sort response for nicer output.
+    resp.sort_unstable_by(|a, b| match a.group_name.cmp(&b.group_name) {
+        Ordering::Equal => a.name.cmp(&b.name),
+        ordering => ordering,
+    });
 
     resp.write_stdout(pretty_print);
 
@@ -73,7 +86,8 @@ pub async fn handle_project(
     } else if let Some(matches) = matches.subcommand_matches("list") {
         let group = matches.get_one::<String>("group");
         let pretty_print = !matches.get_flag("json");
-        get_project_list(api, pretty_print, group.map(String::as_str)).await?;
+        let no_group = matches.get_flag("no-group");
+        get_project_list(api, pretty_print, group.map(String::as_str), no_group).await?;
     } else if let Some(matches) = matches.subcommand_matches("link") {
         let project_name = matches.get_one::<String>("name").unwrap();
         let group_name = matches.get_one::<String>("group").cloned();
@@ -107,16 +121,12 @@ pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), Phyl
     let project = matches.get_one::<String>("project");
     let group = matches.get_one::<String>("group");
 
-    let (project_id, group_name) = match project {
+    let project_id = match project {
         // If project is passed on CLI, lookup its ID.
-        Some(project) => {
-            let group = group.cloned();
-            let project_id = lookup_project(api, project, group.as_deref()).await?;
-            (project_id, group)
-        },
+        Some(project) => lookup_project(api, project, group.map(|g| g.as_str())).await?,
         // If no project is passed, use `.phylum_project`.
         None => match phylum_project::get_current_project() {
-            Some(project_config) => (project_config.id, project_config.group_name),
+            Some(project_config) => project_config.id,
             None => {
                 if pretty_print {
                     print_user_success!("No project set");
@@ -129,7 +139,7 @@ pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), Phyl
         },
     };
 
-    let project = api.get_project(&project_id.to_string(), group_name.as_deref()).await?;
+    let project = api.get_project(&project_id.to_string()).await?;
 
     project.write_stdout(pretty_print);
 
@@ -166,6 +176,7 @@ pub async fn update_project(
     matches: &ArgMatches,
 ) -> StdResult<(), PhylumApiError> {
     let repository_url_cli = matches.get_one::<String>("repository-url");
+    let default_label_cli = matches.get_one::<String>("default-label");
     let project_id_cli = matches.get_one::<String>("project-id");
     let name_cli = matches.get_one::<String>("name");
 
@@ -173,7 +184,11 @@ pub async fn update_project(
     let interactive = project_id_cli.is_none();
 
     // Sanity check non-interactive usage.
-    if !interactive && repository_url_cli.is_none() && name_cli.is_none() {
+    if !interactive
+        && name_cli.is_none()
+        && repository_url_cli.is_none()
+        && default_label_cli.is_none()
+    {
         print_user_warning!("No changes requested, nothing to do.\n");
         print::print_sc_help(app, &["project", "update"])?;
         return Ok(());
@@ -187,10 +202,18 @@ pub async fn update_project(
     };
 
     // Get existing project information from the API.
-    let project = api.get_project(&project_id, group_name.as_deref()).await?;
+    let project = api.get_project(&project_id).await?;
+
+    // Prompt for name, defaulting to the existing one if empty.
+    let name = match name_cli {
+        None if interactive => {
+            prompt_optional("New Project Name", Some(project.name.clone()))?.unwrap()
+        },
+        name => name.cloned().unwrap_or(project.name.clone()),
+    };
 
     // Check if repository URL should be changed.
-    let change_repository_url = if interactive {
+    let change_repository_url = if interactive && repository_url_cli.is_none() {
         let change_repository_url = Confirm::new()
             .with_prompt("Change repository URL?")
             .default(false)
@@ -211,16 +234,36 @@ pub async fn update_project(
         Some(repository_url) => Some(repository_url.clone()),
     };
 
-    // Prompt for name, defaulting to the existing one if empty.
-    let name = match name_cli {
-        None if interactive => {
-            prompt_optional("New Project Name", Some(project.name.clone()))?.unwrap()
-        },
-        name => name.cloned().unwrap_or(project.name.clone()),
+    // Check if default label should be changed.
+    let change_default_label = if interactive && default_label_cli.is_none() {
+        let change_default_label = Confirm::new()
+            .with_prompt("Change default label?")
+            .default(false)
+            .interact()
+            .map_err(|err| anyhow!(err))?;
+
+        println!();
+
+        change_default_label
+    } else {
+        false
     };
 
-    api.update_project(&project_id, group_name.clone(), name.clone(), repository_url.clone())
-        .await?;
+    // Prompt for default label if necessary.
+    let default_label = match default_label_cli {
+        None if change_default_label => prompt_optional("New Default Label", None)?,
+        None => project.default_label.clone(),
+        Some(default_label) => Some(default_label.clone()),
+    };
+
+    api.update_project(
+        &project_id,
+        group_name.clone(),
+        name.clone(),
+        repository_url.clone(),
+        default_label.clone(),
+    )
+    .await?;
 
     // Output success message.
     let fmt_option = |opt| match opt {
@@ -234,9 +277,14 @@ pub async fn update_project(
     success_msg += ":\n";
     success_msg += &format!("      Name: {:?} -> {name:?}\n", project.name);
     success_msg += &format!(
-        "      Repository URL: {} -> {}",
+        "      Repository URL: {} -> {}\n",
         fmt_option(project.repository_url),
         fmt_option(repository_url)
+    );
+    success_msg += &format!(
+        "      Default Label: {} -> {}",
+        fmt_option(project.default_label),
+        fmt_option(default_label),
     );
     print_user_success!("{}", success_msg);
 
@@ -276,7 +324,11 @@ async fn prompt_project(
     };
 
     // Get all projects.
-    let projects = api.get_projects(group_name.as_deref()).await?;
+    let mut projects = api.get_projects(group_name.as_deref(), None).await?;
+
+    // Remove group projects if the user didn't select any group.
+    projects.retain(|project| project.group_name.is_some() == group_name.is_some());
+
     let project_names: Vec<_> = projects.iter().map(|project| &project.name).collect();
 
     // Prompt for project selection.

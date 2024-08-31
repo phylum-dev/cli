@@ -3,9 +3,9 @@ use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
 use phylum_lockfile::ParsedLockfile;
-use phylum_types::types::common::ProjectId;
+use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::package::{
-    PackageDescriptor, PackageDescriptorAndLockfile, RiskDomain as PTRiskDomain,
+    PackageDescriptor, PackageDescriptorAndLockfile, PackageType, RiskDomain as PTRiskDomain,
     RiskLevel as PTRiskLevel,
 };
 use serde::{Deserialize, Serialize};
@@ -239,7 +239,7 @@ pub struct VulnDetails {
 }
 
 /// The user-specified reason for an issue to be ignored.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum IgnoredReason {
     /// It is not ignored.
@@ -472,4 +472,51 @@ pub struct OrgMember {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct AddOrgUserRequest {
     pub email: String,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct CreateProjectRequest {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repository_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_label: Option<String>,
+}
+pub type UpdateProjectRequest = CreateProjectRequest;
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct ProjectListEntry {
+    pub id: ProjectId,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub name: String,
+    pub ecosystems: Vec<PackageType>,
+    pub group_name: Option<String>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct Paginated<T> {
+    /// The curent page of values.
+    pub values: Vec<T>,
+    /// Indication of whether the current query has more values past the last
+    /// element in `values`.
+    pub has_more: bool,
+}
+
+/// Response to the GET /data/project/<project_id> endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetProjectResponse {
+    pub id: ProjectId,
+    pub name: String,
+    pub registries: Vec<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub latest_job_created_at: Option<DateTime<Utc>>,
+    pub latest_job_id: Option<JobId>,
+    pub label: Option<String>,
+    pub default_label: Option<String>,
+    pub repository_url: Option<String>,
 }
