@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Organization management under the `phylum org` subcommand
+- `phylum project update --default-label` option to set a project's default label
+- `phylum project list --no-group` flag to only show personal projects
 
 ## 6.6.6 - 2024-07-12
 
@@ -58,7 +60,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - PNPM v5 lockfile support
-- `phylum project update --default-label`
 
 ### Fixed
 
