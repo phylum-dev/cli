@@ -325,7 +325,10 @@ async fn prompt_project(
 
     // Get all projects.
     let mut projects = api.get_projects(group_name.as_deref(), None).await?;
+
+    // Remove group projects if the user didn't select any group.
     projects.retain(|project| project.group_name.is_some() == group_name.is_some());
+
     let project_names: Vec<_> = projects.iter().map(|project| &project.name).collect();
 
     // Prompt for project selection.
