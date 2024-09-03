@@ -53,6 +53,10 @@ jobs:
             os: macos-14
           - target: aarch64-apple-darwin
             os: macos-14
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            extension: .exe
+            flags: --no-default-features
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -68,20 +72,25 @@ jobs:
         name: Install protoc
         run: sudo apt update && sudo apt install -y protobuf-compiler
 
-      - name: Install Rust toolchain
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }}
+
+      - if: ${{ runner.os != 'Windows' }}
+        name: Install Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf \
             | sh -s -- -y --default-toolchain stable --profile minimal --target ${{ matrix.target }}
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build Distributions
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: phylum-${{ matrix.target }}
-          path: ./target/${{ matrix.target }}/release/phylum
+          path: ./target/${{ matrix.target }}/release/phylum${{ matrix.extension }}
           if-no-files-found: error
           retention-days: 7
 
@@ -103,7 +112,7 @@ jobs:
 
       - name: Prep archives
         run: |
-          for archive in phylum-*/;
+          for archive in phylum-*-apple-*/ phylum-*-linux-*/;
           do
             archive=$(echo "${archive}" | sed -e "s/\/$//")
             cp -R shell-completions "${archive}/completions"
@@ -116,12 +125,19 @@ jobs:
             chmod a+x "${archive}/phylum"
             zip -r "${archive}.zip" "${archive}"
           done
+          for archive in phylum-*-windows-*/;
+          do
+            archive=$(echo "${archive}" | sed -e "s/\/$//")
+            mv "${archive}/phylum.exe" "${archive}.exe"
+          done
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: release-archives
-          path: phylum-*.zip
+          path: |
+            phylum-*.zip
+            phylum-*.exe
           if-no-files-found: error
           retention-days: 7
 
@@ -214,7 +230,7 @@ jobs:
         # Reference: https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28#upload-a-release-asset
         run: |
           API_URL=$(printf "%s" "$UPLOAD_URL" | cut -d '{' -f 1)
-          for asset in phylum-*.zip*;
+          for asset in phylum-*.zip* phylum-*.exe;
           do
             curl \
               -X POST \
