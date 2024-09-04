@@ -15,12 +15,12 @@ use unicode_width::UnicodeWidthStr;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::Vulnerability;
 
+use crate::commands::group::ListGroupsEntry;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    GetProjectResponse, HistoryJob, Issue, ListUserGroupsResponse, OrgMember, OrgMembersResponse,
-    OrgsResponse, Package, PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry,
-    RiskLevel, UserGroup, UserToken,
+    GetProjectResponse, HistoryJob, Issue, OrgMember, OrgMembersResponse, OrgsResponse, Package,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RiskLevel, UserToken,
 };
 
 // Maximum length of email column.
@@ -203,16 +203,37 @@ impl Format for GetProjectResponse {
     }
 }
 
-impl Format for ListUserGroupsResponse {
+impl Format for Vec<ListGroupsEntry> {
     fn pretty<W: Write>(&self, writer: &mut W) {
-        // Maximum length of group name column.
+        // Maximum length of org and group name columns.
         const MAX_NAME_WIDTH: usize = 25;
 
-        let table = format_table::<fn(&UserGroup) -> String, _>(&self.groups, &[
-            ("Group Name", |group| print::truncate(&group.group_name, MAX_NAME_WIDTH).into_owned()),
-            ("Creation Time", |group| format_datetime(group.created_at)),
-        ]);
-        let _ = writeln!(writer, "{table}");
+        // Skip table formatting with no groups.
+        if self.is_empty() {
+            let _ = writeln!(
+                writer,
+                "You don't have any groups yet; create one with `phylum group create <NAME>`."
+            );
+            return;
+        }
+
+        // Use condensed format if only legacy groups are present.
+        if self.iter().all(|group| group.org.is_none()) {
+            let table = format_table::<fn(&ListGroupsEntry) -> String, _>(self, &[(
+                "Group Name",
+                |group| print::truncate(&group.name, MAX_NAME_WIDTH).into_owned(),
+            )]);
+            let _ = writeln!(writer, "{table}");
+        } else {
+            let table = format_table::<fn(&ListGroupsEntry) -> String, _>(self, &[
+                ("Organization Name", |group| match &group.org {
+                    Some(org) => print::truncate(org, MAX_NAME_WIDTH).into_owned(),
+                    None => String::new(),
+                }),
+                ("Group Name", |group| print::truncate(&group.name, MAX_NAME_WIDTH).into_owned()),
+            ]);
+            let _ = writeln!(writer, "{table}");
+        }
     }
 }
 
