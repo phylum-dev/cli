@@ -176,8 +176,19 @@ impl Format for Vec<ProjectListEntry> {
             let _ = writeln!(writer, "{table}");
         } else {
             let table = format_table::<fn(&ProjectListEntry) -> String, _>(self, &[
+                ("Organization Name", |project| {
+                    match project.group_name.as_deref().unwrap_or("").split_once('/') {
+                        Some((org_name, _)) => {
+                            print::truncate(org_name, MAX_NAME_WIDTH).into_owned()
+                        },
+                        None => String::new(),
+                    }
+                }),
                 ("Group Name", |project| {
-                    let group_name = project.group_name.as_deref().unwrap_or("");
+                    let org_and_group = project.group_name.as_deref().unwrap_or("");
+                    let group_name = org_and_group
+                        .split_once('/')
+                        .map_or(org_and_group, |(_, group_name)| group_name);
                     print::truncate(group_name, MAX_NAME_WIDTH).into_owned()
                 }),
                 ("Project Name", |project| {

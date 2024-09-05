@@ -18,11 +18,12 @@ use crate::api::PhylumApi;
 #[cfg(feature = "vulnreach")]
 use crate::auth::jwt::RealmRole;
 use crate::commands::{parse, CommandResult, ExitCode};
+use crate::config::{self, Config};
 use crate::format::Format;
 use crate::types::AnalysisPackageDescriptor;
 #[cfg(feature = "vulnreach")]
 use crate::vulnreach;
-use crate::{config, print_user_failure, print_user_success, print_user_warning};
+use crate::{print_user_failure, print_user_success, print_user_warning};
 
 /// Output analysis job results.
 pub async fn print_job_status(
@@ -57,7 +58,11 @@ pub async fn print_job_status(
 /// This allows us to list last N job runs, list the projects, list runs
 /// associated with projects, and get the detailed run results for a specific
 /// job run.
-pub async fn handle_history(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_history(
+    api: &PhylumApi,
+    matches: &clap::ArgMatches,
+    config: Config,
+) -> CommandResult {
     let pretty_print = !matches.get_flag("json");
 
     if let Some(job_id) = matches.get_one::<String>("JOB_ID") {
@@ -66,7 +71,10 @@ pub async fn handle_history(api: &PhylumApi, matches: &clap::ArgMatches) -> Comm
         return print_job_status(api, &job_id, [], pretty_print).await;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let group = matches.get_one::<String>("group").map(String::as_str);
-        let history = api.get_project_history(project, group).await?;
+        let org = group.as_ref().and_then(|_| config.org());
+
+        let history = api.get_project_history(project, org, group).await?;
+
         history.write_stdout(pretty_print);
     } else {
         let resp = match api.get_status().await {
@@ -88,13 +96,17 @@ pub async fn handle_history(api: &PhylumApi, matches: &clap::ArgMatches) -> Comm
 }
 
 /// Handle `phylum analyze` subcommand.
-pub async fn handle_analyze(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+pub async fn handle_analyze(
+    api: &PhylumApi,
+    matches: &clap::ArgMatches,
+    config: Config,
+) -> CommandResult {
     let sandbox_generation = !matches.get_flag("skip-sandbox");
     let generate_lockfiles = !matches.get_flag("no-generation");
     let label = matches.get_one::<String>("label");
     let pretty_print = !matches.get_flag("json");
 
-    let jobs_project = JobsProject::new(api, matches).await?;
+    let jobs_project = JobsProject::new(api, matches, config).await?;
 
     // Get .phylum_project path.
     let current_project = phylum_project::get_current_project();
@@ -251,7 +263,11 @@ impl JobsProject {
     ///
     /// Assumes that the clap `matches` has a `project` and `group` arguments
     /// option.
-    async fn new(api: &PhylumApi, matches: &clap::ArgMatches) -> Result<JobsProject> {
+    async fn new(
+        api: &PhylumApi,
+        matches: &clap::ArgMatches,
+        config: Config,
+    ) -> Result<JobsProject> {
         let current_project = phylum_project::get_current_project();
         let depfiles = config::depfiles(matches, current_project.as_ref())?;
 
@@ -259,7 +275,10 @@ impl JobsProject {
             // Prefer `--project` and `--group` if they were specified.
             Some(project_name) => {
                 let group = matches.get_one::<String>("group").cloned();
-                let project = api.get_project_id(project_name, group.as_deref()).await?;
+                let org = group.as_ref().and_then(|_| config.org());
+
+                let project = api.get_project_id(project_name, org, group.as_deref()).await?;
+
                 Ok(Self { project_id: project, group, depfiles })
             },
             // Retrieve the project from the `.phylum_project` file.

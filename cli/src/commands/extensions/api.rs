@@ -168,12 +168,15 @@ async fn analyze(
     #[string] project: Option<String>,
     #[string] group: Option<String>,
     #[string] label: Option<String>,
+    #[string] organization: Option<String>,
 ) -> Result<JobId> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     let (project, group) = match (project, group) {
-        (Some(project), group) => (api.get_project_id(&project, group.as_deref()).await?, None),
+        (Some(project), group) => {
+            (api.get_project_id(&project, organization.as_deref(), group.as_deref()).await?, None)
+        },
         (None, _) => {
             if let Some(p) = phylum_project::get_current_project() {
                 (p.id, p.group_name)
@@ -329,11 +332,12 @@ async fn get_groups(op_state: Rc<RefCell<OpState>>) -> Result<ListUserGroupsResp
 async fn get_projects(
     op_state: Rc<RefCell<OpState>>,
     #[string] group: Option<String>,
+    #[string] organization: Option<String>,
 ) -> Result<Vec<ProjectListEntry>> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    api.get_projects(group.as_deref(), None).await.map_err(Error::from)
+    api.get_projects(organization.as_deref(), group.as_deref(), None).await.map_err(Error::from)
 }
 
 #[derive(Serialize)]
@@ -356,15 +360,16 @@ async fn create_project(
     #[string] name: String,
     #[string] group: Option<String>,
     #[string] repository_url: Option<String>,
+    #[string] organization: Option<String>,
 ) -> Result<CreatedProject> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
     // Retrieve the id if the project already exists, otherwise return the id or the
     // error.
-    match api.create_project(&name, group.clone(), repository_url).await {
+    match api.create_project(&name, organization.as_deref(), group.clone(), repository_url).await {
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
-            .get_project_id(&name, group.as_deref())
+            .get_project_id(&name, organization.as_deref(), group.as_deref())
             .await
             .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
             .map_err(|e| e.into()),
@@ -379,11 +384,12 @@ async fn delete_project(
     op_state: Rc<RefCell<OpState>>,
     #[string] name: String,
     #[string] group: Option<String>,
+    #[string] organization: Option<String>,
 ) -> Result<()> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    let project_id = api.get_project_id(&name, group.as_deref()).await?;
+    let project_id = api.get_project_id(&name, organization.as_deref(), group.as_deref()).await?;
     api.delete_project(project_id).await.map_err(|e| e.into())
 }
 

@@ -1,29 +1,90 @@
 use std::cmp::Ordering;
+use std::fmt::Write;
 use std::path::Path;
-use std::result::Result as StdResult;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context};
 use clap::{ArgMatches, Command};
 use console::style;
 use dialoguer::{Confirm, FuzzySelect, Input};
 use phylum_project::{ProjectConfig, PROJ_CONF_FILE};
-use phylum_types::types::common::ProjectId;
 use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{init, CommandResult, ExitCode};
-use crate::config::save_config;
+use crate::config::{self, Config};
 use crate::format::Format;
 use crate::{print, print_user_failure, print_user_success, print_user_warning};
 
-/// List the projects in this account.
-pub async fn get_project_list(
+/// Handle the project subcommand.
+pub async fn handle_project(
     api: &PhylumApi,
-    pretty_print: bool,
-    group: Option<&str>,
-    no_group: bool,
-) -> Result<()> {
-    let mut resp = api.get_projects(group, None).await?;
+    app: &mut Command,
+    matches: &ArgMatches,
+    config: Config,
+) -> CommandResult {
+    match matches.subcommand() {
+        Some(("status", matches)) => handle_status(api, matches, config).await,
+        Some(("create", matches)) => handle_create_project(api, matches, config).await,
+        Some(("update", matches)) => handle_update_project(api, app, matches, config).await,
+        Some(("delete", matches)) => handle_delete_project(api, matches, config).await,
+        Some(("list", matches)) => handle_list_projects(api, matches).await,
+        Some(("link", matches)) => handle_link_project(api, matches, config).await,
+        _ => unreachable!("invalid clap configuration"),
+    }
+}
+
+/// Create a Phylum project.
+pub async fn create_project(
+    api: &PhylumApi,
+    project: &str,
+    org: Option<&str>,
+    group: Option<String>,
+    repository_url: Option<String>,
+) -> Result<ProjectConfig, PhylumApiError> {
+    let project_id = api.create_project(project, org, group.clone(), repository_url).await?;
+    Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
+}
+
+/// Print project information.
+async fn handle_status(api: &PhylumApi, matches: &ArgMatches, config: Config) -> CommandResult {
+    let pretty_print = !matches.get_flag("json");
+    let project = matches.get_one::<String>("project");
+    let group = matches.get_one::<String>("group");
+    let org = config.org();
+
+    let project_id = match project {
+        // If project is passed on CLI, lookup its ID.
+        Some(project) => api.get_project_id(project, org, group.map(|g| g.as_str())).await?,
+        // If no project is passed, use `.phylum_project`.
+        None => match phylum_project::get_current_project() {
+            Some(project_config) => project_config.id,
+            None => {
+                if pretty_print {
+                    print_user_success!("No project set");
+                } else {
+                    println!("{{}}");
+                }
+
+                return Ok(ExitCode::Ok);
+            },
+        },
+    };
+
+    let project = api.get_project(&project_id.to_string()).await?;
+
+    project.write_stdout(pretty_print);
+
+    Ok(ExitCode::Ok)
+}
+
+/// List the projects in this account.
+async fn handle_list_projects(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
+    let group = matches.get_one::<String>("group").map(|g| g.as_str());
+    let org = matches.get_one::<String>("org").map(|o| o.as_str());
+    let pretty_print = !matches.get_flag("json");
+    let no_group = matches.get_flag("no-group");
+
+    let mut resp = api.get_projects(org, group, None).await?;
 
     // Remove group projects if requested.
     if no_group {
@@ -38,147 +99,83 @@ pub async fn get_project_list(
 
     resp.write_stdout(pretty_print);
 
-    Ok(())
+    Ok(ExitCode::Ok)
 }
 
-/// Handle the project subcommand.
-pub async fn handle_project(
+/// Create a Phylum project.
+async fn handle_create_project(
     api: &PhylumApi,
-    app: &mut Command,
     matches: &ArgMatches,
+    config: Config,
 ) -> CommandResult {
-    if let Some(matches) = matches.subcommand_matches("create") {
-        let name = matches.get_one::<String>("name").unwrap();
-        let group = matches.get_one::<String>("group").cloned();
-        let repository_url = matches.get_one::<String>("repository-url").cloned();
+    let repository_url = matches.get_one::<String>("repository-url").cloned();
+    let project = matches.get_one::<String>("name").unwrap();
+    let group = matches.get_one::<String>("group").cloned();
+    let org = config.org();
 
-        log::info!("Initializing new project: `{}`", name);
+    log::info!("Initializing new project: `{}`", project);
 
-        let project_config = match create_project(api, name, group, repository_url).await {
-            Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-                print_user_failure!("Project '{}' already exists", name);
-                return Ok(ExitCode::AlreadyExists);
-            },
-            project_config => project_config?,
-        };
+    let project_config = match create_project(api, project, org, group.clone(), repository_url)
+        .await
+    {
+        Ok(project) => project,
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            let formatted_project = format_project_reference(org, group.as_deref(), project, None);
+            print_user_failure!("Project {} already exists", formatted_project);
+            return Ok(ExitCode::AlreadyExists);
+        },
+        Err(err) => return Err(err.into()),
+    };
 
-        save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
-            print_user_failure!("Failed to save project file: {}", err);
-        });
+    config::save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
+        print_user_failure!("Failed to save project file: {}", err);
+    });
 
-        print_user_success!("Successfully created project {name:?} ({})", project_config.id);
-    } else if let Some(matches) = matches.subcommand_matches("status") {
-        status(api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("update") {
-        update_project(app, api, matches).await?;
-    } else if let Some(matches) = matches.subcommand_matches("delete") {
-        let project_name = matches.get_one::<String>("name").unwrap();
-        let group_name = matches.get_one::<String>("group");
-
-        let proj_uuid = api
-            .get_project_id(project_name, group_name.map(String::as_str))
-            .await
-            .context("A project with that name does not exist")?;
-
-        api.delete_project(proj_uuid).await?;
-
-        print_user_success!("Successfully deleted project, {}", project_name);
-    } else if let Some(matches) = matches.subcommand_matches("list") {
-        let group = matches.get_one::<String>("group");
-        let pretty_print = !matches.get_flag("json");
-        let no_group = matches.get_flag("no-group");
-        get_project_list(api, pretty_print, group.map(String::as_str), no_group).await?;
-    } else if let Some(matches) = matches.subcommand_matches("link") {
-        let project_name = matches.get_one::<String>("name").unwrap();
-        let group_name = matches.get_one::<String>("group").cloned();
-
-        let uuid = lookup_project(api, project_name, group_name.as_deref()).await?;
-
-        let project_config = match phylum_project::get_current_project() {
-            Some(mut project) => {
-                project.update_project(uuid, project_name.into(), group_name);
-                project
-            },
-            None => ProjectConfig::new(uuid, project_name.into(), group_name),
-        };
-
-        save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
-            log::error!("Failed to save user credentials to config: {}", err)
-        });
-
-        print_user_success!(
-            "Linked the current working directory to the project {}.",
-            format!("{}", style(project_config.name).white())
-        );
-    }
+    let project_id = Some(project_config.id.to_string());
+    let formatted_project =
+        format_project_reference(org, group.as_deref(), project, project_id.as_deref());
+    print_user_success!("Successfully created project {formatted_project}");
 
     Ok(ExitCode::Ok)
 }
 
-/// Print project information.
-pub async fn status(api: &PhylumApi, matches: &ArgMatches) -> StdResult<(), PhylumApiError> {
-    let pretty_print = !matches.get_flag("json");
-    let project = matches.get_one::<String>("project");
-    let group = matches.get_one::<String>("group");
-
-    let project_id = match project {
-        // If project is passed on CLI, lookup its ID.
-        Some(project) => lookup_project(api, project, group.map(|g| g.as_str())).await?,
-        // If no project is passed, use `.phylum_project`.
-        None => match phylum_project::get_current_project() {
-            Some(project_config) => project_config.id,
-            None => {
-                if pretty_print {
-                    print_user_success!("No project set");
-                } else {
-                    println!("{{}}");
-                }
-
-                return Ok(());
-            },
-        },
-    };
-
-    let project = api.get_project(&project_id.to_string()).await?;
-
-    project.write_stdout(pretty_print);
-
-    Ok(())
-}
-
-/// Create a Phylum project.
-pub async fn create_project(
+/// Delete a Phylum project.
+async fn handle_delete_project(
     api: &PhylumApi,
-    project: &str,
-    group: Option<String>,
-    repository_url: Option<String>,
-) -> StdResult<ProjectConfig, PhylumApiError> {
-    let project_id = api.create_project(project, group.clone(), repository_url).await?;
+    matches: &ArgMatches,
+    config: Config,
+) -> CommandResult {
+    let project_name = matches.get_one::<String>("name").unwrap();
+    let group_name = matches.get_one::<String>("group").map(|g| g.as_str());
 
-    Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
-}
+    // Only attach org if a group was supplied.
+    let org = group_name.as_ref().and_then(|_| config.org());
 
-/// Lookup project by name and group.
-pub async fn lookup_project(
-    api: &PhylumApi,
-    name: &str,
-    group: Option<&str>,
-) -> StdResult<ProjectId, PhylumApiError> {
-    let uuid =
-        api.get_project_id(name, group).await.context("A project with that name does not exist")?;
-    Ok(uuid)
+    let formatted_project = format_project_reference(org, group_name, project_name, None);
+    let proj_uuid = api
+        .get_project_id(project_name, org, group_name)
+        .await
+        .with_context(|| format!("Project {formatted_project} does not exist"))?;
+
+    api.delete_project(proj_uuid).await?;
+
+    print_user_success!("Successfully deleted project {formatted_project}");
+
+    Ok(ExitCode::Ok)
 }
 
 /// Update a Phylum project.
-pub async fn update_project(
-    app: &mut Command,
+async fn handle_update_project(
     api: &PhylumApi,
+    app: &mut Command,
     matches: &ArgMatches,
-) -> StdResult<(), PhylumApiError> {
+    config: Config,
+) -> CommandResult {
     let repository_url_cli = matches.get_one::<String>("repository-url");
     let default_label_cli = matches.get_one::<String>("default-label");
     let project_id_cli = matches.get_one::<String>("project-id");
     let name_cli = matches.get_one::<String>("name");
+    let org = config.org();
 
     // Determine interactivity by checking if project ID was supplied.
     let interactive = project_id_cli.is_none();
@@ -191,14 +188,14 @@ pub async fn update_project(
     {
         print_user_warning!("No changes requested, nothing to do.\n");
         print::print_sc_help(app, &["project", "update"])?;
-        return Ok(());
+        return Ok(ExitCode::Ok);
     }
 
     // Prompt for project if necessary.
     let group_name = matches.get_one::<String>("group").cloned();
     let (project_id, group_name) = match project_id_cli {
         Some(project_id) => (project_id.clone(), group_name),
-        None => prompt_project(api, group_name).await?,
+        None => prompt_project(api, org, group_name).await?,
     };
 
     // Get existing project information from the API.
@@ -258,6 +255,7 @@ pub async fn update_project(
 
     api.update_project(
         &project_id,
+        None,
         group_name.clone(),
         name.clone(),
         repository_url.clone(),
@@ -270,10 +268,9 @@ pub async fn update_project(
         Some(s) => format!("{s:?}"),
         None => String::from("None"),
     };
-    let mut success_msg = format!("Successfully updated project {project_id:?}");
-    if let Some(group_name) = &group_name {
-        success_msg += &format!(" (group {group_name:?})");
-    }
+    let formatted_project =
+        format_project_reference(org, group_name.as_deref(), &project.name, Some(&project_id));
+    let mut success_msg = format!("Successfully updated project {formatted_project}");
     success_msg += ":\n";
     success_msg += &format!("      Name: {:?} -> {name:?}\n", project.name);
     success_msg += &format!(
@@ -288,7 +285,40 @@ pub async fn update_project(
     );
     print_user_success!("{}", success_msg);
 
-    Ok(())
+    Ok(ExitCode::Ok)
+}
+
+/// Link a Phylum project to the currenty directory.
+async fn handle_link_project(
+    api: &PhylumApi,
+    matches: &ArgMatches,
+    config: Config,
+) -> CommandResult {
+    let project_name = matches.get_one::<String>("name").unwrap();
+    let group_name = matches.get_one::<String>("group").cloned();
+
+    // Only attach org if a group was supplied.
+    let org = group_name.as_ref().and_then(|_| config.org());
+
+    let uuid = api.get_project_id(project_name, org, group_name.as_deref()).await?;
+
+    let project_config = match phylum_project::get_current_project() {
+        Some(mut project) => {
+            project.update_project(uuid, project_name.into(), group_name.clone());
+            project
+        },
+        None => ProjectConfig::new(uuid, project_name.into(), group_name.clone()),
+    };
+
+    config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
+        .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
+
+    let project_id = Some(project_config.id.to_string());
+    let formatted_project =
+        format_project_reference(org, group_name.as_deref(), project_name, project_id.as_deref());
+    print_user_success!("Linked the current working directory to the project {formatted_project}.");
+
+    Ok(ExitCode::Ok)
 }
 
 /// Prompt for optional text input.
@@ -312,19 +342,28 @@ fn prompt_optional(subject: &str, default: Option<String>) -> anyhow::Result<Opt
 /// Prompt for project selection.
 async fn prompt_project(
     api: &PhylumApi,
+    org: Option<&str>,
     cli_group: Option<String>,
 ) -> anyhow::Result<(String, Option<String>)> {
     // Get the project group, prompting for it if necessary.
     let group_name = match cli_group {
         Some(cli_group) => Some(cli_group),
         None => {
-            let groups = api.get_groups_list().await?.groups;
+            let groups: Vec<_> = match org {
+                Some(org) => {
+                    api.org_groups(org).await?.groups.into_iter().map(|group| group.name).collect()
+                },
+                None => {
+                    let groups_list = api.get_groups_list().await?;
+                    groups_list.groups.into_iter().map(|group| group.group_name).collect()
+                },
+            };
             init::prompt_group(&groups)?
         },
     };
 
     // Get all projects.
-    let mut projects = api.get_projects(group_name.as_deref(), None).await?;
+    let mut projects = api.get_projects(org.as_deref(), group_name.as_deref(), None).await?;
 
     // Remove group projects if the user didn't select any group.
     projects.retain(|project| project.group_name.is_some() == group_name.is_some());
@@ -339,4 +378,36 @@ async fn prompt_project(
     println!();
 
     Ok((project_id, group_name))
+}
+
+/// Format a project hierarchy for user output.
+fn format_project_reference(
+    org: Option<&str>,
+    group: Option<&str>,
+    project: &str,
+    project_id: Option<&str>,
+) -> String {
+    let mut formatted = String::new();
+
+    let _ = write!(formatted, "{}", style(project).green());
+
+    formatted.push_str(" (");
+
+    if let Some(project_id) = project_id {
+        let _ = write!(formatted, "id: {}, ", style(project_id).green());
+    }
+
+    let _ = match group.and_then(|_| org) {
+        Some(org) => write!(formatted, "org: {}, ", style(org).green()),
+        None => write!(formatted, "org: {}, ", style("-")),
+    };
+
+    let _ = match group {
+        Some(group) => write!(formatted, "group: {}", style(group).green()),
+        None => write!(formatted, "group: {}", style("-")),
+    };
+
+    formatted.push(')');
+
+    formatted
 }
