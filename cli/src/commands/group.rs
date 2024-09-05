@@ -40,7 +40,8 @@ pub async fn handle_group_create(
 ) -> CommandResult {
     let group_name = matches.get_one::<String>("group_name").unwrap();
 
-    let response = if let Some(org) = config.org() {
+    let org = config.org();
+    let response = if let Some(org) = org {
         api.org_create_group(org, group_name).await
     } else {
         api.create_group(group_name).await.map(|_| ())
@@ -55,6 +56,12 @@ pub async fn handle_group_create(
             print_user_failure!("Group '{}' already exists", group_name);
             Ok(ExitCode::AlreadyExists)
         },
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::FORBIDDEN, .. }))
+            if org.is_some() =>
+        {
+            print_user_failure!("Authorization failed, only organization admins can create groups");
+            Ok(ExitCode::NotAuthenticated)
+        },
         Err(err) => Err(err.into()),
     }
 }
@@ -68,7 +75,14 @@ pub async fn handle_group_delete(
     let group_name = matches.get_one::<String>("group_name").unwrap();
 
     if let Some(org) = config.org() {
-        api.org_delete_group(org, group_name).await?;
+        let response = api.org_delete_group(org, group_name).await;
+        if let Err(PhylumApiError::Response(ResponseError {
+            code: StatusCode::FORBIDDEN, ..
+        })) = response
+        {
+            print_user_failure!("Authorization failed, only organization admins can delete groups");
+            return Ok(ExitCode::NotAuthenticated);
+        }
     } else {
         api.delete_group(group_name).await?;
     };
