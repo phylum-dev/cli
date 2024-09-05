@@ -27,10 +27,10 @@ use crate::auth::{
 use crate::config::{AuthInfo, Config};
 use crate::types::{
     AddOrgUserRequest, AnalysisPackageDescriptor, CreateProjectRequest, GetProjectResponse,
-    HistoryJob, ListUserGroupsResponse, OrgMembersResponse, OrgsResponse, PackageSpecifier,
-    PackageSubmitResponse, Paginated, PingResponse, PolicyEvaluationRequest,
-    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RevokeTokenRequest,
-    SubmitPackageRequest, UpdateProjectRequest, UserToken,
+    HistoryJob, ListUserGroupsResponse, OrgGroup, OrgGroupsResponse, OrgMembersResponse,
+    OrgsResponse, PackageSpecifier, PackageSubmitResponse, Paginated, PingResponse,
+    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
+    ProjectListEntry, RevokeTokenRequest, SubmitPackageRequest, UpdateProjectRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -491,6 +491,27 @@ impl PhylumApi {
     /// Remove user from a group.
     pub async fn group_remove(&self, group_name: &str, user_email: &str) -> Result<()> {
         let url = endpoints::group_usermod(&self.config.connection.uri, group_name, user_email)?;
+        self.send_request_raw(Method::DELETE, url, None::<()>).await?;
+        Ok(())
+    }
+
+    /// Get all groups for on organization.
+    pub async fn org_groups(&self, org_name: &str) -> Result<OrgGroupsResponse> {
+        let url = endpoints::org_groups(&self.config.connection.uri, org_name)?;
+        self.get(url).await
+    }
+
+    /// Create a new organization group.
+    pub async fn org_create_group(&self, org_name: &str, group_name: &str) -> Result<()> {
+        let url = endpoints::org_groups(&self.config.connection.uri, org_name)?;
+        let body = OrgGroup { name: group_name.into() };
+        self.send_request_raw(Method::POST, url, Some(body)).await?;
+        Ok(())
+    }
+
+    /// Delete an organization group.
+    pub async fn org_delete_group(&self, org_name: &str, group_name: &str) -> Result<()> {
+        let url = endpoints::org_groups_delete(&self.config.connection.uri, org_name, group_name)?;
         self.send_request_raw(Method::DELETE, url, None::<()>).await?;
         Ok(())
     }

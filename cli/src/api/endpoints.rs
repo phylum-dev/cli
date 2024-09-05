@@ -169,6 +169,29 @@ pub fn org_member_remove(api_uri: &str, org: &str, email: &str) -> Result<Url, B
     Ok(url)
 }
 
+/// GET/POST /organizations/<orgName>/groups
+pub fn org_groups(api_uri: &str, org_name: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["organizations", org_name, "groups"]);
+    Ok(url)
+}
+
+/// DELETE /organizations/<orgName>/groups/<groupName>
+pub fn org_groups_delete(
+    api_uri: &str,
+    org_name: &str,
+    group_name: &str,
+) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "organizations",
+        org_name,
+        "groups",
+        group_name,
+    ]);
+    Ok(url)
+}
+
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)

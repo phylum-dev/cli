@@ -139,7 +139,7 @@ async fn handle_commands() -> CommandResult {
         },
         "package" => packages::handle_get_package(&Spinner::wrap(api).await?, sub_matches).await,
         "history" => jobs::handle_history(&Spinner::wrap(api).await?, sub_matches).await,
-        "group" => group::handle_group(&Spinner::wrap(api).await?, sub_matches).await,
+        "group" => group::handle_group(&Spinner::wrap(api).await?, sub_matches, config).await,
         "analyze" | "batch" => jobs::handle_submission(&Spinner::wrap(api).await?, &matches).await,
         "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
         "status" => status::handle_status(sub_matches).await,

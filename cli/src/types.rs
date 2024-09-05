@@ -520,3 +520,15 @@ pub struct GetProjectResponse {
     pub default_label: Option<String>,
     pub repository_url: Option<String>,
 }
+
+/// Response body for Phylum's GET /organizations/<org>/groups endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct OrgGroupsResponse {
+    pub groups: Vec<OrgGroup>,
+}
+
+/// Group returned by Phylum's GET /organizations/<org>/groups endpoint.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct OrgGroup {
+    pub name: String,
+}
