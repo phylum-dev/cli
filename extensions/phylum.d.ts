@@ -282,7 +282,10 @@ declare namespace Phylum {
    * ]
    * ```
    */
-  function getProjects(group?: string, organization?: string): Promise<Record<string, unknown>[]>;
+  function getProjects(
+    group?: string,
+    organization?: string,
+  ): Promise<Record<string, unknown>[]>;
 
   /**
    * Create a project.
@@ -301,7 +304,11 @@ declare namespace Phylum {
    *
    * Throws an error if unsuccessful.
    */
-  function deleteProject(name: string, group?: string, organization?: string): Promise<void>;
+  function deleteProject(
+    name: string,
+    group?: string,
+    organization?: string,
+  ): Promise<void>;
 
   /**
    * Get analysis results for a single package.
