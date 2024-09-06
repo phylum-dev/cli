@@ -242,9 +242,9 @@ fn package_hash(input: &str) -> IResult<&str, &str> {
 /// A combinator that takes a parser `inner` and produces a parser that also
 /// consumes both leading and trailing whitespace, returning the output of
 /// `inner`.
-fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&str, &str>
+fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, &'a str>
 where
-    F: Fn(&'a str) -> IResult<&str, &str>,
+    F: Fn(&'a str) -> IResult<&'a str, &'a str>,
 {
     delimited(nl_space0, inner, nl_space0)
 }

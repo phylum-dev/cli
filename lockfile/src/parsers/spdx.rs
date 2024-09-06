@@ -180,9 +180,9 @@ fn parse_external_refs(input: &str) -> IResult<&str, ExternalRefs> {
 /// A combinator that takes a parser `inner` and produces a parser that also
 /// consumes both leading and trailing whitespace, returning the output of
 /// `inner`.
-fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&str, &str>
+fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, &'a str>
 where
-    F: Fn(&'a str) -> IResult<&str, &str>,
+    F: Fn(&'a str) -> IResult<&'a str, &'a str>,
 {
     delimited(multispace0, inner, multispace0)
 }
