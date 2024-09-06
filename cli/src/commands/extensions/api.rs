@@ -24,7 +24,7 @@ use phylum_types::types::package::{PackageDescriptor, PackageDescriptorAndLockfi
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::api::{PhylumApiError, ResponseError};
+use crate::api::{Group, PhylumApiError, ResponseError};
 use crate::auth::UserInfo;
 use crate::commands::extensions::state::ExtensionState;
 use crate::commands::parse;
@@ -175,7 +175,8 @@ async fn analyze(
 
     let (project, group) = match (project, group) {
         (Some(project), group) => {
-            (api.get_project_id(&project, organization.as_deref(), group.as_deref()).await?, None)
+            let org_group = Group::try_new(organization, group);
+            (api.get_project_id(&project, org_group).await?, None)
         },
         (None, _) => {
             if let Some(p) = phylum_project::get_current_project() {
@@ -368,11 +369,13 @@ async fn create_project(
     // Retrieve the id if the project already exists, otherwise return the id or the
     // error.
     match api.create_project(&name, organization.as_deref(), group.clone(), repository_url).await {
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
-            .get_project_id(&name, organization.as_deref(), group.as_deref())
-            .await
-            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
-            .map_err(|e| e.into()),
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            let org_group = Group::try_new(organization, group);
+            api.get_project_id(&name, org_group)
+                .await
+                .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
+                .map_err(|e| e.into())
+        },
         Err(e) => Err(e.into()),
         Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
     }
@@ -389,7 +392,8 @@ async fn delete_project(
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    let project_id = api.get_project_id(&name, organization.as_deref(), group.as_deref()).await?;
+    let org_group = Group::try_new(organization, group);
+    let project_id = api.get_project_id(&name, org_group).await?;
     api.delete_project(project_id).await.map_err(|e| e.into())
 }
 

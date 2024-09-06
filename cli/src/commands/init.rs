@@ -12,7 +12,7 @@ use phylum_lockfile::LockfileFormat;
 use phylum_project::{DepfileConfig, ProjectConfig, PROJ_CONF_FILE};
 use reqwest::StatusCode;
 
-use crate::api::{PhylumApi, PhylumApiError, ResponseError};
+use crate::api::{Group, PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
 use crate::config::{self, Config};
 use crate::{print_user_success, print_user_warning};
@@ -64,8 +64,9 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) 
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
+            let org_group = Group::try_new(org, group.clone());
             let uuid = api
-                .get_project_id(&project, org, group.as_deref())
+                .get_project_id(&project, org_group)
                 .await
                 .context(format!("Could not find project {project:?}"))?;
             ProjectConfig::new(uuid, project, group)

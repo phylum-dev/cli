@@ -14,7 +14,7 @@ use reqwest::StatusCode;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, JobPackage};
 
-use crate::api::PhylumApi;
+use crate::api::{Group, PhylumApi};
 #[cfg(feature = "vulnreach")]
 use crate::auth::jwt::RealmRole;
 use crate::commands::{parse, CommandResult, ExitCode};
@@ -71,9 +71,9 @@ pub async fn handle_history(
         return print_job_status(api, &job_id, [], pretty_print).await;
     } else if let Some(project) = matches.get_one::<String>("project") {
         let group = matches.get_one::<String>("group").map(String::as_str);
-        let org = group.as_ref().and_then(|_| config.org());
+        let org_group = Group::try_new(config.org(), group);
 
-        let history = api.get_project_history(project, org, group).await?;
+        let history = api.get_project_history(project, org_group).await?;
 
         history.write_stdout(pretty_print);
     } else {
@@ -275,9 +275,9 @@ impl JobsProject {
             // Prefer `--project` and `--group` if they were specified.
             Some(project_name) => {
                 let group = matches.get_one::<String>("group").cloned();
-                let org = group.as_ref().and_then(|_| config.org());
 
-                let project = api.get_project_id(project_name, org, group.as_deref()).await?;
+                let org_group = Group::try_new(config.org(), group.clone());
+                let project = api.get_project_id(project_name, org_group).await?;
 
                 Ok(Self { project_id: project, group, depfiles })
             },

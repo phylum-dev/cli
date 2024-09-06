@@ -9,7 +9,7 @@ use dialoguer::{Confirm, FuzzySelect, Input};
 use phylum_project::{ProjectConfig, PROJ_CONF_FILE};
 use reqwest::StatusCode;
 
-use crate::api::{PhylumApi, PhylumApiError, ResponseError};
+use crate::api::{Group, PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{init, CommandResult, ExitCode};
 use crate::config::{self, Config};
 use crate::format::Format;
@@ -50,11 +50,13 @@ async fn handle_status(api: &PhylumApi, matches: &ArgMatches, config: Config) ->
     let pretty_print = !matches.get_flag("json");
     let project = matches.get_one::<String>("project");
     let group = matches.get_one::<String>("group");
-    let org = config.org();
 
     let project_id = match project {
         // If project is passed on CLI, lookup its ID.
-        Some(project) => api.get_project_id(project, org, group.map(|g| g.as_str())).await?,
+        Some(project) => {
+            let org_group = Group::try_new(config.org(), group);
+            api.get_project_id(project, org_group).await?
+        },
         // If no project is passed, use `.phylum_project`.
         None => match phylum_project::get_current_project() {
             Some(project_config) => project_config.id,
@@ -148,12 +150,12 @@ async fn handle_delete_project(
     let project_name = matches.get_one::<String>("name").unwrap();
     let group_name = matches.get_one::<String>("group").map(|g| g.as_str());
 
-    // Only attach org if a group was supplied.
-    let org = group_name.as_ref().and_then(|_| config.org());
+    let org_group = Group::try_new(config.org(), group_name);
+    let org = org_group.as_ref().and_then(|group| group.org());
 
     let formatted_project = format_project_reference(org, group_name, project_name, None);
     let proj_uuid = api
-        .get_project_id(project_name, org, group_name)
+        .get_project_id(project_name, org_group)
         .await
         .with_context(|| format!("Project {formatted_project} does not exist"))?;
 
@@ -297,10 +299,10 @@ async fn handle_link_project(
     let project_name = matches.get_one::<String>("name").unwrap();
     let group_name = matches.get_one::<String>("group").cloned();
 
-    // Only attach org if a group was supplied.
-    let org = group_name.as_ref().and_then(|_| config.org());
+    let org_group = Group::try_new(config.org(), group_name.clone());
+    let org = org_group.as_ref().and_then(|group| group.org().map(String::from));
 
-    let uuid = api.get_project_id(project_name, org, group_name.as_deref()).await?;
+    let uuid = api.get_project_id(project_name, org_group).await?;
 
     let project_config = match phylum_project::get_current_project() {
         Some(mut project) => {
@@ -314,8 +316,12 @@ async fn handle_link_project(
         .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
 
     let project_id = Some(project_config.id.to_string());
-    let formatted_project =
-        format_project_reference(org, group_name.as_deref(), project_name, project_id.as_deref());
+    let formatted_project = format_project_reference(
+        org.as_deref(),
+        group_name.as_deref(),
+        project_name,
+        project_id.as_deref(),
+    );
     print_user_success!("Linked the current working directory to the project {formatted_project}.");
 
     Ok(ExitCode::Ok)
@@ -363,7 +369,7 @@ async fn prompt_project(
     };
 
     // Get all projects.
-    let mut projects = api.get_projects(org.as_deref(), group_name.as_deref(), None).await?;
+    let mut projects = api.get_projects(org, group_name.as_deref(), None).await?;
 
     // Remove group projects if the user didn't select any group.
     projects.retain(|project| project.group_name.is_some() == group_name.is_some());
@@ -397,7 +403,7 @@ fn format_project_reference(
         let _ = write!(formatted, "id: {}, ", style(project_id).green());
     }
 
-    let _ = match group.and_then(|_| org) {
+    let _ = match group.and(org) {
         Some(org) => write!(formatted, "org: {}, ", style(org).green()),
         None => write!(formatted, "org: {}, ", style("-")),
     };
