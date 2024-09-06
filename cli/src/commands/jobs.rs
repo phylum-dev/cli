@@ -1,5 +1,7 @@
+use std::fs;
+#[cfg(feature = "vulnreach")]
+use std::io;
 use std::str::FromStr;
-use std::{fs, io};
 
 use anyhow::{anyhow, Context, Result};
 use console::style;
@@ -7,7 +9,7 @@ use log::debug;
 use phylum_lockfile::ParseError;
 use phylum_project::DepfileConfig;
 use phylum_types::types::common::{JobId, ProjectId};
-use phylum_types::types::package::{PackageDescriptor, PackageType};
+use phylum_types::types::package::PackageDescriptor;
 use reqwest::StatusCode;
 #[cfg(feature = "vulnreach")]
 use vulnreach_types::{Job, JobPackage};
@@ -85,132 +87,72 @@ pub async fn handle_history(api: &PhylumApi, matches: &clap::ArgMatches) -> Comm
     Ok(ExitCode::Ok)
 }
 
-/// Handles submission of packages to the system for analysis and
-/// displays summary information about the submitted package(s)
-pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
-    let mut ignored_packages: Vec<PackageDescriptor> = vec![];
-    let mut packages = vec![];
-    let mut synch = false; // get status after submission
-    let mut pretty_print = false;
-    let jobs_project;
-    let label;
+/// Handle `phylum analyze` subcommand.
+pub async fn handle_analyze(api: &PhylumApi, matches: &clap::ArgMatches) -> CommandResult {
+    let sandbox_generation = !matches.get_flag("skip-sandbox");
+    let generate_lockfiles = !matches.get_flag("no-generation");
+    let label = matches.get_one::<String>("label");
+    let pretty_print = !matches.get_flag("json");
 
-    if let Some(matches) = matches.subcommand_matches("analyze") {
-        let sandbox_generation = !matches.get_flag("skip-sandbox");
-        let generate_lockfiles = !matches.get_flag("no-generation");
-        label = matches.get_one::<String>("label");
-        pretty_print = !matches.get_flag("json");
-        synch = true;
+    let jobs_project = JobsProject::new(api, matches).await?;
 
-        jobs_project = JobsProject::new(api, matches).await?;
+    // Get .phylum_project path.
+    let current_project = phylum_project::get_current_project();
+    let project_root = current_project.as_ref().map(|p| p.root());
 
-        // Get .phylum_project path
-        let current_project = phylum_project::get_current_project();
-        let project_root = current_project.as_ref().map(|p| p.root());
+    let mut packages = Vec::new();
+    for depfile in jobs_project.depfiles {
+        let parse_result = parse::parse_depfile(
+            &depfile.path,
+            project_root,
+            Some(&depfile.depfile_type),
+            sandbox_generation,
+            generate_lockfiles,
+        );
 
-        for depfile in jobs_project.depfiles {
-            let parse_result = parse::parse_depfile(
-                &depfile.path,
-                project_root,
-                Some(&depfile.depfile_type),
-                sandbox_generation,
-                generate_lockfiles,
+        // Map dedicated exit codes for failures due to disabled generation or
+        // unknown dependency file format.
+        let parsed_depfile = match parse_result {
+            Ok(parsed_depfile) => parsed_depfile,
+            Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
+                print_user_failure!("Could not parse manifest: {}", err);
+                return Ok(ExitCode::ManifestWithoutGeneration);
+            },
+            Err(err @ ParseError::UnknownManifestFormat(_)) => {
+                print_user_failure!("Could not parse manifest: {}", err);
+                return Ok(ExitCode::UnknownManifestFormat);
+            },
+            Err(ParseError::Other(err)) => {
+                return Err(err).with_context(|| {
+                    format!(
+                        "Could not parse dependency file {:?} as {:?} type",
+                        depfile.path.display(),
+                        depfile.depfile_type
+                    )
+                });
+            },
+        };
+
+        if pretty_print {
+            print_user_success!(
+                "Successfully parsed dependency file {:?} as type {:?}",
+                parsed_depfile.path,
+                parsed_depfile.format.name()
             );
-
-            // Map dedicated exit codes for failures due to disabled generation or
-            // unknown dependency file format.
-            let parsed_depfile = match parse_result {
-                Ok(parsed_depfile) => parsed_depfile,
-                Err(err @ ParseError::ManifestWithoutGeneration(_)) => {
-                    print_user_failure!("Could not parse manifest: {}", err);
-                    return Ok(ExitCode::ManifestWithoutGeneration);
-                },
-                Err(err @ ParseError::UnknownManifestFormat(_)) => {
-                    print_user_failure!("Could not parse manifest: {}", err);
-                    return Ok(ExitCode::UnknownManifestFormat);
-                },
-                Err(ParseError::Other(err)) => {
-                    return Err(err).with_context(|| {
-                        format!(
-                            "Could not parse dependency file {:?} as {:?} type",
-                            depfile.path.display(),
-                            depfile.depfile_type
-                        )
-                    });
-                },
-            };
-
-            if pretty_print {
-                print_user_success!(
-                    "Successfully parsed dependency file {:?} as type {:?}",
-                    parsed_depfile.path,
-                    parsed_depfile.format.name()
-                );
-            }
-
-            let mut analysis_packages =
-                AnalysisPackageDescriptor::descriptors_from_lockfile(parsed_depfile);
-            packages.append(&mut analysis_packages);
         }
 
-        if let Some(base) = matches.get_one::<String>("base") {
-            let base_text = fs::read_to_string(base)?;
-            ignored_packages = serde_json::from_str(&base_text)?;
-        }
-    } else if let Some(matches) = matches.subcommand_matches("batch") {
-        jobs_project = JobsProject::new(api, matches).await?;
-
-        let mut eof = false;
-        let mut line = String::new();
-        let mut reader: Box<dyn io::BufRead> = if let Some(file) = matches.get_one::<String>("file")
-        {
-            // read entries from the file
-            Box::new(io::BufReader::new(std::fs::File::open(file).unwrap()))
-        } else {
-            // read from stdin
-            log::info!("Waiting on stdin...");
-            Box::new(io::BufReader::new(io::stdin()))
-        };
-
-        let request_type = {
-            let package_type = matches.get_one::<String>("type").unwrap();
-            PackageType::from_str(package_type)
-                .map_err(|_| anyhow!("invalid package type: {}", package_type))?
-        };
-
-        label = matches.get_one::<String>("label");
-
-        while !eof {
-            match reader.read_line(&mut line) {
-                Ok(0) => eof = true,
-                Ok(_) => {
-                    line.pop();
-                    let mut pkg_info = line.split(':').collect::<Vec<&str>>();
-                    if pkg_info.len() < 2 {
-                        debug!("Invalid package input: `{}`", line);
-                        continue;
-                    }
-                    let pkg_version = pkg_info.pop().unwrap();
-                    let pkg_name = pkg_info.join(":");
-
-                    packages.push(AnalysisPackageDescriptor::PackageDescriptor(
-                        PackageDescriptor {
-                            name: pkg_name.to_owned(),
-                            version: pkg_version.to_owned(),
-                            package_type: request_type.to_owned(),
-                        }
-                        .into(),
-                    ));
-                    line.clear();
-                },
-                Err(err) => {
-                    return Err(anyhow!(err));
-                },
-            }
-        }
-    } else {
-        unreachable!();
+        let mut analysis_packages =
+            AnalysisPackageDescriptor::descriptors_from_lockfile(parsed_depfile);
+        packages.append(&mut analysis_packages);
     }
+
+    let ignored_packages: Vec<PackageDescriptor> = match matches.get_one::<String>("base") {
+        Some(base) => {
+            let base_text = fs::read_to_string(base)?;
+            serde_json::from_str(&base_text)?
+        },
+        None => Vec::new(),
+    };
 
     // Avoid request error without dependencies.
     if packages.is_empty() {
@@ -231,31 +173,25 @@ pub async fn handle_submission(api: &PhylumApi, matches: &clap::ArgMatches) -> C
 
     if pretty_print {
         print_user_success!("Job ID: {}", job_id);
-    }
 
-    if synch {
-        if pretty_print {
-            #[cfg(feature = "vulnreach")]
-            let packages: Vec<_> = packages
-                .into_iter()
-                .filter_map(|pkg| match pkg {
-                    AnalysisPackageDescriptor::PackageDescriptor(package) => {
-                        Some(package.package_descriptor)
-                    },
-                    AnalysisPackageDescriptor::Purl(_) => None,
-                })
-                .collect();
-            #[cfg(feature = "vulnreach")]
-            if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
-                print_user_failure!("Reachability analysis failed: {err:?}");
-            }
+        #[cfg(feature = "vulnreach")]
+        let packages: Vec<_> = packages
+            .into_iter()
+            .filter_map(|pkg| match pkg {
+                AnalysisPackageDescriptor::PackageDescriptor(package) => {
+                    Some(package.package_descriptor)
+                },
+                AnalysisPackageDescriptor::Purl(_) => None,
+            })
+            .collect();
+        #[cfg(feature = "vulnreach")]
+        if let Err(err) = vulnreach(api, matches, packages, job_id.to_string()).await {
+            print_user_failure!("Reachability analysis failed: {err:?}");
         }
-
-        debug!("Requesting status...");
-        print_job_status(api, &job_id, ignored_packages, pretty_print).await
-    } else {
-        Ok(ExitCode::Ok)
     }
+
+    debug!("Requesting status...");
+    print_job_status(api, &job_id, ignored_packages, pretty_print).await
 }
 
 /// Perform vulnerability reachability analysis.
@@ -303,7 +239,7 @@ async fn vulnreach(
     Ok(())
 }
 
-/// Project information for analyze/batch.
+/// Project information for analyze.
 struct JobsProject {
     project_id: ProjectId,
     group: Option<String>,

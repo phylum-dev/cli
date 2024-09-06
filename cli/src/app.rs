@@ -427,43 +427,6 @@ pub fn add_subcommands(command: Command) -> Command {
                         .help("Disable generation of lockfiles from manifests"),
                 ]),
         )
-        .subcommand(
-            Command::new("batch")
-                .hide(true)
-                .about("Submits a batch of requests to the processing system")
-                .args(&[
-                    Arg::new("file")
-                        .short('f')
-                        .long("file")
-                        .value_name("FILE")
-                        .help(
-                            "File (or piped stdin) containing the list of packages (format \
-                             `<name>:<version>`)",
-                        )
-                        .value_hint(ValueHint::FilePath),
-                    Arg::new("type")
-                        .short('t')
-                        .long("type")
-                        .value_name("TYPE")
-                        .help("Package ecosystem type")
-                        .value_parser([
-                            "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
-                        ])
-                        .required(true),
-                    Arg::new("label").short('l').long("label").help("Label to use for analysis"),
-                    Arg::new("project")
-                        .short('p')
-                        .long("project")
-                        .value_name("PROJECT_NAME")
-                        .help("Project to use for analysis"),
-                    Arg::new("group")
-                        .short('g')
-                        .long("group")
-                        .value_name("GROUP_NAME")
-                        .help("Group to use for analysis")
-                        .requires("project"),
-                ]),
-        )
         .subcommand(Command::new("version").about("Display application version"))
         .subcommand(
             Command::new("group")

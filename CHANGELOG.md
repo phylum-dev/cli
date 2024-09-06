@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `phylum project list --no-group` flag to only show personal projects
 - Organization support for `phylum group` subcommands
 
+### Removed
+
+- `phylum batch` subcommand
+
 ## 6.6.6 - 2024-07-12
 
 ### Added

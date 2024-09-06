@@ -28,7 +28,7 @@ struct Section<'a> {
 
 impl<'a> Section<'a> {
     /// Parse lockfile into dependency sections.
-    fn from_lockfile(mut input: &'a str) -> IResult<&str, Vec<Self>> {
+    fn from_lockfile(mut input: &'a str) -> IResult<&'a str, Vec<Self>> {
         let mut sections = Vec::new();
 
         while !input.is_empty() {
