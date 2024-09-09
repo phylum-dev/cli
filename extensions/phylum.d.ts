@@ -104,6 +104,7 @@ declare namespace Phylum {
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
    * @param label - Analysis label for this job
+   * @param organization - Phylum organization which owns the group
    *
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
