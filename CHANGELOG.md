@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `phylum project update --default-label` option to set a project's default label
 - `phylum project list --no-group` flag to only show personal projects
 
+### Fixed
+
+- Lockfile parsing of bun-generated yarn lockfiles
+
 ### Removed
 
 - `phylum batch` subcommand

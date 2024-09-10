@@ -1,31 +1,32 @@
 //! Yarn v1 lockfile parser.
 
 use nom::bytes::complete::take_till;
+use nom::multi::many0;
 use nom::InputTakeAtPosition;
 use phylum_types::types::package::PackageType;
 
 use super::*;
 use crate::{Package, PackageVersion};
 
-pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
-    let (input, _) = yarn_lock_header(input)?;
-
-    // Ignore empty lockfiles.
-    if input.trim().is_empty() {
-        return Ok(("", Vec::new()));
+pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
+    let mut packages = Vec::new();
+    while !input.trim().is_empty() {
+        let lockfile_entry = entry(input)?;
+        if let Some(package) = lockfile_entry.1 {
+            packages.push(package);
+        }
+        input = lockfile_entry.0;
     }
-
-    let (input, packages) = many1(entry)(input)?;
-    let filtered = packages.into_iter().flatten().collect();
-
-    Ok((input, filtered))
-}
-
-fn yarn_lock_header(input: &str) -> IResult<&str, &str> {
-    recognize(opt(tuple((count(take_till_line_end, 2), multispace0))))(input)
+    Ok(("", packages))
 }
 
 fn entry(input: &str) -> IResult<&str, Option<Package>> {
+    // Ignore comments.
+    if let Ok((input, _)) = recognize(tuple((tag("#"), take_till_line_end)))(input) {
+        let (input, _) = many0(line_ending)(input)?;
+        return Ok((input, None));
+    }
+
     let (input, capture) = recognize(many_till(
         take_till_line_end,
         recognize(tuple((space0, alt((line_ending, eof))))),
