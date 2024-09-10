@@ -252,7 +252,7 @@ async fn handle_update_project(
 
     api.update_project(
         &project_id,
-        None,
+        org.map(String::from),
         group_name.clone(),
         name.clone(),
         repository_url.clone(),
