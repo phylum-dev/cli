@@ -135,13 +135,14 @@ async fn handle_commands() -> CommandResult {
         "parse-sandboxed" => parse::handle_parse_sandboxed(sub_matches),
         "ping" => handle_ping(Spinner::wrap(api).await?).await,
         "project" => {
-            project::handle_project(&Spinner::wrap(api).await?, app_helper, sub_matches).await
+            project::handle_project(&Spinner::wrap(api).await?, app_helper, sub_matches, config)
+                .await
         },
         "package" => packages::handle_get_package(&Spinner::wrap(api).await?, sub_matches).await,
-        "history" => jobs::handle_history(&Spinner::wrap(api).await?, sub_matches).await,
+        "history" => jobs::handle_history(&Spinner::wrap(api).await?, sub_matches, config).await,
         "group" => group::handle_group(&Spinner::wrap(api).await?, sub_matches, config).await,
-        "analyze" => jobs::handle_analyze(&Spinner::wrap(api).await?, sub_matches).await,
-        "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches).await,
+        "analyze" => jobs::handle_analyze(&Spinner::wrap(api).await?, sub_matches, config).await,
+        "init" => init::handle_init(&Spinner::wrap(api).await?, sub_matches, config).await,
         "status" => status::handle_status(sub_matches).await,
         "org" => org::handle_org(&Spinner::wrap(api).await?, sub_matches, config).await,
 

@@ -13,4 +13,7 @@ $ phylum project list --json
 
 # List all existing projects for the `sample` group
 $ phylum project list -g sample
+
+# List all existing projects for the `demo` organization
+$ phylum project list --organization demo
 ```

@@ -104,6 +104,7 @@ declare namespace Phylum {
    * @param project - Project name. If undefined, the `.phylum_project` file will be used
    * @param group - Group name
    * @param label - Analysis label for this job
+   * @param organization - Phylum organization which owns the group
    *
    * @returns Analyze Job ID, which can later be queried with `getJobStatus`.
    */
@@ -112,6 +113,7 @@ declare namespace Phylum {
     project?: string,
     group?: string,
     label?: string,
+    organization?: string,
   ): Promise<string>;
 
   /**
@@ -281,7 +283,10 @@ declare namespace Phylum {
    * ]
    * ```
    */
-  function getProjects(group?: string): Promise<Record<string, unknown>[]>;
+  function getProjects(
+    group?: string,
+    organization?: string,
+  ): Promise<Record<string, unknown>[]>;
 
   /**
    * Create a project.
@@ -292,6 +297,7 @@ declare namespace Phylum {
     name: string,
     group?: string,
     repository_url?: string,
+    organization?: string,
   ): Promise<{ id: string; status: "Created" | "Exists" }>;
 
   /**
@@ -299,7 +305,11 @@ declare namespace Phylum {
    *
    * Throws an error if unsuccessful.
    */
-  function deleteProject(name: string, group?: string): Promise<void>;
+  function deleteProject(
+    name: string,
+    group?: string,
+    organization?: string,
+  ): Promise<void>;
 
   /**
    * Get analysis results for a single package.

@@ -26,8 +26,8 @@ use crate::auth::{
 };
 use crate::config::{AuthInfo, Config};
 use crate::types::{
-    AddOrgUserRequest, AnalysisPackageDescriptor, CreateProjectRequest, GetProjectResponse,
-    HistoryJob, ListUserGroupsResponse, OrgGroup, OrgGroupsResponse, OrgMembersResponse,
+    AddOrgUserRequest, AnalysisPackageDescriptor, ApiOrgGroup, CreateProjectRequest,
+    GetProjectResponse, HistoryJob, ListUserGroupsResponse, OrgGroupsResponse, OrgMembersResponse,
     OrgsResponse, PackageSpecifier, PackageSubmitResponse, Paginated, PingResponse,
     PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
     ProjectListEntry, RevokeTokenRequest, SubmitPackageRequest, UpdateProjectRequest, UserToken,
@@ -261,14 +261,21 @@ impl PhylumApi {
     pub async fn create_project(
         &self,
         name: impl Into<String>,
+        org: Option<&str>,
         group: Option<String>,
         repository_url: Option<String>,
     ) -> Result<ProjectId> {
+        let group_name = match (org, group) {
+            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
+            (None, Some(group)) => Some(group),
+            (Some(_), None) | (None, None) => None,
+        };
+
         let url = endpoints::create_project(&self.config.connection.uri)?;
         let body = CreateProjectRequest {
             repository_url,
+            group_name,
             default_label: None,
-            group_name: group,
             name: name.into(),
         };
         let response: CreateProjectResponse = self.post(url, body).await?;
@@ -279,18 +286,21 @@ impl PhylumApi {
     pub async fn update_project(
         &self,
         project_id: &str,
+        org: Option<String>,
         group: Option<String>,
         name: impl Into<String>,
         repository_url: Option<String>,
         default_label: Option<String>,
     ) -> Result<ProjectId> {
-        let url = endpoints::project(&self.config.connection.uri, project_id)?;
-        let body = UpdateProjectRequest {
-            repository_url,
-            default_label,
-            name: name.into(),
-            group_name: group,
+        let group_name = match (org, group) {
+            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
+            (None, Some(group)) => Some(group),
+            (Some(_), None) | (None, None) => None,
         };
+
+        let url = endpoints::project(&self.config.connection.uri, project_id)?;
+        let body =
+            UpdateProjectRequest { repository_url, default_label, name: name.into(), group_name };
         let response: CreateProjectResponse = self.put(url, body).await?;
         Ok(response.id)
     }
@@ -312,14 +322,24 @@ impl PhylumApi {
     /// equivalent to filtering with [`str::contains`].
     pub async fn get_projects(
         &self,
+        org: Option<&str>,
         group: Option<&str>,
         name_filter: Option<&str>,
     ) -> Result<Vec<ProjectListEntry>> {
         let mut uri = endpoints::projects(&self.config.connection.uri)?;
 
         // Add filter query parameters.
-        if let Some(group) = group {
-            uri.query_pairs_mut().append_pair("filter.group", group);
+        match (org, group) {
+            (Some(org), Some(group)) => {
+                uri.query_pairs_mut().append_pair("filter.group", &format!("{org}/{group}"));
+            },
+            (Some(org), None) => {
+                uri.query_pairs_mut().append_pair("filter.organization", org);
+            },
+            (None, Some(group)) => {
+                uri.query_pairs_mut().append_pair("filter.group", group);
+            },
+            (None, None) => (),
         }
         if let Some(name_filter) = name_filter {
             uri.query_pairs_mut().append_pair("filter.name", name_filter);
@@ -415,19 +435,11 @@ impl PhylumApi {
     pub async fn get_project_history(
         &self,
         project_name: &str,
-        group_name: Option<&str>,
+        org: Option<&str>,
+        group: Option<&str>,
     ) -> Result<Vec<HistoryJob>> {
-        let project_id = self.get_project_id(project_name, group_name).await?.to_string();
-
-        let url = match group_name {
-            Some(group_name) => endpoints::get_group_project_history(
-                &self.config.connection.uri,
-                &project_id,
-                group_name,
-            )?,
-            None => endpoints::get_project_history(&self.config.connection.uri, &project_id)?,
-        };
-
+        let project_id = self.get_project_id(project_name, org, group).await?.to_string();
+        let url = endpoints::get_project_history(&self.config.connection.uri, &project_id)?;
         self.get(url).await
     }
 
@@ -435,13 +447,20 @@ impl PhylumApi {
     pub async fn get_project_id(
         &self,
         project_name: &str,
-        group_name: Option<&str>,
+        org: Option<&str>,
+        group: Option<&str>,
     ) -> Result<ProjectId> {
-        let projects = self.get_projects(group_name, Some(project_name)).await?;
+        let (org, group, combined_format) = match (org, group) {
+            (Some(org), Some(group)) => (Some(org), Some(group), Some(format!("{org}/{group}"))),
+            (None, Some(group)) => (None, Some(group), Some(group.to_string())),
+            (_, None) => (None, None, None),
+        };
+
+        let projects = self.get_projects(org, group, Some(project_name)).await?;
 
         projects
             .iter()
-            .find(|project| project.name == project_name)
+            .find(|project| project.name == project_name && project.group_name == combined_format)
             .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
             .map(|project| project.id)
     }
@@ -504,7 +523,7 @@ impl PhylumApi {
     /// Create a new organization group.
     pub async fn org_create_group(&self, org_name: &str, group_name: &str) -> Result<()> {
         let url = endpoints::org_groups(&self.config.connection.uri, org_name)?;
-        let body = OrgGroup { name: group_name.into() };
+        let body = ApiOrgGroup { name: group_name.into() };
         self.send_request_raw(Method::POST, url, Some(body)).await?;
         Ok(())
     }

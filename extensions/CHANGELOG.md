@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- `organization?` parameter for the following endpoints:
+    - `PhylumApi::analyze`
+    - `PhylumApi::getProjects`
+    - `PhylumApi::createProject`
+    - `PhylumApi::deleteProject`
+
 ### Changed
 
 - Group projects are included in `PhylumApi::getProjects` with no group specified

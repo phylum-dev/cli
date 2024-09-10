@@ -14,11 +14,11 @@ use reqwest::StatusCode;
 
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
-use crate::types::UserGroup;
-use crate::{config, print_user_success, print_user_warning};
+use crate::config::{self, Config};
+use crate::{print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
-pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult {
+pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) -> CommandResult {
     // Prompt for confirmation if a linked project is already in this directory.
     if !matches.get_flag("force") && phylum_project::find_project_conf(".", false).is_some() {
         print_user_warning!("Workspace is already linked to a Phylum project");
@@ -41,7 +41,15 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let cli_group = matches.get_one::<String>("group");
 
     // Get available groups from API.
-    let groups = api.get_groups_list().await?.groups;
+    let org = config.org();
+    let groups: Vec<_> = match org {
+        Some(org) => {
+            api.org_groups(org).await?.groups.into_iter().map(|group| group.name).collect()
+        },
+        None => {
+            api.get_groups_list().await?.groups.into_iter().map(|group| group.group_name).collect()
+        },
+    };
 
     // Interactively prompt for missing project information.
     let (project, group, repository_url) =
@@ -51,12 +59,13 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
     let depfiles = prompt_depfiles(cli_depfiles, cli_depfile_type)?;
 
     // Attempt to create the project.
-    let result = project::create_project(api, &project, group.clone(), repository_url).await;
+    let result = project::create_project(api, &project, org, group.clone(), repository_url).await;
 
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let uuid = project::lookup_project(api, &project, group.as_deref())
+            let uuid = api
+                .get_project_id(&project, org, group.as_deref())
                 .await
                 .context(format!("Could not find project {project:?}"))?;
             ProjectConfig::new(uuid, project, group)
@@ -78,7 +87,7 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches) -> CommandResult
 
 /// Interactively ask for missing project information.
 async fn prompt_project(
-    groups: &[UserGroup],
+    groups: &[String],
     cli_project: Option<&String>,
     cli_group: Option<&String>,
     cli_repository_url: Option<&String>,
@@ -138,16 +147,15 @@ fn prompt_project_name() -> io::Result<String> {
 }
 
 /// Ask for the desired group.
-pub fn prompt_group(groups: &[UserGroup]) -> anyhow::Result<Option<String>> {
+pub fn prompt_group(groups: &[String]) -> anyhow::Result<Option<String>> {
     // Skip group selection if user has none.
     if groups.is_empty() {
         return Ok(None);
     }
 
     // Map groups to their name.
-    let group_names = iter::once("[None]")
-        .chain(groups.iter().map(|group| group.group_name.as_str()))
-        .collect::<Vec<_>>();
+    let no_group = String::from("[None]");
+    let group_names = iter::once(&no_group).chain(groups).collect::<Vec<_>>();
 
     println!();
 

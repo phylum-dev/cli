@@ -89,8 +89,8 @@ impl Config {
     }
 
     /// Check target organization.
-    pub fn org(&self) -> Option<&String> {
-        self.org_cli.as_ref().or(self.org.as_ref())
+    pub fn org(&self) -> Option<&str> {
+        self.org_cli.as_ref().or(self.org.as_ref()).map(|org| org.as_str())
     }
 
     /// Update the config organization.
