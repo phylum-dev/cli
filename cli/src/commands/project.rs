@@ -37,12 +37,15 @@ pub async fn handle_project(
 pub async fn create_project(
     api: &PhylumApi,
     project: &str,
-    org: Option<&str>,
-    group: Option<String>,
+    group: Option<Group>,
     repository_url: Option<String>,
 ) -> Result<ProjectConfig, PhylumApiError> {
-    let project_id = api.create_project(project, org, group.clone(), repository_url).await?;
-    Ok(ProjectConfig::new(project_id.to_owned(), project.to_owned(), group))
+    let project_id = api.create_project(project, group.clone(), repository_url).await?;
+    Ok(ProjectConfig::new(
+        project_id.to_owned(),
+        project.to_owned(),
+        group.map(|g| g.name().to_owned()),
+    ))
 }
 
 /// Print project information.
@@ -112,17 +115,14 @@ async fn handle_create_project(
 ) -> CommandResult {
     let repository_url = matches.get_one::<String>("repository-url").cloned();
     let project = matches.get_one::<String>("name").unwrap();
-    let group = matches.get_one::<String>("group").cloned();
-    let org = config.org();
+    let group = Group::try_new(config.org(), matches.get_one::<String>("group"));
 
     log::info!("Initializing new project: `{}`", project);
 
-    let project_config = match create_project(api, project, org, group.clone(), repository_url)
-        .await
-    {
+    let project_config = match create_project(api, project, group.clone(), repository_url).await {
         Ok(project) => project,
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let formatted_project = format_project_reference(org, group.as_deref(), project, None);
+            let formatted_project = format_project_reference(group.as_ref(), project, None);
             print_user_failure!("Project {} already exists", formatted_project);
             return Ok(ExitCode::AlreadyExists);
         },
@@ -135,7 +135,7 @@ async fn handle_create_project(
 
     let project_id = Some(project_config.id.to_string());
     let formatted_project =
-        format_project_reference(org, group.as_deref(), project, project_id.as_deref());
+        format_project_reference(group.as_ref(), project, project_id.as_deref());
     print_user_success!("Successfully created project {formatted_project}");
 
     Ok(ExitCode::Ok)
@@ -148,14 +148,11 @@ async fn handle_delete_project(
     config: Config,
 ) -> CommandResult {
     let project_name = matches.get_one::<String>("name").unwrap();
-    let group_name = matches.get_one::<String>("group").map(|g| g.as_str());
+    let group = Group::try_new(config.org(), matches.get_one::<String>("group"));
 
-    let org_group = Group::try_new(config.org(), group_name);
-    let org = org_group.as_ref().and_then(|group| group.org());
-
-    let formatted_project = format_project_reference(org, group_name, project_name, None);
+    let formatted_project = format_project_reference(group.as_ref(), project_name, None);
     let proj_uuid = api
-        .get_project_id(project_name, org_group)
+        .get_project_id(project_name, group)
         .await
         .with_context(|| format!("Project {formatted_project} does not exist"))?;
 
@@ -199,6 +196,7 @@ async fn handle_update_project(
         Some(project_id) => (project_id.clone(), group_name),
         None => prompt_project(api, org, group_name).await?,
     };
+    let org_group = Group::try_new(org, group_name);
 
     // Get existing project information from the API.
     let project = api.get_project(&project_id).await?;
@@ -257,8 +255,7 @@ async fn handle_update_project(
 
     api.update_project(
         &project_id,
-        None,
-        group_name.clone(),
+        org_group.clone(),
         name.clone(),
         repository_url.clone(),
         default_label.clone(),
@@ -271,7 +268,7 @@ async fn handle_update_project(
         None => String::from("None"),
     };
     let formatted_project =
-        format_project_reference(org, group_name.as_deref(), &project.name, Some(&project_id));
+        format_project_reference(org_group.as_ref(), &project.name, Some(&project_id));
     let mut success_msg = format!("Successfully updated project {formatted_project}");
     success_msg += ":\n";
     success_msg += &format!("      Name: {:?} -> {name:?}\n", project.name);
@@ -300,9 +297,8 @@ async fn handle_link_project(
     let group_name = matches.get_one::<String>("group").cloned();
 
     let org_group = Group::try_new(config.org(), group_name.clone());
-    let org = org_group.as_ref().and_then(|group| group.org().map(String::from));
 
-    let uuid = api.get_project_id(project_name, org_group).await?;
+    let uuid = api.get_project_id(project_name, org_group.clone()).await?;
 
     let project_config = match phylum_project::get_current_project() {
         Some(mut project) => {
@@ -316,12 +312,8 @@ async fn handle_link_project(
         .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
 
     let project_id = Some(project_config.id.to_string());
-    let formatted_project = format_project_reference(
-        org.as_deref(),
-        group_name.as_deref(),
-        project_name,
-        project_id.as_deref(),
-    );
+    let formatted_project =
+        format_project_reference(org_group.as_ref(), project_name, project_id.as_deref());
     print_user_success!("Linked the current working directory to the project {formatted_project}.");
 
     Ok(ExitCode::Ok)
@@ -388,8 +380,7 @@ async fn prompt_project(
 
 /// Format a project hierarchy for user output.
 fn format_project_reference(
-    org: Option<&str>,
-    group: Option<&str>,
+    group: Option<&Group>,
     project: &str,
     project_id: Option<&str>,
 ) -> String {
@@ -403,14 +394,15 @@ fn format_project_reference(
         let _ = write!(formatted, "id: {}, ", style(project_id).green());
     }
 
-    let _ = match group.and(org) {
-        Some(org) => write!(formatted, "org: {}, ", style(org).green()),
-        None => write!(formatted, "org: {}, ", style("-")),
-    };
-
     let _ = match group {
-        Some(group) => write!(formatted, "group: {}", style(group).green()),
-        None => write!(formatted, "group: {}", style("-")),
+        Some(group) => {
+            let _ = match group.org() {
+                Some(org) => write!(formatted, "org: {}, ", style(org).green()),
+                None => write!(formatted, "org: {}, ", style("-")),
+            };
+            write!(formatted, "group: {}", style(group.name()).green())
+        },
+        None => write!(formatted, "org: {}, group: {}", style("-"), style("-")),
     };
 
     formatted.push(')');

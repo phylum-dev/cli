@@ -262,15 +262,10 @@ impl PhylumApi {
     pub async fn create_project(
         &self,
         name: impl Into<String>,
-        org: Option<&str>,
-        group: Option<String>,
+        group: Option<Group>,
         repository_url: Option<String>,
     ) -> Result<ProjectId> {
-        let group_name = match (org, group) {
-            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
-            (None, Some(group)) => Some(group),
-            (Some(_), None) | (None, None) => None,
-        };
+        let group_name = group.map(|g| g.combined_format().into_owned());
 
         let url = endpoints::create_project(&self.config.connection.uri)?;
         let body = CreateProjectRequest {
@@ -287,17 +282,12 @@ impl PhylumApi {
     pub async fn update_project(
         &self,
         project_id: &str,
-        org: Option<String>,
-        group: Option<String>,
+        group: Option<Group>,
         name: impl Into<String>,
         repository_url: Option<String>,
         default_label: Option<String>,
     ) -> Result<ProjectId> {
-        let group_name = match (org, group) {
-            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
-            (None, Some(group)) => Some(group),
-            (Some(_), None) | (None, None) => None,
-        };
+        let group_name = group.map(|g| g.combined_format().into_owned());
 
         let url = endpoints::project(&self.config.connection.uri, project_id)?;
         let body =
@@ -590,6 +580,7 @@ impl PhylumApi {
 }
 
 /// Phylum group types.
+#[derive(Clone)]
 pub enum Group {
     Legacy(String),
     Org(OrgGroup),
@@ -644,6 +635,7 @@ impl Group {
 }
 
 /// Group under an organization.
+#[derive(Clone)]
 pub struct OrgGroup {
     org: String,
     name: String,

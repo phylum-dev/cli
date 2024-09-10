@@ -365,17 +365,16 @@ async fn create_project(
 ) -> Result<CreatedProject> {
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
+    let org_group = Group::try_new(organization, group);
 
     // Retrieve the id if the project already exists, otherwise return the id or the
     // error.
-    match api.create_project(&name, organization.as_deref(), group.clone(), repository_url).await {
-        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let org_group = Group::try_new(organization, group);
-            api.get_project_id(&name, org_group)
-                .await
-                .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
-                .map_err(|e| e.into())
-        },
+    match api.create_project(&name, org_group.clone(), repository_url).await {
+        Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
+            .get_project_id(&name, org_group)
+            .await
+            .map(|id| CreatedProject { id, status: CreatedProjectStatus::Exists })
+            .map_err(|e| e.into()),
         Err(e) => Err(e.into()),
         Ok(id) => Ok(CreatedProject { id, status: CreatedProjectStatus::Created }),
     }

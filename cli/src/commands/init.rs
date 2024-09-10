@@ -54,19 +54,19 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) 
     // Interactively prompt for missing project information.
     let (project, group, repository_url) =
         prompt_project(&groups, cli_project, cli_group, cli_repository_url).await?;
+    let org_group = Group::try_new(org, group.clone());
 
     // Interactively prompt for missing dependency file information.
     let depfiles = prompt_depfiles(cli_depfiles, cli_depfile_type)?;
 
     // Attempt to create the project.
-    let result = project::create_project(api, &project, org, group.clone(), repository_url).await;
+    let result = project::create_project(api, &project, org_group.clone(), repository_url).await;
 
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
-            let org_group = Group::try_new(org, group.clone());
             let uuid = api
-                .get_project_id(&project, org_group)
+                .get_project_id(&project, org_group.clone())
                 .await
                 .context(format!("Could not find project {project:?}"))?;
             ProjectConfig::new(uuid, project, group)
