@@ -596,16 +596,6 @@ pub enum Group {
 }
 
 impl Group {
-    /// Create a new group.
-    fn new(org: String, group: String) -> Self {
-        Self::Org(OrgGroup { org, name: group })
-    }
-
-    /// Create a group without organization.
-    fn new_legacy(group: String) -> Self {
-        Self::Legacy(group)
-    }
-
     /// Create a group from an optional group name.
     pub fn try_new<O, G>(org: Option<O>, group: Option<G>) -> Option<Self>
     where
@@ -613,8 +603,8 @@ impl Group {
         G: Into<String>,
     {
         group.map(|group| match org {
-            Some(org) => Self::new(org.into(), group.into()),
-            None => Self::new_legacy(group.into()),
+            Some(org) => Self::Org(OrgGroup { org: org.into(), name: group.into() }),
+            None => Self::Legacy(group.into()),
         })
     }
 
