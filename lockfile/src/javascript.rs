@@ -668,6 +668,17 @@ mod tests {
     }
 
     #[test]
+    fn bun_yarn_v1() {
+        let pkgs = YarnLock.parse(include_str!("../../tests/fixtures/yarn-bun.lock")).unwrap();
+
+        assert_eq!(pkgs, vec![Package {
+            name: "@aashutoshrathi/word-wrap".into(),
+            version: PackageVersion::FirstParty("1.2.6".into()),
+            package_type: PackageType::Npm,
+        },]);
+    }
+
+    #[test]
     fn pnpm() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
 

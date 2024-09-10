@@ -619,7 +619,7 @@ mod tests {
     #[test]
     fn parsers_only_parse_their_lockfiles() {
         for (format, lockfile_count) in [
-            (LockfileFormat::Yarn, 3),
+            (LockfileFormat::Yarn, 4),
             (LockfileFormat::Npm, 2),
             (LockfileFormat::Pnpm, 3),
             (LockfileFormat::Gem, 1),
