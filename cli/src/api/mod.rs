@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -436,9 +435,10 @@ impl PhylumApi {
     pub async fn get_project_history(
         &self,
         project_name: &str,
-        group: Option<Group>,
+        org: Option<&str>,
+        group: Option<&str>,
     ) -> Result<Vec<HistoryJob>> {
-        let project_id = self.get_project_id(project_name, group).await?.to_string();
+        let project_id = self.get_project_id(project_name, org, group).await?.to_string();
         let url = endpoints::get_project_history(&self.config.connection.uri, &project_id)?;
         self.get(url).await
     }
@@ -447,11 +447,14 @@ impl PhylumApi {
     pub async fn get_project_id(
         &self,
         project_name: &str,
-        group: Option<Group>,
+        org: Option<&str>,
+        group: Option<&str>,
     ) -> Result<ProjectId> {
-        let (org, group, combined_format) = group.as_ref().map_or((None, None, None), |group| {
-            (group.org(), Some(group.name()), Some(group.combined_format().into_owned()))
-        });
+        let (org, group, combined_format) = match (org, group) {
+            (Some(org), Some(group)) => (Some(org), Some(group), Some(format!("{org}/{group}"))),
+            (None, Some(group)) => (None, Some(group), Some(group.to_string())),
+            (_, None) => (None, None, None),
+        };
 
         let projects = self.get_projects(org, group, Some(project_name)).await?;
 
@@ -587,56 +590,6 @@ impl PhylumApi {
     pub fn config(&self) -> &Config {
         &self.config
     }
-}
-
-/// Phylum group types.
-pub enum Group {
-    Legacy(String),
-    Org(OrgGroup),
-}
-
-impl Group {
-    /// Create a group from an optional group name.
-    pub fn try_new<O, G>(org: Option<O>, group: Option<G>) -> Option<Self>
-    where
-        O: Into<String>,
-        G: Into<String>,
-    {
-        group.map(|group| match org {
-            Some(org) => Self::Org(OrgGroup { org: org.into(), name: group.into() }),
-            None => Self::Legacy(group.into()),
-        })
-    }
-
-    /// Get the group's organization.
-    pub fn org(&self) -> Option<&str> {
-        match self {
-            Self::Legacy(_) => None,
-            Self::Org(OrgGroup { org, .. }) => Some(org.as_str()),
-        }
-    }
-
-    /// Get the group's name.
-    pub fn name(&self) -> &str {
-        match self {
-            Self::Legacy(name) => name.as_str(),
-            Self::Org(OrgGroup { name, .. }) => name.as_str(),
-        }
-    }
-
-    /// Format the group as a single string.
-    pub fn combined_format(&self) -> Cow<'_, str> {
-        match self {
-            Self::Legacy(name) => Cow::Borrowed(name),
-            Self::Org(OrgGroup { org, name }) => Cow::Owned(format!("{org}/{name}")),
-        }
-    }
-}
-
-/// Group under an organization.
-pub struct OrgGroup {
-    org: String,
-    name: String,
 }
 
 /// Tests
