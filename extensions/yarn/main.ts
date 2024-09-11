@@ -139,7 +139,7 @@ const output = Phylum.runSandboxed({
   cmd: "yarn",
   args: ["install", "--immutable", "--immutable-cache"],
   exceptions: {
-    write: ["/tmp", "./.yarn"],
+    write: ["/tmp", "./"],
     read: true,
     run: true,
     net: false,
