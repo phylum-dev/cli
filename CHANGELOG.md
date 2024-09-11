@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Organization support for existing subcommands
 - `phylum project update --default-label` option to set a project's default label
 - `phylum project list --no-group` flag to only show personal projects
+- Full sandbox write access to project directory for building with `yarn` extension
 
 ### Fixed
 
