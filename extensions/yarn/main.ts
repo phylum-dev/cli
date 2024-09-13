@@ -139,7 +139,7 @@ const output = Phylum.runSandboxed({
   cmd: "yarn",
   args: ["install", "--immutable", "--immutable-cache"],
   exceptions: {
-    write: ["/tmp", "./.yarn"],
+    write: ["/tmp", "./"],
     read: true,
     run: true,
     net: false,
@@ -166,7 +166,7 @@ if (!output.success) {
       red(
         "phylum",
       )
-    }] Please submit your lockfile to Phylum should this error persist.`,
+    }] Please submit your dependency file(s) to Phylum if this error persists.`,
   );
 
   await abort(output.code ?? 255);
