@@ -69,7 +69,6 @@ pub trait Generator {
         let mut command = self.command(&canonicalized);
         command.current_dir(project_path);
         command.stdin(Stdio::null());
-        command.stdout(Stdio::null());
 
         // Provide better error message, including the failed program's name.
         let output = command.output().map_err(|err| {
