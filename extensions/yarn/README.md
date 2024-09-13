@@ -53,18 +53,19 @@ There are some common reasons this extension may fail.
 ### Sandbox violations
 
 The underlying package manager may fail due to operating within the Phylum
-sandbox. These errors are usually displayed in the output and say something
-about not being able to access a particular file or network resource.
+sandbox. These errors may be displayed in the output and say something about not
+being able to access a particular resource.
 
 One possibility is that this is a valid sandbox violation that has not been
-accounted for with an exception. If you believe this is the case, please
-[submit an issue][issue] or [contact us][contact] to discuss adding exceptions.
+accounted for with an exception. Another possibility is that a malicious action
+was taken by one of the packages. Blocking such malicious actions is a primary
+goal for using this extension and failures of this sort are a warning to not
+proceed without the protection of a sandbox.
 
-Another possibility is that a malicious action was taken by one of the packages.
-Blocking such malicious actions is a primary goal for using this extension but
-it may be hard to know what is malicious and what is not. If you need help
-making that determination, please [contact us][contact] and provide the log
-output along with any other relevant details.
+It can be hard to know what is malicious and what is not. If you aren't sure
+what to do, please [contact us][contact] and provide the log output along with
+any other relevant details. If you believe an exception is needed for the
+sandbox, please [submit an issue][issue].
 
 [issue]: https://github.com/phylum-dev/cli/issues/new/choose
 [contact]: https://docs.phylum.io/support/contact_us
