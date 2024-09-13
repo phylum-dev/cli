@@ -143,7 +143,7 @@ pub enum Error {
     Json(#[from] JsonError),
     NonZeroExit(Output),
     PipReportVersionMismatch(&'static str, String),
-    ProcessCreation(String, String, io::Error),
+    ProcessCreation(String, String, #[source] io::Error),
     StripPrefix(#[from] StripPrefixError),
     UnsupportedCommandVersion(&'static str, &'static str, String),
     NoLockfileGenerated,
