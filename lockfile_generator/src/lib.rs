@@ -53,7 +53,7 @@ pub trait Generator {
     fn generate_lockfile(&self, manifest_path: &Path) -> Result<String> {
         self.check_prerequisites(manifest_path)?;
 
-        let canonicalized = fs::canonicalize(manifest_path)?;
+        let canonicalized = dunce::canonicalize(manifest_path)?;
         let project_path = canonicalized
             .parent()
             .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;

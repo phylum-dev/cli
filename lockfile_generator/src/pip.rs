@@ -56,7 +56,7 @@ impl Generator for Pip {
     /// we provide a custom method here which parses this output and transforms
     /// it into the locked requirements.txt format our lockfile parser expects.
     fn generate_lockfile(&self, manifest_path: &Path) -> Result<String> {
-        let canonicalized = fs::canonicalize(manifest_path)?;
+        let canonicalized = dunce::canonicalize(manifest_path)?;
         let project_path = canonicalized
             .parent()
             .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
