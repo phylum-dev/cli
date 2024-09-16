@@ -53,7 +53,7 @@ pub trait Generator {
     fn generate_lockfile(&self, manifest_path: &Path) -> Result<String> {
         self.check_prerequisites(manifest_path)?;
 
-        let canonicalized = fs::canonicalize(manifest_path)?;
+        let canonicalized = dunce::canonicalize(manifest_path)?;
         let project_path = canonicalized
             .parent()
             .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
@@ -69,7 +69,6 @@ pub trait Generator {
         let mut command = self.command(&canonicalized);
         command.current_dir(project_path);
         command.stdin(Stdio::null());
-        command.stdout(Stdio::null());
 
         // Provide better error message, including the failed program's name.
         let output = command.output().map_err(|err| {
@@ -143,7 +142,7 @@ pub enum Error {
     Json(#[from] JsonError),
     NonZeroExit(Output),
     PipReportVersionMismatch(&'static str, String),
-    ProcessCreation(String, String, io::Error),
+    ProcessCreation(String, String, #[source] io::Error),
     StripPrefix(#[from] StripPrefixError),
     UnsupportedCommandVersion(&'static str, &'static str, String),
     NoLockfileGenerated,

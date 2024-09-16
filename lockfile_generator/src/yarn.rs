@@ -1,7 +1,6 @@
 //! JavaScript yarn ecosystem.
 
 use std::ffi::OsStr;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -42,7 +41,7 @@ impl Generator for Yarn {
 
 /// Get the yarn version of the project.
 fn yarn_version(manifest_path: &Path) -> Result<String> {
-    let canonicalized = fs::canonicalize(manifest_path)?;
+    let canonicalized = dunce::canonicalize(manifest_path)?;
     let project_path = canonicalized
         .parent()
         .ok_or_else(|| Error::InvalidManifest(manifest_path.to_path_buf()))?;
