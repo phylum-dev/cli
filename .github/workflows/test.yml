@@ -33,21 +33,27 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
-            protoc: sudo apt install -y protobuf-compiler
             flags: --all-features
           - os: macos-14
-            protoc: brew install protobuf
             flags: --all-features
           - os: windows-latest
-            protoc: choco install protoc
             flags: --no-default-features -F extensions
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Install protoc
-        run: ${{ matrix.protoc }}
+      - if: ${{ runner.os == 'macOS' }}
+        name: Install protoc
+        run: brew install protobuf
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal -c clippy
