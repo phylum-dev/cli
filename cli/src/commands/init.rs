@@ -59,7 +59,14 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) 
     let depfiles = prompt_depfiles(cli_depfiles, cli_depfile_type)?;
 
     // Attempt to create the project.
-    let result = project::create_project(api, &project, org, group.clone(), repository_url).await;
+    let result = project::create_project(
+        api,
+        &project,
+        org.map(|org| org.into()),
+        group.clone(),
+        repository_url,
+    )
+    .await;
 
     let mut project_config = match result {
         // If project already exists, try looking it up to link to it.
