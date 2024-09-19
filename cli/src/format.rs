@@ -182,7 +182,7 @@ impl Format for Vec<ProjectListEntry> {
                 }),
                 ("Group Name", |project| {
                     let group_name = project.group_name.as_deref().unwrap_or("");
-                    print::truncate(&group_name, MAX_NAME_WIDTH).into_owned()
+                    print::truncate(group_name, MAX_NAME_WIDTH).into_owned()
                 }),
                 ("Project Name", |project| {
                     print::truncate(&project.name, MAX_NAME_WIDTH).into_owned()

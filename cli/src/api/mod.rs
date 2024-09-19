@@ -444,8 +444,8 @@ impl PhylumApi {
             .iter()
             .find(|project| {
                 project.name == project_name
-                    && project.organization_name.as_ref().map(|o| o.as_str()) == org
-                    && project.group_name.as_ref().map(|g| g.as_str()) == group
+                    && project.organization_name.as_deref() == org
+                    && project.group_name.as_deref() == group
             })
             .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
             .map(|project| project.id)
