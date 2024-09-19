@@ -261,20 +261,15 @@ impl PhylumApi {
     pub async fn create_project(
         &self,
         name: impl Into<String>,
-        org: Option<&str>,
+        org: Option<String>,
         group: Option<String>,
         repository_url: Option<String>,
     ) -> Result<ProjectId> {
-        let group_name = match (org, group) {
-            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
-            (None, Some(group)) => Some(group),
-            (Some(_), None) | (None, None) => None,
-        };
-
         let url = endpoints::create_project(&self.config.connection.uri)?;
         let body = CreateProjectRequest {
             repository_url,
-            group_name,
+            group_name: group,
+            organization_name: org,
             default_label: None,
             name: name.into(),
         };
@@ -292,15 +287,14 @@ impl PhylumApi {
         repository_url: Option<String>,
         default_label: Option<String>,
     ) -> Result<ProjectId> {
-        let group_name = match (org, group) {
-            (Some(org), Some(group)) => Some(format!("{org}/{group}")),
-            (None, Some(group)) => Some(group),
-            (Some(_), None) | (None, None) => None,
-        };
-
         let url = endpoints::project(&self.config.connection.uri, project_id)?;
-        let body =
-            UpdateProjectRequest { repository_url, default_label, name: name.into(), group_name };
+        let body = UpdateProjectRequest {
+            repository_url,
+            default_label,
+            name: name.into(),
+            organization_name: org,
+            group_name: group,
+        };
         let response: CreateProjectResponse = self.put(url, body).await?;
         Ok(response.id)
     }
@@ -329,17 +323,11 @@ impl PhylumApi {
         let mut uri = endpoints::projects(&self.config.connection.uri)?;
 
         // Add filter query parameters.
-        match (org, group) {
-            (Some(org), Some(group)) => {
-                uri.query_pairs_mut().append_pair("filter.group", &format!("{org}/{group}"));
-            },
-            (Some(org), None) => {
-                uri.query_pairs_mut().append_pair("filter.organization", org);
-            },
-            (None, Some(group)) => {
-                uri.query_pairs_mut().append_pair("filter.group", group);
-            },
-            (None, None) => (),
+        if let Some(org) = org {
+            uri.query_pairs_mut().append_pair("filter.organization", org);
+        }
+        if let Some(group) = group {
+            uri.query_pairs_mut().append_pair("filter.group", group);
         }
         if let Some(name_filter) = name_filter {
             uri.query_pairs_mut().append_pair("filter.name", name_filter);
@@ -450,17 +438,15 @@ impl PhylumApi {
         org: Option<&str>,
         group: Option<&str>,
     ) -> Result<ProjectId> {
-        let (org, group, combined_format) = match (org, group) {
-            (Some(org), Some(group)) => (Some(org), Some(group), Some(format!("{org}/{group}"))),
-            (None, Some(group)) => (None, Some(group), Some(group.to_string())),
-            (_, None) => (None, None, None),
-        };
-
         let projects = self.get_projects(org, group, Some(project_name)).await?;
 
         projects
             .iter()
-            .find(|project| project.name == project_name && project.group_name == combined_format)
+            .find(|project| {
+                project.name == project_name
+                    && project.organization_name.as_ref().map(|o| o.as_str()) == org
+                    && project.group_name.as_ref().map(|g| g.as_str()) == group
+            })
             .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
             .map(|project| project.id)
     }
