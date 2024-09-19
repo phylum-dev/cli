@@ -37,7 +37,7 @@ pub async fn handle_project(
 pub async fn create_project(
     api: &PhylumApi,
     project: &str,
-    org: Option<&str>,
+    org: Option<String>,
     group: Option<String>,
     repository_url: Option<String>,
 ) -> Result<ProjectConfig, PhylumApiError> {
@@ -114,9 +114,10 @@ async fn handle_create_project(
 
     log::info!("Initializing new project: `{}`", project);
 
-    let project_config = match create_project(api, project, org, group.clone(), repository_url)
-        .await
-    {
+    let project_config =
+        create_project(api, project, org.map(|org| org.into()), group.clone(), repository_url)
+            .await;
+    let project_config = match project_config {
         Ok(project) => project,
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
             let formatted_project = format_project_reference(org, group.as_deref(), project, None);

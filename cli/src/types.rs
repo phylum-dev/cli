@@ -478,6 +478,8 @@ pub struct AddOrgUserRequest {
 pub struct CreateProjectRequest {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub organization_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub group_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub repository_url: Option<String>,
@@ -493,6 +495,7 @@ pub struct ProjectListEntry {
     pub updated_at: DateTime<Utc>,
     pub name: String,
     pub ecosystems: Vec<PackageType>,
+    pub organization_name: Option<String>,
     pub group_name: Option<String>,
 }
 
