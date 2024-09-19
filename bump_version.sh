@@ -40,7 +40,7 @@ printf "\nFiles to be added and committed with message: \"%s\"\n\n" "${commit_me
 git status
 
 printf "Press enter to proceed with the commit..."
-read -r
+read -r _
 
 git commit -F - <<EOF
 ${commit_message}

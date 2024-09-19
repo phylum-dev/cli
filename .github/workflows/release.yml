@@ -56,7 +56,7 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             extension: .exe
-            flags: --no-default-features
+            flags: --no-default-features -F extensions
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -71,6 +71,10 @@ jobs:
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt update && sudo apt install -y protobuf-compiler
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
 
       - if: ${{ runner.os == 'Windows' }}
         name: Install Rust toolchain
@@ -191,7 +195,7 @@ jobs:
         env:
           OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
         run: |
-          for archive in phylum-*.zip;
+          for archive in phylum-*.zip phylum-*.exe;
           do
             openssl dgst -sha256 -sign <(printf "%s" "$OPENSSL_KEY") -out "${archive}.signature" "${archive}"
           done
@@ -230,7 +234,7 @@ jobs:
         # Reference: https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28#upload-a-release-asset
         run: |
           API_URL=$(printf "%s" "$UPLOAD_URL" | cut -d '{' -f 1)
-          for asset in phylum-*.zip* phylum-*.exe;
+          for asset in phylum-*.zip* phylum-*.exe*;
           do
             curl \
               -X POST \
