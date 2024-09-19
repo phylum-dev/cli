@@ -66,6 +66,7 @@ fn pages() -> Result<Vec<(PathBuf, String)>> {
     Ok(pages)
 }
 
+#[cfg(feature = "full-docs")]
 #[cfg(test)]
 mod tests {
     use std::env;
@@ -73,7 +74,6 @@ mod tests {
     use super::*;
 
     /// Ensure the generate CLI docs are always up-to-date.
-    #[cfg(feature = "full-docs")]
     #[test]
     fn docs_up_to_date() {
         // Move to project root.

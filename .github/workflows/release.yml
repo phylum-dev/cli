@@ -56,7 +56,7 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             extension: .exe
-            flags: --no-default-features
+            flags: --no-default-features -F extensions
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -71,6 +71,10 @@ jobs:
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt update && sudo apt install -y protobuf-compiler
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
 
       - if: ${{ runner.os == 'Windows' }}
         name: Install Rust toolchain

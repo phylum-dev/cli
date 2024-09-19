@@ -13,18 +13,6 @@ on:
     - cron: '30 5 * * 1'
 
 jobs:
-  windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout the repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Install Rust toolchain
-        run: rustup toolchain install --no-self-update stable --profile minimal
-
-      - name: Test
-        run: cargo +stable test --locked --no-default-features
-
   rustfmt:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-20.04
@@ -43,7 +31,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-14]
+        include:
+          - os: ubuntu-20.04
+            flags: --all-features
+          - os: macos-14
+            flags: --all-features
+          - os: windows-latest
+            flags: --no-default-features -F extensions
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -51,23 +45,30 @@ jobs:
 
       - if: ${{ runner.os == 'macOS' }}
         name: Install protoc
-        run: brew install cmake protobuf
+        run: brew install protobuf
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt install -y protobuf-compiler
 
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
+
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal -c clippy
 
       - name: Clippy
-        run: cargo +stable clippy --locked --all-features --all-targets -- -D warnings
+        run: cargo +stable clippy --locked ${{ matrix.flags }} --all-targets -- -D warnings
 
   test-matrix:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-14]
+        include:
+          - os: windows-latest
+            flags: --no-default-features -F extensions
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -75,22 +76,27 @@ jobs:
 
       - if: ${{ runner.os == 'macOS' }}
         name: Install protoc
-        run: brew install cmake protobuf
+        run: brew install protobuf
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt install -y protobuf-compiler
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
 
       - name: Test
-        run: cargo +stable test --locked
+        run: cargo +stable test --locked ${{ matrix.flags }}
 
   oldstable:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-14]
+        os: [ubuntu-20.04, macos-14, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -98,17 +104,22 @@ jobs:
 
       - if: ${{ runner.os == 'macOS' }}
         name: Install protoc
-        run: brew install cmake protobuf
+        run: brew install protobuf
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt install -y protobuf-compiler
 
+      - if: ${{ runner.os == 'Windows' }}
+        name: Install protoc
+        run: choco install protoc
+
       - name: Oldstable
+        shell: bash
         run: |
-          oldstable=$(cat "./cli/Cargo.toml" | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
-          rustup toolchain install --profile minimal "$oldstable"
-          cargo "+$oldstable" check
+          oldstable=$(grep rust-version ./cli/Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+          rustup toolchain install --profile minimal "${oldstable}"
+          cargo "+${oldstable}" check
 
   all-features:
     # Skip this job when the secret is unavailable
@@ -123,7 +134,7 @@ jobs:
 
       - if: ${{ runner.os == 'macOS' }}
         name: Install protoc
-        run: brew install cmake protobuf
+        run: brew install protobuf
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
@@ -142,26 +153,34 @@ jobs:
     runs-on: ubuntu-latest
     container: denoland/deno
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Checkout the repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
       - name: deno fmt
         run: deno fmt --check
+
       - name: deno lint
         run: deno lint
+
       - name: deno check
         run: deno check --no-lock extensions/**/*.ts
 
   shellcheck:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Script Style Check
-        if: github.event_name != 'schedule'
-        run: shellcheck -o all -S style -s sh $(find . -iname "*.sh")
+      - name: Checkout the repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-  # This job reports the results of the matrixes above
+      - name: Script Style Check
+        run: find . -iname "*.sh" -print0 | xargs -0 shellcheck -o all -S style -s sh
+
+  # This job reports the results of the test jobs above and is used
+  # to enforce status checks in the repo settings without needing
+  # to update those settings every time the test jobs are updated.
   test:
     if: always()
-    needs: [windows, clippy, test-matrix, all-features, oldstable]
+    needs: [clippy, test-matrix, oldstable, all-features]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
