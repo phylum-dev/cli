@@ -51,7 +51,7 @@ impl ProjectConfig {
                 .iter()
                 .map(|depfile| {
                     let path = self.root.join(&depfile.path);
-                    DepfileConfig::new(path, depfile.depfile_type.clone())
+                    DepfileConfig::new(dunce::simplified(&path), depfile.depfile_type.clone())
                 })
                 .collect();
         }
@@ -108,7 +108,7 @@ pub fn find_project_conf(
     // If `path` is like `.`, `path.parent()` is `None`.
     // Convert to a canonicalized path so removing components navigates up the
     // directory hierarchy.
-    let mut path = starting_directory.as_ref().canonicalize().ok()?;
+    let mut path = dunce::canonicalize(starting_directory.as_ref()).ok()?;
 
     for _ in 0..max_depth {
         let conf_path = path.join(PROJ_CONF_FILE);
@@ -157,7 +157,7 @@ mod tests {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
         config.set_depfiles(vec![DepfileConfig {
-            path: PathBuf::from("Cargo.lock"),
+            path: PathBuf::from("./Cargo.lock"),
             depfile_type: "cargo".to_owned(),
         }]);
 
@@ -166,7 +166,7 @@ mod tests {
             panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
-        assert_eq!(&PathBuf::from("Cargo.lock"), &depfile.path);
+        assert_eq!(&PathBuf::from("./Cargo.lock"), &depfile.path);
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
         config.set_depfiles(vec![DepfileConfig {
-            path: PathBuf::from("Cargo.lock"),
+            path: PathBuf::from("./Cargo.lock"),
             depfile_type: "cargo".to_owned(),
         }]);
 
@@ -186,7 +186,7 @@ mod tests {
             panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
-        assert_eq!(&PathBuf::from("Cargo.lock"), &depfile.path);
+        assert_eq!(&PathBuf::from("./Cargo.lock"), &depfile.path);
     }
 
     #[test]
@@ -194,17 +194,27 @@ mod tests {
         let mut config =
             ProjectConfig::new(PROJECT_ID, PROJECT_NAME.to_owned(), Some(GROUP_NAME.to_owned()));
         config.set_depfiles(vec![DepfileConfig {
-            path: PathBuf::from("Cargo.lock"),
+            path: PathBuf::from("./Cargo.lock"),
             depfile_type: "cargo".to_owned(),
         }]);
-        config.root = PathBuf::from("/home/user/project");
+        #[cfg(not(windows))]
+        {
+            config.root = PathBuf::from("/home/user/project");
+        }
+        #[cfg(windows)]
+        {
+            config.root = PathBuf::from(r"C:\home\user\project");
+        }
 
         let depfiles = config.depfiles();
         let [depfile] = &depfiles[..] else {
             panic!("Expected to get exactly one depfile but got {depfiles:?}");
         };
 
+        #[cfg(not(windows))]
         assert_eq!(&PathBuf::from("/home/user/project/Cargo.lock"), &depfile.path);
+        #[cfg(windows)]
+        assert_eq!(&PathBuf::from(r"C:\home\user\project\Cargo.lock"), &depfile.path);
     }
 
     #[cfg(any(unix, windows))]
@@ -246,9 +256,8 @@ mod tests {
 
         let found = find_project_conf(&cwd, true);
         assert_eq!(
-            Some(file.canonicalize().unwrap()),
-            found.map(|f| f
-                .canonicalize()
+            Some(dunce::canonicalize(file).unwrap()),
+            found.map(|f| dunce::canonicalize(f)
                 .expect("Found configuration should be a canonicalizable path"))
         );
     }

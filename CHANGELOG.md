@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Extensions for Windows release artifacts
 
+### Fixed
+
+- Phylum project file paths on Windows
+
 ## 7.0.0 - 2024-09-17
 
 ### Added
