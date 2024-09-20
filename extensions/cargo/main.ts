@@ -52,7 +52,7 @@ async function findRoot(manifest: string): Promise<string | undefined> {
 
 /// Check if there is a cache entry for this lockfile's hash.
 async function hasSuccessCached(lockfilePath: string): Promise<boolean> {
-  // Check if sucess is cached.
+  // Check if success is cached.
   const hash = await hashFile(lockfilePath);
 
   try {

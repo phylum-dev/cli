@@ -115,7 +115,7 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
             },
         }
 
-        // Add the replacment module.
+        // Add the replacement module.
         packages.push(Package::from(replacement));
     }
 

@@ -79,20 +79,20 @@ impl CodeVerifier {
 }
 
 impl From<CodeVerifier> for String {
-    fn from(code_verfier: CodeVerifier) -> Self {
-        code_verfier.0
+    fn from(code_verifier: CodeVerifier) -> Self {
+        code_verifier.0
     }
 }
 
 impl From<&CodeVerifier> for String {
-    fn from(code_verfier: &CodeVerifier) -> Self {
-        code_verfier.0.clone()
+    fn from(code_verifier: &CodeVerifier) -> Self {
+        code_verifier.0.clone()
     }
 }
 
 impl<'a> From<&'a CodeVerifier> for &'a str {
-    fn from(code_verfier: &'a CodeVerifier) -> Self {
-        &code_verfier.0
+    fn from(code_verifier: &'a CodeVerifier) -> Self {
+        &code_verifier.0
     }
 }
 
@@ -213,14 +213,14 @@ pub async fn fetch_locksmith_server_settings(
 fn build_grant_type_auth_code_post_body(
     redirect_url: &Url,
     authorization_code: &AuthorizationCode,
-    code_verfier: &CodeVerifier,
+    code_verifier: &CodeVerifier,
     token_name: Option<String>,
     expiry: Option<DateTime<Utc>>,
 ) -> Result<HashMap<String, String>> {
     let mut body = hashmap! {
         "client_id".to_owned() => Default::default(),
         "code".to_owned() => authorization_code.into(),
-        "code_verifier".to_owned() => code_verfier.into(),
+        "code_verifier".to_owned() => code_verifier.into(),
         "grant_type".to_owned() => "authorization_code".to_owned(),
         // Must match previous request to /authorize but not redirected to by server
         "redirect_uri".to_owned() => redirect_url.to_string(),

@@ -227,7 +227,7 @@ fn prompt_depfiles(
 
 /// Ask for the dependency file names.
 fn prompt_depfile_names() -> io::Result<Vec<String>> {
-    // Find all known dependency files below the currenty directory.
+    // Find all known dependency files below the current directory.
     let mut depfiles = phylum_lockfile::find_depfiles_at(".")
         .iter()
         .flat_map(|(path, _)| Some(path.to_str()?.to_owned()))

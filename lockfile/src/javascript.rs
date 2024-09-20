@@ -193,7 +193,7 @@ impl Parse for YarnLock {
 
             // Extract original resolver from patch.
             if let Some((_, patch)) = resolver.split_once("patch:") {
-                // Exctract resolver from `@scope/package@RESOLVER#patch`.
+                // Extract resolver from `@scope/package@RESOLVER#patch`.
                 let patch = patch[1..].split_once('@');
                 let subresolver = patch.and_then(|(_, resolver)| resolver.split_once('#'));
                 resolver = match subresolver {

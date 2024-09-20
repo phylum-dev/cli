@@ -249,7 +249,7 @@ pub async fn handle_auth(
     match matches.subcommand() {
         Some(("register", _)) => match handle_auth_register(config, matches).await {
             Ok(_) => {
-                print_user_success!("{}", "User successfuly regsistered");
+                print_user_success!("{}", "User successfully regsistered");
                 Ok(ExitCode::Ok)
             },
             Err(error) => Err(error).context("User registration failed"),
