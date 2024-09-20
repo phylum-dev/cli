@@ -125,6 +125,7 @@ jobs:
     # Skip this job when the secret is unavailable
     if: github.secret_source == 'Actions'
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
