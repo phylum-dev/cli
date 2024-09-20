@@ -51,8 +51,7 @@ impl ProjectConfig {
                 .iter()
                 .map(|depfile| {
                     let path = self.root.join(&depfile.path);
-                    let dunce_path = dunce::simplified(&path);
-                    DepfileConfig::new(dunce_path, depfile.depfile_type.clone())
+                    DepfileConfig::new(dunce::simplified(&path), depfile.depfile_type.clone())
                 })
                 .collect();
         }
@@ -109,8 +108,7 @@ pub fn find_project_conf(
     // If `path` is like `.`, `path.parent()` is `None`.
     // Convert to a canonicalized path so removing components navigates up the
     // directory hierarchy.
-    let mut path = starting_directory.as_ref().canonicalize().ok()?;
-    path = dunce::simplified(&path).to_path_buf();
+    let mut path = dunce::canonicalize(starting_directory.as_ref()).ok()?;
 
     for _ in 0..max_depth {
         let conf_path = path.join(PROJ_CONF_FILE);
