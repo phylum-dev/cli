@@ -176,6 +176,23 @@ jobs:
       - name: Script Style Check
         run: find . -iname "*.sh" -print0 | xargs -0 shellcheck -o all -S style -s sh
 
+  spellcheck:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Install typos
+        run: cargo install typos-cli
+      - name: Check for typos
+        run: typos
+      - name: Print help on failure
+        if: failure()
+        run: |
+          echo 'To fix typos, please run `typos -w`'
+          echo 'To check for a diff, run `typos`'
+          echo 'You can find the typos CLI here: https://crates.io/crates/typos'
+
   # This job reports the results of the test jobs above and is used
   # to enforce status checks in the repo settings without needing
   # to update those settings every time the test jobs are updated.
