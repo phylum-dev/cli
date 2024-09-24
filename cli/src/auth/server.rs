@@ -138,7 +138,7 @@ async fn spawn_server_and_get_auth_code(
     let is_routable = check_if_routable(format!("{auth_host}:{port}"))?;
     if is_routable && auth_scheme == "http" {
         return Err(anyhow!(
-            "Authorization host {auth_host} is publically routable, must use https to connect."
+            "Authorization host {auth_host} is publicly routable, must use https to connect."
         ));
     }
 

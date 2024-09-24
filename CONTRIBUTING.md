@@ -20,7 +20,7 @@ Report bugs in the [GitHub issue tracker][bugs].
 
 Please use the template, which should remind you to include:
 
-* A clear and consise description of the bug
+* A clear and concise description of the bug
 * Detailed steps to reproduce the bug
 * Expected behavior
 * Screenshots, where appropriate

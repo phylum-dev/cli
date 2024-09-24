@@ -18,7 +18,7 @@ template used when no override is present.
 Some placeholders are available to templates, these will be replaced
 automatically with their values during documentation generation.
 
-These placeholers are currently supported:
+These placeholders are currently supported:
 
 | Name             | Description                                                                            |
 | ---------------- | -------------------------------------------------------------------------------------- |

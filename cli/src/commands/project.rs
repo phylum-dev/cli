@@ -286,7 +286,7 @@ async fn handle_update_project(
     Ok(ExitCode::Ok)
 }
 
-/// Link a Phylum project to the currenty directory.
+/// Link a Phylum project to the current directory.
 async fn handle_link_project(
     api: &PhylumApi,
     matches: &ArgMatches,

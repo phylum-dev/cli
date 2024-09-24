@@ -339,7 +339,7 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     Ok(birdcage)
 }
 
-/// Add an execption to the sandbox, ignoring invalid path errors.
+/// Add an exception to the sandbox, ignoring invalid path errors.
 #[cfg(unix)]
 pub fn add_exception(birdcage: &mut Birdcage, exception: Exception) -> SandboxResult<()> {
     match birdcage.add_exception(exception) {

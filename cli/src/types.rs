@@ -501,7 +501,7 @@ pub struct ProjectListEntry {
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct Paginated<T> {
-    /// The curent page of values.
+    /// The current page of values.
     pub values: Vec<T>,
     /// Indication of whether the current query has more values past the last
     /// element in `values`.

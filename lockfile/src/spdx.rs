@@ -21,7 +21,7 @@ use crate::{
 pub(crate) struct SpdxInfo {
     #[serde(rename = "SPDXID")]
     pub(crate) spdx_id: String,
-    // Deprecated in v2.3 but kept for v2.2 compatability.
+    // Deprecated in v2.3 but kept for v2.2 compatibility.
     #[serde(default)]
     pub(crate) document_describes: Vec<String>,
     pub(crate) packages: Vec<PackageInformation>,

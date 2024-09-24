@@ -190,7 +190,7 @@ pub mod open {
         Handle::current().spawn(async move {
             let url = Url::from_str(&authorization_url).expect("Failed to parse url.");
 
-            let code = "FAKE_OAUTH_ATHORIZATION_CODE";
+            let code = "FAKE_OAUTH_AUTHORIZATION_CODE";
 
             let query_params = url.query_pairs().into_owned().collect::<HashMap<String, String>>();
             let state =
