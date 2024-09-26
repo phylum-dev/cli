@@ -636,7 +636,7 @@ mod tests {
                 let mut guard = responder_token_holder.lock().unwrap();
                 let auth_header = HeaderName::from_str("Authorization").unwrap();
 
-                *guard = request.headers.get(&auth_header).map(|v| v.as_str().to_owned());
+                *guard = request.headers.get(&auth_header).map(|v| v.to_str().unwrap().to_owned());
 
                 ResponseTemplate::new(200)
                     .set_body_string(r#"{"job_id": "59482a54-423b-448d-8325-f171c9dc336b"}"#)
