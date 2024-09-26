@@ -3,24 +3,21 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use anyhow::{anyhow, Context, Error, Result};
 use console::style;
 use dashmap::DashMap;
 use deno_ast::{
-    EmitOptions, EmittedSource, MediaType, ParseParams, SourceMapOption, SourceTextInfo,
-    TranspileOptions,
+    EmitOptions, EmittedSourceBytes, MediaType, ParseParams, SourceMapOption, TranspileOptions,
 };
+use deno_core::error::JsError;
 use deno_core::{
-    include_js_files, ExtensionFileSource, ModuleCodeString, ModuleLoadResponse, ModuleSourceCode,
-    RequestedModuleType,
+    include_js_files, Extension, ExtensionFileSource, ModuleCodeString, ModuleLoadResponse,
+    ModuleLoader, ModuleSource, ModuleSourceCode, ModuleSpecifier, ModuleType, RequestedModuleType,
+    ResolutionKind,
 };
-use deno_runtime::deno_core::error::JsError;
-use deno_runtime::deno_core::{
-    Extension, ModuleLoader, ModuleSource, ModuleSpecifier, ModuleType, ResolutionKind,
-    SourceMapGetter,
-};
-use deno_runtime::permissions::{Permissions, PermissionsContainer, PermissionsOptions};
+use deno_runtime::deno_permissions::{Permissions, PermissionsContainer, PermissionsOptions};
 use deno_runtime::worker::{MainWorker, WorkerOptions};
 use deno_runtime::{fmt_errors, BootstrapOptions};
 use futures::future::BoxFuture;
@@ -66,14 +63,12 @@ pub async fn run(
         ..Default::default()
     };
 
-    let main_module =
-        deno_core::resolve_path(&extension.entry_point().to_string_lossy(), &PathBuf::from("."))?;
+    let main_module = deno_core::resolve_path(extension.entry_point(), &PathBuf::from("."))?;
 
     let bootstrap =
         BootstrapOptions { args, user_agent: "phylum-cli/extension".into(), ..Default::default() };
 
     let module_loader = Rc::new(ExtensionsModuleLoader::new(extension.path()));
-    let source_map_getter: Rc<dyn SourceMapGetter> = Rc::new(module_loader.clone());
 
     let origin_storage_dir = extension.state_path();
 
@@ -81,7 +76,6 @@ pub async fn run(
         origin_storage_dir,
         module_loader,
         bootstrap,
-        source_map_getter: Some(source_map_getter),
         extensions: vec![phylum_api],
         ..Default::default()
     };
@@ -219,7 +213,7 @@ impl ModuleLoader for ExtensionsModuleLoader {
             // Load either a local file under the extensions directory, or a Deno standard
             // library module. Reject all URLs that do not fit these two use
             // cases.
-            let mut code = match module_specifier.scheme() {
+            let code = match module_specifier.scheme() {
                 "file" => {
                     ExtensionsModuleLoader::load_from_filesystem(&extension_path, &module_specifier)
                         .await?
@@ -228,31 +222,30 @@ impl ModuleLoader for ExtensionsModuleLoader {
                 _ => return Err(anyhow!("Unsupported module specifier: {}", module_specifier)),
             };
 
-            if should_transpile {
-                let transpiled =
-                    source_mapper.transpile(module_specifier.to_string(), &code, media_type)?;
-                code.clone_from(&transpiled.text);
+            let module_source = if should_transpile {
+                let transpiled = source_mapper.transpile(
+                    module_specifier.to_string(),
+                    code.into(),
+                    media_type,
+                )?;
+                ModuleSourceCode::Bytes(transpiled.source.into_boxed_slice().into())
             } else {
-                source_mapper.source_cache.insert(module_specifier.to_string(), code.clone());
-            }
+                source_mapper
+                    .source_cache
+                    .insert(module_specifier.to_string(), code.clone().into());
+                ModuleSourceCode::String(code.into())
+            };
 
-            Ok(ModuleSource::new(
-                module_type,
-                ModuleSourceCode::String(code.into()),
-                &module_specifier,
-                None,
-            ))
+            Ok(ModuleSource::new(module_type, module_source, &module_specifier, None))
         }))
     }
-}
 
-impl SourceMapGetter for ExtensionsModuleLoader {
     fn get_source_map(&self, file_name: &str) -> Option<Vec<u8>> {
         let transpiled = self.source_mapper.transpiled_cache.get(file_name)?;
-        transpiled.source_map.clone().map(|map| map.into_bytes())
+        transpiled.source_map.clone()
     }
 
-    fn get_source_line(&self, file_name: &str, line_number: usize) -> Option<String> {
+    fn get_source_mapped_source_line(&self, file_name: &str, line_number: usize) -> Option<String> {
         let source = self.source_mapper.source_cache.get(file_name)?;
         source.lines().nth(line_number).map(|line| line.to_owned())
     }
@@ -261,8 +254,8 @@ impl SourceMapGetter for ExtensionsModuleLoader {
 /// Module source map cache.
 #[derive(Default)]
 struct SourceMapper {
-    transpiled_cache: DashMap<String, EmittedSource>,
-    source_cache: DashMap<String, String>,
+    transpiled_cache: DashMap<String, EmittedSourceBytes>,
+    source_cache: DashMap<String, Arc<str>>,
 }
 
 impl SourceMapper {
@@ -274,21 +267,19 @@ impl SourceMapper {
     fn transpile(
         &self,
         specifier: impl Into<String>,
-        code: impl Into<String>,
+        code: Arc<str>,
         media_type: MediaType,
-    ) -> Result<EmittedSource> {
+    ) -> Result<EmittedSourceBytes> {
         let specifier = specifier.into();
 
         // Load module if it is not in the cache.
         if !self.transpiled_cache.contains_key(&specifier) {
-            let code = code.into();
-
             // Add the original code to the cache.
             self.source_cache.insert(specifier.clone(), code.clone());
 
             // Parse module.
             let parsed = deno_ast::parse_module(ParseParams {
-                text_info: SourceTextInfo::from_string(code),
+                text: code,
                 specifier: specifier.parse()?,
                 capture_tokens: false,
                 scope_analysis: false,
@@ -308,10 +299,7 @@ impl SourceMapper {
 
         // Clone fields manually, since derive is missing.
         let transpiled = self.transpiled_cache.get(&specifier).unwrap();
-        Ok(EmittedSource {
-            source_map: transpiled.source_map.clone(),
-            text: transpiled.text.clone(),
-        })
+        Ok(transpiled.clone())
     }
 }
 

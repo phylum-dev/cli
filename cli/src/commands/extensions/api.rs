@@ -14,8 +14,8 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Error, Result};
-use deno_runtime::deno_core::{op2, OpDecl, OpState};
-use deno_runtime::permissions::PermissionsContainer;
+use deno_core::{op2, OpDecl, OpState};
+use deno_runtime::deno_permissions::PermissionsContainer;
 use phylum_lockfile::ParsedLockfile;
 use phylum_project::ProjectConfig;
 use phylum_types::types::auth::{AccessToken, RefreshToken};
