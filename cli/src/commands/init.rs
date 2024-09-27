@@ -127,21 +127,15 @@ fn prompt_project_name() -> dialoguer::Result<String> {
     let current_dir = env::current_dir()?;
     let default_name = current_dir.file_name().and_then(|name| name.to_str());
 
-    let mut prompt = Input::new();
-
     // Suggest default if we found a directory name.
     //
     // NOTE: We don't use dialoguer's built-in default here so we can add a more
     // explicit `default` label.
-    match default_name {
-        Some(default_name) => {
-            prompt = prompt
-                .with_prompt(format!("Project Name [default: {default_name}]"))
-                .allow_empty(true);
-        },
-        None => {
-            prompt = prompt.with_prompt("Project Name");
-        },
+    let prompt = match default_name {
+        Some(default_name) => Input::new()
+            .with_prompt(format!("Project Name [default: {default_name}]"))
+            .allow_empty(true),
+        None => Input::new().with_prompt("Project Name"),
     };
 
     let mut name: String = prompt.interact_text()?;
@@ -273,14 +267,13 @@ fn prompt_depfile_names() -> dialoguer::Result<Vec<String>> {
     }
 
     // Construct dialoguer freetext prompt.
-    let mut input = Input::new();
-    if prompt {
-        input = input.with_prompt("Other dependency files (comma separated paths)");
+    let mut input = if prompt {
+        Input::new().with_prompt("Other dependency files (comma separated paths)")
     } else {
-        input = input.with_prompt(
+        Input::new().with_prompt(
             "No known dependency files found in the current directory.\nDependency files (comma \
              separated paths)",
-        );
+        )
     };
 
     // Allow empty as escape hatch if people already selected a valid dependency

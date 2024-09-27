@@ -297,7 +297,6 @@ impl SourceMapper {
             self.transpiled_cache.insert(specifier.clone(), transpiled);
         }
 
-        // Clone fields manually, since derive is missing.
         let transpiled = self.transpiled_cache.get(&specifier).unwrap();
         Ok(transpiled.clone())
     }
