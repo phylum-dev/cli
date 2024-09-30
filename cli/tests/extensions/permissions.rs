@@ -70,7 +70,7 @@ fn incorrect_net_permission_unsuccessful_run() {
     test_cli
         .run(["incorrect-net-perms"])
         .failure()
-        .stderr("❗ Error: Requires net access to \"phylum.io\"\n");
+        .stderr("❗ Error: Requires net access to \"phylum.io:443\"\n");
 }
 
 #[test]

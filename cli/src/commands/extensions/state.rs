@@ -5,7 +5,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
-use deno_runtime::deno_core::OpState;
+use deno_core::OpState;
 use futures::future::BoxFuture;
 use tokio::sync::OnceCell;
 

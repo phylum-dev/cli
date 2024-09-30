@@ -1,7 +1,7 @@
 //! Subcommand `phylum init`.
 
 use std::path::Path;
-use std::{env, io, iter};
+use std::{env, iter};
 
 use anyhow::Context;
 use clap::parser::ValuesRef;
@@ -122,25 +122,20 @@ async fn prompt_project(
 }
 
 /// Ask for the desired project name.
-fn prompt_project_name() -> io::Result<String> {
+fn prompt_project_name() -> dialoguer::Result<String> {
     // Use directory name as default project name.
     let current_dir = env::current_dir()?;
     let default_name = current_dir.file_name().and_then(|name| name.to_str());
-
-    let mut prompt = Input::new();
 
     // Suggest default if we found a directory name.
     //
     // NOTE: We don't use dialoguer's built-in default here so we can add a more
     // explicit `default` label.
-    match default_name {
-        Some(default_name) => {
-            prompt.with_prompt(format!("Project Name [default: {default_name}]"));
-            prompt.allow_empty(true);
-        },
-        None => {
-            let _ = prompt.with_prompt("Project Name");
-        },
+    let prompt = match default_name {
+        Some(default_name) => Input::new()
+            .with_prompt(format!("Project Name [default: {default_name}]"))
+            .allow_empty(true),
+        None => Input::new().with_prompt("Project Name"),
     };
 
     let mut name: String = prompt.interact_text()?;
@@ -207,7 +202,7 @@ async fn prompt_repository_url() -> anyhow::Result<Option<String>> {
 fn prompt_depfiles(
     cli_depfiles: Option<ValuesRef<'_, String>>,
     cli_depfile_type: Option<&String>,
-) -> io::Result<Vec<DepfileConfig>> {
+) -> dialoguer::Result<Vec<DepfileConfig>> {
     // Prompt for dependency files if they weren't specified.
     let depfiles = match cli_depfiles {
         Some(depfiles) => depfiles.cloned().collect(),
@@ -226,7 +221,7 @@ fn prompt_depfiles(
 }
 
 /// Ask for the dependency file names.
-fn prompt_depfile_names() -> io::Result<Vec<String>> {
+fn prompt_depfile_names() -> dialoguer::Result<Vec<String>> {
     // Find all known dependency files below the current directory.
     let mut depfiles = phylum_lockfile::find_depfiles_at(".")
         .iter()
@@ -272,19 +267,18 @@ fn prompt_depfile_names() -> io::Result<Vec<String>> {
     }
 
     // Construct dialoguer freetext prompt.
-    let mut input = Input::new();
-    if prompt {
-        input.with_prompt("Other dependency files (comma separated paths)");
+    let mut input = if prompt {
+        Input::new().with_prompt("Other dependency files (comma separated paths)")
     } else {
-        input.with_prompt(
+        Input::new().with_prompt(
             "No known dependency files found in the current directory.\nDependency files (comma \
              separated paths)",
-        );
+        )
     };
 
     // Allow empty as escape hatch if people already selected a valid dependency
     // file.
-    input.allow_empty(!depfiles.is_empty());
+    input = input.allow_empty(!depfiles.is_empty());
 
     // Prompt for additional files.
     let other_depfiles: String = input.interact_text()?;
@@ -301,7 +295,10 @@ fn prompt_depfile_names() -> io::Result<Vec<String>> {
 }
 
 /// Find the type for a dependency file path.
-fn find_depfile_type(depfile: &str, cli_depfile_type: Option<&String>) -> io::Result<String> {
+fn find_depfile_type(
+    depfile: &str,
+    cli_depfile_type: Option<&String>,
+) -> dialoguer::Result<String> {
     if let Some(cli_depfile_type) = cli_depfile_type {
         // Use CLI dependency file type if specified.
         return Ok(cli_depfile_type.into());
@@ -326,7 +323,7 @@ fn find_depfile_type(depfile: &str, cli_depfile_type: Option<&String>) -> io::Re
 }
 
 /// Ask for the dependency file type.
-fn prompt_depfile_type(depfile: &str, mut formats: Vec<&str>) -> io::Result<String> {
+fn prompt_depfile_type(depfile: &str, mut formats: Vec<&str>) -> dialoguer::Result<String> {
     // Allow all formats if no matching formats were found.
     if formats.is_empty() {
         formats = LockfileFormat::iter().map(|format| format.name()).collect();

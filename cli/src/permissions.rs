@@ -12,7 +12,7 @@ use birdcage::error::Result as SandboxResult;
 #[cfg(unix)]
 use birdcage::{Birdcage, Exception, Sandbox};
 #[cfg(feature = "extensions")]
-use deno_runtime::permissions::PermissionsOptions;
+use deno_runtime::deno_permissions::PermissionsOptions;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 

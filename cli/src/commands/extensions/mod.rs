@@ -220,8 +220,7 @@ async fn handle_install_extension(
 }
 
 fn ask_overwrite(extension: &Extension) -> Result<()> {
-    let mut prompt = Confirm::new();
-    prompt
+    let prompt = Confirm::new()
         .with_prompt(format!(
             "Another version of the '{}' extension is already installed. Overwrite?",
             extension.name()
