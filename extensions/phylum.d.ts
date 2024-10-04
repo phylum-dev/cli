@@ -48,7 +48,7 @@ type EvaluatedDependencies = {
 
 type PolicyRejection = {
   title: string;
-  suppressed: boolean;
+  suppression_reason: string | null;
   source: RejectionSource;
 };
 
@@ -207,7 +207,7 @@ declare namespace Phylum {
    *     version: "0.2.1",
    *     rejections: [
    *       title: "Commercial license risk detected in birdcage@0.2.1",
-   *       suppressed: false,
+   *       suppression_reason: null,
    *       source: {
    *         type: "Issue",
    *         tag: "HL0030",

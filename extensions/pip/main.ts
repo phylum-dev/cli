@@ -266,7 +266,7 @@ function logPackageAnalysisResults(result: PolicyEvaluationResponseRaw) {
 
     for (const rejection of pkg.rejections) {
       // Skip suppressed issues.
-      if (rejection.suppressed) {
+      if (rejection.suppression_reason !== null) {
         continue;
       }
 

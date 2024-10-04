@@ -870,7 +870,7 @@ mod tests {
                         description: None,
                         reason: None,
                     },
-                    suppressed: false,
+                    suppression_reason: None,
                 }],
             }],
             job_link: Some("job_link".into()),
