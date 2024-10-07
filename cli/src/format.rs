@@ -126,14 +126,14 @@ impl Format for PolicyEvaluationResponseRaw {
         }
 
         // Write summary for each issue.
-        for package in self
-            .dependencies
-            .iter()
-            .filter(|package| package.rejections.iter().any(|rejection| !rejection.suppressed))
-        {
+        for package in self.dependencies.iter().filter(|package| {
+            package.rejections.iter().any(|rejection| rejection.suppression_reason.is_none())
+        }) {
             let _ = writeln!(writer, "[{}] {}@{}", package.registry, package.name, package.version);
 
-            for rejection in package.rejections.iter().filter(|rejection| !rejection.suppressed) {
+            for rejection in
+                package.rejections.iter().filter(|rejection| rejection.suppression_reason.is_none())
+            {
                 let domain = rejection
                     .source
                     .domain

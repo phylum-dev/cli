@@ -102,7 +102,7 @@ pub struct EvaluatedDependency {
 pub struct PolicyRejection {
     pub title: String,
     pub source: RejectionSource,
-    pub suppressed: bool,
+    pub suppression_reason: Option<String>,
 }
 
 /// Policy rejection source.
