@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Phylum project file paths on Windows
+- Package subcommand failing to parse API responses
 
 ## 7.0.0 - 2024-09-17
 
