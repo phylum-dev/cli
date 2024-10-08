@@ -132,6 +132,14 @@ pub struct RevokeTokenRequest<'a> {
     pub name: &'a str,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct PackageSpecifier {
+    #[serde(alias = "type")]
+    pub registry: String,
+    pub name: String,
+    pub version: String,
+}
+
 /// Response body for `/data/packages/submit`.
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "status", content = "data")]
@@ -156,33 +164,19 @@ pub struct Package {
     pub versions: Vec<ScoredVersion>,
     pub description: Option<String>,
     pub license: Option<String>,
-    pub dep_specs: Vec<PackageSpecifier>,
     pub dependencies: Option<Vec<Package>>,
-    pub download_count: u32,
     pub risk_scores: RiskScores,
-    pub total_risk_score_dynamics: Option<Vec<ScoreDynamicsPoint>>,
     pub issues: Vec<Issue>,
-    pub authors: Vec<Author>,
-    pub developer_responsiveness: Option<DeveloperResponsiveness>,
     pub complete: bool,
     pub release_data: Option<PackageReleaseData>,
     pub repo_url: Option<String>,
-    pub maintainers_recently_changed: Option<bool>,
-    pub is_abandonware: Option<bool>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct PackageSpecifier {
-    #[serde(alias = "type")]
-    pub registry: String,
-    pub name: String,
-    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ScoredVersion {
     pub version: String,
     pub total_risk_score: Option<f32>,
+    pub published_date: Option<String>,
 }
 
 /// Package risk scores, broken down by domain.
@@ -235,7 +229,7 @@ pub struct VulnDetails {
     /// The CVSS score assigned to this vuln.
     pub cvss: f32,
     /// The CVSS vector string assigned to this vuln.
-    pub cvss_vector: String,
+    pub cvss_vector: Option<String>,
 }
 
 /// The user-specified reason for an issue to be ignored.
@@ -277,6 +271,7 @@ pub struct DeveloperResponsiveness {
 pub struct PackageReleaseData {
     pub first_release_date: String,
     pub last_release_date: String,
+    pub total_releases: u32,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Copy, Clone, Debug, Hash)]

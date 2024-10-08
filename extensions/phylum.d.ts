@@ -335,9 +335,7 @@ declare namespace Phylum {
    *   ],
    *   description: "TypeScript is a language for application scale JavaScript development",
    *   license: "Apache-2.0",
-   *   depSpecs: [],
    *   dependencies: [],
-   *   downloadCount: 134637844,
    *   riskScores: {
    *     total: 1,
    *     vulnerability: 1,
@@ -346,18 +344,8 @@ declare namespace Phylum {
    *     engineering: 1,
    *     license: 1
    *   },
-   *   totalRiskScoreDynamics: null,
    *   issuesDetails: [],
    *   issues: [],
-   *   authors: [],
-   *   developerResponsiveness: {
-   *     open_issue_count: 0,
-   *     total_issue_count: 0,
-   *     open_issue_avg_duration: null,
-   *     open_pull_request_count: 0,
-   *     total_pull_request_count: 0,
-   *     open_pull_request_avg_duration: null
-   *   },
    *   complete: true
    * }
    * ```

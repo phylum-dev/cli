@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Use `suppression_reason` instead of deprecated `suppressed` field
 
+### Fixed
+
+- Package subcommand failing to parse API responses
+
 ## 7.1.0 - 2024-09-24
 
 ### Added
