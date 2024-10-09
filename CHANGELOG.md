@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 7.1.1 - 2024-10-09
+
 ### Changed
 
 - Use `suppression_reason` instead of deprecated `suppressed` field
