@@ -35,7 +35,7 @@ pub async fn handle_get_package(api: &PhylumApi, matches: &clap::ArgMatches) -> 
     };
 
     match resp {
-        PackageSubmitResponse::AlreadyProcessed(mut resp) => {
+        PackageSubmitResponse::AlreadyProcessed(mut resp) if resp.complete => {
             let filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
             if let Some(filter) = filter {
                 resp.filter(&filter);
@@ -43,14 +43,14 @@ pub async fn handle_get_package(api: &PhylumApi, matches: &clap::ArgMatches) -> 
 
             resp.write_stdout(pretty_print);
         },
-        PackageSubmitResponse::AlreadySubmitted => {
-            print_user_warning!(
-                "Package is still processing. Please check back later for results."
-            );
-        },
         PackageSubmitResponse::New => {
             print_user_warning!(
                 "Thank you for submitting this package. Please check back later for results."
+            );
+        },
+        _ => {
+            print_user_warning!(
+                "Package is still processing. Please check back later for results."
             );
         },
     }
