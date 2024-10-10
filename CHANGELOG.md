@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Package subcommand failing to parse API responses
+- Packages which cannot be analyzed showing up as having no issues
 
 ## 7.1.0 - 2024-09-24
 
