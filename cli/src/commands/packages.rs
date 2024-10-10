@@ -8,8 +8,8 @@ use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
 use crate::filter::{Filter, FilterIssues};
 use crate::format::Format;
-use crate::print_user_warning;
 use crate::types::{PackageSpecifier, PackageSubmitResponse};
+use crate::{print_user_failure, print_user_warning};
 
 fn parse_package(matches: &ArgMatches) -> Result<PackageSpecifier> {
     // Read required options.
@@ -36,12 +36,20 @@ pub async fn handle_get_package(api: &PhylumApi, matches: &clap::ArgMatches) -> 
 
     match resp {
         PackageSubmitResponse::AlreadyProcessed(mut resp) if resp.complete => {
-            let filter = matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
-            if let Some(filter) = filter {
-                resp.filter(&filter);
-            }
+            match resp.pipeline_error {
+                Some(_) => print_user_failure!(
+                    "Package analysis failed, please contact Phylum if this package exists."
+                ),
+                None => {
+                    let filter =
+                        matches.get_one::<String>("filter").and_then(|v| Filter::from_str(v).ok());
+                    if let Some(filter) = filter {
+                        resp.filter(&filter);
+                    }
 
-            resp.write_stdout(pretty_print);
+                    resp.write_stdout(pretty_print);
+                },
+            }
         },
         PackageSubmitResponse::New => {
             print_user_warning!(
