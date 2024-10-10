@@ -170,6 +170,9 @@ pub struct Package {
     pub complete: bool,
     pub release_data: Option<PackageReleaseData>,
     pub repo_url: Option<String>,
+    pub hash: Option<String>,
+    pub pipeline_error: Option<String>,
+    pub pipeline_status: Option<PipelineStatus>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -243,25 +246,14 @@ pub enum IgnoredReason {
     Other,
 }
 
-/// One of the authors of a package.
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Author {
-    pub name: String,
-    pub avatar_url: String,
-    pub email: String,
-    pub profile_url: String,
-}
-
-/// Stats about how responsive the maintainers of a package are.
-#[derive(Serialize, Deserialize)]
-pub struct DeveloperResponsiveness {
-    pub open_issue_count: Option<usize>,
-    pub total_issue_count: Option<usize>,
-    pub open_issue_avg_duration: Option<u32>,
-    pub open_pull_request_count: Option<usize>,
-    pub total_pull_request_count: Option<usize>,
-    pub open_pull_request_avg_duration: Option<u32>,
+/// Package status in the analysis pipeline.
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Debug)]
+pub enum PipelineStatus {
+    Submitted,
+    Downloading,
+    Processing,
+    Analyzing,
+    Complete,
 }
 
 /// Information about when package releases have happened.
