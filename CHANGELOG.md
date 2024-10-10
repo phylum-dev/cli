@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- `phylum package` subcommand showing unprocessed packages as complete
+
 ## 7.1.1 - 2024-10-09
 
 ### Changed
