@@ -36,7 +36,7 @@ pub async fn handle_get_package(api: &PhylumApi, matches: &clap::ArgMatches) -> 
 
     match resp {
         PackageSubmitResponse::AlreadyProcessed(mut resp) if resp.complete => {
-            match resp.pipeline_error {
+            match resp.pipeline_error.take().filter(|e| !e.is_empty()) {
                 Some(_) => print_user_failure!(
                     "Package analysis failed, please contact Phylum if this package exists."
                 ),
