@@ -187,7 +187,7 @@ fn package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("==")(input)?;
 
     // Take all valid semver character.
-    recognize(many1(alt((alphanumeric1, tag(".")))))(input)
+    recognize(many1(alt((alphanumeric1, tag(".")))))(input.trim())
 }
 
 /// Parse local version specifiers.

@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- `pip` parser failing with whitespace around `==` in requirement specifier
+
 ## 7.1.3 - 2024-10-29
 
 ### Fixed
