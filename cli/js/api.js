@@ -63,12 +63,14 @@ export function analyze(
   project,
   group,
   label,
+  organization,
 ) {
   return op_analyze(
     packages,
     project,
     group,
     label,
+    organization,
   );
 }
 
@@ -116,20 +118,21 @@ export function getGroups() {
   return get_groups();
 }
 
-export function getProjects(group) {
-  return get_projects(group);
+export function getProjects(group, organization) {
+  return get_projects(group, organization);
 }
 
 export function createProject(
   name,
   group,
   repository_url,
+  organization,
 ) {
-  return create_project(name, group, repository_url);
+  return create_project(name, group, repository_url, organization);
 }
 
-export function deleteProject(name, group) {
-  return delete_project(name, group);
+export function deleteProject(name, group, organization) {
+  return delete_project(name, group, organization);
 }
 
 export function getPackageDetails(

@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Fixed
+
+- Add missing `organization` parameters to global `Phylum` object endpoints
+
 ## 7.1.1 - 2024-10-09
 
 ### Changed
