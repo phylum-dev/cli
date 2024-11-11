@@ -59,7 +59,7 @@ sha2 = "0.10.2"
 shellexpand = "3.0.0"
 tempfile = "3.3.0"
 textwrap = "0.16.0"
-thiserror = "1.0.29"
+thiserror = "2.0.3"
 tokio = { version = "^1.0", features = ["full"] }
 toml = "0.8.19"
 unicode-width = "0.2.0"
