@@ -13,6 +13,7 @@ import {
   get_current_project,
   get_groups,
   get_job_status,
+  get_job_status_raw,
   get_package_details,
   get_projects,
   get_refresh_token,
@@ -107,7 +108,7 @@ export function getJobStatusRaw(
   jobId,
   ignoredPackages,
 ) {
-  return get_job_status(jobId, ignoredPackages);
+  return get_job_status_raw(jobId, ignoredPackages);
 }
 
 export function getCurrentProject() {
