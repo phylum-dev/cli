@@ -344,9 +344,9 @@ impl PnpmLock {
     ///
     /// This parses the combined name and version used as an index for the
     /// `packages` map.
-    fn parse_key(mut key: &str, version: PnpmVersion) -> anyhow::Result<(String, String)> {
+    fn parse_key(mut key: &str, pnpm_version: PnpmVersion) -> anyhow::Result<(String, String)> {
         // Strip prefix from `version < 9` lockfiles.
-        if version < PnpmVersion::V9 {
+        if pnpm_version < PnpmVersion::V9 {
             key = key
                 .strip_prefix('/')
                 .ok_or_else(|| anyhow!("Dependency '{key}' is missing '/' prefix"))?;
@@ -356,16 +356,23 @@ impl PnpmLock {
         let name = key.split_once('(').map(|(name, _)| name).unwrap_or(key);
 
         // Get version separator based on PNPM version.
-        let version_separator = match version {
+        let version_separator = match pnpm_version {
             PnpmVersion::V6 | PnpmVersion::V9 => '@',
             PnpmVersion::V5 => '/',
         };
 
         // Separate name and version.
-        match name.rsplit_once(version_separator) {
-            Some((name, version)) => Ok((name.into(), version.into())),
+        let (name, mut version) = match name.rsplit_once(version_separator) {
+            Some((name, version)) => Ok((name, version)),
             None => Err(anyhow!("Dependency '{name}' is missing a version")),
+        }?;
+
+        // Remove dependency information from V5 versions.
+        if pnpm_version == PnpmVersion::V5 {
+            version = version.split_once('_').map_or(version, |(version, _)| version);
         }
+
+        Ok((name.into(), version.into()))
     }
 
     /// Parse a first-party registry package.
@@ -682,7 +689,7 @@ mod tests {
     fn pnpm() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock.yaml")).unwrap();
 
-        assert_eq!(pkgs.len(), 65);
+        assert_eq!(pkgs.len(), 66);
 
         let expected_pkgs = [
             Package {
@@ -723,6 +730,11 @@ mod tests {
             Package {
                 name: "workspace_member".into(),
                 version: PackageVersion::Path(Some("projects/workspace_member".into())),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "@emotion/use-insertion-effect-with-fallbacks".into(),
+                version: PackageVersion::FirstParty("1.1.0".into()),
                 package_type: PackageType::Npm,
             },
         ];
@@ -774,10 +786,28 @@ mod tests {
     fn pnpm_v5() {
         let pkgs = Pnpm.parse(include_str!("../../tests/fixtures/pnpm-lock-v5.yaml")).unwrap();
 
-        assert_eq!(pkgs, vec![Package {
-            name: "lodash".into(),
-            version: PackageVersion::FirstParty("4.17.21".into()),
-            package_type: PackageType::Npm,
-        }]);
+        assert_eq!(pkgs.len(), 3);
+
+        let expected_pkgs = [
+            Package {
+                name: "use-sync-external-store".into(),
+                version: PackageVersion::FirstParty("1.2.2".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "@types/eslint__js".into(),
+                version: PackageVersion::FirstParty("8.42.3".into()),
+                package_type: PackageType::Npm,
+            },
+            Package {
+                name: "lodash".into(),
+                version: PackageVersion::FirstParty("4.17.21".into()),
+                package_type: PackageType::Npm,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
     }
 }
