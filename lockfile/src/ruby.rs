@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn lock_parse_gem() {
         let pkgs = GemLock.parse(include_str!("../../tests/fixtures/Gemfile.lock")).unwrap();
-        assert_eq!(pkgs.len(), 11);
+        assert_eq!(pkgs.len(), 12);
 
         let expected_pkgs = [
             Package {
@@ -82,6 +82,11 @@ mod tests {
                     registry: "http://rubygems.org/".into(),
                     version: "3.11.2".into(),
                 }),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "ffi".into(),
+                version: PackageVersion::FirstParty("1.17.0".into()),
                 package_type: PackageType::RubyGems,
             },
         ];

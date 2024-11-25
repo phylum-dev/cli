@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
-use nom::combinator::{opt, recognize};
+use nom::combinator::{eof, opt, recognize};
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
@@ -15,10 +15,10 @@ use crate::{Package, PackageVersion, ThirdPartyVersion};
 const DEFAULT_REGISTRY: &str = "https://rubygems.org/";
 
 /// Legal non-alphanumeric characters in loose version specifications.
-const LOOSE_VERSION_CHARS: &[char] = &[' ', ',', '<', '>', '=', '~', '!', '.', '-', '+'];
+const LOOSE_VERSION_CHARS: &[char] = &[' ', ',', '<', '>', '=', '~', '!', '.', '-', '+', '_'];
 
 /// Legal non-alphanumeric characters in strict version specifications.
-const STRICT_VERSION_CHARS: &[char] = &['.', '-', '+'];
+const STRICT_VERSION_CHARS: &[char] = &['.'];
 
 #[derive(Debug)]
 struct Section<'a> {
@@ -224,7 +224,7 @@ fn package_name(input: &str) -> IResult<&str, &str> {
 }
 
 /// Parser allowing for loose `(>= 1.2.0, < 2.0, != 1.2.3)` and strict
-/// `(1.2.3-alpha+build3)` versions.
+/// `(1.2.3.alpha.1)` versions.
 fn loose_package_version(input: &str) -> IResult<&str, &str> {
     // Versions can be completely omitted for sub-dependencies.
     if input.is_empty() {
@@ -241,12 +241,13 @@ fn loose_package_version(input: &str) -> IResult<&str, &str> {
     )(input)
 }
 
-/// Parser allowing only strict `1.2.3-alpha+build3` versions.
+/// Parser allowing only strict `1.2.3.alpha.1` versions.
 fn strict_package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
-    recognize(many1(satisfy(|c: char| {
-        c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c)
-    })))(input)
+    recognize(tuple((
+        many1(satisfy(|c: char| c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c))),
+        eof,
+    )))(input)
 }
 
 /// Get the value for a key in a `   key: value` line.
