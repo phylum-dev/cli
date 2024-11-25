@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - `pnpm` version 5 parser including metadata in package versions
+- Platform-specific dependencies ignored by the `Gemfile.lock` parser
 
 ## 7.1.4 - 2024-11-07
 
