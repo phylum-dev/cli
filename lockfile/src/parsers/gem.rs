@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
-use nom::combinator::{eof, opt, recognize};
+use nom::combinator::{opt, recognize};
 use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
@@ -244,10 +244,9 @@ fn loose_package_version(input: &str) -> IResult<&str, &str> {
 /// Parser allowing only strict `1.2.3.alpha.1` versions.
 fn strict_package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
-    recognize(tuple((
-        many1(satisfy(|c: char| c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c))),
-        eof,
-    )))(input)
+    recognize(many1(satisfy(|c: char| {
+        c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c)
+    })))(input)
 }
 
 /// Get the value for a key in a `   key: value` line.
