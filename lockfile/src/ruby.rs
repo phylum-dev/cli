@@ -17,11 +17,17 @@ pub struct GemLock;
 impl Parse for GemLock {
     /// Parses `Gemfile.lock` files into a vec of packages
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
-        let (_, entries) = gem::parse(data)
+        let (_, mut packages) = gem::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse gem lockfile")?;
-        Ok(entries)
+
+        // Remove duplicate dependencies, which can occur when a dependency is included
+        // with multiple different platform suffixes.
+        packages.sort_unstable();
+        packages.dedup();
+
+        Ok(packages)
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
@@ -48,7 +54,7 @@ mod tests {
     #[test]
     fn lock_parse_gem() {
         let pkgs = GemLock.parse(include_str!("../../tests/fixtures/Gemfile.lock")).unwrap();
-        assert_eq!(pkgs.len(), 11);
+        assert_eq!(pkgs.len(), 13);
 
         let expected_pkgs = [
             Package {
@@ -82,6 +88,16 @@ mod tests {
                     registry: "http://rubygems.org/".into(),
                     version: "3.11.2".into(),
                 }),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "ffi".into(),
+                version: PackageVersion::FirstParty("1.17.0".into()),
+                package_type: PackageType::RubyGems,
+            },
+            Package {
+                name: "fake".into(),
+                version: PackageVersion::FirstParty("1.2.3".into()),
                 package_type: PackageType::RubyGems,
             },
         ];
