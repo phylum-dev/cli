@@ -155,6 +155,61 @@ impl Parse for CSProj {
     }
 }
 
+pub struct PackagesConfig;
+
+impl Parse for PackagesConfig {
+    /// Parses `*.packages.config` files into a [`Vec`] of packages.
+    fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
+        let data = data.trim_start_matches(UTF8_BOM);
+        let parsed: PackagesConfigXml = quick_xml::de::from_str(data)?;
+        Ok(parsed.into())
+    }
+
+    fn is_path_lockfile(&self, path: &Path) -> bool {
+        let file_name = match path.file_name().and_then(|f| f.to_str()) {
+            Some(file_name) => file_name,
+            None => return false,
+        };
+
+        // Accept both `packages.config` and `packages.<project_name>.config`.
+        file_name.starts_with("packages.") && file_name.ends_with(".config")
+    }
+
+    fn is_path_manifest(&self, _path: &Path) -> bool {
+        false
+    }
+}
+
+/// XML format of the `*.packages.config` file.
+#[derive(Deserialize)]
+struct PackagesConfigXml {
+    #[serde(rename = "package", default)]
+    packages: Vec<PackagesConfigXmlPackage>,
+}
+
+impl From<PackagesConfigXml> for Vec<Package> {
+    fn from(packages_config: PackagesConfigXml) -> Self {
+        packages_config
+            .packages
+            .into_iter()
+            .map(|package| {
+                let version =
+                    package.version.map_or(PackageVersion::Unknown, PackageVersion::FirstParty);
+                Package { version, name: package.id, package_type: PackageType::Nuget }
+            })
+            .collect()
+    }
+}
+
+/// Package entry in a `*.packages.config` file.
+#[derive(Deserialize)]
+struct PackagesConfigXmlPackage {
+    #[serde(alias = "@id")]
+    id: String,
+    #[serde(alias = "@version")]
+    version: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,5 +356,39 @@ mod tests {
         assert_eq!(pkgs[0].version, PackageVersion::FirstParty("1.0.0".into()));
         assert_eq!(pkgs[1].name, "NUnit3TestAdapter");
         assert_eq!(pkgs[1].version, PackageVersion::FirstParty("3.13.0".into()));
+    }
+
+    #[test]
+    fn packages_config() {
+        let pkgs =
+            PackagesConfig.parse(include_str!("../../tests/fixtures/packages.config")).unwrap();
+        assert_eq!(pkgs.len(), 4);
+
+        let expected_pkgs = [
+            Package {
+                name: "AddressParser".into(),
+                version: PackageVersion::FirstParty("0.0.20".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "JetBrains.ReSharper.SDK".into(),
+                version: PackageVersion::FirstParty("8.2.921-EAP".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "boost".into(),
+                version: PackageVersion::FirstParty("1.78.0".into()),
+                package_type: PackageType::Nuget,
+            },
+            Package {
+                name: "noversion".into(),
+                version: PackageVersion::Unknown,
+                package_type: PackageType::Nuget,
+            },
+        ];
+
+        for expected_pkg in expected_pkgs {
+            assert!(pkgs.contains(&expected_pkg), "missing package {expected_pkg:?}");
+        }
     }
 }
