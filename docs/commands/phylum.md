@@ -17,7 +17,7 @@ Usage: phylum [OPTIONS] [COMMAND]
 `-t`, `--timeout` `<TIMEOUT>`
 &emsp; Set the timeout (in seconds) for requests to the Phylum api
 
-`--no-check-certificate`
+`--ignore-certs`
 &emsp; Don't validate the server certificate when performing api requests
 
 `-o`, `--org` `<ORG>`
