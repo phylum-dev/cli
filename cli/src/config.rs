@@ -83,7 +83,7 @@ impl Config {
         self.ignore_certs_cli || self.ignore_certs
     }
 
-    /// Set the CLI `--no-check-certificate` override value.
+    /// Set the CLI `--ignore-certs` override value.
     pub fn set_ignore_certs_cli(&mut self, ignore_certs_cli: bool) {
         self.ignore_certs_cli = ignore_certs_cli;
     }

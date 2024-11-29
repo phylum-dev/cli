@@ -51,9 +51,10 @@ pub fn app() -> Command {
                 .long("timeout")
                 .value_name("TIMEOUT")
                 .help("Set the timeout (in seconds) for requests to the Phylum api"),
-            Arg::new("no-check-certificate")
+            Arg::new("ignore-certs")
                 .action(ArgAction::SetTrue)
-                .long("no-check-certificate")
+                .long("ignore-certs")
+                .alias("no-check-certificate")
                 .help("Don't validate the server certificate when performing api requests"),
             Arg::new("org")
                 .short('o')
