@@ -193,7 +193,7 @@ impl<'a> TestExtension<'a> {
 }
 
 #[cfg(feature = "extensions")]
-impl<'a> Drop for TestExtension<'a> {
+impl Drop for TestExtension<'_> {
     fn drop(&mut self) {
         self.test_cli.run(["extension", "uninstall", "test-ext"]).success();
         fs::remove_dir_all(&self.extension_path).unwrap();
