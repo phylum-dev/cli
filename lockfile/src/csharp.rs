@@ -158,7 +158,7 @@ impl Parse for CSProj {
 pub struct PackagesConfig;
 
 impl Parse for PackagesConfig {
-    /// Parses `*.packages.config` files into a [`Vec`] of packages.
+    /// Parses `packages.*.config` files into a [`Vec`] of packages.
     fn parse(&self, data: &str) -> anyhow::Result<Vec<Package>> {
         let data = data.trim_start_matches(UTF8_BOM);
         let parsed: PackagesConfigXml = quick_xml::de::from_str(data)?;
@@ -180,7 +180,7 @@ impl Parse for PackagesConfig {
     }
 }
 
-/// XML format of the `*.packages.config` file.
+/// XML format of the `packages.*.config` file.
 #[derive(Deserialize)]
 struct PackagesConfigXml {
     #[serde(rename = "package", default)]
@@ -201,7 +201,7 @@ impl From<PackagesConfigXml> for Vec<Package> {
     }
 }
 
-/// Package entry in a `*.packages.config` file.
+/// Package entry in a `packages.*.config` file.
 #[derive(Deserialize)]
 struct PackagesConfigXmlPackage {
     #[serde(alias = "@id")]
