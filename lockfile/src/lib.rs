@@ -137,18 +137,7 @@ impl LockfileFormat {
     }
 
     /// Iterate over all supported lockfile formats.
-    pub fn iter() -> LockfileFormatIter {
-        LockfileFormatIter(0)
-    }
-}
-
-/// An iterator of all supported lockfile formats.
-pub struct LockfileFormatIter(usize);
-
-impl Iterator for LockfileFormatIter {
-    type Item = LockfileFormat;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    pub fn iter() -> impl Iterator<Item = LockfileFormat> {
         // NOTE: Without explicit override, the lockfile generator will always pick the
         // first matching format for the manifest. To ensure best possible support,
         // common formats should be returned **before** less common ones (i.e. NPM
@@ -173,9 +162,7 @@ impl Iterator for LockfileFormatIter {
             LockfileFormat::CycloneDX,
         ];
 
-        let format = FORMATS.get(self.0)?;
-        self.0 += 1;
-        Some(*format)
+        FORMATS.iter().copied()
     }
 }
 
