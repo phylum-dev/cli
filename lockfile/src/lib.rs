@@ -512,7 +512,7 @@ mod tests {
             ("packages.lock.json", LockfileFormat::NugetLock),
             ("packages.project.lock.json", LockfileFormat::NugetLock),
             ("packages.config", LockfileFormat::NugetConfig),
-            ("project.packages.config", LockfileFormat::NugetConfig),
+            ("packages.project.config", LockfileFormat::NugetConfig),
             ("gradle.lockfile", LockfileFormat::Gradle),
             ("default.lockfile", LockfileFormat::Gradle),
             ("effective-pom.xml", LockfileFormat::Maven),
