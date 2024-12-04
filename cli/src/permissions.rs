@@ -70,7 +70,7 @@ impl Permission {
 
     /// Check if access to resource is permitted.
     pub fn validate(&self, resource: &String, resource_type: &str) -> Result<()> {
-        if self.get().map_or(false, |allowed| allowed.contains(resource)) {
+        if self.get().is_some_and(|allowed| allowed.contains(resource)) {
             Ok(())
         } else {
             Err(anyhow!("Requires {resource_type} access to {resource:?}"))

@@ -245,7 +245,7 @@ fn prompt_depfile_names() -> dialoguer::Result<Vec<String>> {
         let mut files_index = 0;
         depfiles.retain(|_| {
             // Check if index is in the selected indices.
-            let retain = indices.peek().map_or(false, |index| **index <= files_index);
+            let retain = indices.peek().is_some_and(|index| **index <= files_index);
 
             // Go to next selection index if current index was found.
             if retain {

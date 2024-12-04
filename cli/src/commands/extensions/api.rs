@@ -499,7 +499,7 @@ fn run_sandboxed(
         .output()?;
 
     // Return explicit error when process start failed
-    if output.status.code().map_or(false, |code| code == i32::from(&ExitCode::SandboxStart)) {
+    if output.status.code().is_some_and(|code| code == i32::from(&ExitCode::SandboxStart)) {
         return Err(anyhow!("Process {cmd:?} failed to start"));
     }
 

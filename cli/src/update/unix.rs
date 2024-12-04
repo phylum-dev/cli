@@ -231,7 +231,7 @@ impl ApplicationUpdater {
         let public_key = RsaPublicKey::from_public_key_pem(PUBKEY).expect("invalid public key");
         let verifying_key = VerifyingKey::<Sha256>::new(public_key);
 
-        Signature::try_from(sig).map_or(false, |sig| verifying_key.verify(bin, &sig).is_ok())
+        Signature::try_from(sig).is_ok_and(|sig| verifying_key.verify(bin, &sig).is_ok())
     }
 }
 
