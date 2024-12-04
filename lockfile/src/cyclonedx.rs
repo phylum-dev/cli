@@ -190,7 +190,7 @@ impl Parse for CycloneDX {
     fn is_path_lockfile(&self, path: &Path) -> bool {
         path.file_name()
             .and_then(OsStr::to_str)
-            .map_or(false, |name| name.ends_with("bom.json") || name.ends_with("bom.xml"))
+            .is_some_and(|name| name.ends_with("bom.json") || name.ends_with("bom.xml"))
     }
 
     fn is_path_manifest(&self, _path: &Path) -> bool {

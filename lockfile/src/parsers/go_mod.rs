@@ -161,7 +161,7 @@ fn require_spec(input: &str) -> IResult<&str, Module> {
     let (input, comments) = opt(preceded(tag("//"), take_till1(|c: char| c == '\n')))(input)?;
 
     // Determine if the comment indicates the module is indirect.
-    let indirect = comments.map_or(false, |s: &str| s.trim().eq("indirect"));
+    let indirect = comments.is_some_and(|s: &str| s.trim().eq("indirect"));
     let (input, _) = take_while(|c: char| c != '\n')(input)?;
 
     Ok((input, Module { path: module_path.to_string(), version: version.to_string(), indirect }))

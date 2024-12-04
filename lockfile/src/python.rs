@@ -25,7 +25,7 @@ pub struct Poetry;
 
 /// Check if filename is `requirements*.txt`
 fn is_requirements_file(path: &Path) -> bool {
-    path.file_name().and_then(|f| f.to_str()).map_or(false, |file_name| {
+    path.file_name().and_then(|f| f.to_str()).is_some_and(|file_name| {
         file_name.starts_with("requirements") && file_name.ends_with(".txt")
     })
 }

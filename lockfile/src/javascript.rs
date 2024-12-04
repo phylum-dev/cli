@@ -172,7 +172,7 @@ impl Parse for YarnLock {
         for package in yaml_v2
             .iter()
             // Filter lockfile data fields like "__metadata".
-            .filter(|(k, _v)| k.as_str().map_or(false, |k| !k.starts_with('_')))
+            .filter(|(k, _v)| k.as_str().is_some_and(  |k| !k.starts_with('_')))
             .flat_map(|(_k, v)| v.as_mapping())
         {
             let resolution = package

@@ -283,7 +283,7 @@ pub async fn acquire_tokens(
 
         // Provide additional detail when user requires activation.
         if serde_json::from_str::<ResponseError>(&body)
-            .map_or(false, |response| response.error == "not_allowed")
+            .is_ok_and(|response| response.error == "not_allowed")
         {
             err = err.context(
                 "Your account is not authorized to perform this action. Please contact Phylum \

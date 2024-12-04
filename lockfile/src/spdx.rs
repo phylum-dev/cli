@@ -192,8 +192,8 @@ impl Parse for Spdx {
             .relationships
             .into_iter()
             .filter_map(|r| {
-                if r.relationship_type.as_ref().map_or(false, |t| t == "DESCRIBES")
-                    && r.spdx_element_id.as_ref().map_or(false, |t| t == &spdx_info.spdx_id)
+                if r.relationship_type.as_deref() == Some("DESCRIBES")
+                    && r.spdx_element_id.as_ref() == Some(&spdx_info.spdx_id)
                 {
                     r.related_spdx_element
                 } else {
@@ -225,7 +225,7 @@ impl Parse for Spdx {
     }
 
     fn is_path_lockfile(&self, path: &Path) -> bool {
-        path.file_name().and_then(OsStr::to_str).map_or(false, |name| {
+        path.file_name().and_then(OsStr::to_str).is_some_and(|name| {
             name.ends_with(".spdx.json")
                 || name.ends_with(".spdx.yaml")
                 || name.ends_with(".spdx.yml")
@@ -513,7 +513,7 @@ mod tests {
             Created: 2024-04-01T00:28:13Z
             CreatorComment: <text>This document has been automatically generated.</text>
             DocumentDescribes: SPDXRef-Package1, SPDXRef-Package2
-            ##### 
+            #####
 
             PackageName: cve-bin-tool
             SPDXID: SPDXRef-Package-1-cve-bin-tool
@@ -529,7 +529,7 @@ mod tests {
             PackageSummary: <text>CVE Binary Checker Tool</text>
             ExternalRef: PACKAGE_MANAGER purl pkg:pypi/cve-bin-tool@3.3rc2
             ExternalRef: SECURITY cpe23Type cpe:2.3:a:terri_oda:cve-bin-tool:3.3rc2:*:*:*:*:*:*:*
-            ##### 
+            #####
 
             PackageName: aiohttp
             SPDXID: SPDXRef-Package-2-aiohttp
@@ -576,7 +576,7 @@ mod tests {
             ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json-ext:0.5.6:*:*:*:*:*:*:*
             ExternalRef: SECURITY cpe23Type cpe:2.3:a:\@discoveryjs\/json:\@discoveryjs\/json_ext:0.5.6:*:*:*:*:*:*:*
             ExternalRef: PACKAGE-MANAGER purl pkg:npm/%40discoveryjs/json-ext@0.5.6
-            
+
             Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-1-cve-bin-tool
             Relationship: SPDXRef-Package-1-cve-bin-tool DEPENDS_ON SPDXRef-Package-2-aiohttp
             "##;
