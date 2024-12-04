@@ -13,6 +13,7 @@ The Phylum CLI supports processing many different lockfiles:
 | `gem`         | `Gemfile.lock`                                                         |
 | `msbuild`     | `*.csproj`                                                             |
 | `nugetlock`   | `packages.lock.json` <br /> `packages.*.lock.json`                     |
+| `nugetconfig` | `packages.config` <br /> `packages.*.config`                           |
 | `mvn`         | `effective-pom.xml`                                                    |
 | `gradle`      | `gradle.lockfile` <br /> `gradle/dependency-locks/*.lockfile`          |
 | `go`          | `go.sum`                                                               |
