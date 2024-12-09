@@ -192,6 +192,11 @@ pub fn org_groups_delete(
     Ok(url)
 }
 
+/// Aviary activity endpoint.
+pub fn firewall_log(api_uri: &str) -> Result<Url, BaseUriError> {
+    Ok(get_firewall_path(api_uri)?.join("activity")?)
+}
+
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)
@@ -240,6 +245,14 @@ fn get_api_path(api_uri: &str) -> Result<Url, BaseUriError> {
 
 fn get_locksmith_path(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(parse_base_url(api_uri)?.join(LOCKSMITH_PATH)?)
+}
+
+fn get_firewall_path(api_uri: &str) -> Result<Url, BaseUriError> {
+    let mut api_path = parse_base_url(api_uri)?;
+    let host = api_path.host_str().ok_or(ParseError::EmptyHost)?;
+    let host = host.replacen("api.", "aviary.", 1);
+    api_path.set_host(Some(&host))?;
+    Ok(api_path)
 }
 
 #[cfg(test)]
