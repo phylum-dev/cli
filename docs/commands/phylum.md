@@ -40,6 +40,7 @@ Usage: phylum [OPTIONS] [COMMAND]
 * [phylum analyze](./phylum_analyze.md)
 * [phylum auth](./phylum_auth.md)
 * [phylum extension](./phylum_extension.md)
+* [phylum firewall](./phylum_firewall.md)
 * [phylum group](./phylum_group.md)
 * [phylum history](./phylum_history.md)
 * [phylum init](./phylum_init.md)

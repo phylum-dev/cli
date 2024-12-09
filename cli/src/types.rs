@@ -8,6 +8,7 @@ use phylum_types::types::package::{
     PackageDescriptor, PackageDescriptorAndLockfile, PackageType, RiskDomain as PTRiskDomain,
     RiskLevel as PTRiskLevel,
 };
+use purl::{PackageError, Purl};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -521,4 +522,62 @@ pub struct OrgGroupsResponse {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct ApiOrgGroup {
     pub name: String,
+}
+
+/// Aviary pagination system.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct FirewallPaginated<T, I = i32> {
+    pub data: Vec<T>,
+    pub last_index: I,
+}
+
+/// Aviary GET /activity response.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct FirewallLogResponse {
+    pub action: FirewallAction,
+    pub package: FirewallPackage,
+    pub timestamp: DateTime<Utc>,
+    pub failure_cause: Option<String>,
+}
+
+/// Aviary log action.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
+pub enum FirewallAction {
+    Download,
+    AnalysisSuccess,
+    AnalysisFailure,
+    AnalysisWarning,
+}
+
+/// Aviary log package.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
+pub struct FirewallPackage {
+    pub ecosystem: String,
+    pub name: String,
+    pub namespace: String,
+    pub version: String,
+}
+
+impl FirewallPackage {
+    /// Get the PURL for this package.
+    pub fn purl(&self) -> Result<Purl, PackageError> {
+        let ecosystem = purl::PackageType::from_str(&self.ecosystem)?;
+        Purl::builder(ecosystem, &self.name)
+            .with_namespace(&self.namespace)
+            .with_version(&self.version)
+            .build()
+    }
+}
+
+/// Aviary log filter query.
+#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
+pub struct FirewallLogFilter<'a> {
+    pub ecosystem: Option<&'a str>,
+    pub namespace: Option<&'a str>,
+    pub name: Option<&'a str>,
+    pub version: Option<&'a str>,
+    pub action: Option<&'a str>,
+    pub before: Option<&'a str>,
+    pub after: Option<&'a str>,
+    pub limit: Option<i32>,
 }
