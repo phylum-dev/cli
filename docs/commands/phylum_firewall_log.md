@@ -18,7 +18,7 @@ Usage: phylum firewall log [OPTIONS] <GROUP_NAME>
 
 `--ecosystem` `<ECOSYSTEM>`
 &emsp; Only show logs matching this ecosystem
-&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
+&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `cargo`
 
 `--package` `<PURL>`
 &emsp; Only show logs matching this PURL
@@ -28,10 +28,10 @@ Usage: phylum firewall log [OPTIONS] <GROUP_NAME>
 &emsp; Accepted values: `Download`, `AnalysisSuccess`, `AnalysisFailure`, `AnalysisWarning`
 
 `--before` `<TIMESTAMP>`
-&emsp; Only show logs created before this timestamp
+&emsp; Only show logs created before this timestamp (RFC3339 format)
 
 `--after` `<TIMESTAMP>`
-&emsp; Only show logs created after this timestamp
+&emsp; Only show logs created after this timestamp (RFC3339 format)
 
 `--limit` `<COUNT>`
 &emsp; Maximum number of log entries to show
