@@ -372,9 +372,8 @@ pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)
             // Legacy Gradle (before v7) lockfiles are in a subdirectory,
             // so we truncate these directories to get the effective
             // directory these lockfiles were created for.
-            let dir_str = lockfile_dir.to_string_lossy();
             if lockfile_format == &LockfileFormat::Gradle
-                && dir_str.ends_with("/gradle/dependency-locks")
+                && lockfile_dir.ends_with("gradle/dependency-locks")
             {
                 lockfile_dir = lockfile_dir.parent().unwrap().parent().unwrap();
             }
@@ -763,5 +762,43 @@ mod tests {
         // Compare results.
         let expected = vec![(tempdir.path().join("go.mod"), LockfileFormat::GoMod)];
         assert_eq!(lockable_files, expected);
+    }
+
+    #[test]
+    fn skip_build_gradle_with_legacy_lockfiles() {
+        // Create desired directory structure.
+        let tempdir = tempfile::tempdir().unwrap();
+        let files = [
+            tempdir.path().join("build.gradle"),
+            tempdir.path().join("gradle/dependency-locks/compile.lockfile"),
+            tempdir.path().join("gradle/dependency-locks/default.lockfile"),
+            tempdir.path().join("gradle/dependency-locks/runtime.lockfile"),
+        ];
+        for file in &files {
+            let dir = file.parent().unwrap();
+            fs::create_dir_all(dir).unwrap();
+            File::create(file).unwrap();
+        }
+
+        // Find lockfiles.
+        let mut lockfiles = find_depfiles_at(tempdir.path());
+
+        // Compare results.
+        lockfiles.sort_unstable();
+        let expected = vec![
+            (
+                tempdir.path().join("gradle/dependency-locks/compile.lockfile"),
+                LockfileFormat::Gradle,
+            ),
+            (
+                tempdir.path().join("gradle/dependency-locks/default.lockfile"),
+                LockfileFormat::Gradle,
+            ),
+            (
+                tempdir.path().join("gradle/dependency-locks/runtime.lockfile"),
+                LockfileFormat::Gradle,
+            ),
+        ];
+        assert_eq!(lockfiles, expected);
     }
 }

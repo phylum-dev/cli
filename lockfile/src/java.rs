@@ -26,7 +26,7 @@ impl Parse for GradleLock {
         let (_, entries) = gradle_dep::parse(data)
             .finish()
             .map_err(|e| anyhow!(convert_error(data, e)))
-            .context("Failed to parse requirements file")?;
+            .context("Failed to parse gradle lockfile")?;
         Ok(entries)
     }
 
