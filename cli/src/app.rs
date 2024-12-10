@@ -644,14 +644,12 @@ pub fn add_subcommands(command: Command) -> Command {
                                     "AnalysisFailure",
                                     "AnalysisWarning",
                                 ]),
-                            Arg::new("before")
-                                .long("before")
-                                .value_name("TIMESTAMP")
-                                .help("Only show logs created before this timestamp"),
-                            Arg::new("after")
-                                .long("after")
-                                .value_name("TIMESTAMP")
-                                .help("Only show logs created after this timestamp"),
+                            Arg::new("before").long("before").value_name("TIMESTAMP").help(
+                                "Only show logs created before this timestamp (RFC3339 format)",
+                            ),
+                            Arg::new("after").long("after").value_name("TIMESTAMP").help(
+                                "Only show logs created after this timestamp (RFC3339 format)",
+                            ),
                             Arg::new("limit")
                                 .long("limit")
                                 .value_name("COUNT")
