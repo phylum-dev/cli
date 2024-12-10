@@ -627,7 +627,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .value_name("ECOSYSTEM")
                                 .help("Only show logs matching this ecosystem")
                                 .value_parser([
-                                    "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                                    "npm", "rubygems", "pypi", "maven", "nuget", "cargo",
                                 ]),
                             Arg::new("package")
                                 .long("package")
