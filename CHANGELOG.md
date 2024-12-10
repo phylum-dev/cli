@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Gradle manifests used on Windows when legacy lockfiles exist
+- Gradle manifests incorrectly retained on Windows
 
 ## 7.1.5 - 2024-11-26
 
