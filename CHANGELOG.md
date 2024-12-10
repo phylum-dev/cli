@@ -15,9 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Support for C#'s `packages.*.config` lockfile type
 - `phylum firewall log` command to browse firewall activity log
 
-### Fixed
+### Changed
 
 - Certificate check option name doesn't match configuration option
+
+### Fixed
+
 - Gradle manifests incorrectly retained on Windows
 
 ## 7.1.5 - 2024-11-26
