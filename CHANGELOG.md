@@ -8,10 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## 7.2.0 - 2024-12-10
+
 ### Added
 
 - Support for C#'s `packages.*.config` lockfile type
 - `phylum firewall log` command to browse firewall activity log
+
+### Changed
+
+- Certificate check option name doesn't match configuration option
 
 ### Fixed
 
