@@ -657,7 +657,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .value_name("COUNT")
                                 .help("Maximum number of log entries to show")
                                 .default_value("10")
-                                .value_parser(0..=10_000),
+                                .value_parser(1..=10_000),
                         ]),
                 ),
         );
