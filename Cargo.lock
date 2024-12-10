@@ -4517,6 +4517,7 @@ dependencies = [
  "phylum_types",
  "predicates",
  "prettytable-rs",
+ "purl",
  "rand",
  "regex",
  "reqwest",

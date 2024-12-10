@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use std::{cmp, str};
 
 use chrono::{DateTime, Local, Utc};
-use console::style;
+use console::{style, Color};
 use phylum_types::types::group::{GroupMember, ListGroupMembersResponse};
 use phylum_types::types::job::{AllJobsStatusResponse, JobDescriptor};
 use phylum_types::types::package::{PackageStatus, PackageStatusExtended};
@@ -19,8 +19,9 @@ use crate::commands::group::ListGroupsEntry;
 use crate::commands::status::PhylumStatus;
 use crate::print::{self, table_format};
 use crate::types::{
-    GetProjectResponse, HistoryJob, Issue, OrgMember, OrgMembersResponse, OrgsResponse, Package,
-    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RiskLevel, UserToken,
+    FirewallAction, FirewallLogResponse, GetProjectResponse, HistoryJob, Issue, OrgMember,
+    OrgMembersResponse, OrgsResponse, Package, PolicyEvaluationResponse,
+    PolicyEvaluationResponseRaw, ProjectListEntry, RiskLevel, UserToken,
 };
 
 // Maximum length of email column.
@@ -415,6 +416,31 @@ impl Format for OrgMembersResponse {
     }
 }
 
+impl Format for Vec<FirewallLogResponse> {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        fn color_action(action: FirewallAction) -> (String, Option<Color>) {
+            match action {
+                FirewallAction::Download => ("Download".into(), Some(Color::Blue)),
+                FirewallAction::AnalysisSuccess => ("Analysis Success".into(), Some(Color::Green)),
+                FirewallAction::AnalysisWarning => ("Analysis Warning".into(), Some(Color::Yellow)),
+                FirewallAction::AnalysisFailure => ("Analysis Failure".into(), Some(Color::Red)),
+            }
+        }
+
+        let table =
+            format_table::<fn(&FirewallLogResponse) -> (String, Option<Color>), _>(self, &[
+                ("Action", |log| color_action(log.action)),
+                ("Package", |log| {
+                    let purl =
+                        log.package.purl().map_or_else(|_| String::new(), |purl| purl.to_string());
+                    (purl, None)
+                }),
+                ("Timestamp", |log| (format_datetime_precise(log.timestamp), None)),
+            ]);
+        let _ = writeln!(writer, "{table}");
+    }
+}
+
 #[cfg(feature = "vulnreach")]
 impl Format for Vulnerability {
     fn pretty<W: Write>(&self, writer: &mut W) {
@@ -483,16 +509,38 @@ impl Scored for PackageStatusExtended {
     }
 }
 
+/// Table cell formatting.
+trait TableCell<T> {
+    /// Get cell text and color.
+    ///
+    /// The text itself must not contain any escape sequences, to avoid issues
+    /// with width calculation.
+    fn content(&self, data: &T) -> (String, Option<Color>);
+}
+
+impl<T> TableCell<T> for fn(&T) -> String {
+    fn content(&self, data: &T) -> (String, Option<Color>) {
+        (self(data), None)
+    }
+}
+
+impl<T> TableCell<T> for fn(&T) -> (String, Option<Color>) {
+    fn content(&self, data: &T) -> (String, Option<Color>) {
+        self(data)
+    }
+}
+
 /// Format any slice into a table.
 fn format_table<F, T>(data: &[T], columns: &[(&str, F)]) -> String
 where
-    F: Fn(&T) -> String,
+    F: TableCell<T>,
 {
     // Whitespace between the columns.
     const COLUMN_SPACING: usize = 2;
 
     let mut header = String::new();
     let mut rows = vec![String::new(); data.len()];
+    let mut last_column_widths = vec![0; data.len()];
 
     let mut last_column_width = 0;
     for column in columns {
@@ -502,11 +550,23 @@ where
         header.push_str(column.0);
 
         for i in 0..data.len() {
-            let cell = column.1(&data[i]);
-            column_width = cmp::max(column_width, cell.width());
+            let (text, color) = column.1.content(&data[i]);
+            let text_width = text.width();
+            column_width = cmp::max(column_width, text_width);
 
-            rows[i] = leftpad(&rows[i], last_column_width);
-            rows[i].push_str(&cell);
+            let formatted = match color {
+                Some(color) => style(text).fg(color).to_string(),
+                None => text,
+            };
+
+            // Start next column after the widest element from the last one.
+            if let Some(required_padding) = last_column_width.checked_sub(last_column_widths[i]) {
+                rows[i].push_str(&str::repeat(" ", required_padding));
+                last_column_widths[i] += required_padding;
+            }
+
+            rows[i].push_str(&formatted);
+            last_column_widths[i] += text_width;
         }
 
         last_column_width += column_width + COLUMN_SPACING;
@@ -558,4 +618,11 @@ fn format_datetime(timestamp: DateTime<Utc>) -> String {
     let local: DateTime<Local> = timestamp.into();
 
     local.format("%F %R").to_string()
+}
+
+/// Convert a UTC timestamp in the local timezone, including seconds.
+fn format_datetime_precise(timestamp: DateTime<Utc>) -> String {
+    let local: DateTime<Local> = timestamp.into();
+
+    local.format("%F %T.%f").to_string()
 }

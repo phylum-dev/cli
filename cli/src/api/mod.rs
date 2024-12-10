@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use phylum_types::types::auth::AccessToken;
 use phylum_types::types::common::{JobId, ProjectId};
 use phylum_types::types::group::{
     CreateGroupRequest, CreateGroupResponse, ListGroupMembersResponse,
@@ -27,10 +29,11 @@ use crate::auth::{
 use crate::config::{AuthInfo, Config};
 use crate::types::{
     AddOrgUserRequest, AnalysisPackageDescriptor, ApiOrgGroup, CreateProjectRequest,
-    GetProjectResponse, HistoryJob, ListUserGroupsResponse, OrgGroupsResponse, OrgMembersResponse,
-    OrgsResponse, PackageSpecifier, PackageSubmitResponse, Paginated, PingResponse,
-    PolicyEvaluationRequest, PolicyEvaluationResponse, PolicyEvaluationResponseRaw,
-    ProjectListEntry, RevokeTokenRequest, SubmitPackageRequest, UpdateProjectRequest, UserToken,
+    FirewallLogFilter, FirewallLogResponse, FirewallPaginated, GetProjectResponse, HistoryJob,
+    ListUserGroupsResponse, OrgGroupsResponse, OrgMembersResponse, OrgsResponse, PackageSpecifier,
+    PackageSubmitResponse, Paginated, PingResponse, PolicyEvaluationRequest,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RevokeTokenRequest,
+    SubmitPackageRequest, UpdateProjectRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -41,6 +44,7 @@ pub struct PhylumApi {
     roles: HashSet<RealmRole>,
     config: Config,
     client: Client,
+    access_token: AccessToken,
 }
 
 /// Phylum Api Error type
@@ -140,7 +144,7 @@ impl PhylumApi {
         // Try to parse token's roles.
         let roles = jwt::user_roles(access_token.as_str()).unwrap_or_default();
 
-        Ok(Self { config, client, roles })
+        Ok(Self { config, client, roles, access_token })
     }
 
     async fn get<T: DeserializeOwned, U: IntoUrl>(&self, path: U) -> Result<T> {
@@ -560,6 +564,36 @@ impl PhylumApi {
         let url = endpoints::org_member_remove(&self.config.connection.uri, org, email)?;
         self.send_request_raw(Method::DELETE, url, None::<()>).await?;
         Ok(())
+    }
+
+    /// Get Aviary activity log.
+    pub async fn firewall_log(
+        &self,
+        org: Option<&str>,
+        group: &str,
+        filter: FirewallLogFilter<'_>,
+    ) -> Result<FirewallPaginated<FirewallLogResponse>> {
+        let user = match org {
+            Some(org) => Cow::Owned(format!("{org}/{group}")),
+            None => Cow::Borrowed(group),
+        };
+        let url = endpoints::firewall_log(&self.config.connection.uri)?;
+
+        let request =
+            self.client.get(url).basic_auth(user, Some(&self.access_token)).query(&filter);
+
+        let response = request.send().await?;
+        let status_code = response.status();
+        let body = response.text().await?;
+
+        if !status_code.is_success() {
+            let err = ResponseError { details: body, code: status_code };
+            return Err(err.into());
+        }
+
+        let log = serde_json::from_str(&body).map_err(|e| PhylumApiError::Other(e.into()))?;
+
+        Ok(log)
     }
 
     /// Get reachable vulnerabilities.

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Support for C#'s `packages.*.config` lockfile type
+- `phylum firewall log` command to browse firewall activity log
 
 ## 7.1.5 - 2024-11-26
 

@@ -4,6 +4,7 @@ pub mod auth;
 #[cfg(feature = "extensions")]
 pub mod extensions;
 pub mod find_dependency_files;
+pub mod firewall;
 pub mod group;
 pub mod init;
 pub mod jobs;
