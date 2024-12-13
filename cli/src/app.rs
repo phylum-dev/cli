@@ -610,53 +610,51 @@ pub fn add_subcommands(command: Command) -> Command {
                 .arg_required_else_help(true)
                 .subcommand_required(true)
                 .subcommand(
-                    Command::new("log")
-                        .about("Show firewall activity log")
-                        .args(&[Arg::new("json")
+                    Command::new("log").about("Show firewall activity log").args(&[
+                        Arg::new("json")
                             .action(ArgAction::SetTrue)
                             .short('j')
                             .long("json")
-                            .help("Produce output in json format (default: false)")])
-                        .args(&[
-                            Arg::new("group")
-                                .value_name("GROUP_NAME")
-                                .help("Specify a group to use for analysis")
-                                .required(true),
-                            Arg::new("ecosystem")
-                                .long("ecosystem")
-                                .value_name("ECOSYSTEM")
-                                .help("Only show logs matching this ecosystem")
-                                .value_parser([
-                                    "npm", "rubygems", "pypi", "maven", "nuget", "cargo",
-                                ]),
-                            Arg::new("package")
-                                .long("package")
-                                .value_name("PURL")
-                                .help("Only show logs matching this PURL")
-                                .conflicts_with("ecosystem"),
-                            Arg::new("action")
-                                .long("action")
-                                .value_name("ACTION")
-                                .help("Only show logs matching this log action")
-                                .value_parser([
-                                    "Download",
-                                    "AnalysisSuccess",
-                                    "AnalysisFailure",
-                                    "AnalysisWarning",
-                                ]),
-                            Arg::new("before").long("before").value_name("TIMESTAMP").help(
-                                "Only show logs created before this timestamp (RFC3339 format)",
-                            ),
-                            Arg::new("after").long("after").value_name("TIMESTAMP").help(
-                                "Only show logs created after this timestamp (RFC3339 format)",
-                            ),
-                            Arg::new("limit")
-                                .long("limit")
-                                .value_name("COUNT")
-                                .help("Maximum number of log entries to show")
-                                .default_value("10")
-                                .value_parser(1..=10_000),
-                        ]),
+                            .help("Produce output in json format (default: false)"),
+                        Arg::new("group")
+                            .value_name("GROUP_NAME")
+                            .help("Firewall group to list log activity for")
+                            .required(true),
+                        Arg::new("ecosystem")
+                            .long("ecosystem")
+                            .value_name("ECOSYSTEM")
+                            .help("Only show logs matching this ecosystem")
+                            .value_parser(["npm", "rubygems", "pypi", "maven", "nuget", "cargo"]),
+                        Arg::new("package")
+                            .long("package")
+                            .value_name("PURL")
+                            .help("Only show logs matching this PURL")
+                            .conflicts_with("ecosystem"),
+                        Arg::new("action")
+                            .long("action")
+                            .value_name("ACTION")
+                            .help("Only show logs matching this log action")
+                            .value_parser([
+                                "Download",
+                                "AnalysisSuccess",
+                                "AnalysisFailure",
+                                "AnalysisWarning",
+                            ]),
+                        Arg::new("before")
+                            .long("before")
+                            .value_name("TIMESTAMP")
+                            .help("Only show logs created before this timestamp (RFC3339 format)"),
+                        Arg::new("after")
+                            .long("after")
+                            .value_name("TIMESTAMP")
+                            .help("Only show logs created after this timestamp (RFC3339 format)"),
+                        Arg::new("limit")
+                            .long("limit")
+                            .value_name("COUNT")
+                            .help("Maximum number of log entries to show")
+                            .default_value("10")
+                            .value_parser(1..=10_000),
+                    ]),
                 ),
         );
 
