@@ -9,7 +9,7 @@ Usage: phylum firewall log [OPTIONS] <GROUP_NAME>
 ## Arguments
 
 `<GROUP_NAME>`
-&emsp; Specify a group to use for analysis
+&emsp; Firewall group to list log activity for
 
 ## Options
 
