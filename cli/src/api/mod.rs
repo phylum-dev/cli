@@ -32,8 +32,8 @@ use crate::types::{
     FirewallLogFilter, FirewallLogResponse, FirewallPaginated, GetProjectResponse, HistoryJob,
     ListUserGroupsResponse, OrgGroupsResponse, OrgMembersResponse, OrgsResponse, PackageSpecifier,
     PackageSubmitResponse, Paginated, PingResponse, PolicyEvaluationRequest,
-    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, ProjectListEntry, RevokeTokenRequest,
-    SubmitPackageRequest, UpdateProjectRequest, UserToken,
+    PolicyEvaluationResponse, PolicyEvaluationResponseRaw, Preferences, ProjectListEntry,
+    RevokeTokenRequest, SubmitPackageRequest, Suppression, UpdateProjectRequest, UserToken,
 };
 
 pub mod endpoints;
@@ -594,6 +594,93 @@ impl PhylumApi {
         let log = serde_json::from_str(&body).map_err(|e| PhylumApiError::Other(e.into()))?;
 
         Ok(log)
+    }
+
+    /// Get group preferences.
+    pub async fn group_preferences(
+        &self,
+        org: Option<&str>,
+        group: &str,
+    ) -> Result<Preferences<'static>> {
+        match org {
+            Some(org) => {
+                let url =
+                    endpoints::org_group_preferences(&self.config.connection.uri, org, group)?;
+                self.get(url).await
+            },
+            None => {
+                #[derive(Deserialize)]
+                struct Response<'a> {
+                    preferences: Preferences<'a>,
+                }
+
+                let url = endpoints::group_preferences(&self.config.connection.uri, group)?;
+                Ok(self.get::<Response, _>(url).await?.preferences)
+            },
+        }
+    }
+
+    /// Get project preferences.
+    pub async fn project_preferences(&self, project_id: &str) -> Result<Preferences<'static>> {
+        #[derive(Deserialize)]
+        struct Response<'a> {
+            preferences: Preferences<'a>,
+        }
+
+        let url = endpoints::project_preferences(&self.config.connection.uri, project_id)?;
+        Ok(self.get::<Response, _>(url).await?.preferences)
+    }
+
+    /// Add group suppression.
+    pub async fn group_suppress(
+        &self,
+        org: Option<&str>,
+        group: &str,
+        suppressions: &[Suppression<'_>],
+    ) -> Result<()> {
+        let url = match org {
+            Some(org) => endpoints::org_group_suppress(&self.config.connection.uri, org, group)?,
+            None => endpoints::group_suppress(&self.config.connection.uri, group)?,
+        };
+        self.send_request_raw(Method::POST, url, Some(suppressions)).await?;
+        Ok(())
+    }
+
+    /// Get project suppression.
+    pub async fn project_suppress(
+        &self,
+        project_id: &str,
+        suppressions: &[Suppression<'_>],
+    ) -> Result<()> {
+        let url = endpoints::project_suppress(&self.config.connection.uri, project_id)?;
+        self.send_request_raw(Method::POST, url, Some(suppressions)).await?;
+        Ok(())
+    }
+
+    /// Remove group suppression.
+    pub async fn group_unsuppress(
+        &self,
+        org: Option<&str>,
+        group: &str,
+        unsuppressions: &[Suppression<'_>],
+    ) -> Result<()> {
+        let url = match org {
+            Some(org) => endpoints::org_group_unsuppress(&self.config.connection.uri, org, group)?,
+            None => endpoints::group_unsuppress(&self.config.connection.uri, group)?,
+        };
+        self.send_request_raw(Method::POST, url, Some(unsuppressions)).await?;
+        Ok(())
+    }
+
+    /// Remove project suppression.
+    pub async fn project_unsuppress(
+        &self,
+        project_id: &str,
+        unsuppressions: &[Suppression<'_>],
+    ) -> Result<()> {
+        let url = endpoints::project_unsuppress(&self.config.connection.uri, project_id)?;
+        self.send_request_raw(Method::POST, url, Some(unsuppressions)).await?;
+        Ok(())
     }
 
     /// Get reachable vulnerabilities.

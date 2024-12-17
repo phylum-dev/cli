@@ -197,6 +197,119 @@ pub fn firewall_log(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_firewall_path(api_uri)?.join("activity")?)
 }
 
+/// GET /organizations/<orgName>/groups/<groupName>/preferences.
+pub fn org_group_preferences(
+    api_uri: &str,
+    org_name: &str,
+    group_name: &str,
+) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "organizations",
+        org_name,
+        "groups",
+        group_name,
+        "preferences",
+    ]);
+    Ok(url)
+}
+
+/// GET /preferences/group/<groupName>
+pub fn group_preferences(api_uri: &str, group_name: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["preferences", "group", group_name]);
+    Ok(url)
+}
+
+/// GET /preferences/project/<projectId>
+pub fn project_preferences(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend(["preferences", "project", project_id]);
+    Ok(url)
+}
+
+/// POST /organizations/<orgName>/groups/<groupName>/suppress.
+pub fn org_group_suppress(
+    api_uri: &str,
+    org_name: &str,
+    group_name: &str,
+) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "organizations",
+        org_name,
+        "groups",
+        group_name,
+        "suppress",
+    ]);
+    Ok(url)
+}
+
+/// POST /preferences/group/<groupName>/suppress.
+pub fn group_suppress(api_uri: &str, group_name: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "preferences",
+        "group",
+        group_name,
+        "suppress",
+    ]);
+    Ok(url)
+}
+
+/// POST /preferences/project/<projectId>/suppress.
+pub fn project_suppress(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "preferences",
+        "project",
+        project_id,
+        "suppress",
+    ]);
+    Ok(url)
+}
+
+/// POST /organizations/<orgName>/groups/<groupName>/unsuppress.
+pub fn org_group_unsuppress(
+    api_uri: &str,
+    org_name: &str,
+    group_name: &str,
+) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "organizations",
+        org_name,
+        "groups",
+        group_name,
+        "unsuppress",
+    ]);
+    Ok(url)
+}
+
+/// POST /preferences/group/<groupName>/unsuppress.
+pub fn group_unsuppress(api_uri: &str, group_name: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "preferences",
+        "group",
+        group_name,
+        "unsuppress",
+    ]);
+    Ok(url)
+}
+
+/// POST /preferences/project/<projectId>/unsuppress.
+pub fn project_unsuppress(api_uri: &str, project_id: &str) -> Result<Url, BaseUriError> {
+    let mut url = get_api_path(api_uri)?;
+    url.path_segments_mut().unwrap().pop_if_empty().extend([
+        "preferences",
+        "project",
+        project_id,
+        "unsuppress",
+    ]);
+    Ok(url)
+}
+
 /// GET /.well-known/openid-configuration
 pub fn oidc_discovery(api_uri: &str) -> Result<Url, BaseUriError> {
     Ok(get_api_path(api_uri)?.join(".well-known/openid-configuration")?)

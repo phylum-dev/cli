@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
@@ -549,13 +550,27 @@ pub enum FirewallAction {
     AnalysisWarning,
 }
 
+impl FromStr for FirewallAction {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Download" => Ok(Self::Download),
+            "AnalysisSuccess" => Ok(Self::AnalysisSuccess),
+            "AnalysisFailure" => Ok(Self::AnalysisFailure),
+            "AnalysisWarning" => Ok(Self::AnalysisWarning),
+            _ => Err(()),
+        }
+    }
+}
+
 /// Aviary log package.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct FirewallPackage {
     pub ecosystem: String,
     pub name: String,
-    pub namespace: String,
     pub version: String,
+    pub namespace: String,
 }
 
 impl FirewallPackage {
@@ -572,12 +587,62 @@ impl FirewallPackage {
 /// Aviary log filter query.
 #[derive(Serialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
 pub struct FirewallLogFilter<'a> {
-    pub ecosystem: Option<&'a str>,
+    pub ecosystem: Option<purl::PackageType>,
     pub namespace: Option<&'a str>,
     pub name: Option<&'a str>,
     pub version: Option<&'a str>,
-    pub action: Option<&'a str>,
+    pub action: Option<FirewallAction>,
     pub before: Option<&'a str>,
     pub after: Option<&'a str>,
     pub limit: Option<i32>,
+}
+
+/// Project/Group preferences.
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
+pub struct Preferences<'a> {
+    #[serde(rename = "ignoredIssues", default)]
+    pub ignored_issues: Vec<IgnoredIssue<'a>>,
+    #[serde(rename = "ignoredPackages", default)]
+    pub ignored_packages: Vec<IgnoredPackage<'a>>,
+}
+
+/// Project/Group preferences ignored issues.
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
+pub struct IgnoredIssue<'a> {
+    pub id: Cow<'a, str>,
+    pub tag: Cow<'a, str>,
+    pub reason: Cow<'a, str>,
+}
+
+/// Project/Group preferences ignored packages.
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
+pub struct IgnoredPackage<'a> {
+    pub purl: Cow<'a, str>,
+    pub reason: Cow<'a, str>,
+}
+
+/// Suppression request variants.
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
+pub enum Suppression<'a> {
+    Package(IgnoredPackage<'a>),
+    Issue(IgnoredIssue<'a>),
+}
+
+impl<'a> From<&'a IgnoredIssue<'a>> for Suppression<'a> {
+    fn from(issue: &'a IgnoredIssue<'a>) -> Self {
+        Self::Issue(IgnoredIssue {
+            id: Cow::Borrowed(&issue.id),
+            tag: Cow::Borrowed(&issue.tag),
+            reason: Cow::Borrowed(&issue.reason),
+        })
+    }
+}
+
+impl<'a> From<&'a IgnoredPackage<'a>> for Suppression<'a> {
+    fn from(package: &'a IgnoredPackage<'a>) -> Self {
+        Self::Package(IgnoredPackage {
+            purl: Cow::Borrowed(&package.purl),
+            reason: Cow::Borrowed(&package.reason),
+        })
+    }
 }

@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- `phylum exception` subcommand for managing suppressions
+
 ## 7.2.0 - 2024-12-10
 
 ### Added

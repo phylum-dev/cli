@@ -14,8 +14,8 @@ use phylum_cli::commands::sandbox;
 #[cfg(feature = "selfmanage")]
 use phylum_cli::commands::uninstall;
 use phylum_cli::commands::{
-    auth, find_dependency_files, firewall, group, init, jobs, org, packages, parse, project,
-    status, CommandResult, ExitCode,
+    auth, exception, find_dependency_files, firewall, group, init, jobs, org, packages, parse,
+    project, status, CommandResult, ExitCode,
 };
 use phylum_cli::config::{self, Config};
 use phylum_cli::spinner::Spinner;
@@ -147,6 +147,9 @@ async fn handle_commands() -> CommandResult {
         "org" => org::handle_org(&Spinner::wrap(api).await?, sub_matches, config).await,
         "firewall" => {
             firewall::handle_firewall(&Spinner::wrap(api).await?, sub_matches, config).await
+        },
+        "exception" => {
+            exception::handle_exception(&Spinner::wrap(api).await?, sub_matches, config).await
         },
 
         #[cfg(feature = "selfmanage")]

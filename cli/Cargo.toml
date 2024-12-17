@@ -4,7 +4,7 @@ version = "7.2.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.80.0"
+rust-version = "1.82.0"
 autotests = false
 
 [[test]]
@@ -48,7 +48,7 @@ phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 prettytable-rs = "0.10.0"
-purl = "0.1.1"
+purl = { version = "0.1.5", features = ["serde"] }
 rand = "0.8.4"
 regex = "1.5.5"
 reqwest = { version = "0.12.7", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }
@@ -70,6 +70,7 @@ vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true
 vulnreach_types = { path = "../vulnreach_types", optional = true }
 walkdir = "2.3.2"
 zip = { version = "2.1.0", default-features = false, features = ["deflate"] }
+indexmap = "2.7.0"
 
 [target.'cfg(unix)'.dependencies]
 birdcage = { version = "0.8.1" }

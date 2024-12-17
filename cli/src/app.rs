@@ -1,5 +1,5 @@
 use clap::builder::PossibleValuesParser;
-use clap::{Arg, ArgAction, Command, ValueHint};
+use clap::{Arg, ArgAction, ArgGroup, Command, ValueHint};
 use git_version::git_version;
 use lazy_static::lazy_static;
 
@@ -655,6 +655,142 @@ pub fn add_subcommands(command: Command) -> Command {
                             .default_value("10")
                             .value_parser(1..=10_000),
                     ]),
+                ),
+        )
+        .subcommand(
+            Command::new("exception")
+                .about("Manage analysis exceptions")
+                .arg_required_else_help(true)
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("list")
+                        .about("List active analysis exceptions")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
+                        .args(&[
+                            Arg::new("json")
+                                .action(ArgAction::SetTrue)
+                                .short('j')
+                                .long("json")
+                                .help("Produce output in json format (default: false)"),
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP_NAME")
+                                .help("Group to list exceptions for"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to list exceptions for"),
+                        ]),
+                )
+                .subcommand(
+                    Command::new("add")
+                        .about("Add a new analysis exception")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
+                        .args(&[
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP_NAME")
+                                .help("Group to add exception to"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to add exceptions to"),
+                            Arg::new("ecosystem")
+                                .short('e')
+                                .long("ecosystem")
+                                .value_name("ECOSYSTEM")
+                                .help("Ecosystem of the package to add an exception for")
+                                .value_parser([
+                                    "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                                ]),
+                            Arg::new("name")
+                                .short('n')
+                                .long("name")
+                                .value_name("PACKAGE_NAME")
+                                .help(
+                                    "Name and optional namespace of the package to add an \
+                                     exception for",
+                                ),
+                            Arg::new("version")
+                                .long("version")
+                                .value_name("VERSION")
+                                .help("Version of the package to add an exception for"),
+                            Arg::new("purl")
+                                .long("purl")
+                                .value_name("PURL")
+                                .help("Package in PURL format")
+                                .conflicts_with_all(["ecosystem", "name", "version"]),
+                            Arg::new("reason")
+                                .short('r')
+                                .long("reason")
+                                .value_name("REASON")
+                                .help("Reason for adding this exception"),
+                            Arg::new("no-suggestions")
+                                .short('s')
+                                .long("no-suggestions")
+                                .action(ArgAction::SetTrue)
+                                .help("Do not query package firewall to make suggestions"),
+                        ]),
+                )
+                .subcommand(
+                    Command::new("remove")
+                        .about("Remove an existing analysis exception")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
+                        .group(
+                            ArgGroup::new("package")
+                                .args(["ecosystem", "name", "version", "purl"])
+                                .conflicts_with("issue"),
+                        )
+                        .group(ArgGroup::new("issue").args(["id", "tag"]))
+                        .args(&[
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP_NAME")
+                                .help("Group to add exception to"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to add exceptions to"),
+                            Arg::new("ecosystem")
+                                .short('e')
+                                .long("ecosystem")
+                                .value_name("ECOSYSTEM")
+                                .help("Ecosystem of the exception which should be removed")
+                                .value_parser([
+                                    "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                                ]),
+                            Arg::new("name")
+                                .short('n')
+                                .long("name")
+                                .value_name("PACKAGE_NAME")
+                                .help(
+                                    "Package name and optional namespace of the exception which \
+                                     should be removed",
+                                ),
+                            Arg::new("version")
+                                .long("version")
+                                .value_name("VERSION")
+                                .help("Package version of the exception which should be removed"),
+                            Arg::new("purl")
+                                .long("purl")
+                                .value_name("PURL")
+                                .help("Package in PURL format")
+                                .conflicts_with_all(["ecosystem", "name", "version"]),
+                            Arg::new("id")
+                                .long("id")
+                                .value_name("ISSUE_ID")
+                                .help("Issue ID of the exception which should be removed"),
+                            Arg::new("tag")
+                                .long("tag")
+                                .value_name("ISSUE_TAG")
+                                .help("Issue tag of the exception which should be removed"),
+                        ]),
                 ),
         );
 
