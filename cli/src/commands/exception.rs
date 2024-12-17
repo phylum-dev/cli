@@ -74,10 +74,6 @@ pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -
         None => purl_from_components(api, ecosystem, name, group, org, !no_suggestions).await?,
     };
 
-    // TODO: Show short description of the issues for each version.
-    //  => Create issue.
-    //  => Maybe also provide full list while prompting for reason?
-    //
     // Get suggested versions from Aviary if no argument was supplied.
     let version = purl.version().or(version.map(String::as_str));
     let mut suggested_versions = IndexSet::new();
