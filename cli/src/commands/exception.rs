@@ -108,7 +108,7 @@ pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -
     };
 
     // Build suppression API object.
-    let suppressions = vec![Suppression::Package(IgnoredPackage {
+    let suppressions = [Suppression::Package(IgnoredPackage {
         purl: Cow::Owned(purl.to_string()),
         reason: Cow::Borrowed(&reason),
     })];
@@ -122,7 +122,7 @@ pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -
         None => api.group_suppress(org, group.unwrap(), &suppressions).await?,
     }
 
-    print_user_success!("Successfully added suppression for {}", purl.to_string());
+    print_user_success!("Successfully added suppression for {}", purl);
 
     Ok(ExitCode::Ok)
 }
@@ -186,7 +186,7 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
         });
     }
 
-    let unsuppressions = vec![prompt_removal(&exceptions)?];
+    let unsuppressions = [prompt_removal(&exceptions)?];
 
     match project {
         Some(project_name) => {
@@ -199,7 +199,7 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
 
     match &unsuppressions[0] {
         Suppression::Package(IgnoredPackage { purl, .. }) => {
-            print_user_success!("Successfully removed suppression for package {purl:?}");
+            print_user_success!("Successfully removed suppression for package {purl}");
         },
         Suppression::Issue(IgnoredIssue { id, tag, .. }) => {
             print_user_success!("Successfully removed suppression for issue {tag:?} [{id}]");
