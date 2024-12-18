@@ -712,8 +712,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("name")
                                 .value_name("PACKAGE_NAME")
                                 .help(
-                                    "Name and optional namespace of the package to add an \
-                                     exception for",
+                                    "Fully qualified name of the package to add an exception for",
                                 ),
                             Arg::new("version")
                                 .long("version")
@@ -751,12 +750,12 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .short('g')
                                 .long("group")
                                 .value_name("GROUP_NAME")
-                                .help("Group to add exception to"),
+                                .help("Group to remove exception from"),
                             Arg::new("project")
                                 .short('p')
                                 .long("project")
                                 .value_name("PROJECT_NAME")
-                                .help("Project to add exceptions to"),
+                                .help("Project to remove exceptions from"),
                             Arg::new("ecosystem")
                                 .short('e')
                                 .long("ecosystem")
@@ -770,8 +769,8 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("name")
                                 .value_name("PACKAGE_NAME")
                                 .help(
-                                    "Package name and optional namespace of the exception which \
-                                     should be removed",
+                                    "Fully qualified package name of the exception which should \
+                                     be removed",
                                 ),
                             Arg::new("version")
                                 .long("version")
