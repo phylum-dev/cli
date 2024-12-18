@@ -4506,6 +4506,7 @@ dependencies = [
  "git2",
  "home",
  "ignore",
+ "indexmap",
  "lazy_static",
  "libc",
  "log",
@@ -4948,13 +4949,14 @@ dependencies = [
 
 [[package]]
 name = "purl"
-version = "0.1.3"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c14fe28c8495f7eaf77a6e6106966f95211c0a2404b9da50d248fc32af3a3f14"
+checksum = "f112b0e2a9bca03924c39166775b74fec9a831f7d4d8fa539dee0e565f403a0e"
 dependencies = [
  "hex",
  "percent-encoding",
  "phf",
+ "serde",
  "smartstring",
  "thiserror 1.0.69",
  "unicase",

@@ -9,18 +9,18 @@ Usage: phylum firewall log [OPTIONS] <GROUP_NAME>
 ## Arguments
 
 `<GROUP_NAME>`
-&emsp; Specify a group to use for analysis
+&emsp; Firewall group to list log activity for
 
 ## Options
 
 `-j`, `--json`
 &emsp; Produce output in json format (default: false)
 
-`--ecosystem` `<ECOSYSTEM>`
-&emsp; Only show logs matching this ecosystem
-&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `cargo`
+`--package-type` `<PACKAGE_TYPE>`
+&emsp; Only show logs matching this package type
+&emsp; Accepted values: `npm`, `gem`, `pypi`, `maven`, `nuget`, `cargo`
 
-`--package` `<PURL>`
+`--purl` `<PURL>`
 &emsp; Only show logs matching this PURL
 
 `--action` `<ACTION>`

@@ -21,7 +21,7 @@ use crate::print::{self, table_format};
 use crate::types::{
     FirewallAction, FirewallLogResponse, GetProjectResponse, HistoryJob, Issue, OrgMember,
     OrgMembersResponse, OrgsResponse, Package, PolicyEvaluationResponse,
-    PolicyEvaluationResponseRaw, ProjectListEntry, RiskLevel, UserToken,
+    PolicyEvaluationResponseRaw, Preferences, ProjectListEntry, RiskLevel, UserToken,
 };
 
 // Maximum length of email column.
@@ -437,6 +437,29 @@ impl Format for Vec<FirewallLogResponse> {
                 }),
                 ("Timestamp", |log| (format_datetime_precise(log.timestamp), None)),
             ]);
+        let _ = writeln!(writer, "{table}");
+    }
+}
+
+impl Format for Preferences<'_> {
+    fn pretty<W: Write>(&self, writer: &mut W) {
+        let issue_exceptions = self
+            .ignored_issues
+            .iter()
+            .map(|issue| (format!("[{}] {}", issue.tag, issue.id), issue.reason.to_string()));
+        let package_exceptions =
+            self.ignored_packages.iter().map(|pkg| (pkg.purl.to_string(), pkg.reason.to_string()));
+        let exceptions: Vec<_> = issue_exceptions.chain(package_exceptions).collect();
+
+        if exceptions.is_empty() {
+            println!("No exceptions present.");
+            return;
+        }
+
+        let table = format_table::<fn(&(String, String)) -> String, _>(&exceptions, &[
+            ("Subject", |(subject, _)| subject.into()),
+            ("Reason", |(_, reason)| reason.to_string()),
+        ]);
         let _ = writeln!(writer, "{table}");
     }
 }
