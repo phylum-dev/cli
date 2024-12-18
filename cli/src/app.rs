@@ -620,16 +620,16 @@ pub fn add_subcommands(command: Command) -> Command {
                             .value_name("GROUP_NAME")
                             .help("Firewall group to list log activity for")
                             .required(true),
-                        Arg::new("ecosystem")
-                            .long("ecosystem")
-                            .value_name("ECOSYSTEM")
-                            .help("Only show logs matching this ecosystem")
-                            .value_parser(["npm", "rubygems", "pypi", "maven", "nuget", "cargo"]),
-                        Arg::new("package")
-                            .long("package")
+                        Arg::new("package-type")
+                            .long("package-type")
+                            .value_name("PACKAGE_TYPE")
+                            .help("Only show logs matching this package type")
+                            .value_parser(["npm", "gem", "pypi", "maven", "nuget", "cargo"]),
+                        Arg::new("purl")
+                            .long("purl")
                             .value_name("PURL")
                             .help("Only show logs matching this PURL")
-                            .conflicts_with("ecosystem"),
+                            .conflicts_with("package-type"),
                         Arg::new("action")
                             .long("action")
                             .value_name("ACTION")
@@ -699,13 +699,12 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("project")
                                 .value_name("PROJECT_NAME")
                                 .help("Project to add exceptions to"),
-                            Arg::new("ecosystem")
-                                .short('e')
-                                .long("ecosystem")
-                                .value_name("ECOSYSTEM")
-                                .help("Ecosystem of the package to add an exception for")
+                            Arg::new("package-type")
+                                .long("package-type")
+                                .value_name("PACKAGE_TYPE")
+                                .help("Package type of the package to add an exception for")
                                 .value_parser([
-                                    "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                                    "npm", "gem", "pypi", "maven", "nuget", "golang", "cargo",
                                 ]),
                             Arg::new("name")
                                 .short('n')
@@ -722,7 +721,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("purl")
                                 .value_name("PURL")
                                 .help("Package in PURL format")
-                                .conflicts_with_all(["ecosystem", "name", "version"]),
+                                .conflicts_with_all(["package-type", "name", "version"]),
                             Arg::new("reason")
                                 .short('r')
                                 .long("reason")
@@ -741,7 +740,7 @@ pub fn add_subcommands(command: Command) -> Command {
                         .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
                         .group(
                             ArgGroup::new("package")
-                                .args(["ecosystem", "name", "version", "purl"])
+                                .args(["package-type", "name", "version", "purl"])
                                 .conflicts_with("issue"),
                         )
                         .group(ArgGroup::new("issue").args(["id", "tag"]))
@@ -756,13 +755,12 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("project")
                                 .value_name("PROJECT_NAME")
                                 .help("Project to remove exceptions from"),
-                            Arg::new("ecosystem")
-                                .short('e')
-                                .long("ecosystem")
-                                .value_name("ECOSYSTEM")
-                                .help("Ecosystem of the exception which should be removed")
+                            Arg::new("package-type")
+                                .long("package-type")
+                                .value_name("PACKAGE_TYPE")
+                                .help("Package type of the exception which should be removed")
                                 .value_parser([
-                                    "npm", "rubygems", "pypi", "maven", "nuget", "golang", "cargo",
+                                    "npm", "gem", "pypi", "maven", "nuget", "golang", "cargo",
                                 ]),
                             Arg::new("name")
                                 .short('n')
@@ -780,7 +778,7 @@ pub fn add_subcommands(command: Command) -> Command {
                                 .long("purl")
                                 .value_name("PURL")
                                 .help("Package in PURL format")
-                                .conflicts_with_all(["ecosystem", "name", "version"]),
+                                .conflicts_with_all(["package-type", "name", "version"]),
                             Arg::new("id")
                                 .long("id")
                                 .value_name("ISSUE_ID")

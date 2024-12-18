@@ -59,7 +59,7 @@ pub async fn handle_list(api: &PhylumApi, matches: &ArgMatches, config: Config) 
 /// Handle `phylum exception add` subcommand.
 pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -> CommandResult {
     let no_suggestions = matches.get_flag("no-suggestions");
-    let ecosystem = matches.get_one::<String>("ecosystem");
+    let package_type = matches.get_one::<String>("package-type");
     let project = matches.get_one::<String>("project");
     let version = matches.get_one::<String>("version");
     let reason = matches.get_one::<String>("reason");
@@ -71,7 +71,7 @@ pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -
     // Parse PURL argument or assemble it from its components.
     let mut purl = match purl {
         Some(purl) => Purl::from_str(purl)?,
-        None => purl_from_components(api, ecosystem, name, group, org, !no_suggestions).await?,
+        None => purl_from_components(api, package_type, name, group, org, !no_suggestions).await?,
     };
 
     // Get suggested versions from Aviary if no argument was supplied.
@@ -129,7 +129,7 @@ pub async fn handle_add(api: &PhylumApi, matches: &ArgMatches, config: Config) -
 
 /// Handle `phylum exception remove` subcommand.
 pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config) -> CommandResult {
-    let ecosystem = matches.get_one::<String>("ecosystem");
+    let package_type = matches.get_one::<String>("package-type");
     let project = matches.get_one::<String>("project");
     let version = matches.get_one::<String>("version");
     let group = matches.get_one::<String>("group");
@@ -156,16 +156,16 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
     }
 
     // Filter package suppressions with CLI args.
-    if ecosystem.is_some() || name.is_some() || version.is_some() || purl.is_some() {
+    if package_type.is_some() || name.is_some() || version.is_some() || purl.is_some() {
         let purl = purl.map(|purl| Purl::from_str(purl));
-        let (ecosystem, namespace, name, version) = match purl {
+        let (package_type, namespace, name, version) = match purl {
             Some(Ok(ref purl)) => {
                 let package_type = Cow::Owned(purl.package_type().to_string());
                 (Some(package_type), purl.namespace(), Some(purl.name()), purl.version())
             },
             Some(Err(err)) => return Err(err.into()),
             None => (
-                ecosystem.map(Cow::Borrowed),
+                package_type.map(Cow::Borrowed),
                 None,
                 name.map(String::as_str),
                 version.map(String::as_str),
@@ -178,8 +178,8 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
                 Err(_) => return false,
             };
 
-            let package_type = purl.package_type().to_string();
-            ecosystem.as_ref().is_none_or(|ecosystem| **ecosystem == package_type)
+            let purl_package_type = purl.package_type().to_string();
+            package_type.as_ref().is_none_or(|package_type| **package_type == purl_package_type)
                 && namespace.is_none_or(|namespace| Some(namespace) == purl.namespace())
                 && name.is_none_or(|name| name == purl.name())
                 && version.is_none_or(|version| Some(version) == purl.version())
@@ -212,18 +212,17 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
 /// Creat a PURL from its individual components.
 async fn purl_from_components(
     api: &PhylumApi,
-    cli_ecosystem: Option<&String>,
+    cli_package_type: Option<&String>,
     cli_name: Option<&String>,
     group: Option<&String>,
     org: Option<&str>,
     suggestions: bool,
 ) -> anyhow::Result<Purl> {
-    // Prompt for ecosystem if it wasn't supplied as an argument.
-    let ecosystem = match cli_ecosystem {
-        Some(ecosystem) => ecosystem.into(),
-        None => Cow::Owned(prompt_ecosystem()?),
+    // Prompt for package type if it wasn't supplied as an argument.
+    let package_type = match cli_package_type {
+        Some(package_type) => PackageType::from_str(package_type)?,
+        None => prompt_package_type()?,
     };
-    let ecosystem = PackageType::from_str(&ecosystem).unwrap();
 
     // Get suggested names from Aviary if no argument was supplied.
     let mut suggested_names: IndexSet<Purl> = IndexSet::new();
@@ -231,13 +230,13 @@ async fn purl_from_components(
         let spinner = Spinner::new();
 
         let filter = FirewallLogFilter {
-            ecosystem: Some(ecosystem),
+            ecosystem: Some(package_type),
             action: Some(FirewallAction::AnalysisFailure),
             ..Default::default()
         };
         if let Ok(logs) = api.firewall_log(org, group, filter).await {
             for log in logs.data {
-                let purl = Purl::builder(ecosystem, log.package.name)
+                let purl = Purl::builder(package_type, log.package.name)
                     .with_namespace(log.package.namespace)
                     .build()?;
                 suggested_names.insert(purl);
@@ -249,27 +248,27 @@ async fn purl_from_components(
 
     // Prompt for name if it wasn't supplied as an argument.
     let purl = match cli_name {
-        Some(name) => Purl::builder_with_combined_name(ecosystem, name).build()?,
-        None => prompt_name(ecosystem, &suggested_names)?,
+        Some(name) => Purl::builder_with_combined_name(package_type, name).build()?,
+        None => prompt_name(package_type, &suggested_names)?,
     };
 
     Ok(purl)
 }
 
-/// Ask for an ecosystem.
-fn prompt_ecosystem() -> dialoguer::Result<String> {
-    let ecosystems = ["cargo", "gem", "golang", "maven", "npm", "nuget", "pypi"];
+/// Ask for a package type.
+fn prompt_package_type() -> dialoguer::Result<PackageType> {
+    let package_types = ["cargo", "gem", "golang", "maven", "npm", "nuget", "pypi"];
 
-    let prompt = "[ENTER] Select and Confirm\nSelect ecosystem";
-    let index = FuzzySelect::new().with_prompt(prompt).items(&ecosystems).interact()?;
+    let prompt = "[ENTER] Select and Confirm\nSelect package type";
+    let index = FuzzySelect::new().with_prompt(prompt).items(&package_types).interact()?;
 
     println!();
 
-    Ok(ecosystems[index].to_owned())
+    Ok(PackageType::from_str(package_types[index]).unwrap())
 }
 
 /// Ask for a package name.
-fn prompt_name(ecosystem: PackageType, suggestions: &'_ IndexSet<Purl>) -> anyhow::Result<Purl> {
+fn prompt_name(package_type: PackageType, suggestions: &'_ IndexSet<Purl>) -> anyhow::Result<Purl> {
     // Get space available for suggestions.
     let term_size = Term::stdout().size_checked().unwrap_or((u16::MAX, u16::MAX));
     let max_suggestions = (term_size.0 as usize - 3).min(MAX_SUGGESTIONS);
@@ -292,7 +291,7 @@ fn prompt_name(ecosystem: PackageType, suggestions: &'_ IndexSet<Purl>) -> anyho
         Ok(index) if index < suggestions.len() && index < MAX_SUGGESTIONS => {
             suggestions[index].clone()
         },
-        _ => Purl::builder_with_combined_name(ecosystem, &input).build()?,
+        _ => Purl::builder_with_combined_name(package_type, &input).build()?,
     };
 
     println!("Using package {}\n", purl.combined_name());
