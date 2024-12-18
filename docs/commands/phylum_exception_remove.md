@@ -9,17 +9,17 @@ Usage: phylum exception remove [OPTIONS] <--group <GROUP_NAME>|--project <PROJEC
 ## Options
 
 `-g`, `--group` `<GROUP_NAME>`
-&emsp; Group to add exception to
+&emsp; Group to remove exception from
 
 `-p`, `--project` `<PROJECT_NAME>`
-&emsp; Project to add exceptions to
+&emsp; Project to remove exceptions from
 
-`-e`, `--ecosystem` `<ECOSYSTEM>`
-&emsp; Ecosystem of the exception which should be removed
-&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
+`--package-type` `<PACKAGE_TYPE>`
+&emsp; Package type of the exception which should be removed
+&emsp; Accepted values: `npm`, `gem`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
 `-n`, `--name` `<PACKAGE_NAME>`
-&emsp; Package name and optional namespace of the exception which should be removed
+&emsp; Fully qualified package name of the exception which should be removed
 
 `--version` `<VERSION>`
 &emsp; Package version of the exception which should be removed

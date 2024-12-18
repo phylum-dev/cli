@@ -14,12 +14,12 @@ Usage: phylum exception add [OPTIONS] <--group <GROUP_NAME>|--project <PROJECT_N
 `-p`, `--project` `<PROJECT_NAME>`
 &emsp; Project to add exceptions to
 
-`-e`, `--ecosystem` `<ECOSYSTEM>`
-&emsp; Ecosystem of the package to add an exception for
-&emsp; Accepted values: `npm`, `rubygems`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
+`--package-type` `<PACKAGE_TYPE>`
+&emsp; Package type of the package to add an exception for
+&emsp; Accepted values: `npm`, `gem`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
 `-n`, `--name` `<PACKAGE_NAME>`
-&emsp; Name and optional namespace of the package to add an exception for
+&emsp; Fully qualified name of the package to add an exception for
 
 `--version` `<VERSION>`
 &emsp; Version of the package to add an exception for
