@@ -1,6 +1,7 @@
 //! Subcommand `phylum exception`.
 
 use std::borrow::Cow;
+use std::slice;
 use std::str::FromStr;
 
 use clap::ArgMatches;
@@ -13,11 +14,11 @@ use crate::api::PhylumApi;
 use crate::commands::{CommandResult, ExitCode};
 use crate::config::Config;
 use crate::format::Format;
-use crate::print_user_success;
 use crate::spinner::Spinner;
 use crate::types::{
     FirewallAction, FirewallLogFilter, IgnoredIssue, IgnoredPackage, Preferences, Suppression,
 };
+use crate::{print_user_success, print_user_warning};
 
 /// Maximum number of package names or versions proposed for exceptions.
 const MAX_SUGGESTIONS: usize = 25;
@@ -158,18 +159,14 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
     // Filter package suppressions with CLI args.
     if package_type.is_some() || name.is_some() || version.is_some() || purl.is_some() {
         let purl = purl.map(|purl| Purl::from_str(purl));
-        let (package_type, namespace, name, version) = match purl {
-            Some(Ok(ref purl)) => {
-                let package_type = Cow::Owned(purl.package_type().to_string());
-                (Some(package_type), purl.namespace(), Some(purl.name()), purl.version())
-            },
+        let (packages, version) = match purl {
+            Some(Ok(ref purl)) => (vec![purl.clone()], purl.version()),
             Some(Err(err)) => return Err(err.into()),
-            None => (
-                package_type.map(Cow::Borrowed),
-                None,
-                name.map(String::as_str),
-                version.map(String::as_str),
-            ),
+            None => {
+                let packages =
+                    name.map(|name| possible_packages(package_type, name)).unwrap_or_default();
+                (packages, version.map(String::as_str))
+            },
         };
 
         exceptions.ignored_packages.retain(|pkg| {
@@ -178,12 +175,20 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
                 Err(_) => return false,
             };
 
-            let purl_package_type = purl.package_type().to_string();
-            package_type.as_ref().is_none_or(|package_type| **package_type == purl_package_type)
-                && namespace.is_none_or(|namespace| Some(namespace) == purl.namespace())
-                && name.is_none_or(|name| name == purl.name())
-                && version.is_none_or(|version| Some(version) == purl.version())
+            version.is_none_or(|version| Some(version) == purl.version())
+                && (packages.is_empty()
+                    || packages.iter().any(|pkg| {
+                        pkg.package_type() == purl.package_type()
+                            && pkg.name() == purl.name()
+                            && pkg.namespace().is_none_or(|ns| Some(ns) == purl.namespace())
+                    }))
         });
+    }
+
+    // Abort if no matching exceptions were found.
+    if exceptions.ignored_packages.is_empty() && exceptions.ignored_issues.is_empty() {
+        print_user_warning!("No existing exception matches the active filter.");
+        return Ok(ExitCode::Ok);
     }
 
     let unsuppressions = [prompt_removal(&exceptions)?];
@@ -357,4 +362,30 @@ fn prompt_removal<'a>(preferences: &'a Preferences<'a>) -> dialoguer::Result<Sup
         Some(index) => Ok(Suppression::from(&preferences.ignored_issues[index])),
         None => Ok(Suppression::from(&preferences.ignored_packages[index])),
     }
+}
+
+/// Find all possible package type, namespace, and name combination for a
+/// combined package name and optional package type.
+fn possible_packages(package_type: Option<&String>, combined_name: &str) -> Vec<Purl> {
+    let package_type = package_type.and_then(|pt| PackageType::from_str(pt).ok());
+    let package_types = package_type.as_ref().map_or(
+        [
+            PackageType::Cargo,
+            PackageType::Gem,
+            PackageType::Golang,
+            PackageType::Maven,
+            PackageType::Npm,
+            PackageType::NuGet,
+            PackageType::PyPI,
+        ]
+        .as_slice(),
+        |pt| slice::from_ref(pt),
+    );
+
+    package_types
+        .iter()
+        .filter_map(|package_type| {
+            Purl::builder_with_combined_name(*package_type, combined_name).build().ok()
+        })
+        .collect()
 }
