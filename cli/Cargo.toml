@@ -4,7 +4,7 @@ version = "7.2.0"
 authors = ["Phylum, Inc. <engineering@phylum.io>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.80.0"
+rust-version = "1.82.0"
 autotests = false
 
 [[test]]
@@ -38,6 +38,7 @@ git2 = { version = "0.19.0", default-features = false }
 git-version = "0.3.5"
 home = "0.5.3"
 ignore = { version = "0.4.20", optional = true }
+indexmap = "2.7.0"
 lazy_static = "1.4.0"
 libc = "0.2.135"
 log = "0.4.6"
@@ -48,7 +49,7 @@ phylum_lockfile = { path = "../lockfile", features = ["generator"] }
 phylum_project = { path = "../phylum_project" }
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 prettytable-rs = "0.10.0"
-purl = "0.1.1"
+purl = { version = "0.1.5", features = ["serde"] }
 rand = "0.8.4"
 regex = "1.5.5"
 reqwest = { version = "0.12.7", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }

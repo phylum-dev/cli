@@ -1,5 +1,5 @@
 use clap::builder::PossibleValuesParser;
-use clap::{Arg, ArgAction, Command, ValueHint};
+use clap::{Arg, ArgAction, ArgGroup, Command, ValueHint};
 use git_version::git_version;
 use lazy_static::lazy_static;
 
@@ -610,52 +610,183 @@ pub fn add_subcommands(command: Command) -> Command {
                 .arg_required_else_help(true)
                 .subcommand_required(true)
                 .subcommand(
-                    Command::new("log")
-                        .about("Show firewall activity log")
-                        .args(&[Arg::new("json")
+                    Command::new("log").about("Show firewall activity log").args(&[
+                        Arg::new("json")
                             .action(ArgAction::SetTrue)
                             .short('j')
                             .long("json")
-                            .help("Produce output in json format (default: false)")])
+                            .help("Produce output in json format (default: false)"),
+                        Arg::new("group")
+                            .value_name("GROUP_NAME")
+                            .help("Firewall group to list log activity for")
+                            .required(true),
+                        Arg::new("package-type")
+                            .long("package-type")
+                            .value_name("PACKAGE_TYPE")
+                            .help("Only show logs matching this package type")
+                            .value_parser(["npm", "gem", "pypi", "maven", "nuget", "cargo"]),
+                        Arg::new("purl")
+                            .long("purl")
+                            .value_name("PURL")
+                            .help("Only show logs matching this PURL")
+                            .conflicts_with("package-type"),
+                        Arg::new("action")
+                            .long("action")
+                            .value_name("ACTION")
+                            .help("Only show logs matching this log action")
+                            .value_parser([
+                                "Download",
+                                "AnalysisSuccess",
+                                "AnalysisFailure",
+                                "AnalysisWarning",
+                            ]),
+                        Arg::new("before")
+                            .long("before")
+                            .value_name("TIMESTAMP")
+                            .help("Only show logs created before this timestamp (RFC3339 format)"),
+                        Arg::new("after")
+                            .long("after")
+                            .value_name("TIMESTAMP")
+                            .help("Only show logs created after this timestamp (RFC3339 format)"),
+                        Arg::new("limit")
+                            .long("limit")
+                            .value_name("COUNT")
+                            .help("Maximum number of log entries to show")
+                            .default_value("10")
+                            .value_parser(1..=10_000),
+                    ]),
+                ),
+        )
+        .subcommand(
+            Command::new("exception")
+                .about("Manage analysis exceptions")
+                .arg_required_else_help(true)
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("list")
+                        .about("List active analysis exceptions")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
+                        .args(&[
+                            Arg::new("json")
+                                .action(ArgAction::SetTrue)
+                                .short('j')
+                                .long("json")
+                                .help("Produce output in json format (default: false)"),
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP_NAME")
+                                .help("Group to list exceptions for"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to list exceptions for"),
+                        ]),
+                )
+                .subcommand(
+                    Command::new("add")
+                        .about("Add a new analysis exception")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
                         .args(&[
                             Arg::new("group")
+                                .short('g')
+                                .long("group")
                                 .value_name("GROUP_NAME")
-                                .help("Specify a group to use for analysis")
-                                .required(true),
-                            Arg::new("ecosystem")
-                                .long("ecosystem")
-                                .value_name("ECOSYSTEM")
-                                .help("Only show logs matching this ecosystem")
+                                .help("Group to add exception to"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to add exceptions to"),
+                            Arg::new("package-type")
+                                .long("package-type")
+                                .value_name("PACKAGE_TYPE")
+                                .help("Package type of the package to add an exception for")
                                 .value_parser([
-                                    "npm", "rubygems", "pypi", "maven", "nuget", "cargo",
+                                    "npm", "gem", "pypi", "maven", "nuget", "golang", "cargo",
                                 ]),
-                            Arg::new("package")
-                                .long("package")
+                            Arg::new("name")
+                                .short('n')
+                                .long("name")
+                                .value_name("PACKAGE_NAME")
+                                .help(
+                                    "Fully qualified name of the package to add an exception for",
+                                ),
+                            Arg::new("version")
+                                .long("version")
+                                .value_name("VERSION")
+                                .help("Version of the package to add an exception for"),
+                            Arg::new("purl")
+                                .long("purl")
                                 .value_name("PURL")
-                                .help("Only show logs matching this PURL")
-                                .conflicts_with("ecosystem"),
-                            Arg::new("action")
-                                .long("action")
-                                .value_name("ACTION")
-                                .help("Only show logs matching this log action")
+                                .help("Package in PURL format")
+                                .conflicts_with_all(["package-type", "name", "version"]),
+                            Arg::new("reason")
+                                .short('r')
+                                .long("reason")
+                                .value_name("REASON")
+                                .help("Reason for adding this exception"),
+                            Arg::new("no-suggestions")
+                                .short('s')
+                                .long("no-suggestions")
+                                .action(ArgAction::SetTrue)
+                                .help("Do not query package firewall to make suggestions"),
+                        ]),
+                )
+                .subcommand(
+                    Command::new("remove")
+                        .about("Remove an existing analysis exception")
+                        .group(ArgGroup::new("subject").args(["group", "project"]).required(true))
+                        .group(
+                            ArgGroup::new("package")
+                                .args(["package-type", "name", "version", "purl"])
+                                .conflicts_with("issue"),
+                        )
+                        .group(ArgGroup::new("issue").args(["id", "tag"]))
+                        .args(&[
+                            Arg::new("group")
+                                .short('g')
+                                .long("group")
+                                .value_name("GROUP_NAME")
+                                .help("Group to remove exception from"),
+                            Arg::new("project")
+                                .short('p')
+                                .long("project")
+                                .value_name("PROJECT_NAME")
+                                .help("Project to remove exceptions from"),
+                            Arg::new("package-type")
+                                .long("package-type")
+                                .value_name("PACKAGE_TYPE")
+                                .help("Package type of the exception which should be removed")
                                 .value_parser([
-                                    "Download",
-                                    "AnalysisSuccess",
-                                    "AnalysisFailure",
-                                    "AnalysisWarning",
+                                    "npm", "gem", "pypi", "maven", "nuget", "golang", "cargo",
                                 ]),
-                            Arg::new("before").long("before").value_name("TIMESTAMP").help(
-                                "Only show logs created before this timestamp (RFC3339 format)",
-                            ),
-                            Arg::new("after").long("after").value_name("TIMESTAMP").help(
-                                "Only show logs created after this timestamp (RFC3339 format)",
-                            ),
-                            Arg::new("limit")
-                                .long("limit")
-                                .value_name("COUNT")
-                                .help("Maximum number of log entries to show")
-                                .default_value("10")
-                                .value_parser(1..=10_000),
+                            Arg::new("name")
+                                .short('n')
+                                .long("name")
+                                .value_name("PACKAGE_NAME")
+                                .help(
+                                    "Fully qualified package name of the exception which should \
+                                     be removed",
+                                ),
+                            Arg::new("version")
+                                .long("version")
+                                .value_name("VERSION")
+                                .help("Package version of the exception which should be removed"),
+                            Arg::new("purl")
+                                .long("purl")
+                                .value_name("PURL")
+                                .help("Package in PURL format")
+                                .conflicts_with_all(["package-type", "name", "version"]),
+                            Arg::new("id")
+                                .long("id")
+                                .value_name("ISSUE_ID")
+                                .help("Issue ID of the exception which should be removed"),
+                            Arg::new("tag")
+                                .long("tag")
+                                .value_name("ISSUE_TAG")
+                                .help("Issue tag of the exception which should be removed"),
                         ]),
                 ),
         );
