@@ -165,7 +165,7 @@ pub async fn handle_remove(api: &PhylumApi, matches: &ArgMatches, config: Config
             Some(Err(err)) => return Err(err.into()),
             None => {
                 let package_type = match package_type {
-                    Some(package_type) => Some(PackageType::from_str(&package_type)?),
+                    Some(package_type) => Some(PackageType::from_str(package_type)?),
                     None => None,
                 };
                 let name = name.map(|name| Cow::Borrowed(name.as_str()));
