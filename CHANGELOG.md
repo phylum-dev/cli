@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `phylum exception` subcommand for managing suppressions
 
+### Fixed
+
+- `msbuild` lockfile parser allowing missing names and versions
+
 ## 7.2.0 - 2024-12-10
 
 ### Added

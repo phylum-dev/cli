@@ -95,10 +95,10 @@ pub struct CSProj;
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct PackageReference {
     #[serde(alias = "@Include", default)]
-    pub name: String,
+    pub name: Option<String>,
 
     #[serde(alias = "@Version", alias = "@version", alias = "Version", default)]
-    pub version: String,
+    pub version: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -113,13 +113,15 @@ struct Project {
     pub item_groups: Vec<ItemGroup>,
 }
 
-impl From<PackageReference> for Package {
-    fn from(pkg_ref: PackageReference) -> Self {
-        Self {
-            name: pkg_ref.name,
-            version: PackageVersion::FirstParty(pkg_ref.version),
+impl TryFrom<PackageReference> for Package {
+    type Error = ();
+
+    fn try_from(pkg_ref: PackageReference) -> Result<Self, Self::Error> {
+        Ok(Self {
+            name: pkg_ref.name.ok_or(())?,
+            version: PackageVersion::FirstParty(pkg_ref.version.ok_or(())?),
             package_type: PackageType::Nuget,
-        }
+        })
     }
 }
 
@@ -130,7 +132,11 @@ impl From<Project> for Vec<Package> {
         for item_group in proj.item_groups {
             if !item_group.dependencies.is_empty() {
                 deps.extend(
-                    item_group.dependencies.into_iter().map(Package::from).collect::<Vec<_>>(),
+                    item_group
+                        .dependencies
+                        .into_iter()
+                        .filter_map(|pkg| Package::try_from(pkg).ok())
+                        .collect::<Vec<_>>(),
                 );
             }
         }
