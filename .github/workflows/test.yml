@@ -146,7 +146,7 @@ jobs:
 
       - name: All Features
         env:
-          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
+          PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN }}
         run: cargo +stable test --all-features
 
   deno-checks:

@@ -16,7 +16,7 @@ use phylum_types::types::auth::RefreshToken;
 use reqwest::StatusCode;
 use tempfile::TempDir;
 
-pub const API_URL: &str = "https://api.staging.phylum.io";
+pub const API_URL: &str = "https://api.phylum.io";
 const PROJECT_NAME: &str = "integration-tests";
 
 #[derive(Default)]

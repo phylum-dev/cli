@@ -68,7 +68,7 @@ afterAll(async () => {
 });
 
 describe("Poetry extension", () => {
-  // These tests may fail if the packages aren't processed on staging.
+  // These tests may fail if the packages aren't processed yet.
 
   it("correctly handles the `--dry-run` argument", async () => {
     const status = await phylum.runExt(

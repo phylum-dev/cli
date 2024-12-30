@@ -65,7 +65,7 @@ declare namespace Phylum {
   /**
    * Send a request to the Phylum REST API.
    *
-   * See https://api.staging.phylum.io/api/v0/swagger/index.html for available API endpoints.
+   * See https://api.phylum.io/api/v0/swagger/index.html for available API endpoints.
    *
    * The `init` parameter matches the `init` parameter of the Deno `fetch` function:
    * https://deno.land/api@latest?s=fetch
@@ -175,7 +175,7 @@ declare namespace Phylum {
    * {
    *   is_failure: false,
    *   incomplete_count: 0,
-   *   report: "# Phylum OSS Supply Chain Risk Analysis - SUCCESS\n\nThe Phylum risk analysis is complete and did not identify any issues.\n\n[View this project in the Phylum UI](https://app.staging.phylum.io/projects/739098bc-c954-4bf6-aa36-692f5483edaa?label=uncategorized)\n",
+   *   report: "# Phylum OSS Supply Chain Risk Analysis - SUCCESS\n\nThe Phylum risk analysis is complete and did not identify any issues.\n\n[View this project in the Phylum UI](https://app.phylum.io/projects/739098bc-c954-4bf6-aa36-692f5483edaa?label=uncategorized)\n",
    *   output: "{\"dependencies\":[],\"errors\":[]}"
    * }
    * ```
