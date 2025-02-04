@@ -624,7 +624,9 @@ pub fn add_subcommands(command: Command) -> Command {
                             .long("package-type")
                             .value_name("PACKAGE_TYPE")
                             .help("Only show logs matching this package type")
-                            .value_parser(["npm", "gem", "pypi", "maven", "nuget", "cargo"]),
+                            .value_parser([
+                                "npm", "gem", "pypi", "maven", "nuget", "golang", "cargo",
+                            ]),
                         Arg::new("purl")
                             .long("purl")
                             .value_name("PURL")
