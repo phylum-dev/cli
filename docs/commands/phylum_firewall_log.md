@@ -18,7 +18,7 @@ Usage: phylum firewall log [OPTIONS] <GROUP_NAME>
 
 `--package-type` `<PACKAGE_TYPE>`
 &emsp; Only show logs matching this package type
-&emsp; Accepted values: `npm`, `gem`, `pypi`, `maven`, `nuget`, `cargo`
+&emsp; Accepted values: `npm`, `gem`, `pypi`, `maven`, `nuget`, `golang`, `cargo`
 
 `--purl` `<PURL>`
 &emsp; Only show logs matching this PURL
