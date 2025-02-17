@@ -185,7 +185,7 @@ mod tests {
             Package {
                 name: "zstd-sys".into(),
                 version: PackageVersion::ThirdParty(ThirdPartyVersion {
-                    registry: "https://phylum.io/foreign-registry-example".into(),
+                    registry: "https://invalid.veracode.com/foreign-registry-example".into(),
                     version: "1.6.3+zstd.1.5.2".into(),
                 }),
                 package_type: PackageType::Cargo,
