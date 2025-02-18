@@ -15,7 +15,7 @@ use reqwest::StatusCode;
 use crate::api::{PhylumApi, PhylumApiError, ResponseError};
 use crate::commands::{project, CommandResult, ExitCode};
 use crate::config::{self, Config};
-use crate::{print_user_success, print_user_warning};
+use crate::{print_user_failure, print_user_success, print_user_warning};
 
 /// Handle `phylum init` subcommand.
 pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) -> CommandResult {
@@ -44,7 +44,15 @@ pub async fn handle_init(api: &PhylumApi, matches: &ArgMatches, config: Config) 
     let org = config.org();
     let groups: Vec<_> = match org {
         Some(org) => {
-            api.org_groups(org).await?.groups.into_iter().map(|group| group.name).collect()
+            let org_groups = match api.org_groups(org).await {
+                Ok(org_groups) => org_groups,
+                Err(err) if err.status() == Some(StatusCode::NOT_FOUND) => {
+                    print_user_failure!("Organization {org:?} does not exist.");
+                    return Ok(ExitCode::NotFound);
+                },
+                Err(err) => return Err(err.into()),
+            };
+            org_groups.groups.into_iter().map(|group| group.name).collect()
         },
         None => {
             api.get_groups_list().await?.groups.into_iter().map(|group| group.group_name).collect()
