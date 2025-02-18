@@ -264,7 +264,7 @@ impl From<&Permissions> for PermissionsOptions {
 
         let mut allow_net = value.net.clone();
 
-        // Add net exceptions to phylum.io's domains by default.
+        // Add net exceptions to Veracode's domains by default.
         allow_net.allow_resource("api.staging.phylum.io".into());
         allow_net.allow_resource("api.phylum.io".into());
 

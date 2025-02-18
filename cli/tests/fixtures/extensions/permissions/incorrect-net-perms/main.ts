@@ -1,4 +1,4 @@
-let response = await fetch('https://phylum.io')
+let response = await fetch('https://veracode.com')
 let release = await response.json()
 
 console.log(release)
