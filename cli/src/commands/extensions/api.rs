@@ -187,7 +187,7 @@ async fn analyze(
     };
 
     let api_packages: Vec<_> = packages.into_iter().map(From::from).collect();
-    let job_id = api.submit_request(&api_packages, project, label, group.map(String::from)).await?;
+    let job_id = api.submit_request(&api_packages, project, label, group).await?;
 
     Ok(job_id)
 }
