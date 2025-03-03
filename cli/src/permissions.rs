@@ -310,6 +310,9 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/opt/homebrew".into()))?;
     add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/local".into()))?;
 
+    // NixOS stores all system files under /nix/store.
+    add_exception(&mut birdcage, Exception::ExecuteAndRead("/nix/store".into()))?;
+
     // Allow access to DNS list.
     //
     // While this is required to send DNS requests for network queries, this does

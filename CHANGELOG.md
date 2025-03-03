@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- Nix store access to the default sandbox
+
 ### Fixed
 
 - Unclear error when running `phylum init` with an invalid organization
