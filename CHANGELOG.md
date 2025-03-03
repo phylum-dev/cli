@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Nix store access to the default sandbox
+- Mac OS's Library/Java/JavaVirtualMachines paths to the dependency parsing sandbox
 
 ### Fixed
 
