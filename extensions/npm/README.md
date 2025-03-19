@@ -5,7 +5,7 @@ through [Phylum][phylum] before installing them.
 
 [phylum-cli]: https://github.com/phylum-dev/cli
 [npm]: https://www.npmjs.com/
-[phylum]: https://phylum.io
+[phylum]: https://app.phylum.io
 
 ## Installation
 

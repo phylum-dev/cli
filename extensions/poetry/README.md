@@ -5,7 +5,7 @@ dependencies through [Phylum][phylum] before installing them.
 
 [phylum-cli]: https://github.com/phylum-dev/cli
 [poetry]: https://python-poetry.org/
-[phylum]: https://phylum.io
+[phylum]: https://app.phylum.io
 
 ## Installation
 

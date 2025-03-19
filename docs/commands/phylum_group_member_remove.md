@@ -28,6 +28,6 @@ Usage: phylum group member --group <GROUP> remove [OPTIONS] <USER>...
 ## Examples
 
 ```sh
-# Remove user `demo@phylum.io` from the `sample` group
-$ phylum group member --group sample remove demo@phylum.io
+# Remove user `demo@veracode.com` from the `sample` group
+$ phylum group member --group sample remove demo@veracode.com
 ```

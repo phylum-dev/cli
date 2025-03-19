@@ -5,7 +5,7 @@ before installing them.
 
 [Phylum CLI]: https://github.com/phylum-dev/cli
 [bundle]: https://bundler.io
-[Phylum]: https://phylum.io
+[Phylum]: https://app.phylum.io
 
 ## Installation
 
