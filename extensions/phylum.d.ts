@@ -144,7 +144,7 @@ declare namespace Phylum {
    * User information object example:
    * ```
    * {
-   *   email: "user@phylum.io",
+   *   email: "user@veracode.com",
    *   sub: "af8b5c32-9966-496a-e5ae-9ca9ceb43294",
    *   name: "John Doe",
    *   given_name: "John",

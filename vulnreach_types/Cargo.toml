@@ -1,7 +1,7 @@
 [package]
 name = "vulnreach_types"
 version = "0.1.0"
-authors = ["Phylum, Inc. <engineering@phylum.io>"]
+authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 edition = "2021"
 rust-version = "1.65.0"
 

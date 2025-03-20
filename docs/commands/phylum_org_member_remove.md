@@ -28,6 +28,6 @@ Usage: phylum org member remove [OPTIONS] <USER>...
 ## Examples
 
 ```sh
-# Remove user `demo@phylum.io` from the `sample` organization
-$ phylum org -o sample member remove demo@phylum.io
+# Remove user `demo@veracode.com` from the `sample` organization
+$ phylum org -o sample member remove demo@veracode.com
 ```

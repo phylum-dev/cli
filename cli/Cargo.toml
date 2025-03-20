@@ -1,7 +1,7 @@
 [package]
 name = "phylum-cli"
 version = "7.3.0"
-authors = ["Phylum, Inc. <engineering@phylum.io>"]
+authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
 rust-version = "1.82.0"
@@ -23,7 +23,10 @@ anyhow = "1.0.44"
 axum = "0.7.4"
 base64 = "0.22.1"
 bytes = "1.1.0"
-chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
+chrono = { version = "^0.4", default-features = false, features = [
+    "serde",
+    "clock",
+] }
 cidr = "0.3.0"
 clap = { version = "4.0.9", features = ["string", "wrap_help"] }
 console = "0.15.2"
@@ -52,7 +55,13 @@ prettytable-rs = "0.10.0"
 purl = { version = "0.1.5", features = ["serde"] }
 rand = "0.8.4"
 regex = "1.5.5"
-reqwest = { version = "0.12.7", features = ["blocking", "json", "rustls-tls", "rustls-tls-native-roots", "rustls-tls-webpki-roots"], default-features = false }
+reqwest = { version = "0.12.7", features = [
+    "blocking",
+    "json",
+    "rustls-tls",
+    "rustls-tls-native-roots",
+    "rustls-tls-webpki-roots",
+], default-features = false }
 rsa = { version = "0.9.2", features = ["sha2"] }
 serde_json = "1.0.85"
 serde = { version = "1.0.144", features = ["derive"] }

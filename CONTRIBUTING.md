@@ -10,6 +10,9 @@ Table of Contents:
    1. [Testing](#testing)
    2. [Documentation](#documentation)
    3. [Style](#style)
+      1. [Rust](#rust)
+      2. [Extensions](#extensions)
+      3. [Shell scripts](#shell-scripts)
 4. [Contact](#contact)
 
 ## Bug Reports
@@ -137,7 +140,7 @@ shellcheck -o all -S style -s sh $(find . -iname "*.sh")
 If there are any outstanding questions about contributing to the Phylum CLI,
 they can be asked on the [issue tracker].
 
-As an alternative, you can also contact <support@phylum.io> for issues with
-using the Phylum CLI.
+As an alternative, you can also contact `dl-phylum-engineering@veracode.com` for
+issues with using the Phylum CLI.
 
 [issue tracker]: https://github.com/phylum-dev/cli/issues

@@ -256,7 +256,7 @@ fn net_sandboxing_fail() {
             try {
                 const output = Phylum.runSandboxed({
                     cmd: 'curl',
-                    args: ['http://phylum.io'],
+                    args: ['http://veracode.com'],
                 });
                 Deno.exit(output.code);
             } catch (e) {
@@ -286,7 +286,7 @@ fn net_sandboxing_success() {
         .extension("
             const output = Phylum.runSandboxed({
                 cmd: 'curl',
-                args: ['http://phylum.io'],
+                args: ['http://veracode.com'],
                 exceptions: { env: true, run: true, net: true },
             });
             Deno.exit(output.code);

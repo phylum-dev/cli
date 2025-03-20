@@ -28,6 +28,6 @@ Usage: phylum group member --group <GROUP> add [OPTIONS] <USER>...
 ## Examples
 
 ```sh
-# Add user `demo@phylum.io` to the `sample` group
-$ phylum group member --group sample add demo@phylum.io
+# Add user `demo@veracode.com` to the `sample` group
+$ phylum group member --group sample add demo@veracode.com
 ```

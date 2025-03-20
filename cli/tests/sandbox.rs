@@ -95,9 +95,9 @@ fn default_deny_net() {
     let test_cli = TestCli::builder().build();
 
     test_cli
-        .run(["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://phylum.io"])
+        .run(["sandbox", "--allow-run", "/", "--allow-env", "--", "curl", "http://veracode.com"])
         .failure()
-        .stderr(predicate::str::contains("Could not resolve host: phylum.io"));
+        .stderr(predicate::str::contains("Could not resolve host: veracode.com"));
 }
 
 #[test]
@@ -112,7 +112,7 @@ fn allow_net() {
             "--allow-env",
             "--allow-net",
             "curl",
-            "http://phylum.io",
+            "http://veracode.com",
         ])
         .success();
 }

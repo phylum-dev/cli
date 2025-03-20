@@ -205,7 +205,7 @@ array containing the allowed domains.
 ```toml
 [permissions]
 # ...
-net = ["www.phylum.io", "phylum.io"]
+net = ["www.veracode.com", "veracode.com"]
 ```
 
 ```toml

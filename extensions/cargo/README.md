@@ -5,7 +5,7 @@ before installing them.
 
 [Phylum CLI]: https://github.com/phylum-dev/cli
 [cargo]: https://doc.rust-lang.org/cargo
-[Phylum]: https://phylum.io
+[Phylum]: https://app.phylum.io
 
 ## Installation
 

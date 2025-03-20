@@ -1,6 +1,6 @@
 # Quickstart
 
-The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](./alternate_install.md) for more options.
+The Phylum command line interface (CLI) allows users to submit their project package dependencies to [Phylum's](https://app.phylum.io) API for analysis. Currently [pre-built binaries](https://github.com/phylum-dev/cli/releases) for Linux and macOS are available. On Windows, we recommend using the Linux binaries under [WSL](https://learn.microsoft.com/en-us/windows/wsl/). See the [alternate installation methods](./alternate_install.md) for more options.
 
 ## Install `phylum` CLI
 
@@ -67,7 +67,7 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
 this program. If not, see <https://www.gnu.org/licenses/gpl.html> or write to
-`phylum@phylum.io` or `engineering@phylum.io`
+`phylum@veracode.com` or `dl-phylum-engineering@veracode.com`
 
 ## Discord
 
@@ -77,4 +77,4 @@ Join us on the [Phylum Community Discord](https://discord.gg/c9QnknWxm3)!
 
 Please contact Phylum with any questions or issues using the CLI tool.
 
-Email: <support@phylum.io>
+Email: `dl-phylum-engineering@veracode.com`

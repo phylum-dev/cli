@@ -2,7 +2,7 @@
 name = "fixture"
 version = "0.1.0"
 description = ""
-authors = ["Phylum, Inc. <engineering@phylum.io>"]
+authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"

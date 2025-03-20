@@ -5,7 +5,7 @@ A [Phylum CLI][phylum-cli] extension that checks your [pip] dependencies through
 
 [phylum-cli]: https://github.com/phylum-dev/cli
 [pip]: https://pip.pypa.io
-[phylum]: https://phylum.io
+[phylum]: https://app.phylum.io
 
 ## Installation
 

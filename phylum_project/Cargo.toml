@@ -3,13 +3,16 @@ name = "phylum_project"
 description = "Phylum project configuration handling"
 repository = "https://github.com/phylum-dev/cli"
 version = "0.1.0"
-authors = ["Phylum, Inc. <engineering@phylum.io>"]
+authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
 rust-version = "1.64.0"
 
 [dependencies]
-chrono = { version = "^0.4", default-features = false, features = ["serde", "clock"] }
+chrono = { version = "^0.4", default-features = false, features = [
+    "serde",
+    "clock",
+] }
 dunce = "1.0.5"
 log = "0.4.6"
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
