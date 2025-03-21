@@ -127,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-14]
+        os: [ubuntu-latest, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repo
@@ -140,6 +140,12 @@ jobs:
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
         run: sudo apt-get install -y protobuf-compiler
+
+      - if: ${{ runner.os == 'Linux' }}
+        name: Disable apparmor
+        run: |
+          sudo aa-teardown || true
+          sudo systemctl disable --now apparmor.service
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
