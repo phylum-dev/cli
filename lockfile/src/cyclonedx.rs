@@ -12,8 +12,7 @@ use crate::{determine_package_version, formatted_package_name, Package, Parse, U
 /// Define the generic trait for components.
 trait Component {
     fn component_type(&self) -> &str;
-    fn name(&self) -> &str;
-    fn version(&self) -> &str;
+    fn version(&self) -> Option<&str>;
     fn scope(&self) -> Option<&str>;
     fn purl(&self) -> Option<&str>;
     fn components(&self) -> Option<&[Self]>
@@ -40,8 +39,7 @@ struct Components<T> {
 struct XmlComponent {
     #[serde(rename = "@type")]
     component_type: String,
-    name: String,
-    version: String,
+    version: Option<String>,
     scope: Option<String>,
     purl: Option<String>,
     components: Option<Components<XmlComponent>>,
@@ -52,12 +50,8 @@ impl Component for XmlComponent {
         &self.component_type
     }
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn version(&self) -> &str {
-        &self.version
+    fn version(&self) -> Option<&str> {
+        self.version.as_deref()
     }
 
     fn scope(&self) -> Option<&str> {
@@ -78,8 +72,7 @@ impl Component for XmlComponent {
 struct JsonComponent {
     #[serde(rename = "type")]
     component_type: String,
-    name: String,
-    version: String,
+    version: Option<String>,
     scope: Option<String>,
     purl: Option<String>,
     #[serde(default)]
@@ -91,12 +84,8 @@ impl Component for JsonComponent {
         &self.component_type
     }
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn version(&self) -> &str {
-        &self.version
+    fn version(&self) -> Option<&str> {
+        self.version.as_deref()
     }
 
     fn scope(&self) -> Option<&str> {
@@ -140,11 +129,12 @@ fn filter_components<T: Component>(components: &[T]) -> impl Iterator<Item = &'_
 }
 
 /// Convert a component's package URL (PURL) into a package object.
-fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
-    let purl_str = component
-        .purl()
-        .ok_or_else(|| anyhow!("Missing purl for {}:{}", component.name(), component.version()))?;
-    let purl = GenericPurl::<String>::from_str(purl_str)?;
+fn from_purl<T: Component>(component: &T) -> anyhow::Result<Option<Package>> {
+    let purl = match component.purl() {
+        Some(purl) => purl,
+        None => return Ok(None),
+    };
+    let purl = GenericPurl::<String>::from_str(purl)?;
     let package_type = PackageType::from_str(purl.package_type()).map_err(|_| UnknownEcosystem)?;
 
     // Determine the package name based on its type and namespace.
@@ -159,7 +149,7 @@ fn from_purl<T: Component>(component: &T) -> anyhow::Result<Package> {
     // Use the qualifiers from the PURL to determine the version details.
     let version = determine_package_version(pkg_version, &purl);
 
-    Ok(Package { name, version, package_type })
+    Ok(Some(Package { name, version, package_type }))
 }
 
 pub struct CycloneDX;
@@ -169,6 +159,7 @@ impl CycloneDX {
         let comp = components.unwrap_or_default();
         let packages = filter_components(comp)
             .map(from_purl)
+            .flat_map(Result::transpose)
             .filter(|r| !r.as_ref().is_err_and(|e| e.is::<UnknownEcosystem>()))
             .collect::<anyhow::Result<Vec<_>>>()?;
         Ok(packages)
@@ -278,8 +269,7 @@ mod tests {
     fn test_ignore_unsupported_ecosystem() {
         let ignored_component = JsonComponent {
             component_type: "library".into(),
-            name: "adduser".into(),
-            version: "3.118ubuntu5".into(),
+            version: Some("3.118ubuntu5".into()),
             scope: None,
             purl: Some("pkg:deb/ubuntu/adduser@3.118ubuntu5?arch=all&distro=ubuntu-22.04".into()),
             components: vec![],
@@ -287,8 +277,7 @@ mod tests {
 
         let component = JsonComponent {
             component_type: "library".into(),
-            name: "abbrev".into(),
-            version: "1.1.1".into(),
+            version: Some("1.1.1".into()),
             scope: None,
             purl: Some("pkg:npm/abbrev@1.1.1".into()),
             components: vec![],
@@ -297,6 +286,39 @@ mod tests {
         let expected_package = Package {
             name: "abbrev".into(),
             version: PackageVersion::FirstParty("1.1.1".into()),
+            package_type: PackageType::Npm,
+        };
+
+        let bom: Bom<Vec<JsonComponent>> =
+            Bom { components: Some(vec![component, ignored_component]) };
+
+        let packages = CycloneDX::process_components(bom.components.as_deref()).unwrap();
+
+        assert!(packages.len() == 1);
+        assert_eq!(packages[0], expected_package);
+    }
+
+    #[test]
+    fn test_ignore_missing_purl() {
+        let ignored_component = JsonComponent {
+            component_type: "library".into(),
+            version: Some("1.0.0".into()),
+            scope: None,
+            purl: None,
+            components: vec![],
+        };
+
+        let component = JsonComponent {
+            component_type: "library".into(),
+            version: Some("2.0.0".into()),
+            scope: None,
+            purl: Some("pkg:npm/some-package-2@2.0.0".into()),
+            components: vec![],
+        };
+
+        let expected_package = Package {
+            name: "some-package-2".into(),
+            version: PackageVersion::FirstParty("2.0.0".into()),
             package_type: PackageType::Npm,
         };
 
