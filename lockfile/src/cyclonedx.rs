@@ -39,8 +39,6 @@ struct Components<T> {
 struct XmlComponent {
     #[serde(rename = "@type")]
     component_type: String,
-    #[serde(rename = "name")]
-    _name: String,
     version: Option<String>,
     scope: Option<String>,
     purl: Option<String>,
@@ -74,8 +72,6 @@ impl Component for XmlComponent {
 struct JsonComponent {
     #[serde(rename = "type")]
     component_type: String,
-    #[serde(rename = "name")]
-    _name: String,
     version: Option<String>,
     scope: Option<String>,
     purl: Option<String>,
@@ -273,7 +269,6 @@ mod tests {
     fn test_ignore_unsupported_ecosystem() {
         let ignored_component = JsonComponent {
             component_type: "library".into(),
-            _name: "adduser".into(),
             version: Some("3.118ubuntu5".into()),
             scope: None,
             purl: Some("pkg:deb/ubuntu/adduser@3.118ubuntu5?arch=all&distro=ubuntu-22.04".into()),
@@ -282,7 +277,6 @@ mod tests {
 
         let component = JsonComponent {
             component_type: "library".into(),
-            _name: "abbrev".into(),
             version: Some("1.1.1".into()),
             scope: None,
             purl: Some("pkg:npm/abbrev@1.1.1".into()),
@@ -308,7 +302,6 @@ mod tests {
     fn test_ignore_missing_purl() {
         let ignored_component = JsonComponent {
             component_type: "library".into(),
-            _name: "some-package-1".into(),
             version: Some("1.0.0".into()),
             scope: None,
             purl: None,
@@ -317,7 +310,6 @@ mod tests {
 
         let component = JsonComponent {
             component_type: "library".into(),
-            _name: "some-package-2".into(),
             version: Some("2.0.0".into()),
             scope: None,
             purl: Some("pkg:npm/some-package-2@2.0.0".into()),
