@@ -119,7 +119,7 @@ jobs:
         run: |
           oldstable=$(grep rust-version ./cli/Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
           rustup toolchain install --profile minimal "${oldstable}"
-          cargo "+${oldstable}" check
+          cargo "+${oldstable}" check --locked
 
   all-features:
     # Skip this job when the secret is unavailable
@@ -147,7 +147,7 @@ jobs:
       - name: All Features
         env:
           PHYLUM_API_KEY: ${{ secrets.PHYLUM_TOKEN_STAGING }}
-        run: cargo +stable test --all-features
+        run: cargo +stable test --all-features --locked
 
   deno-checks:
     if: github.event_name != 'schedule'
