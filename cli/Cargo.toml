@@ -1,6 +1,6 @@
 [package]
 name = "phylum-cli"
-version = "7.4.0"
+version = "7.5.0"
 authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
