@@ -24,8 +24,8 @@ axum = "0.7.4"
 base64 = "0.22.1"
 bytes = "1.1.0"
 chrono = { version = "^0.4", default-features = false, features = [
-    "serde",
-    "clock",
+  "serde",
+  "clock",
 ] }
 cidr = "0.3.0"
 clap = { version = "4.0.9", features = ["string", "wrap_help"] }
@@ -56,11 +56,11 @@ purl = { version = "0.1.5", features = ["serde"] }
 rand = "0.8.4"
 regex = "1.5.5"
 reqwest = { version = "0.12.7", features = [
-    "blocking",
-    "json",
-    "rustls-tls",
-    "rustls-tls-native-roots",
-    "rustls-tls-webpki-roots",
+  "blocking",
+  "json",
+  "rustls-tls",
+  "rustls-tls-native-roots",
+  "rustls-tls-webpki-roots",
 ], default-features = false }
 rsa = { version = "0.9.2", features = ["sha2"] }
 serde_json = "1.0.85"
@@ -87,6 +87,8 @@ birdcage = { version = "0.8.1" }
 [target.'cfg(windows)'.dependencies]
 # HACK: The Win32_Security feature is required by deno_io, but their crate didn't enable it
 windows-sys = { version = "0.52.0", features = ["Win32_Security"] }
+# HACK: The sysinfoapi feature is required by deno_node, but their crate didn't enable it
+winapi = { version = "0.3.9", features = ["sysinfoapi"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
