@@ -87,6 +87,8 @@ birdcage = { version = "0.8.1" }
 [target.'cfg(windows)'.dependencies]
 # HACK: The Win32_Security feature is required by deno_io, but their crate didn't enable it
 windows-sys = { version = "0.52.0", features = ["Win32_Security"] }
+# HACK: The sysinfoapi feature is required by deno_node, but their crate didn't enable it
+windowsapi = { version = "0.3.9", features = ["sysinfoapi"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
