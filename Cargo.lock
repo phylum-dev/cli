@@ -4587,6 +4587,7 @@ dependencies = [
  "vuln-reach",
  "vulnreach_types",
  "walkdir",
+ "winapi",
  "windows-sys 0.52.0",
  "wiremock",
  "zip",
