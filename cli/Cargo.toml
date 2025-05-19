@@ -79,7 +79,7 @@ uuid = { version = "1.4.1", features = ["v4"] }
 vuln-reach = { git = "https://github.com/phylum-dev/vuln-reach", optional = true }
 vulnreach_types = { path = "../vulnreach_types", optional = true }
 walkdir = "2.3.2"
-zip = { version = "2.3.0", default-features = false, features = ["deflate"] }
+zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 
 [target.'cfg(unix)'.dependencies]
 birdcage = { version = "0.8.1" }
