@@ -175,10 +175,7 @@ impl ApplicationUpdater {
     ) -> Result<&'a GithubReleaseAsset, io::Error> {
         match latest.assets.iter().find(|x| x.name == name) {
             Some(x) => Ok(x),
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("Failed to download update file: {name}"),
-            )),
+            _ => Err(io::Error::other(format!("Failed to download update file: {name}"))),
         }
     }
 
