@@ -59,7 +59,7 @@ fn find_workspace_root(path: &Path) -> Option<PathBuf> {
         let dir = fs::read_dir(path).ok()?;
 
         for dir_entry in dir.into_iter().flatten().map(|entry| entry.path()) {
-            if dir_entry.file_name().map_or(false, |name| name == WORKSPACE_MANIFEST_FILENAME) {
+            if dir_entry.file_name().is_some_and(|name| name == WORKSPACE_MANIFEST_FILENAME) {
                 return Some(path.into());
             }
         }

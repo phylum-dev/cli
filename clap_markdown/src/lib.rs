@@ -134,7 +134,7 @@ fn generate_argument(arg: &Arg) -> Option<String> {
     }
 
     // Add arguments.
-    if arg.get_num_args().map_or(false, |range| range.max_values() > 0) {
+    if arg.get_num_args().is_some_and(|range| range.max_values() > 0) {
         let default_name = [arg.get_id().to_string().into()];
         let value_names = arg.get_value_names().unwrap_or(&default_name);
 
