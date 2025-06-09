@@ -81,7 +81,7 @@ pub(crate) fn find_workspace_root(manifest_path: impl AsRef<Path>) -> Result<Pat
         // Check if original manifest location matches any workspace glob.
         let is_root = workspaces.iter().any(|glob| {
             let glob = glob.strip_prefix("./").unwrap_or(glob);
-            Pattern::new(glob).map_or(false, |pattern| pattern.matches_path(relative_path))
+            Pattern::new(glob).is_ok_and(|pattern| pattern.matches_path(relative_path))
         });
 
         if is_root {

@@ -34,7 +34,7 @@ impl Generator for Pip {
         let is_local_project = manifest_path
             .file_name()
             .and_then(|f| f.to_str())
-            .map_or(false, |file_name| file_name == "setup.py" || file_name == "pyproject.toml");
+            .is_some_and(|file_name| file_name == "setup.py" || file_name == "pyproject.toml");
 
         if is_local_project {
             command.arg(".");
