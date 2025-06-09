@@ -4,7 +4,7 @@ description = "Package lockfile parsers used by Phylum"
 version = "0.1.0"
 authors = ["Veracode, Inc. <dl-phylum-engineering@veracode.com>"]
 edition = "2021"
-rust-version = "1.70.0"
+rust-version = "1.85.0"
 
 [features]
 default = []

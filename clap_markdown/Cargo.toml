@@ -5,7 +5,7 @@ repository = "https://github.com/phylum-dev/cli"
 categories = ["command-line-interface"]
 keywords = ["clap", "cli", "generate", "markdown"]
 license = "GPL-3.0-or-later"
-rust-version = "1.63.0"
+rust-version = "1.85.0"
 version = "0.1.0"
 edition = "2021"
 
