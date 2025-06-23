@@ -15,7 +15,7 @@ anyhow = "1.0.44"
 ignore = "0.4.20"
 lockfile_generator = { path = "../lockfile_generator", optional = true }
 log = "0.4.6"
-nom = "7.1.1"
+nom = "8.0.0"
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 purl = "0.1.1"
 quick-xml = { version = "0.37.1", features = [
