@@ -530,7 +530,7 @@ mod tests {
 
         for (file, expected_type) in test_cases {
             let pkg_type = get_path_format(Path::new(file));
-            assert_eq!(pkg_type, Some(*expected_type), "{}", file);
+            assert_eq!(pkg_type, Some(*expected_type), "{file}");
         }
     }
 
@@ -558,11 +558,10 @@ mod tests {
             ("cyclonedx", LockfileFormat::CycloneDX),
         ] {
             let actual_format =
-                name.parse().unwrap_or_else(|e| panic!("Could not parse {:?}: {}", name, e));
+                name.parse().unwrap_or_else(|e| panic!("Could not parse {name:?}: {e}"));
             assert_eq!(
                 expected_format, actual_format,
-                "{:?} should parse as {:?}",
-                name, expected_format,
+                "{name:?} should parse as {expected_format:?}",
             );
         }
     }
@@ -591,8 +590,7 @@ mod tests {
             let actual_name = format.to_string();
             assert_eq!(
                 expected_name, &actual_name,
-                "{:?} should to_string as {:?}",
-                format, expected_name,
+                "{format:?} should to_string as {expected_name:?}",
             );
         }
     }
@@ -604,9 +602,7 @@ mod tests {
             assert_eq!(
                 &expected_name,
                 format.name(),
-                "{:?}.name() should be {:?}",
-                format,
-                expected_name,
+                "{format:?}.name() should be {expected_name:?}",
             );
         }
     }

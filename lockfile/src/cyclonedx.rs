@@ -261,7 +261,7 @@ mod tests {
         for path_str in test_paths {
             let path_buf = PathBuf::from(path_str);
             let is_lockfile = CycloneDX.is_path_lockfile(&path_buf);
-            assert!(is_lockfile, "Failed for path: {}", path_str);
+            assert!(is_lockfile, "Failed for path: {path_str}");
         }
     }
 

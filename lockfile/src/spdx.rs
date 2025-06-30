@@ -213,7 +213,7 @@ impl Parse for Spdx {
                 Ok(pkg) => packages.push(pkg),
                 Err(e) => {
                     if e.is::<UnknownEcosystem>() {
-                        log::warn!("{:?}", e)
+                        log::warn!("{e:?}")
                     } else {
                         bail!(e)
                     }
@@ -732,7 +732,7 @@ mod tests {
         for path_str in test_paths {
             let path_buf = PathBuf::from(path_str);
             let is_lockfile = Spdx.is_path_lockfile(&path_buf);
-            assert!(is_lockfile, "Failed for path: {}", path_str);
+            assert!(is_lockfile, "Failed for path: {path_str}");
         }
     }
 }
