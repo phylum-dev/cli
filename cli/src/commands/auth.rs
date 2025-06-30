@@ -95,7 +95,7 @@ pub async fn handle_auth_token(config: &Config, matches: &clap::ArgMatches) -> C
         let api_uri = &config.connection.uri;
         let access_token =
             auth::renew_access_token(refresh_token, config.ignore_certs(), api_uri).await?;
-        println!("{}", access_token);
+        println!("{access_token}");
         Ok(ExitCode::Ok)
     } else {
         println!("{refresh_token}");

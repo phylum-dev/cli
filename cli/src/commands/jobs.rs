@@ -180,10 +180,10 @@ pub async fn handle_analyze(
             jobs_project.group,
         )
         .await?;
-    debug!("Response => {:?}", job_id);
+    debug!("Response => {job_id:?}");
 
     if pretty_print {
-        print_user_success!("Job ID: {}", job_id);
+        print_user_success!("Job ID: {job_id}");
 
         #[cfg(feature = "vulnreach")]
         let packages: Vec<_> = packages

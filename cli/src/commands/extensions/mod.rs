@@ -70,7 +70,7 @@ pub fn add_extensions_subcommands(command: Command) -> Command {
     let extensions = match installed_extensions() {
         Ok(extensions) => extensions,
         Err(e) => {
-            error!("Couldn't list extensions: {}", e);
+            error!("Couldn't list extensions: {e}");
             return command;
         },
     };

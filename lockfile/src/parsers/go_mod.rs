@@ -124,26 +124,26 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
     Ok((input, GoDeps { go: go_directive, modules: packages }))
 }
 
-fn directive(input: &str) -> IResult<&str, Directive> {
+fn directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, _) = take_while(|c: char| c == '\n')(input)?;
     alt((module_directive, go_directive, require_directive, replace_directive, exclude_directive))(
         input.trim(),
     )
 }
 
-fn module_directive(input: &str) -> IResult<&str, Directive> {
+fn module_directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, module_name) =
         preceded(tuple((tag("module"), space1)), take_till(|c| c == '\n'))(input)?;
     Ok((input, Directive::Module(module_name)))
 }
 
-fn go_directive(input: &str) -> IResult<&str, Directive> {
+fn go_directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, go_version) =
         preceded(tuple((tag("go"), space1)), take_till(|c| c == '\n'))(input)?;
     Ok((input, Directive::Go(go_version.trim())))
 }
 
-fn require_directive(input: &str) -> IResult<&str, Directive> {
+fn require_directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, deps) = preceded(
         tuple((tag("require"), space1)),
         alt((module_block, map(require_spec, |r| vec![r]))),
@@ -167,7 +167,7 @@ fn require_spec(input: &str) -> IResult<&str, Module> {
     Ok((input, Module { path: module_path.to_string(), version: version.to_string(), indirect }))
 }
 
-fn replace_directive(input: &str) -> IResult<&str, Directive> {
+fn replace_directive(input: &str) -> IResult<&str, Directive<'_>> {
     preceded(tuple((tag("replace"), space1)), alt((replace_block, map(replace_spec, |r| vec![r]))))(
         input,
     )
@@ -212,7 +212,7 @@ fn replace_spec(input: &str) -> IResult<&str, ModuleReplacement> {
     }))
 }
 
-fn exclude_directive(input: &str) -> IResult<&str, Directive> {
+fn exclude_directive(input: &str) -> IResult<&str, Directive<'_>> {
     preceded(tuple((tag("exclude"), space1)), alt((module_block, map(require_spec, |r| vec![r]))))(
         input,
     )

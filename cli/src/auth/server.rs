@@ -123,10 +123,10 @@ async fn spawn_server_and_get_auth_code(
 
     // Get OIDC auth url.
     let state = state.into();
-    let callback_url = Url::parse(&format!("http://{}/", auth_address))?;
+    let callback_url = Url::parse(&format!("http://{auth_address}/"))?;
     let authorization_url =
         build_auth_url(redirect_type, locksmith_settings, &callback_url, code_challenge, &state)?;
-    debug!("Authorization url is {}", authorization_url);
+    debug!("Authorization url is {authorization_url}");
 
     // Ensure external auth urls use https, rather than http.
     let auth_host = authorization_url
@@ -162,7 +162,7 @@ async fn spawn_server_and_get_auth_code(
     let router = Router::new().route("/", get(keycloak_callback_handler)).with_state(state.clone());
 
     // Start server.
-    debug!("Starting local login server at {:?}", auth_address);
+    debug!("Starting local login server at {auth_address:?}");
     axum::serve(listener, router)
         .with_graceful_shutdown(async move { notify.notified().await })
         .await?;
@@ -235,7 +235,7 @@ mod test {
 
         let result = handle_auth_flow(AuthAction::Login, None, None, false, &api_uri).await?;
 
-        debug!("{:?}", result);
+        debug!("{result:?}");
 
         Ok(())
     }
@@ -251,7 +251,7 @@ mod test {
 
         let result = handle_auth_flow(AuthAction::Register, None, None, false, &api_uri).await?;
 
-        debug!("{:?}", result);
+        debug!("{result:?}");
 
         Ok(())
     }
