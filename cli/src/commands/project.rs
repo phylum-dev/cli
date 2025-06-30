@@ -112,7 +112,7 @@ async fn handle_create_project(
     let group = matches.get_one::<String>("group").cloned();
     let org = config.org();
 
-    log::info!("Initializing new project: `{}`", project);
+    log::info!("Initializing new project: `{project}`");
 
     let project_config =
         create_project(api, project, org.map(|org| org.into()), group.clone(), repository_url)
@@ -121,14 +121,14 @@ async fn handle_create_project(
         Ok(project) => project,
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => {
             let formatted_project = format_project_reference(org, group.as_deref(), project, None);
-            print_user_failure!("Project {} already exists", formatted_project);
+            print_user_failure!("Project {formatted_project} already exists");
             return Ok(ExitCode::AlreadyExists);
         },
         Err(err) => return Err(err.into()),
     };
 
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config).unwrap_or_else(|err| {
-        print_user_failure!("Failed to save project file: {}", err);
+        print_user_failure!("Failed to save project file: {err}");
     });
 
     let project_id = Some(project_config.id.to_string());
@@ -307,7 +307,7 @@ async fn handle_link_project(
     };
 
     config::save_config(Path::new(PROJ_CONF_FILE), &project_config)
-        .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {}", err));
+        .unwrap_or_else(|err| log::error!("Failed to save user credentials to config: {err}"));
 
     let project_id = Some(project_config.id.to_string());
     let formatted_project =

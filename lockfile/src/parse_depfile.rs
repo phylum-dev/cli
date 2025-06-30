@@ -119,7 +119,7 @@ fn try_get_packages(path: impl Into<String>, contents: &str) -> Result<ParsedLoc
     for format in LockfileFormat::iter() {
         let parser = format.parser();
         if let Some(packages) = parser.parse(contents).ok().filter(|pkgs| !pkgs.is_empty()) {
-            log::info!("Identified lockfile type: {}", format);
+            log::info!("Identified lockfile type: {format}");
 
             let packages = filter_packages(packages);
 
@@ -246,7 +246,7 @@ mod tests {
         for (path, expected_format) in test_cases {
             let contents = fs::read_to_string(path).unwrap();
             let parsed = try_get_packages(path, &contents).unwrap();
-            assert_eq!(parsed.format, expected_format, "{}", path);
+            assert_eq!(parsed.format, expected_format, "{path}");
         }
     }
 }

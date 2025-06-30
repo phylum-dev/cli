@@ -346,11 +346,11 @@ fn fs_sandboxing_success() {
     let js = format!("
         const output = Phylum.runSandboxed({{
             cmd: 'cat',
-            args: ['{}'],
-            exceptions: {{ run: true, read: ['{0:}'] }},
+            args: ['{file_path}'],
+            exceptions: {{ run: true, read: ['{file_path}'] }},
         }});
         Deno.exit(output.code);
-    ", file_path);
+    ");
 
     test_cli
         .extension(&js)

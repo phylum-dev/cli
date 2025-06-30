@@ -121,7 +121,7 @@ pub mod mockito {
                     query_params.get("redirect_uri").expect("redirect_uri not set").to_string();
                 ResponseTemplate::new(302).insert_header::<&str, &str>(
                     "Location",
-                    &format!("{redirect_uri}/?code={}", DUMMY_AUTH_CODE),
+                    &format!("{redirect_uri}/?code={DUMMY_AUTH_CODE}"),
                 )
             })
             .mount(&mock_server)
@@ -202,7 +202,7 @@ pub mod open {
                 Url::from_str(redirect_uri).expect("Failed to parse redirect_uri");
             callback_url.query_pairs_mut().append_pair("code", code).append_pair("state", state);
 
-            log::debug!("Calling callback url: {}", callback_url);
+            log::debug!("Calling callback url: {callback_url}");
 
             // Wait for the server to be up
             tokio::time::sleep(Duration::from_millis(100)).await;

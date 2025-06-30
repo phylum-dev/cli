@@ -32,7 +32,7 @@ pub trait Format: Serialize {
     /// Output JSON format.
     fn json<W: Write>(&self, writer: &mut W) {
         let json = serde_json::to_string_pretty(&self).unwrap_or_else(|e| {
-            log::error!("Failed to serialize json response: {}", e);
+            log::error!("Failed to serialize json response: {e}");
             "".to_string()
         });
         let _ = writeln!(writer, "{json}");
@@ -65,7 +65,7 @@ impl Format for PhylumStatus {
         ) {
             let label = style(label).blue();
             let _ = match option {
-                Some(value) => writeln!(writer, "{label}: {}", value),
+                Some(value) => writeln!(writer, "{label}: {value}"),
                 None => writeln!(writer, "{label}: {}", style("null").italic().green()),
             };
         }
@@ -138,7 +138,7 @@ impl Format for PolicyEvaluationResponseRaw {
                 let domain = rejection
                     .source
                     .domain
-                    .map_or_else(|| "     ".into(), |domain| format!("[{}]", domain));
+                    .map_or_else(|| "     ".into(), |domain| format!("[{domain}]"));
                 let message = format!("{domain} {}", rejection.title);
 
                 let colored = match rejection.source.severity {
@@ -147,7 +147,7 @@ impl Format for PolicyEvaluationResponseRaw {
                     _ => style(message).red(),
                 };
 
-                let _ = writeln!(writer, "  {}", colored);
+                let _ = writeln!(writer, "  {colored}");
             }
         }
         if !self.dependencies.is_empty() {
@@ -156,7 +156,7 @@ impl Format for PolicyEvaluationResponseRaw {
 
         // Print web URI for the job results.
         if let Some(job_link) = &self.job_link {
-            let _ = writeln!(writer, "You can find the interactive report here:\n  {}", job_link);
+            let _ = writeln!(writer, "You can find the interactive report here:\n  {job_link}");
         }
     }
 }
@@ -508,7 +508,7 @@ impl Format for Vulnerability {
             // Print the callchain as arrow-separated packages.
             let _ = write!(writer, "    {}", path[0]);
             for package in &path[1..] {
-                let _ = write!(writer, " {} {}", arrow, package);
+                let _ = write!(writer, " {arrow} {package}");
             }
 
             let _ = writeln!(writer);

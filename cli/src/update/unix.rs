@@ -33,7 +33,7 @@ pub async fn needs_update(prerelease: bool) -> bool {
     match updater.get_latest_version(prerelease).await {
         Ok(latest) => updater.needs_update(CURRENT_VERSION, &latest),
         Err(e) => {
-            log::debug!("Failed to get the latest version for update check: {:?}", e);
+            log::debug!("Failed to get the latest version for update check: {e:?}");
             false
         },
     }
@@ -150,7 +150,7 @@ impl ApplicationUpdater {
             self.http_get_json::<GithubRelease>(&url).await?
         };
 
-        log::debug!("Found latest version: {:?}", ver);
+        log::debug!("Found latest version: {ver:?}");
 
         Ok(ver)
     }
@@ -259,7 +259,7 @@ mod tests {
 
         let updater = ApplicationUpdater::build_test_instance(mock_server);
         let latest = updater.get_latest_version(false).await.unwrap();
-        log::error!("{:?}", latest);
+        log::error!("{latest:?}");
         assert!("v1.2.3" == latest.tag_name);
         assert!(updater.needs_update("1.0.2", &latest));
 

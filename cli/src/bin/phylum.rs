@@ -64,7 +64,7 @@ async fn check_for_updates(config: &mut Config) -> Result<()> {
 
     // Update last update check timestamp.
     config.last_update = Some(now);
-    config.save().unwrap_or_else(|e| log::error!("Failed to save config: {}", e));
+    config.save().unwrap_or_else(|e| log::error!("Failed to save config: {e}"));
 
     if update::needs_update(false).await {
         print::print_update_message();

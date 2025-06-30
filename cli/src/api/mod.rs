@@ -130,7 +130,7 @@ impl PhylumApi {
         // here and be done.
         headers.insert(
             "Authorization",
-            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
+            HeaderValue::from_str(&format!("Bearer {access_token}")).unwrap(),
         );
         headers.insert("Accept", HeaderValue::from_str("application/json").unwrap());
 
@@ -376,7 +376,7 @@ impl PhylumApi {
             label: label.unwrap_or_else(|| "uncategorized".to_string()),
             group_name,
         };
-        log::debug!("==> Sending package submission: {:?}", req);
+        log::debug!("==> Sending package submission: {req:?}");
         let resp: SubmitPackageResponse =
             self.post(endpoints::post_submit_job(&self.config.connection.uri)?, req).await?;
         Ok(resp.job_id)
@@ -451,7 +451,7 @@ impl PhylumApi {
                     && project.organization_name.as_deref() == org
                     && project.group_name.as_deref() == group
             })
-            .ok_or_else(|| anyhow!("No project found with name {:?}", project_name).into())
+            .ok_or_else(|| anyhow!("No project found with name {project_name:?}").into())
             .map(|project| project.id)
     }
 
@@ -784,7 +784,7 @@ mod tests {
 
         // Request should have been submitted with a bearer token
         let bearer_token = token_holder.lock().unwrap().take();
-        assert_eq!(Some(format!("Bearer {}", DUMMY_ACCESS_TOKEN)), bearer_token);
+        assert_eq!(Some(format!("Bearer {DUMMY_ACCESS_TOKEN}")), bearer_token);
 
         Ok(())
     }
