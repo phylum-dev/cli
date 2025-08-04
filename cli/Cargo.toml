@@ -72,6 +72,7 @@ tempfile = "3.3.0"
 textwrap = "0.16.0"
 thiserror = "2.0.3"
 tokio = { version = "^1.0", features = ["full"] }
+tokio-util = "=0.7.15"
 toml = "0.8.19"
 unicode-width = "0.2.0"
 url = { version = "2", features = ["serde"] }
