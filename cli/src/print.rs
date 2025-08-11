@@ -54,7 +54,7 @@ pub fn print_sc_help(mut app: &mut Command, subcommands: &[&str]) -> Result<()> 
 
 /// Limit a string to a specific length, using an ellipsis to indicate
 /// truncation.
-pub fn truncate(text: &str, max_length: usize) -> Cow<str> {
+pub fn truncate(text: &str, max_length: usize) -> Cow<'_, str> {
     if text.width() > max_length {
         let mut len = 0;
         let truncated = text
