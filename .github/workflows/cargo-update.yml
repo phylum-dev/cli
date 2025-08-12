@@ -15,7 +15,7 @@ jobs:
       UPDATE_BRANCH_NAME: auto-cargo-update
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Cargo update
         run: cargo update
