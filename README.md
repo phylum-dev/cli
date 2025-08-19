@@ -104,10 +104,6 @@ this program. If not, see <https://www.gnu.org/licenses/gpl.html> or write to
 `phylum@veracode.com` or `dl-phylum-engineering@veracode.com`
 
 ---
-## Discord
-
-Join us on the [Phylum Community Discord](https://discord.gg/c9QnknWxm3)!
-
 ## Questions/Issues
 
 Please contact Phylum with any questions or issues using the CLI tool.
