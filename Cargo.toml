@@ -9,3 +9,12 @@ members = [
   "lockfile_generator",
   "vulnreach_types",
 ]
+
+[patch.crates-io]
+# TODO: Remove this patch when `deno`, and specifically `deno_ffi`, is updated to a newer version that depends on
+#       versions of `libffi` and `libffi-sys` that are from 08 APR 2025 or later (4.0.0 and 3.2.0, respectively). Until
+#       then, building on `macos-latest` runners without this patch will fail.
+#       https://github.com/phylum-dev/cli/issues/1478
+# Ref: https://github.com/libffi-rs/libffi-rs/issues/109
+#      https://github.com/libffi-rs/libffi-rs/pull/110
+libffi-sys = { git = 'https://github.com/libffi-rs/libffi-rs', rev = "8df0df577317bdca2c2b5e9ae263ba0e98fa9076" }

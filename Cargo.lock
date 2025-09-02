@@ -3713,8 +3713,7 @@ dependencies = [
 [[package]]
 name = "libffi-sys"
 version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f36115160c57e8529781b4183c2bb51fdc1f6d6d1ed345591d84be7703befb3c"
+source = "git+https://github.com/libffi-rs/libffi-rs?rev=8df0df577317bdca2c2b5e9ae263ba0e98fa9076#8df0df577317bdca2c2b5e9ae263ba0e98fa9076"
 dependencies = [
  "cc",
 ]
