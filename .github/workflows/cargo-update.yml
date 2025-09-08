@@ -36,7 +36,7 @@ jobs:
         # The PR may already exist (e.g., created in previous week and not merged yet) so we
         # allow it here and check in the next step so workflow failures will be extraordinary
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
