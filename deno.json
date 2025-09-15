@@ -1,13 +1,26 @@
 {
   "compilerOptions": {
-    "types": ["./extensions/phylum.d.ts"]
+    "types": [
+      "./extensions/phylum.d.ts"
+    ]
   },
   "lint": {
-    "include": ["extensions/"]
+    "include": [
+      "extensions/"
+    ],
+    "rules": {
+      "exclude": [
+        "no-import-prefix"
+      ]
+    }
   },
   "fmt": {
-    "include": ["extensions/"],
-    "exclude": ["extensions/CHANGELOG.md"]
+    "include": [
+      "extensions/"
+    ],
+    "exclude": [
+      "extensions/CHANGELOG.md"
+    ]
   },
   "lock": false
 }
