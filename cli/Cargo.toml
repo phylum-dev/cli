@@ -64,7 +64,9 @@ reqwest = { version = "0.12.7", features = [
 ], default-features = false }
 rsa = { version = "0.9.2", features = ["sha2"] }
 serde_json = "1.0.85"
-serde = { version = "1.0.144", features = ["derive"] }
+# The derived `swc_ecma_ast` dependency will not compile with `serde` v1.0.220 or above.
+# Ref: https://github.com/swc-project/swc/issues/11092
+serde = { version = "=1.0.219", features = ["derive"] }
 serde_yaml = "0.9.2"
 sha2 = "0.10.2"
 shellexpand = "3.0.0"
