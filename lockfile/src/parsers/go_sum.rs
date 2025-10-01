@@ -4,13 +4,14 @@ use nom::character::complete::{alphanumeric1, line_ending, space0, space1};
 use nom::combinator::{opt, recognize};
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, tuple};
+use nom::Parser;
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::IResult;
 use crate::{Package, PackageVersion};
 
 pub fn parse(input: &str) -> IResult<&str, Vec<Package>> {
-    let (input, pkgs) = many0(package)(input)?;
+    let (input, pkgs) = many0(package).parse(input)?;
 
     let pkgs = pkgs
         .into_iter()
@@ -42,7 +43,7 @@ fn package_name(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
 
     // The package name will be everything up until a space.
-    recognize(take_until(" "))(input)
+    recognize(take_until(" ")).parse(input)
 }
 
 fn package_version(input: &str) -> IResult<&str, &str> {
@@ -54,7 +55,8 @@ fn package_version(input: &str) -> IResult<&str, &str> {
         tag("v"),
         many1(alt((alphanumeric1, tag("."), tag("-"), tag("+")))),
         opt(tag("/go.mod")),
-    )))(input)?;
+    )))
+    .parse(input)?;
 
     // Expect at least one whitespace after version.
     let (input, _) = space1(input)?;
@@ -70,7 +72,7 @@ fn package_hash(input: &str) -> IResult<&str, &str> {
     let base64_parser = recognize(many1(alt((alphanumeric1, tag("+"), tag("/"), tag("=")))));
 
     // Parse base64 hash with `h1:` prefix.
-    let (input, hash) = preceded(tag("h1:"), base64_parser)(input)?;
+    let (input, hash) = preceded(tag("h1:"), base64_parser).parse(input)?;
 
     // Expect EOL.
     let (input, _) = line_ending(input)?;

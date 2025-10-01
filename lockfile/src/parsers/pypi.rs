@@ -6,7 +6,7 @@ use nom::character::complete::{alphanumeric1, char, line_ending, space1};
 use nom::combinator::{eof, opt, recognize, rest, verify};
 use nom::multi::{many0, many1, separated_list0};
 use nom::sequence::{delimited, pair, terminated};
-use nom::Err as NomErr;
+use nom::{Err as NomErr, Parser};
 use nom_language::error::{VerboseError, VerboseErrorKind};
 use phylum_types::types::package::PackageType;
 
@@ -28,7 +28,7 @@ pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
         }
 
         // Strip comments.
-        let (_, line) = alt((take_until(" #"), rest))(line)?;
+        let (_, line) = alt((take_until(" #"), rest)).parse(line)?;
 
         // Parse dependency.
         let (_, pkg) = package(line, registry)?;
@@ -43,7 +43,7 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
     // Take everything until the next newline.
     //
     // This takes line continuation characters into account.
-    let (input, mut line) = recognize(parsers::take_continued_line)(input)?;
+    let (input, mut line) = recognize(parsers::take_continued_line).parse(input)?;
 
     // Remove irrelevant whitespace.
     line = line.trim();
@@ -74,7 +74,7 @@ fn line<'a>(input: &'a str, registry: &mut Option<&'a str>) -> IResult<&'a str, 
 
 fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Package> {
     // Ignore everything after `;`.
-    let (_, input) = alt((take_until(";"), rest))(input)?;
+    let (_, input) = alt((take_until(";"), rest)).parse(input)?;
 
     // Parse for `-e` dependencies.
     if let Ok(editable) = editable(input) {
@@ -104,7 +104,7 @@ fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Packa
     let (input, version) = package_version(input)?;
 
     // Parse local version specifier.
-    let (input, local_version) = opt(local_version)(input)?;
+    let (input, local_version) = opt(local_version).parse(input)?;
 
     let version = match (registry, local_version) {
         (_, Some(_)) => PackageVersion::Unknown,
@@ -176,18 +176,18 @@ fn uri_version(input: &str) -> IResult<&str, &str> {
 }
 
 fn package_name(input: &str) -> IResult<&str, &str> {
-    terminated(ws(identifier), opt(ws(package_extras)))(input)
+    terminated(ws(identifier), opt(ws(package_extras))).parse(input)
 }
 
 fn package_version(input: &str) -> IResult<&str, &str> {
     // Ensure no `*` is in the version.
-    let (_, input) = verify(rest, |s: &str| !s.contains('*'))(input)?;
+    let (_, input) = verify(rest, |s: &str| !s.contains('*')).parse(input)?;
 
     // Skip exact version indicator.
     let (input, _) = tag("==")(input)?;
 
     // Take all valid semver character.
-    recognize(many1(alt((alphanumeric1, tag(".")))))(input.trim())
+    recognize(many1(alt((alphanumeric1, tag("."))))).parse(input.trim())
 }
 
 /// Parse local version specifiers.
@@ -196,26 +196,25 @@ fn package_version(input: &str) -> IResult<&str, &str> {
 fn local_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("+")(input)?;
 
-    recognize(many1(alt((alphanumeric1, tag(".")))))(input)
+    recognize(many1(alt((alphanumeric1, tag("."))))).parse(input)
 }
 
 fn identifier(input: &str) -> IResult<&str, &str> {
-    recognize(pair(alphanumeric1, many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag("."))))))))(
-        input,
-    )
+    recognize(pair(alphanumeric1, many0(alt((alphanumeric1, alt((tag("-"), tag("_"), tag("."))))))))
+        .parse(input)
 }
 
 fn package_extras(input: &str) -> IResult<&str, &str> {
-    delimited(char('['), identifier_list, char(']'))(input)
+    delimited(char('['), identifier_list, char(']')).parse(input)
 }
 
 fn identifier_list(input: &str) -> IResult<&str, &str> {
-    recognize(separated_list0(char(','), ws(identifier)))(input)
+    recognize(separated_list0(char(','), ws(identifier))).parse(input)
 }
 
 fn line_done(input: &str) -> IResult<&str, &str> {
     // Allow for spaces and arguments not impacting resolution.
-    let (input, _) = recognize(many0(alt((nl_space1, package_hash))))(input)?;
+    let (input, _) = recognize(many0(alt((nl_space1, package_hash)))).parse(input)?;
 
     eof(input)
 }
@@ -253,17 +252,17 @@ where
 ///
 /// This automatically handles " \\\n" and treats it as normal space.
 fn nl_space0(input: &str) -> IResult<&str, &str> {
-    recognize(many0(alt((space1, line_continuation))))(input)
+    recognize(many0(alt((space1, line_continuation)))).parse(input)
 }
 
 /// Newline-aware space1.
 ///
 /// This automatically handles " \\\n" and treats it as normal space.
 fn nl_space1(input: &str) -> IResult<&str, &str> {
-    recognize(many1(alt((space1, line_continuation))))(input)
+    recognize(many1(alt((space1, line_continuation)))).parse(input)
 }
 
 /// Recognize line continuations.
 fn line_continuation(input: &str) -> IResult<&str, &str> {
-    recognize(pair(tag("\\"), line_ending))(input)
+    recognize(pair(tag("\\"), line_ending)).parse(input)
 }

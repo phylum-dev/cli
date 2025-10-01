@@ -4,7 +4,7 @@ use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
 use nom::combinator::{opt, recognize};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
-use nom::Err as NomErr;
+use nom::{Err as NomErr, Parser};
 use nom_language::error::{VerboseError, VerboseErrorKind};
 use phylum_types::types::package::PackageType;
 
@@ -36,7 +36,8 @@ impl<'a> Section<'a> {
             let (new_input, consumed) = recognize(many_till(
                 take_till_line_end,
                 alt((tag("GEM"), tag("GIT"), tag("PATH"), tag("BUNDLED WITH"))),
-            ))(input)?;
+            ))
+            .parse(input)?;
 
             // Check for type of section head.
             let section_type = if consumed.ends_with("GEM") {
@@ -196,7 +197,8 @@ fn specs(input: &str) -> IResult<&str, &str> {
     recognize(many_till(
         take_till_line_end,
         recognize(tuple((space0, tag("specs:"), opt(line_ending)))),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {
@@ -219,8 +221,8 @@ fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str
 }
 
 fn package_name(input: &str) -> IResult<&str, &str> {
-    let (input, _) = recognize(space0)(input)?;
-    recognize(alt((take_until(" "), not_line_ending)))(input)
+    let (input, _) = recognize(space0).parse(input)?;
+    recognize(alt((take_until(" "), not_line_ending))).parse(input)
 }
 
 /// Parser allowing for loose `(>= 1.2.0, < 2.0, != 1.2.3)` and strict
@@ -238,7 +240,8 @@ fn loose_package_version(input: &str) -> IResult<&str, &str> {
             c.is_ascii_alphanumeric() || LOOSE_VERSION_CHARS.contains(&c)
         }))),
         tag(")"),
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parser allowing only strict `1.2.3.alpha.1` versions.
@@ -246,19 +249,20 @@ fn strict_package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
     recognize(many1(satisfy(|c: char| {
         c.is_ascii_alphanumeric() || STRICT_VERSION_CHARS.contains(&c)
-    })))(input)
+    })))
+    .parse(input)
 }
 
 /// Get the value for a key in a `   key: value` line.
 fn key<'a>(input: &'a str, key: &str) -> IResult<&'a str, &'a str> {
-    let (input, _key) = recognize(tuple((space0, tag(key), tag(": "))))(input)?;
+    let (input, _key) = recognize(tuple((space0, tag(key), tag(": ")))).parse(input)?;
     take_till_line_end(input)
 }
 
 /// Take everything until a line end, swallowing the line end character
 /// completely.
 fn take_till_line_end(input: &str) -> IResult<&str, &str> {
-    let (input, consumed) = recognize(alt((take_until("\n"), take_until("\r\n"))))(input)?;
-    let (input, _) = alt((tag("\n"), tag("\r\n")))(input)?;
+    let (input, consumed) = recognize(alt((take_until("\n"), take_until("\r\n")))).parse(input)?;
+    let (input, _) = alt((tag("\n"), tag("\r\n"))).parse(input)?;
     Ok((input, consumed))
 }

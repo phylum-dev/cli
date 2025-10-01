@@ -5,7 +5,7 @@ use nom::combinator::{eof, map_opt, opt, recognize};
 use nom::error::context;
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, preceded, tuple};
-use nom::Err as NomErr;
+use nom::{Err as NomErr, Parser};
 use nom_language::error::{VerboseError, VerboseErrorKind};
 
 use crate::parsers::{take_till_blank_line, take_till_line_end, IResult};
@@ -15,7 +15,7 @@ pub(crate) fn parse(input: &str) -> IResult<&str, SpdxInfo> {
     let (_, relationships) = parse_relationships(input)?;
     let (_, document_describes) = parse_document_describes(input)?;
     let (i, spdx_id) = parse_spdx_id(input)?;
-    let (i, packages) = many1(package)(i)?;
+    let (i, packages) = many1(package).parse(i)?;
 
     Ok((i, SpdxInfo { spdx_id: spdx_id.into(), document_describes, packages, relationships }))
 }
@@ -27,10 +27,9 @@ fn parse_spdx_id(input: &str) -> IResult<&str, &str> {
 }
 
 fn parse_document_describes(input: &str) -> IResult<&str, Vec<String>> {
-    let (i, describes) = opt(preceded(
-        take_until("DocumentDescribes:"),
-        take_till(|c| c == '\n' || c == '\r'),
-    ))(input)?;
+    let (i, describes) =
+        opt(preceded(take_until("DocumentDescribes:"), take_till(|c| c == '\n' || c == '\r')))
+            .parse(input)?;
 
     let describes_list = if let Some(describes_str) = describes {
         describes_str
@@ -55,12 +54,12 @@ fn skip_until_tag<'a>(input: &'a str, line_tag: &'a str) -> IResult<&'a str, ()>
 }
 
 fn parse_relationships(input: &str) -> IResult<&str, Vec<Relationship>> {
-    many0(parse_relationship)(input)
+    many0(parse_relationship).parse(input)
 }
 
 fn parse_relationship(input: &str) -> IResult<&str, Relationship> {
     let (i, _) = skip_until_tag(input, "Relationship:")?;
-    let (i, rel) = recognize(ws(take_till_line_end))(i)?;
+    let (i, rel) = recognize(ws(take_till_line_end)).parse(i)?;
 
     let parts: Vec<&str> = rel.split_whitespace().collect();
     if parts.len() == 3 {
@@ -77,7 +76,7 @@ fn parse_relationship(input: &str) -> IResult<&str, Relationship> {
 }
 
 fn package_name(input: &str) -> IResult<&str, &str> {
-    recognize(take_until("PackageName:"))(input)
+    recognize(take_until("PackageName:")).parse(input)
 }
 
 fn package(input: &str) -> IResult<&str, PackageInformation> {
@@ -86,14 +85,15 @@ fn package(input: &str) -> IResult<&str, PackageInformation> {
     let (i, capture) = recognize(many_till(
         take_till_line_end,
         recognize(tuple((space0, alt((line_ending, eof))))),
-    ))(i)?;
+    ))
+    .parse(i)?;
 
     let (_, my_entry) = parse_package(capture)?;
     Ok((i, my_entry))
 }
 
 fn parse_package(input: &str) -> IResult<&str, PackageInformation> {
-    context("package", package_info)(input).map(|(next_input, res)| {
+    context("package", package_info).parse(input).map(|(next_input, res)| {
         let pi = res;
         (next_input, pi)
     })
@@ -104,18 +104,18 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
 
     // PackageName is required.
     let (i, _) = tag("PackageName:")(i)?;
-    let (i, name) = recognize(ws(take_till_line_end))(i)?;
+    let (i, name) = recognize(ws(take_till_line_end)).parse(i)?;
     let name = name.trim();
 
     // SPDXID is required.
     let (i, _) = tag("SPDXID:")(i)?;
-    let (tail, spdx_id) = recognize(ws(take_till_line_end))(i)?;
+    let (tail, spdx_id) = recognize(ws(take_till_line_end)).parse(i)?;
 
     // PackageVersion is optional.
     // The version can be obtained from PURL if present, so we don't return an
     // error.
-    let (i, has_version) = opt(tag("PackageVersion:"))(tail)?;
-    let (i, v) = recognize(ws(take_till_line_end))(i)?;
+    let (i, has_version) = opt(tag("PackageVersion:")).parse(tail)?;
+    let (i, v) = recognize(ws(take_till_line_end)).parse(i)?;
     let version = has_version.map(|_| v.trim().to_string());
 
     // Update input.
@@ -126,12 +126,12 @@ fn package_info(input: &str) -> IResult<&str, PackageInformation> {
 
     // PackageDownloadLocation is required.
     let (i, _) = skip_until_tag(i, "PackageDownloadLocation:")?;
-    let (i, download_location) = recognize(ws(take_till_line_end))(i)?;
+    let (i, download_location) = recognize(ws(take_till_line_end)).parse(i)?;
     let download_location = download_location.trim();
 
     // Look for external references.
     let (i, next_input) = extern_ref(i)?;
-    let (_, external_ref) = opt(recognize(ws(take_till_line_end)))(i)?;
+    let (_, external_ref) = opt(recognize(ws(take_till_line_end))).parse(i)?;
     let external_refs = external_ref
         .map(|er| parse_external_refs(er).map(|(_, external_ref)| vec![external_ref]))
         .unwrap_or_else(|| Ok(Vec::new()))?;
@@ -150,7 +150,8 @@ fn extern_ref(input: &str) -> IResult<&str, &str> {
         take_until("ExternalRef: PACKAGE-MANAGER"),
         take_until("ExternalRef: PACKAGE_MANAGER"),
         take_till_blank_line,
-    )))(input)
+    )))
+    .parse(input)
 }
 
 fn parse_external_refs(input: &str) -> IResult<&str, ExternalRefs> {
@@ -175,7 +176,8 @@ fn parse_external_refs(input: &str) -> IResult<&str, ExternalRefs> {
             reference_type: reference_type.into(),
             reference_locator: reference_locator.into(),
         })
-    })(input)
+    })
+    .parse(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also
