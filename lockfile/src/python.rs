@@ -11,8 +11,8 @@ use lockfile_generator::pipenv::Pipenv as PipenvGenerator;
 use lockfile_generator::poetry::Poetry as PoetryGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
-use nom::error::convert_error;
 use nom::Finish;
+use nom_language::error::convert_error;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 

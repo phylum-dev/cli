@@ -2,10 +2,11 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, space0};
 use nom::combinator::{eof, opt, recognize, rest};
-use nom::error::{context, VerboseError};
+use nom::error::context;
 use nom::multi::many_till;
-use nom::sequence::{delimited, terminated, tuple};
-use nom::AsChar;
+use nom::sequence::{delimited, terminated};
+use nom::{AsChar, Parser};
+use nom_language::error::VerboseError;
 
 pub mod gem;
 pub mod go_mod;
@@ -17,12 +18,12 @@ pub mod yarn;
 
 /// Consume everything until the next `\n` or `\r\n`.
 fn take_till_line_end(input: &str) -> IResult<&str, &str> {
-    recognize(terminated(not_line_ending, line_ending))(input)
+    recognize(terminated(not_line_ending, line_ending)).parse(input)
 }
 
 /// Consume everything until the next `\n\n` or `\r\n\r\n`.
 fn take_till_blank_line(input: &str) -> IResult<&str, &str> {
-    recognize(alt((take_until("\n\n"), take_until("\r\n\r\n"))))(input)
+    recognize(alt((take_until("\n\n"), take_until("\r\n\r\n")))).parse(input)
 }
 
 /// Consume the next line.
@@ -32,7 +33,7 @@ fn take_till_blank_line(input: &str) -> IResult<&str, &str> {
 fn take_continued_line(mut input: &str) -> IResult<&str, ()> {
     loop {
         // Get everything up to the next NL or EOF.
-        let (new_input, line) = recognize(alt((take_till_line_end, rest)))(input)?;
+        let (new_input, line) = recognize(alt((take_till_line_end, rest))).parse(input)?;
         input = new_input;
 
         // Stop consuming lines once there are no continuations.

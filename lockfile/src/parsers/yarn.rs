@@ -2,7 +2,7 @@
 
 use nom::bytes::complete::take_till;
 use nom::multi::many0;
-use nom::InputTakeAtPosition;
+use nom::{Input, Parser};
 use phylum_types::types::package::PackageType;
 
 use super::*;
@@ -22,22 +22,21 @@ pub fn parse(mut input: &str) -> IResult<&str, Vec<Package>> {
 
 fn entry(input: &str) -> IResult<&str, Option<Package>> {
     // Ignore comments.
-    if let Ok((input, _)) = recognize(tuple((tag("#"), take_till_line_end)))(input) {
-        let (input, _) = many0(line_ending)(input)?;
+    if let Ok((input, _)) = recognize((tag("#"), take_till_line_end)).parse(input) {
+        let (input, _) = many0(line_ending).parse(input)?;
         return Ok((input, None));
     }
 
-    let (input, capture) = recognize(many_till(
-        take_till_line_end,
-        recognize(tuple((space0, alt((line_ending, eof))))),
-    ))(input)?;
+    let (input, capture) =
+        recognize(many_till(take_till_line_end, recognize((space0, alt((line_ending, eof))))))
+            .parse(input)?;
 
     let (_, my_entry) = parse_entry(capture)?;
     Ok((input, my_entry))
 }
 
 fn parse_entry(input: &str) -> IResult<&str, Option<Package>> {
-    let (input, (name, version)) = context("entry", tuple((entry_name, entry_version)))(input)?;
+    let (input, (name, version)) = context("entry", (entry_name, entry_version)).parse(input)?;
 
     let version = match version {
         Some(version) => version,
@@ -51,17 +50,17 @@ fn parse_entry(input: &str) -> IResult<&str, Option<Package>> {
 
 fn entry_name(input: &str) -> IResult<&str, &str> {
     // Strip optional quotes.
-    let (input, _) = opt(tag(r#"""#))(input)?;
+    let (input, _) = opt(tag(r#"""#)).parse(input)?;
 
     // Strip optional aliased package name.
-    let (input, _) = recognize(opt(tuple((take_until("@npm:"), tag("@npm:")))))(input)?;
+    let (input, _) = recognize(opt((take_until("@npm:"), tag("@npm:")))).parse(input)?;
 
     // Allow for up to one leading `@` in package name (like `@angular/cli`).
     let opt_at = opt(tag("@"));
 
     // Consume everything until version separator as name.
-    let name_parser = tuple((opt_at, take_until("@")));
-    context("name", recognize(name_parser))(input)
+    let name_parser = (opt_at, take_until("@"));
+    context("name", recognize(name_parser)).parse(input)
 }
 
 fn entry_version(input: &str) -> IResult<&str, Option<PackageVersion>> {
@@ -85,9 +84,9 @@ fn entry_version(input: &str) -> IResult<&str, Option<PackageVersion>> {
 
     // Parse version field.
     let (input, _) = take_until(r#"version"#)(input)?;
-    let version_key = tuple((tag(r#"version"#), opt(tag(r#"""#)), tag(r#" ""#)));
+    let version_key = (tag(r#"version"#), opt(tag(r#"""#)), tag(r#" ""#));
     let version_parser = delimited(version_key, is_version, tag(r#"""#));
-    let (input, version) = context("version", version_parser)(input)?;
+    let (input, version) = context("version", version_parser).parse(input)?;
 
     let package_version = PackageVersion::FirstParty(version.to_string());
 
@@ -104,7 +103,7 @@ fn path_dep(input: &str) -> IResult<&str, Option<PackageVersion>> {
 fn git_dep(input: &str) -> IResult<&str, Option<PackageVersion>> {
     // Parse resolved field.
     let (input, _) = take_until(r#"resolved"#)(input)?;
-    let (input, _) = tuple((tag(r#"resolved"#), opt(tag(r#"""#)), tag(r#" ""#)))(input)?;
+    let (input, _) = (tag(r#"resolved"#), opt(tag(r#"""#)), tag(r#" ""#)).parse(input)?;
     let (input, url) = take_until("\"")(input)?;
 
     let package_version = PackageVersion::Git(url.into());

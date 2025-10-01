@@ -5,8 +5,8 @@ use nom::bytes::complete::{tag, take_till, take_till1, take_while};
 use nom::character::complete::{char, multispace0, space0, space1};
 use nom::combinator::{map, opt};
 use nom::multi::many0;
-use nom::sequence::{delimited, preceded, tuple};
-use nom::IResult;
+use nom::sequence::{delimited, preceded};
+use nom::{IResult, Parser};
 
 use crate::golang::GoDeps;
 use crate::{Package, PackageType, PackageVersion};
@@ -68,7 +68,7 @@ impl From<ModuleReplacement> for Package {
 }
 
 pub fn parse(input: &str) -> IResult<&str, GoDeps> {
-    let (_, directives) = many0(directive)(input)?;
+    let (_, directives) = many0(directive).parse(input)?;
 
     let mut required: Vec<Module> = Vec::new();
     let mut excluded: Vec<Module> = Vec::new();
@@ -126,28 +126,26 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
 
 fn directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, _) = take_while(|c: char| c == '\n')(input)?;
-    alt((module_directive, go_directive, require_directive, replace_directive, exclude_directive))(
-        input.trim(),
-    )
+    alt((module_directive, go_directive, require_directive, replace_directive, exclude_directive))
+        .parse(input.trim())
 }
 
 fn module_directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, module_name) =
-        preceded(tuple((tag("module"), space1)), take_till(|c| c == '\n'))(input)?;
+        preceded((tag("module"), space1), take_till(|c| c == '\n')).parse(input)?;
     Ok((input, Directive::Module(module_name)))
 }
 
 fn go_directive(input: &str) -> IResult<&str, Directive<'_>> {
     let (input, go_version) =
-        preceded(tuple((tag("go"), space1)), take_till(|c| c == '\n'))(input)?;
+        preceded((tag("go"), space1), take_till(|c| c == '\n')).parse(input)?;
     Ok((input, Directive::Go(go_version.trim())))
 }
 
 fn require_directive(input: &str) -> IResult<&str, Directive<'_>> {
-    let (input, deps) = preceded(
-        tuple((tag("require"), space1)),
-        alt((module_block, map(require_spec, |r| vec![r]))),
-    )(input)?;
+    let (input, deps) =
+        preceded((tag("require"), space1), alt((module_block, map(require_spec, |r| vec![r]))))
+            .parse(input)?;
     Ok((input, Directive::Require(deps)))
 }
 
@@ -158,7 +156,8 @@ fn require_spec(input: &str) -> IResult<&str, Module> {
     let (input, _) = space0(input)?;
 
     // Check if there is a comment starting with "//".
-    let (input, comments) = opt(preceded(tag("//"), take_till1(|c: char| c == '\n')))(input)?;
+    let (input, comments) =
+        opt(preceded(tag("//"), take_till1(|c: char| c == '\n'))).parse(input)?;
 
     // Determine if the comment indicates the module is indirect.
     let indirect = comments.is_some_and(|s: &str| s.trim().eq("indirect"));
@@ -168,10 +167,9 @@ fn require_spec(input: &str) -> IResult<&str, Module> {
 }
 
 fn replace_directive(input: &str) -> IResult<&str, Directive<'_>> {
-    preceded(tuple((tag("replace"), space1)), alt((replace_block, map(replace_spec, |r| vec![r]))))(
-        input,
-    )
-    .map(|(next_input, reps)| (next_input, Directive::Replace(reps)))
+    preceded((tag("replace"), space1), alt((replace_block, map(replace_spec, |r| vec![r]))))
+        .parse(input)
+        .map(|(next_input, reps)| (next_input, Directive::Replace(reps)))
 }
 
 fn replace_spec(input: &str) -> IResult<&str, ModuleReplacement> {
@@ -187,13 +185,14 @@ fn replace_spec(input: &str) -> IResult<&str, ModuleReplacement> {
     };
 
     // Consume "=>" with surrounding spaces.
-    let (input, _) = tuple((space1, tag("=>"), space1))(input)?;
+    let (input, _) = (space1, tag("=>"), space1).parse(input)?;
 
     // Parse the destination path and optional version.
-    let (input, (dest_path, dest_version)) = tuple((
+    let (input, (dest_path, dest_version)) = (
         take_till1(|c: char| c.is_whitespace()),
         opt(preceded(space1, take_till1(|c: char| c.is_whitespace()))),
-    ))(input)?;
+    )
+        .parse(input)?;
 
     let replacement = if let Some(version) = dest_version {
         Replacement::Module(Module {
@@ -213,10 +212,9 @@ fn replace_spec(input: &str) -> IResult<&str, ModuleReplacement> {
 }
 
 fn exclude_directive(input: &str) -> IResult<&str, Directive<'_>> {
-    preceded(tuple((tag("exclude"), space1)), alt((module_block, map(require_spec, |r| vec![r]))))(
-        input,
-    )
-    .map(|(next_input, deps)| (next_input, Directive::Exclude(deps)))
+    preceded((tag("exclude"), space1), alt((module_block, map(require_spec, |r| vec![r]))))
+        .parse(input)
+        .map(|(next_input, deps)| (next_input, Directive::Exclude(deps)))
 }
 
 fn parse_block<T, F>(input: &str, line_parser: F) -> IResult<&str, Vec<T>>
@@ -227,7 +225,8 @@ where
         char('('),
         many0(preceded(multispace0, line_parser)),
         preceded(multispace0, char(')')),
-    )(input)
+    )
+    .parse(input)
 }
 
 fn module_block(input: &str) -> IResult<&str, Vec<Module>> {

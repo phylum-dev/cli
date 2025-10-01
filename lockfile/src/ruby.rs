@@ -6,8 +6,8 @@ use anyhow::{anyhow, Context};
 use lockfile_generator::bundler::Bundler as BundlerGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
-use nom::error::convert_error;
 use nom::Finish;
+use nom_language::error::convert_error;
 
 use super::parsers::gem;
 use crate::{Package, Parse};

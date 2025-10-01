@@ -13,8 +13,8 @@ use lockfile_generator::yarn::Yarn as YarnGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
 use log::debug;
-use nom::error::convert_error;
 use nom::Finish;
+use nom_language::error::convert_error;
 use phylum_types::types::package::PackageType;
 use serde::Deserialize;
 use serde_json::Value as JsonValue;

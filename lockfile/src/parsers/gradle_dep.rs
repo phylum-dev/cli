@@ -1,7 +1,8 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till};
 use nom::combinator::eof;
-use nom::error::VerboseError;
+use nom::Parser;
+use nom_language::error::VerboseError;
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::IResult;
@@ -33,7 +34,7 @@ fn package(input: &str) -> Result<Package, nom::Err<VerboseError<&str>>> {
     let (input, _) = tag(":")(input)?;
 
     let (input, version) = not_space_until(input, '=')?;
-    let _ = alt((tag("="), eof))(input)?;
+    let _ = alt((tag("="), eof)).parse(input)?;
 
     Ok(Package {
         name: format!("{group_id}:{artifact_id}"),
