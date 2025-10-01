@@ -3,7 +3,7 @@ use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alphanumeric1, line_ending, space0, space1};
 use nom::combinator::{opt, recognize};
 use nom::multi::{many0, many1};
-use nom::sequence::{preceded, tuple};
+use nom::sequence::preceded;
 use nom::Parser;
 use phylum_types::types::package::PackageType;
 
@@ -51,11 +51,11 @@ fn package_version(input: &str) -> IResult<&str, &str> {
     let (input, _) = space0(input)?;
 
     // Accept all of `v[a-zA-Z0-9.+-]+` with an optional "/go.mod" suffix.
-    let (input, version) = recognize(tuple((
+    let (input, version) = recognize((
         tag("v"),
         many1(alt((alphanumeric1, tag("."), tag("-"), tag("+")))),
         opt(tag("/go.mod")),
-    )))
+    ))
     .parse(input)?;
 
     // Expect at least one whitespace after version.

@@ -3,7 +3,7 @@ use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
 use nom::combinator::{opt, recognize};
 use nom::multi::{many1, many_till};
-use nom::sequence::{delimited, tuple};
+use nom::sequence::delimited;
 use nom::{Err as NomErr, Parser};
 use nom_language::error::{VerboseError, VerboseErrorKind};
 use phylum_types::types::package::PackageType;
@@ -194,11 +194,8 @@ fn revision(input: &str) -> IResult<&str, &str> {
 }
 
 fn specs(input: &str) -> IResult<&str, &str> {
-    recognize(many_till(
-        take_till_line_end,
-        recognize(tuple((space0, tag("specs:"), opt(line_ending)))),
-    ))
-    .parse(input)
+    recognize(many_till(take_till_line_end, recognize((space0, tag("specs:"), opt(line_ending)))))
+        .parse(input)
 }
 
 fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str>>> {
@@ -255,7 +252,7 @@ fn strict_package_version(input: &str) -> IResult<&str, &str> {
 
 /// Get the value for a key in a `   key: value` line.
 fn key<'a>(input: &'a str, key: &str) -> IResult<&'a str, &'a str> {
-    let (input, _key) = recognize(tuple((space0, tag(key), tag(": ")))).parse(input)?;
+    let (input, _key) = recognize((space0, tag(key), tag(": "))).parse(input)?;
     take_till_line_end(input)
 }
 

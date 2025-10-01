@@ -4,7 +4,7 @@ use nom::character::complete::{line_ending, not_line_ending, space0};
 use nom::combinator::{eof, opt, recognize, rest};
 use nom::error::context;
 use nom::multi::many_till;
-use nom::sequence::{delimited, terminated, tuple};
+use nom::sequence::{delimited, terminated};
 use nom::{AsChar, Parser};
 use nom_language::error::VerboseError;
 

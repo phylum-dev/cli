@@ -4,7 +4,7 @@ use nom::character::complete::{line_ending, multispace0, not_line_ending, space0
 use nom::combinator::{eof, map_opt, opt, recognize};
 use nom::error::context;
 use nom::multi::{many0, many1, many_till};
-use nom::sequence::{delimited, preceded, tuple};
+use nom::sequence::{delimited, preceded};
 use nom::{Err as NomErr, Parser};
 use nom_language::error::{VerboseError, VerboseErrorKind};
 
@@ -82,11 +82,9 @@ fn package_name(input: &str) -> IResult<&str, &str> {
 fn package(input: &str) -> IResult<&str, PackageInformation> {
     let (i, _) = package_name(input)?;
 
-    let (i, capture) = recognize(many_till(
-        take_till_line_end,
-        recognize(tuple((space0, alt((line_ending, eof))))),
-    ))
-    .parse(i)?;
+    let (i, capture) =
+        recognize(many_till(take_till_line_end, recognize((space0, alt((line_ending, eof))))))
+            .parse(i)?;
 
     let (_, my_entry) = parse_package(capture)?;
     Ok((i, my_entry))
@@ -156,11 +154,11 @@ fn extern_ref(input: &str) -> IResult<&str, &str> {
 
 fn parse_external_refs(input: &str) -> IResult<&str, ExternalRefs> {
     let input = input.trim_start_matches("ExternalRef:").trim();
-    let purl = tuple((
+    let purl = (
         ws(take_while(|c: char| !c.is_whitespace())),
         ws(take_while(|c: char| !c.is_whitespace())),
         ws(not_line_ending),
-    ));
+    );
 
     map_opt(purl, |(reference_category, reference_type, reference_locator)| {
         let reference_category = match reference_category {
