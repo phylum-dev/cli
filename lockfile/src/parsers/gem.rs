@@ -2,10 +2,10 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{line_ending, not_line_ending, satisfy, space0};
 use nom::combinator::{opt, recognize};
-use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, tuple};
 use nom::Err as NomErr;
+use nom_language::error::{VerboseError, VerboseErrorKind};
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::{take_till_blank_line, IResult};

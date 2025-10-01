@@ -4,10 +4,10 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until};
 use nom::character::complete::{alphanumeric1, char, line_ending, space1};
 use nom::combinator::{eof, opt, recognize, rest, verify};
-use nom::error::{VerboseError, VerboseErrorKind};
 use nom::multi::{many0, many1, separated_list0};
 use nom::sequence::{delimited, pair, terminated};
 use nom::Err as NomErr;
+use nom_language::error::{VerboseError, VerboseErrorKind};
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::{self, IResult};

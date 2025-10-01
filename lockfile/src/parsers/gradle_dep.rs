@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till};
 use nom::combinator::eof;
-use nom::error::VerboseError;
+use nom_language::error::VerboseError;
 use phylum_types::types::package::PackageType;
 
 use crate::parsers::IResult;

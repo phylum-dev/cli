@@ -2,10 +2,11 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until, take_while};
 use nom::character::complete::{line_ending, multispace0, not_line_ending, space0};
 use nom::combinator::{eof, map_opt, opt, recognize};
-use nom::error::{context, VerboseError, VerboseErrorKind};
+use nom::error::context;
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, preceded, tuple};
 use nom::Err as NomErr;
+use nom_language::error::{VerboseError, VerboseErrorKind};
 
 use crate::parsers::{take_till_blank_line, take_till_line_end, IResult};
 use crate::spdx::{ExternalRefs, PackageInformation, ReferenceCategory, Relationship, SpdxInfo};

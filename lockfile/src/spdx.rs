@@ -3,8 +3,8 @@ use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
-use nom::error::convert_error;
 use nom::Finish;
+use nom_language::error::convert_error;
 use phylum_types::types::package::PackageType;
 use purl::GenericPurl;
 use serde::Deserialize;
