@@ -128,7 +128,7 @@ fn package<'a>(input: &'a str, registry: Option<&str>) -> IResult<&'a str, Packa
 /// repository, which does not have any path.
 fn editable(input: &str) -> IResult<&str, Package> {
     // Ensure `-e` is present and skip it.
-    let (input, _) = ws(tag("-e"))(input)?;
+    let (input, _) = ws(tag("-e")).parse(input)?;
 
     // Parse everything until the next whitespace.
     let (input, uri) = take_till(|c: char| c.is_whitespace())(input)?;
@@ -171,7 +171,7 @@ fn editable(input: &str) -> IResult<&str, Package> {
 ///
 /// This includes path, git and internet dependencies.
 fn uri_version(input: &str) -> IResult<&str, &str> {
-    let (uri, _) = ws(tag("@"))(input)?;
+    let (uri, _) = ws(tag("@")).parse(input)?;
     Ok(("", uri))
 }
 
@@ -241,9 +241,9 @@ fn package_hash(input: &str) -> IResult<&str, &str> {
 /// A combinator that takes a parser `inner` and produces a parser that also
 /// consumes both leading and trailing whitespace, returning the output of
 /// `inner`.
-fn ws<'a, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, &'a str>
+fn ws<'a, P>(inner: P) -> impl Parser<&'a str, Output = &'a str, Error = VerboseError<&'a str>>
 where
-    F: Fn(&'a str) -> IResult<&'a str, &'a str>,
+    P: Parser<&'a str, Output = &'a str, Error = VerboseError<&'a str>>,
 {
     delimited(nl_space0, inner, nl_space0)
 }
