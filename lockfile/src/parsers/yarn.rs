@@ -2,7 +2,7 @@
 
 use nom::bytes::complete::take_till;
 use nom::multi::many0;
-use nom::{Input, InputTakeAtPosition, Parser};
+use nom::{Input, Parser};
 use phylum_types::types::package::PackageType;
 
 use super::*;
