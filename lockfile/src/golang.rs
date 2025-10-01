@@ -6,8 +6,8 @@ use anyhow::{anyhow, Context};
 use lockfile_generator::go::Go as GoGenerator;
 #[cfg(feature = "generator")]
 use lockfile_generator::Generator;
-use nom_language::error::convert_error;
 use nom::Finish;
+use nom_language::error::convert_error;
 
 use crate::parsers::{go_mod, go_sum};
 use crate::{Package, Parse};
