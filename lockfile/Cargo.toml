@@ -19,7 +19,7 @@ nom = "8.0.0"
 nom-language = "0.1.0"
 phylum_types = { git = "https://github.com/phylum-dev/phylum-types", branch = "development" }
 purl = "0.1.1"
-quick-xml = { version = "0.37.1", features = [
+quick-xml = { version = "0.38.3", features = [
     "encoding",
     "overlapped-lists",
     "serialize",
