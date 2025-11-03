@@ -120,8 +120,7 @@ impl From<ProcessException> for permissions::Permissions {
 }
 
 /// Standard I/O behavior.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 enum ProcessStdio {
     #[serde(rename = "inherit")]
     #[default]
@@ -131,7 +130,6 @@ enum ProcessStdio {
     #[serde(rename = "null")]
     Null,
 }
-
 
 #[cfg(unix)]
 impl From<ProcessStdio> for Stdio {
