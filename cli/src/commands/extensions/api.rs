@@ -120,20 +120,15 @@ impl From<ProcessException> for permissions::Permissions {
 }
 
 /// Standard I/O behavior.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 enum ProcessStdio {
     #[serde(rename = "inherit")]
+    #[default]
     Inherit,
     #[serde(rename = "piped")]
     Piped,
     #[serde(rename = "null")]
     Null,
-}
-
-impl Default for ProcessStdio {
-    fn default() -> Self {
-        Self::Inherit
-    }
 }
 
 #[cfg(unix)]
