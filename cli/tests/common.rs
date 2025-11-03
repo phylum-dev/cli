@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use assert_cmd::assert::Assert;
-use assert_cmd::Command;
+use assert_cmd::{cargo, Command};
 use phylum_cli::api::{PhylumApi, PhylumApiError, ResponseError};
 use phylum_cli::config::{AuthInfo, Config, ConnectionInfo};
 #[cfg(feature = "extensions")]
@@ -112,7 +112,7 @@ impl TestCli {
     }
 
     pub fn cmd(&self) -> Command {
-        let mut cmd = Command::cargo_bin("phylum").unwrap();
+        let mut cmd = Command::new(cargo::cargo_bin!("phylum"));
 
         cmd.env("XDG_DATA_HOME", self.data_home());
         cmd.env("XDG_STATE_HOME", self.state_home());
