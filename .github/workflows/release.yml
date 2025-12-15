@@ -102,7 +102,7 @@ jobs:
           path: cli
 
       - name: Download release artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
 
       - name: Prep archives
         run: |
@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: release-archives
 
@@ -191,7 +191,7 @@ jobs:
           done
 
       - name: Download release notes
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: RELEASE-NOTES.txt
 
