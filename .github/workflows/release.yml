@@ -32,7 +32,7 @@ jobs:
         run: cargo run --package xtask gencomp
 
       - name: Upload shell completions
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: shell-completions
           path: ./target/completions/
@@ -81,7 +81,7 @@ jobs:
         run: cargo +stable build --release --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: phylum-${{ matrix.target }}
           path: ./target/${{ matrix.target }}/release/phylum${{ matrix.extension }}
@@ -126,7 +126,7 @@ jobs:
           done
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: release-archives
           path: |
@@ -158,7 +158,7 @@ jobs:
             fs.writeFileSync("RELEASE-NOTES.txt", releaseNotes);
 
       - name: Upload release notes
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: RELEASE-NOTES.txt
           path: RELEASE-NOTES.txt
