@@ -62,7 +62,7 @@ reqwest = { version = "0.12.7", features = [
   "rustls-tls-native-roots",
   "rustls-tls-webpki-roots",
 ], default-features = false }
-rsa = { version = "0.9.2", features = ["sha2"] }
+rsa = { version = "0.9.10", features = ["sha2"] }
 serde_json = "1.0.85"
 # The derived `swc_ecma_ast` dependency will not compile with `serde` v1.0.220 or above.
 # Ref: https://github.com/swc-project/swc/issues/11092
