@@ -10,7 +10,7 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
 
 jobs:
   Generate-Completion-Files:
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
         run: |
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install host dependencies
-        run: sudo apt-get install -yq zip
+        run: sudo apt-get update && sudo apt-get install -yq zip
 
       - name: Checkout the repo
         uses: actions/checkout@v6
@@ -164,7 +164,6 @@ jobs:
           path: RELEASE-NOTES.txt
           if-no-files-found: error
           retention-days: 7
-
 
   Release:
     name: Create release from tag
