@@ -49,7 +49,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - if: ${{ runner.os == 'Windows' }}
         name: Install protoc
@@ -80,7 +80,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - if: ${{ runner.os == 'Windows' }}
         name: Install protoc
@@ -108,7 +108,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - if: ${{ runner.os == 'Windows' }}
         name: Install protoc
@@ -139,7 +139,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
         run: rustup toolchain install --no-self-update stable --profile minimal
