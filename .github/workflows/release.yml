@@ -136,7 +136,7 @@ jobs:
           retention-days: 7
 
       - name: Create release notes
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
@@ -196,7 +196,7 @@ jobs:
 
       - name: Create GitHub release
         id: create_release
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           # The response is explicitly returned here so it will be available for other steps
           script: |
@@ -239,7 +239,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
@@ -255,7 +255,7 @@ jobs:
         # Don't trigger for pre-releases
         if: ${{ !contains(github.ref, 'rc') }}
         # Reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GH_RELEASE_PAT }}
           script: |
