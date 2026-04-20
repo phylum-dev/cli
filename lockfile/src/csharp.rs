@@ -25,8 +25,8 @@ impl Parse for PackagesLock {
         // Map all dependencies to their correct package types.
         parsed
             .dependencies
-            .into_iter()
-            .flat_map(|(_, deps)| deps.into_iter())
+            .into_values()
+            .flat_map(|deps| deps.into_iter())
             .map(|(name, dependency)| {
                 let version = match (&dependency.dependency_type, &dependency.resolved) {
                     (DependencyType::Project, _) => PackageVersion::Path(None),
