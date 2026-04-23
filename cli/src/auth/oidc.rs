@@ -11,8 +11,8 @@ use base64::Engine as _;
 use chrono::{DateTime, Utc};
 use maplit::hashmap;
 use phylum_types::types::auth::{AccessToken, AuthorizationCode, RefreshToken, TokenResponse};
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::{rng, Rng};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -69,7 +69,7 @@ impl CodeVerifier {
             return Err(anyhow!("length must be between 43 and 128 inclusive."));
         }
         let code_verifier: String =
-            thread_rng().sample_iter(&Alphanumeric).take(length as usize).map(char::from).collect();
+            rng().sample_iter(&Alphanumeric).take(length as usize).map(char::from).collect();
         let mut hasher = Sha256::new();
         hasher.update(&code_verifier);
         let hash = hasher.finalize();

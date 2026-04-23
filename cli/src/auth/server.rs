@@ -11,8 +11,8 @@ use axum::Router;
 use chrono::{DateTime, Utc};
 use log::{debug, error};
 use phylum_types::types::auth::{AuthorizationCode, RefreshToken};
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::{rng, Rng};
 use reqwest::Url;
 use serde::Deserialize;
 use tokio::net::TcpListener;
@@ -184,7 +184,7 @@ pub async fn handle_auth_flow(
 ) -> Result<RefreshToken> {
     let locksmith_settings = fetch_locksmith_server_settings(ignore_certs, api_uri).await?;
     let (code_verifier, challenge_code) = CodeVerifier::generate(64)?;
-    let state: String = thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
+    let state: String = rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
     let (auth_code, callback_url) =
         spawn_server_and_get_auth_code(&locksmith_settings, auth_action, &challenge_code, state)
             .await?;
@@ -215,8 +215,7 @@ mod test {
         let (_verifier, challenge) =
             CodeVerifier::generate(64).expect("Failed to build PKCE verifier and challenge");
 
-        let state: String =
-            thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
+        let state: String = rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
         spawn_server_and_get_auth_code(&locksmith_settings, AuthAction::Login, &challenge, state)
             .await?;
