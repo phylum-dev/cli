@@ -149,8 +149,8 @@ impl Pom {
                     Ok(Package {
                         name: format!(
                             "{}:{}",
-                            &dep.group_id.clone().unwrap_or_default(),
-                            &dep.artifact_id.clone().unwrap_or_default()
+                            dep.group_id.clone().unwrap_or_default(),
+                            dep.artifact_id.clone().unwrap_or_default()
                         ),
                         version: PackageVersion::FirstParty(s.into()),
                         package_type: PackageType::Maven,

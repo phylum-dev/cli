@@ -613,7 +613,7 @@ fn issue_to_row(issue: &Issue) -> Vec<Row> {
     let row_1 = Row::new(vec![
         Cell::new_align(&issue.severity.to_string(), Alignment::LEFT)
             .with_style(Attr::ForegroundColor(risk_level_to_color(&issue.severity))),
-        Cell::new_align(&format!("{} [{}]", &issue.title, issue.domain), Alignment::LEFT)
+        Cell::new_align(&format!("{} [{}]", issue.title, issue.domain), Alignment::LEFT)
             .with_style(Attr::Bold),
     ]);
 
