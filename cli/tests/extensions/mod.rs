@@ -70,7 +70,8 @@ fn successful_installation_prints_message() {
         .success()
         .stdout(predicate::str::contains("Extension sample installed successfully"));
 
-    // Installing the same extension twice is also fine (because we're using --yes)
+    // Installing the same extension twice is also fine (because we're using
+    // --yes)
     test_cli
         .install_extension(&fixtures_path().join("sample"))
         .success()

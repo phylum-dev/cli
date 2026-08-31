@@ -220,9 +220,9 @@ mod tests {
     #[cfg(any(unix, windows))]
     #[test]
     fn find_project_conf_can_recurse_up() {
-        // To verify the behavior of navigation to parent directories, we must construct
-        // a filesystem where the parent directory cannot be reached by removing path
-        // components.
+        // To verify the behavior of navigation to parent directories, we must
+        // construct a filesystem where the parent directory cannot be
+        // reached by removing path components.
         //
         //     temp:
         //       - r:
@@ -249,8 +249,8 @@ mod tests {
 
         #[cfg(unix)]
         std::os::unix::fs::symlink(&subdir, &cwd).unwrap();
-        // This only works on Windows if the user is an administrator or developer mode
-        // is on.
+        // This only works on Windows if the user is an administrator or
+        // developer mode is on.
         #[cfg(windows)]
         std::os::windows::fs::symlink_dir(&subdir, &cwd).unwrap();
 

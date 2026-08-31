@@ -49,7 +49,8 @@ impl<'a> Section<'a> {
             } else if consumed.ends_with("BUNDLED WITH") {
                 break;
             } else {
-                // Unreachable since our parser fails if none of the headers are found.
+                // Unreachable since our parser fails if none of the headers are
+                // found.
                 unreachable!();
             };
 
@@ -205,10 +206,10 @@ fn package(input: &str) -> Result<Option<SpecsPackage>, NomErr<VerboseError<&str
     // Skip loose dependencies.
     //
     // NOTE: Loose dependencies in the Gemfile parser are not an indication that
-    // this is not a proper lockfile. The lockfile specifies the loose dependencies
-    // for each strict dependency beneath the strict requirement. Each of these
-    // loose dependencies is also separately listed as strict dependency with
-    // all its loose dependencies.
+    // this is not a proper lockfile. The lockfile specifies the loose
+    // dependencies for each strict dependency beneath the strict
+    // requirement. Each of these loose dependencies is also separately
+    // listed as strict dependency with all its loose dependencies.
     let version = match strict_package_version(version) {
         Ok((_, version)) => version,
         Err(_) => return Ok(None),

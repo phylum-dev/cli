@@ -65,7 +65,8 @@ impl Generator for Pip {
 
         // Execute pip inside the project.
         //
-        // We still change directory here since it could impact pip's report generation.
+        // We still change directory here since it could impact pip's report
+        // generation.
         let mut command = self.command(&canonicalized);
         command.current_dir(project_path);
         command.stdin(Stdio::null());

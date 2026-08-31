@@ -360,8 +360,8 @@ async fn create_project(
     let state = ExtensionState::from(op_state);
     let api = state.api().await?;
 
-    // Retrieve the id if the project already exists, otherwise return the id or the
-    // error.
+    // Retrieve the id if the project already exists, otherwise return the id or
+    // the error.
     match api.create_project(&name, organization.clone(), group.clone(), repository_url).await {
         Err(PhylumApiError::Response(ResponseError { code: StatusCode::CONFLICT, .. })) => api
             .get_project_id(&name, organization.as_deref(), group.as_deref())

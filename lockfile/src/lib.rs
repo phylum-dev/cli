@@ -138,10 +138,10 @@ impl LockfileFormat {
 
     /// Iterate over all supported lockfile formats.
     pub fn iter() -> impl Iterator<Item = LockfileFormat> {
-        // NOTE: Without explicit override, the lockfile generator will always pick the
-        // first matching format for the manifest. To ensure best possible support,
-        // common formats should be returned **before** less common ones (i.e. NPM
-        // before Yarn).
+        // NOTE: Without explicit override, the lockfile generator will always
+        // pick the first matching format for the manifest. To ensure
+        // best possible support, common formats should be returned
+        // **before** less common ones (i.e. NPM before Yarn).
         const FORMATS: &[LockfileFormat] = &[
             LockfileFormat::Npm,
             LockfileFormat::Yarn,
@@ -322,9 +322,10 @@ impl DepFiles {
                 let parser = format.parser();
 
                 let mut format_found = false;
-                // GoMod can represent a manifest and lockfile which causes duplicate
-                // lockfiles being submitted when a go.sum is present. This removes
-                // go.mod files from being automatically recognized as a lockfile.
+                // GoMod can represent a manifest and lockfile which causes
+                // duplicate lockfiles being submitted when a
+                // go.sum is present. This removes go.mod files
+                // from being automatically recognized as a lockfile.
                 if format != LockfileFormat::GoMod && parser.is_path_lockfile(path) {
                     depfiles.lockfiles.push((path.to_path_buf(), format));
                     format_found = true;
@@ -364,8 +365,8 @@ pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)
 
         let (manifest_path, _) = &depfiles.manifests[i];
 
-        // Filter out manifest if there's a lockfile with a matching format at or above
-        // the manifest.
+        // Filter out manifest if there's a lockfile with a matching format at
+        // or above the manifest.
         let mut lockfile_dirs =
             depfiles.lockfiles.iter().filter_map(|(path, format)| Some((path.parent()?, format)));
         remove |= lockfile_dirs.any(|(mut lockfile_dir, lockfile_format)| {
@@ -382,8 +383,8 @@ pub fn find_depfiles_at(root: impl AsRef<Path>) -> Vec<(PathBuf, LockfileFormat)
                 && manifest_path.starts_with(lockfile_dir)
         });
 
-        // Filter out manifest if there's a manifest with a matching format above the
-        // manifest.
+        // Filter out manifest if there's a manifest with a matching format
+        // above the manifest.
         let mut manifest_dirs = depfiles.manifests.iter().filter_map(|(path, format)| {
             let parent = path.parent()?;
             (path != manifest_path).then_some((parent, format))

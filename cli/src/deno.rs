@@ -190,9 +190,9 @@ impl ModuleLoader for ExtensionsModuleLoader {
             }
 
             // Determine source file type.
-            // We do not care about invalid URLs yet: This match statement is inexpensive,
-            // bears no risk and does not do I/O -- it operates fully off of the
-            // contents of the URL.
+            // We do not care about invalid URLs yet: This match statement is
+            // inexpensive, bears no risk and does not do I/O -- it
+            // operates fully off of the contents of the URL.
             let media_type = MediaType::from_specifier(&module_specifier);
             let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
@@ -210,9 +210,9 @@ impl ModuleLoader for ExtensionsModuleLoader {
                 _ => return Err(anyhow!("Unknown JS module format: {}", module_specifier)),
             };
 
-            // Load either a local file under the extensions directory, or a Deno standard
-            // library module. Reject all URLs that do not fit these two use
-            // cases.
+            // Load either a local file under the extensions directory, or a
+            // Deno standard library module. Reject all URLs that do
+            // not fit these two use cases.
             let code = match module_specifier.scheme() {
                 "file" => {
                     ExtensionsModuleLoader::load_from_filesystem(&extension_path, &module_specifier)

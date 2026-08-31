@@ -32,8 +32,8 @@ pub async fn handle_sandbox(matches: &ArgMatches) -> CommandResult {
     };
 
     if let Some(mut code) = status.code() {
-        // Remap exit code if it matches our sandbox start failure indicator, to ensure
-        // we can detect the failure reliably.
+        // Remap exit code if it matches our sandbox start failure indicator, to
+        // ensure we can detect the failure reliably.
         if code == i32::from(&ExitCode::SandboxStart) {
             code = i32::from(&ExitCode::SandboxStartCollision);
         }

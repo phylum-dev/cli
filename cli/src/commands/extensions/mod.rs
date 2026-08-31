@@ -179,7 +179,8 @@ async fn handle_install_extension(
     accept_permissions: bool,
     overwrite: bool,
 ) -> CommandResult {
-    // NOTE: Extension installation without slashes is reserved for the marketplace.
+    // NOTE: Extension installation without slashes is reserved for the
+    // marketplace.
     if !path.contains('/') && !path.contains('\\') {
         return Err(anyhow!("Ambiguous extension URI '{}', use './{0}' instead", path));
     }
@@ -318,8 +319,8 @@ async fn handle_uninstall_extension(name: &str) -> CommandResult {
 pub async fn handle_create_extension(path: &str) -> CommandResult {
     // Error out when target is already occupied.
     //
-    // This allows use to use [`fs::create_dir_all`] without having to worry about
-    // reusing an existing directory.
+    // This allows use to use [`fs::create_dir_all`] without having to worry
+    // about reusing an existing directory.
     let extension_path = PathBuf::from(path);
     if extension_path.exists() {
         return Err(anyhow!("Destination {path:?} already exists"));
