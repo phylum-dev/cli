@@ -108,8 +108,9 @@ struct FileRelocator {
 
 impl Drop for FileRelocator {
     fn drop(&mut self) {
-        // We can't do anything about failure here, but the original file should stay
-        // around allowing users to still resolve these issues manually.
+        // We can't do anything about failure here, but the original file should
+        // stay around allowing users to still resolve these issues
+        // manually.
         let _ = fs::rename(&self.backup_path, &self.original_path);
     }
 }

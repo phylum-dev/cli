@@ -76,8 +76,8 @@ fn entry_version(input: &str) -> IResult<&str, Option<PackageVersion>> {
 
     // Ignore HTTP(S) dependencies.
     //
-    // These could be either git or tar dependencies, so to avoid miscategorization
-    // we just ignore them.
+    // These could be either git or tar dependencies, so to avoid
+    // miscategorization we just ignore them.
     if input.starts_with("@http://") || input.starts_with("@https://") {
         return Ok((input, None));
     }

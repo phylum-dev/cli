@@ -98,8 +98,8 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
     for replacement in replacement_set {
         let module_path = &replacement.path;
 
-        // Check if the replacement module version is available and remove any modules
-        // marked for replacement.
+        // Check if the replacement module version is available and remove any
+        // modules marked for replacement.
         match &replacement.version {
             Some(version) => {
                 let module = Module {
@@ -110,7 +110,8 @@ pub fn parse(input: &str) -> IResult<&str, GoDeps> {
                 modules.remove(&module);
             },
             None => {
-                // Remove all modules with the same path since version isn't specified.
+                // Remove all modules with the same path since version isn't
+                // specified.
                 modules.retain(|m| (&m.path != module_path) || m.indirect);
             },
         }

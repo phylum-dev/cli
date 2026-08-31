@@ -45,7 +45,8 @@ impl Parse for PackagesLock {
             None => return false,
         };
 
-        // Accept both `packages.lock.json` and `packages.<project_name>.lock.json`.
+        // Accept both `packages.lock.json` and
+        // `packages.<project_name>.lock.json`.
         file_name.starts_with("packages.") && file_name.ends_with(".lock.json")
     }
 

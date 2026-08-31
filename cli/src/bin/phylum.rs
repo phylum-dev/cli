@@ -38,8 +38,8 @@ fn exit_fail(message: impl Display, exit_code: ExitCode) -> ! {
 async fn api_factory(config: Config, timeout: Option<u64>) -> Result<PhylumApi> {
     let api = PhylumApi::new(config, timeout).await?;
 
-    // PhylumApi may have had to log in, updating the auth info so we should save
-    // the config
+    // PhylumApi may have had to log in, updating the auth info so we should
+    // save the config
     let api_config = api.config();
     api_config
         .save()
@@ -119,9 +119,9 @@ async fn handle_commands() -> CommandResult {
         check_for_updates(&mut config).await?;
     }
 
-    // Get the future, but don't await. Commands that require access to the API will
-    // await on this, so that the API is not instantiated ahead of time for
-    // subcommands that don't require it.
+    // Get the future, but don't await. Commands that require access to the API
+    // will await on this, so that the API is not instantiated ahead of time
+    // for subcommands that don't require it.
     let api = api_factory(config.clone(), timeout);
 
     match subcommand {

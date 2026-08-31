@@ -383,8 +383,8 @@ mod test {
             "https://example.com/a/api/v0/",
         );
 
-        // Maybe an error should be reported in this case instead of stripping the
-        // extras.
+        // Maybe an error should be reported in this case instead of stripping
+        // the extras.
         assert_eq!(
             get_api_path("https://example.com/search?q=invalid#search").unwrap().as_str(),
             "https://example.com/search/api/v0/",

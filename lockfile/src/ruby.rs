@@ -22,8 +22,8 @@ impl Parse for GemLock {
             .map_err(|e| anyhow!(convert_error(data, e)))
             .context("Failed to parse gem lockfile")?;
 
-        // Remove duplicate dependencies, which can occur when a dependency is included
-        // with multiple different platform suffixes.
+        // Remove duplicate dependencies, which can occur when a dependency is
+        // included with multiple different platform suffixes.
         packages.sort_unstable();
         packages.dedup();
 

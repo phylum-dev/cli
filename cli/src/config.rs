@@ -156,8 +156,9 @@ where
 
     // Use target directory for temporary file path.
     //
-    // It's not possible to create the file on tmpfs since the configuration file is
-    // usually not on the same device, which causes `fs::rename` to fail.
+    // It's not possible to create the file on tmpfs since the configuration
+    // file is usually not on the same device, which causes `fs::rename` to
+    // fail.
     let file_name = path
         .file_name()
         .and_then(|name| name.to_str())

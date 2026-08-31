@@ -88,10 +88,10 @@ pub fn parse_depfile(
         }
     }
 
-    // Attempt to generate a lockfile for likely manifests when feature and option
-    // are enabled. This is a best effort attempt for files that are known at this
-    // point to not be a valid/parseable lockfile but may parse as a manifest with
-    // a non-standard name.
+    // Attempt to generate a lockfile for likely manifests when feature and
+    // option are enabled. This is a best effort attempt for files that are
+    // known at this point to not be a valid/parseable lockfile but may
+    // parse as a manifest with a non-standard name.
     #[cfg(feature = "generator")]
     if let Some(generation_path) = _generation_path.filter(|_| !maybe_lockfile || maybe_manifest) {
         if parser.generator().is_some() {

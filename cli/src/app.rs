@@ -25,8 +25,8 @@ const FILTER_ABOUT: &str = r#"Provide a filter used to limit the issues displaye
 "#;
 
 pub fn app() -> Command {
-    // NOTE: We do not use the `arg!` macro here since it causes a stack overflow on
-    // Windows.
+    // NOTE: We do not use the `arg!` macro here since it causes a stack
+    // overflow on Windows.
     #[allow(unused_mut)]
     let mut app = Command::new("phylum")
         .bin_name("phylum")

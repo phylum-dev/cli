@@ -34,9 +34,9 @@ impl Default for Permission {
 }
 
 impl Permission {
-    // XXX In Deno, `Some(vec![])` actually means "allow all". We don't want empty
-    // `Vec<String>` permissions to allow access to all resources, so we
-    // manually convert these instances into `None`.
+    // XXX In Deno, `Some(vec![])` actually means "allow all". We don't want
+    // empty `Vec<String>` permissions to allow access to all resources, so
+    // we manually convert these instances into `None`.
     pub fn get(&self) -> Option<&Vec<String>> {
         const EMPTY_VEC: &Vec<String> = &Vec::new();
         match &self {
@@ -114,8 +114,8 @@ impl Permission {
         let without_parent: Vec<_> = child
             .iter()
             .filter_map(|child| {
-                // Using Path::starts_with rather than String::starts_with in order to get
-                // the correct semantics.
+                // Using Path::starts_with rather than String::starts_with in
+                // order to get the correct semantics.
                 if parent.iter().any(|p| Path::new(&child).starts_with(p)) {
                     None
                 } else {
@@ -124,8 +124,8 @@ impl Permission {
             })
             .collect::<Vec<_>>();
 
-        // The above list must be empty for all child paths to be a subset of the
-        // parent.
+        // The above list must be empty for all child paths to be a subset of
+        // the parent.
         if !without_parent.is_empty() {
             Err(without_parent)
         } else {
@@ -315,8 +315,8 @@ pub fn default_sandbox() -> SandboxResult<Birdcage> {
 
     // Allow access to DNS list.
     //
-    // While this is required to send DNS requests for network queries, this does
-    // not automatically allow any network access.
+    // While this is required to send DNS requests for network queries, this
+    // does not automatically allow any network access.
     add_exception(&mut birdcage, Exception::Read("/etc/resolv.conf".into()))?;
 
     // Allow reading SSL certificates.
@@ -408,7 +408,8 @@ mod tests {
         assert!(permissions_options.allow_env.is_none());
         assert!(permissions_options.allow_run.is_none());
 
-        // NOTE: Net is an exception since we allow our own API domains by default.
+        // NOTE: Net is an exception since we allow our own API domains by
+        // default.
         assert_eq!(
             permissions_options.allow_net,
             Some(vec!["api.staging.phylum.io".into(), "api.phylum.io".into()])
@@ -490,13 +491,15 @@ mod tests {
         assert!(paths_subset(&["/tmp"], &["/"]).is_err());
         assert!(paths_subset(&["/tmp"], &["/etc/something"]).is_err());
 
-        // A << B if for each a in A, there exist at least one b in B such that a < b.
+        // A << B if for each a in A, there exist at least one b in B such that
+        // a < b.
         assert!(paths_subset(&["/tmp", "/etc"], &["/etc/something"]).is_ok());
         assert!(paths_subset(&["/tmp", "/etc"], &["/etc", "/tmp/something"]).is_ok());
         assert!(paths_subset(&["/tmp", "/etc"], &["/tmp", "/etc/something"]).is_ok());
         assert!(paths_subset(&["/tmp", "/etc"], &["/etc/something", "/tmp/something"]).is_ok());
 
-        // Not A << B if there exists one a in A such that for each b in B, not a < b.
+        // Not A << B if there exists one a in A such that for each b in B, not
+        // a < b.
         assert!(paths_subset(&["/tmp", "/etc"], &["/something"]).is_err());
         assert!(paths_subset(&["/tmp", "/etc"], &["/tmp", "/etc", "/something"]).is_err());
         assert!(paths_subset(&["/tmp", "/etc"], &["/tmp/a", "/etc/b", "/something"]).is_err());

@@ -49,15 +49,18 @@ impl Parse for PackageLock {
             for (name, keys) in deps {
                 // Discard version information of local packages.
                 //
-                // In NPM, versions for filesystem dependencies are in the object with the
-                // `name` corresponding to the path of the module, without any mention of the
+                // In NPM, versions for filesystem dependencies are in the
+                // object with the `name` corresponding to the
+                // path of the module, without any mention of the
                 // module's name itself.
                 //
-                // The module's name then shows up as a separate package with the `name` as
-                // `node_modules/<NAME>`, the path as `resolved`, `"link": true` and no version.
+                // The module's name then shows up as a separate package with
+                // the `name` as `node_modules/<NAME>`, the path
+                // as `resolved`, `"link": true` and no version.
                 //
-                // Since we care more about the name of a local dependency than its package, we
-                // discard the version here and include the package later when it's mentioned by
+                // Since we care more about the name of a local dependency than
+                // its package, we discard the version here and
+                // include the package later when it's mentioned by
                 // name.
                 if !name.starts_with("node_modules/") {
                     continue;
@@ -517,12 +520,13 @@ mod tests {
 
     #[test]
     fn lock_parse_yarn_v1_simple() {
-        // This file contains only one package and that package has no dependencies.
-        // This makes the file valid YAML according to serde_yaml.
+        // This file contains only one package and that package has no
+        // dependencies. This makes the file valid YAML according to
+        // serde_yaml.
         //
-        // We need to make sure we don't take the v2 lockfile code path because this is
-        // not a v2 lockfile and parsing it as one will produce incorrect
-        // results.
+        // We need to make sure we don't take the v2 lockfile code path because
+        // this is not a v2 lockfile and parsing it as one will produce
+        // incorrect results.
         let pkgs =
             YarnLock.parse(include_str!("../../tests/fixtures/yarn-v1.simple.lock")).unwrap();
 
@@ -667,9 +671,9 @@ mod tests {
 
     #[test]
     fn empty_yarn_v2() {
-        // While this uses the same parser as the `empty_yarn_v1` test, this should make
-        // sure we do not accidentally introduce a regression if we ever remove the v1
-        // parser.
+        // While this uses the same parser as the `empty_yarn_v1` test, this
+        // should make sure we do not accidentally introduce a
+        // regression if we ever remove the v1 parser.
         let pkgs = YarnLock.parse("").unwrap();
         assert!(pkgs.is_empty());
     }

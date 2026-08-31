@@ -68,8 +68,9 @@ fn file_compare<A: AsRef<Path>, B: AsRef<Path>>(a: A, b: B) -> Result<bool> {
         let cmp_len = std::cmp::min(a_buf.len(), b_buf.len());
         if cmp_len == 0 {
             // Only 1 EOF. Files are different
-            // Note: Because of the file length check above, this should be impossible
-            //       except perhaps if a file is actively being changed.
+            // Note: Because of the file length check above, this should be
+            //       impossible except perhaps if a file is actively being
+            //       changed.
             log::trace!("File length mismatch (race condition?)");
             return Ok(false);
         }

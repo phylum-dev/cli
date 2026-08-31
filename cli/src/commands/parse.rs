@@ -427,8 +427,8 @@ fn depfile_parsing_sandbox(canonical_manifest_path: &Path) -> Result<Birdcage> {
 
     // Allow any executable in common binary directories.
     //
-    // Reading binaries shouldn't be an attack vector, but significantly simplifies
-    // complex ecosystems (like Python's symlinks).
+    // Reading binaries shouldn't be an attack vector, but significantly
+    // simplifies complex ecosystems (like Python's symlinks).
     permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/usr/bin".into()))?;
     permissions::add_exception(&mut birdcage, Exception::ExecuteAndRead("/bin".into()))?;
 
@@ -577,9 +577,9 @@ mod tests {
         let tempdir = tempfile::tempdir().unwrap();
         let tempdir = tempdir.path().canonicalize().unwrap();
 
-        // Create a sample project directory named "sample" inside the "projects"
-        // directory. Also create a "Cargo.lock" file inside the "sample"
-        // directory.
+        // Create a sample project directory named "sample" inside the
+        // "projects" directory. Also create a "Cargo.lock" file inside
+        // the "sample" directory.
         let sample_dir = tempdir.join("sample");
         let lockfile_path = sample_dir.join("Cargo.lock");
         fs::create_dir_all(&sample_dir).unwrap();
@@ -587,33 +587,36 @@ mod tests {
 
         // Change the current directory to the "sample" project directory.
         let path = relative_path(&sample_dir, &lockfile_path).unwrap();
-        // The path to the lockfile should now be just the filename since it's in the
-        // current directory.
+        // The path to the lockfile should now be just the filename since it's
+        // in the current directory.
         assert_eq!(path.as_os_str(), "Cargo.lock");
 
-        // Create a subdirectory named "sub" within the "sample" project directory.
+        // Create a subdirectory named "sub" within the "sample" project
+        // directory.
         let sub_dir = sample_dir.join("sub");
         fs::create_dir_all(&sub_dir).unwrap();
 
         // Change the current directory to the new "sub" directory.
         let rel_lockfile_path = sub_dir.join("../Cargo.lock");
 
-        // Get the relative path from the sub directory to the lockfile in the sample
-        // directory.
+        // Get the relative path from the sub directory to the lockfile in the
+        // sample directory.
         let path = relative_path(&sample_dir, &rel_lockfile_path).unwrap();
-        // The path to the lockfile should be the same as before since we are looking
-        // relative to the sample directory.
+        // The path to the lockfile should be the same as before since we are
+        // looking relative to the sample directory.
         assert_eq!(path.as_os_str(), "Cargo.lock");
 
-        // Create another "Cargo.lock" file one level above the "sample" directory.
+        // Create another "Cargo.lock" file one level above the "sample"
+        // directory.
         let above_lockfile_path = tempdir.join("Cargo.lock");
         File::create(above_lockfile_path).unwrap();
         let rel_lockfile_path = sub_dir.join("../../Cargo.lock");
 
-        // Although the current directory is still "sub", get the relative path to the
-        // lockfile above the "sample" directory.
+        // Although the current directory is still "sub", get the relative path
+        // to the lockfile above the "sample" directory.
         let path = relative_path(&sample_dir, &rel_lockfile_path).unwrap();
-        // The path to the lockfile should be relative to the "sample" directory.
+        // The path to the lockfile should be relative to the "sample"
+        // directory.
         assert_eq!(path, Path::new("../Cargo.lock"));
     }
 }
