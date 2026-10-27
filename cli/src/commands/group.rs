@@ -103,7 +103,8 @@ pub async fn handle_group_list(api: &PhylumApi, matches: &ArgMatches) -> Command
                 groups.push(ListGroupsEntry { org: Some(org_name.clone()), name: group.name });
             }
         },
-        // If org is not specified as CLI arg, print all org and and legacy groups.
+        // If org is not specified as CLI arg, print all org and and legacy
+        // groups.
         None => {
             let legacy_groups = api.get_groups_list().await?.groups;
             groups = legacy_groups

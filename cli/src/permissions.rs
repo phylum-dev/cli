@@ -85,14 +85,16 @@ impl Permission {
             (&Permission::Boolean(false), _) => {
                 Err(anyhow!("All permissions are denied by the manifest"))
             },
-            // Parent allow-all always succeeds, returning the child's permissions.
+            // Parent allow-all always succeeds, returning the child's
+            // permissions.
             (&Permission::Boolean(true), child) => Ok(child.clone()),
             // Child allow-all fails with more restrictive parent permissions.
             (_, &Permission::Boolean(true)) => {
                 Err(anyhow!("The requested permissions are denied by the manifest"))
             },
             // Parent set vs child set have to be validated.
-            // This will error if child is not subset of parent, and return the child set otherwise.
+            // This will error if child is not subset of parent, and return the
+            // child set otherwise.
             (Permission::List(parent), Permission::List(child)) => {
                 Permission::check_paths_include_children(parent, child)
                     .map(|_| Permission::List(child.clone()))

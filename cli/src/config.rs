@@ -213,7 +213,8 @@ fn read_configuration(path: &Path) -> Result<Config> {
         Ok(c) => c,
         Err(orig_err) => match orig_err.downcast_ref::<io::Error>() {
             Some(e) if e.kind() == io::ErrorKind::NotFound => Config::default(),
-            // We don't fail on permission errors to allow running inside our sandbox.
+            // We don't fail on permission errors to allow running inside our
+            // sandbox.
             Some(e) if e.kind() == io::ErrorKind::PermissionDenied => {
                 print_user_failure!("Config access denied: {e}");
                 Config::default()

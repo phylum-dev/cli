@@ -19,14 +19,15 @@ struct CargoLock {
     #[serde(rename = "package")]
     packages: Vec<CargoPackage>,
 
-    // NOTE: This is used to try and parse the lockfile as a Poetry and Cargo manifest
-    // simultaneously, since both use toml with a list of [[package]].
+    // NOTE: This is used to try and parse the lockfile as a Poetry and Cargo
+    // manifest simultaneously, since both use toml with a list of [[package]].
     //
-    // Everything in a minimal Cargo lockfile is also found in a Poetry lockfile, so we instead use
-    // data found only in a Poetry lockfile to detect an invalid lockfile.
+    // Everything in a minimal Cargo lockfile is also found in a Poetry
+    // lockfile, so we instead use data found only in a Poetry lockfile to
+    // detect an invalid lockfile.
     //
-    // We need to actually parse a field from the metadata struct since early versions of Cargo
-    // lockfiles used it for hashes.
+    // We need to actually parse a field from the metadata struct since early
+    // versions of Cargo lockfiles used it for hashes.
     #[serde(rename = "metadata")]
     python_metadata: Option<PoetryMetadata>,
 }
