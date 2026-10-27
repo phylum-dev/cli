@@ -393,9 +393,9 @@ pub struct SubmitPackageRequest {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug, Serialize, Deserialize)]
 pub struct PurlWithOrigin {
     purl: String,
-    // NOTE: This is named `lockfile` with an `origin` alias because the API does
-    // not support the `origin` name. So we force conversion to `lockfile` while
-    // allowing a more proper name through the alias.
+    // NOTE: This is named `lockfile` with an `origin` alias because the API
+    // does not support the `origin` name. So we force conversion to `lockfile`
+    // while allowing a more proper name through the alias.
     #[serde(alias = "origin")]
     #[serde(skip_serializing_if = "Option::is_none")]
     lockfile: Option<String>,
